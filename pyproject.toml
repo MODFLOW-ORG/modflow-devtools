@@ -58,6 +58,7 @@ test = [
     "numpy",
     "pandas",
     "pytest!=8.1.0",
+    "pooch",
     "pytest-cov",
     "pytest-dotenv",
     "pytest-xdist",
