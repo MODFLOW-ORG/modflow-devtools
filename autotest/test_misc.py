@@ -103,7 +103,7 @@ def test_get_packages_fails_on_invalid_namefile(module_tmpdir):
             f.write(line + os.linesep)
     assert set(get_packages(namefile_path)) == {"gwf", "tdis", "ims"}
 
-    # entirely unparseable namefile - result should be empty
+    # entirely unparsable namefile - result should be empty
     lines = open(namefile_path, "r").read().splitlines()
     with open(namefile_path, "w") as f:
         for _ in lines:

@@ -32,9 +32,15 @@ jobs:
       - name: Install Python packages
         run: pip install ".[lint]"
 
-      - name: Run ruff
-        run: ruff check .
-  
+      - name: Run ruff check
+        run: ruff check
+
+      - name: Run ruff format
+        run: ruff format --check
+
+      - name: Check spelling
+        run: codespell
+
   build:
     name: Build
     runs-on: ubuntu-latest

@@ -44,6 +44,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 lint = [
+    "codespell[toml]",
     "ruff"
 ]
 test = [
@@ -73,20 +74,6 @@ docs = [
 "Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
 "Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
 
-[tool.ruff]
-target-version = "py38"
-include = [
-    "pyproject.toml",
-    "modflow_devtools/**/*.py",
-    "autotest/**/*.py",
-    "docs/**/*.py",
-    "scripts/**/*.py",
-    ".github/**/*.py",
-]
-
-[tool.ruff.lint]
-select = ["F", "E", "I001"]
-
 [tool.setuptools]
 packages = ["modflow_devtools"]
 include-package-data = true
@@ -97,6 +84,19 @@ version = {file = "version.txt"}
 
 [tool.setuptools_scm]
 fallback_version = "999"
+
+[tool.codespell]
+skip = "cliff.toml"
+ignore-words-list = [
+    "nam",
+    "wel",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["F", "E", "I001"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]

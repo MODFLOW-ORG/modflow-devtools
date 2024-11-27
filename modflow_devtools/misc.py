@@ -120,7 +120,7 @@ def run_py_script(script, *args, verbose=False):
 def get_current_branch() -> str:
     """
     Tries to determine the name of the current branch, first by the GITHUB_REF
-    environent variable, then by asking ``git`` if GITHUB_REF is not set.
+    environment variable, then by asking ``git`` if GITHUB_REF is not set.
 
     Returns
     -------
