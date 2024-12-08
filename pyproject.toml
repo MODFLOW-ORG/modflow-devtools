@@ -96,7 +96,20 @@ ignore-words-list = [
 line-length = 88
 
 [tool.ruff.lint]
-select = ["F", "E", "I001"]
+select = [
+    # "ARG",  # flake8-unused-arguments
+    "C4",   # flake8 comprehensions
+    "D409", # pydocstyle - section-underline-matches-section-length
+    "E", "W", # pycodestyle
+    "F",    # Pyflakes
+    "I",    # isort 
+    "PTH",  # flake8-use-pathlib
+    "RUF",  # Ruff-specific rules
+    "UP",   # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+"modflow_devtools/zip.py" = ["PTH"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]

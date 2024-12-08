@@ -56,10 +56,7 @@ def test_readable_text_array_snapshot(readable_array_snapshot):
     )
     assert snapshot_path.is_file()
     assert np.allclose(
-        np.fromstring(
-            open(snapshot_path).readlines()[0].replace("[", "").replace("]", ""),
-            sep=" ",
-        ),
+        np.fromstring(snapshot_path.read_text().strip("[]\r\n"), sep=" "),
         snapshot_array,
     )
 

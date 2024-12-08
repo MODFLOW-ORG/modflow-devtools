@@ -396,13 +396,13 @@ def download_artifact(
         if github_token:
             request.add_header("Authorization", f"Bearer {github_token}")
 
-    zip_path = Path(path).expanduser().absolute() / f"{str(uuid4())}.zip"
+    zip_path = Path(path).expanduser().absolute() / f"{uuid4()!s}.zip"
     tries = 0
     while True:
         tries += 1
         try:
-            with urllib.request.urlopen(request) as url_file, open(
-                zip_path, "wb"
+            with urllib.request.urlopen(request) as url_file, zip_path.open(
+                "wb"
             ) as out_file:
                 content = url_file.read()
                 out_file.write(content)
@@ -456,8 +456,10 @@ def download_and_unzip(
     Path
         The path to the directory where the zip file was unzipped
     """
-
-    path = Path(path if path else os.getcwd())
+    if path:
+        path = Path(path)
+    else:
+        path = Path.cwd()
     path.mkdir(exist_ok=True)
 
     if verbose:
@@ -477,8 +479,8 @@ def download_and_unzip(
     while True:
         tries += 1
         try:
-            with urllib.request.urlopen(request) as url_file, open(
-                file_path, "wb"
+            with urllib.request.urlopen(request) as url_file, file_path.open(
+                "wb"
             ) as out_file:
                 content = url_file.read()
                 out_file.write(content)

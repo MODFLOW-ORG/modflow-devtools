@@ -53,9 +53,9 @@ def test_get_release(repo):
     if repo == "MODFLOW-USGS/modflow6":
         # can remove if modflow6 releases follow asset name
         # conventions followed in executables and nightly build repos
-        assert set([a.rpartition("_")[2] for a in actual_names]) >= set(
-            [a for a in expected_names if not a.startswith("win")]
-        )
+        assert {a.rpartition("_")[2] for a in actual_names} >= {
+            a for a in expected_names if not a.startswith("win")
+        }
     else:
         assert set(actual_names) >= set(expected_names)
 
@@ -64,7 +64,7 @@ def test_get_release(repo):
 @requires_github
 @pytest.mark.parametrize("name", [None, "rtd-files", "run-time-comparison"])
 @pytest.mark.parametrize("per_page", [None, 100])
-def test_list_artifacts(tmp_path, name, per_page):
+def test_list_artifacts(name, per_page):
     artifacts = list_artifacts(
         "MODFLOW-USGS/modflow6",
         name=name,

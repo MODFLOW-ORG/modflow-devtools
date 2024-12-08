@@ -15,30 +15,29 @@ _current_version = Version(_version_txt_path.read_text().strip())
 
 
 def update_version_txt(version: Version):
-    with open(_version_txt_path, "w") as f:
-        f.write(str(version))
+    _version_txt_path.write_text(str(version))
     print(f"Updated {_version_txt_path} to version {version}")
 
 
 def update_init_py(timestamp: datetime, version: Version):
-    lines = _package_init_path.read_text().rstrip().split("\n")
-    with open(_package_init_path, "w") as f:
-        for line in lines:
-            if "__date__" in line:
-                line = f'__date__ = "{timestamp.strftime("%b %d, %Y")}"'
-            if "__version__" in line:
-                line = f'__version__ = "{version}"'
-            f.write(f"{line}\n")
+    lines = []
+    for line in _package_init_path.read_text().splitlines():
+        if "__date__" in line:
+            line = f'__date__ = "{timestamp:%b %d, %Y}"'
+        if "__version__" in line:
+            line = f'__version__ = "{version}"'
+        lines.append(line)
+    _package_init_path.write_text("\n".join(lines) + "\n")
     print(f"Updated {_package_init_path} to version {version}")
 
 
 def update_docs_config(version: Version):
-    lines = _docs_config_path.read_text().rstrip().split("\n")
-    with open(_docs_config_path, "w") as f:
-        for line in lines:
-            line = f"release = '{version}'" if "release = " in line else line
-            f.write(f"{line}\n")
-
+    lines = []
+    for line in _docs_config_path.read_text().splitlines():
+        if "release = " in line:
+            line = f'release = "{version}"'
+        lines.append(line)
+    _docs_config_path.write_text("\n".join(lines) + "\n")
     print(f"Updated {_docs_config_path} to version {version}")
 
 
@@ -59,6 +58,8 @@ def update_version(
         update_version_txt(version)
         update_init_py(timestamp, version)
         update_docs_config(version)
+
+    lock_path.unlink()
 
 
 if __name__ == "__main__":

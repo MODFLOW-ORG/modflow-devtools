@@ -1,9 +1,6 @@
-import platform
-import subprocess
 from os import PathLike
 from pathlib import Path
-
-from modflow_devtools.misc import set_dir
+from subprocess import run
 
 
 def meson_build(
@@ -11,21 +8,31 @@ def meson_build(
     build_path: PathLike,
     bin_path: PathLike,
 ):
-    project_path = Path(project_path).expanduser().absolute()
-    build_path = Path(build_path).expanduser().absolute()
-    bin_path = Path(bin_path).expanduser().absolute()
+    project_path = Path(project_path).expanduser().resolve()
+    build_path = Path(build_path).expanduser().resolve()
+    bin_path = Path(bin_path).expanduser().resolve()
 
-    with set_dir(Path(project_path)):
-        cmd = (
-            f"meson setup {build_path} "
-            + f"--bindir={bin_path} "
-            + f"--libdir={bin_path} "
-            + f"--prefix={('%CD%' if platform.system() == 'Windows' else '$(pwd)')}"
-            + (" --wipe" if build_path.is_dir() else "")
-        )
-        print(f"Running meson setup command: {cmd}")
-        subprocess.run(cmd, shell=True, check=True)
+    # meson setup
+    args = [
+        "meson",
+        "setup",
+        str(build_path),
+        f"--bindir={bin_path}",
+        f"--libdir={bin_path}",
+        f"--prefix={Path.cwd()}",
+    ]
+    if build_path.is_dir():
+        args.append("--wipe")
 
-        cmd = f"meson install -C {build_path}"
-        print(f"Running meson install command: {cmd}")
-        subprocess.run(cmd, shell=True, check=True)
+    print("Running command: " + " ".join(args))
+    run(args, check=True, cwd=project_path)
+
+    # meson compile
+    args = ["meson", "compile", "-C", str(build_path)]
+    print("Running command: " + " ".join(args))
+    run(args, check=True, cwd=project_path)
+
+    # meson install
+    args = ["meson", "install", "-C", str(build_path)]
+    print("Running command: " + " ".join(args))
+    run(args, check=True, cwd=project_path)

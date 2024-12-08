@@ -7,11 +7,10 @@ from ast import literal_eval
 from contextlib import contextmanager
 from functools import wraps
 from importlib import metadata
-from os import PathLike, chdir, environ, getcwd
-from os.path import basename, normpath
-from pathlib import Path
+from os import PathLike, chdir, environ
+from pathlib import Path, PurePosixPath
 from shutil import which
-from subprocess import PIPE, Popen
+from subprocess import run
 from timeit import timeit
 from typing import Dict, List, Optional, Tuple
 from urllib import request
@@ -20,8 +19,8 @@ from urllib.error import URLError
 
 @contextmanager
 def set_dir(path: PathLike):
-    origin = Path(getcwd()).absolute()
-    wrkdir = Path(path).expanduser().absolute()
+    origin = Path.cwd()
+    wrkdir = Path(path).expanduser().resolve()
 
     try:
         chdir(path)
@@ -92,17 +91,14 @@ def get_suffixes(ostag) -> Tuple[str, str]:
 def run_cmd(*args, verbose=False, **kwargs):
     """
     Run any command, return tuple (stdout, stderr, returncode).
-
-    Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
     args = [str(g) for g in args]
     if verbose:
         print("running: " + " ".join(args))
-    p = Popen(args, stdout=PIPE, stderr=PIPE, **kwargs)
-    stdout, stderr = p.communicate()
-    stdout = stdout.decode()
-    stderr = stderr.decode()
-    returncode = p.returncode
+    proc = run(args, capture_output=True, text=True, **kwargs)
+    stdout = proc.stdout
+    stderr = proc.stderr
+    returncode = proc.returncode
     if verbose:
         print(f"stdout:\n{stdout}")
         print(f"stderr:\n{stderr}")
@@ -136,16 +132,15 @@ def get_current_branch() -> str:
     """
 
     # check if on GitHub Actions CI
-    ref = environ.get("GITHUB_REF")
-    if ref is not None:
-        return basename(normpath(ref)).lower()
+    if ref := environ.get("GITHUB_REF"):
+        return PurePosixPath(ref).name
 
     # otherwise ask git about it
     if not which("git"):
         raise RuntimeError("'git' required to determine current branch")
-    stdout, stderr, code = run_cmd("git", "rev-parse", "--abbrev-ref", "HEAD")
+    stdout, stderr, code = run_cmd("git", "branch", "--show-current")
     if code == 0 and stdout:
-        return stdout.strip().lower()
+        return stdout.strip()
     raise ValueError(f"Could not determine current branch: {stderr}")
 
 
@@ -164,12 +159,13 @@ def get_packages(namefile_path: PathLike) -> List[str]:
 
     Returns
     -------
+    list
         a list of packages used by the simulation or model
     """
 
     packages = []
-    path = Path(namefile_path).expanduser().absolute()
-    lines = open(path, "r").readlines()
+    path = Path(namefile_path).expanduser().resolve()
+    lines = path.read_text().splitlines()
     gwf_lines = [ln for ln in lines if ln.strip().lower().startswith("gwf6 ")]
     gwt_lines = [ln for ln in lines if ln.strip().lower().startswith("gwt6 ")]
 
@@ -223,7 +219,7 @@ def has_package(namefile_path: PathLike, package: str) -> bool:
 
 def get_namefile_paths(
     path: PathLike,
-    prefix: str = None,
+    prefix: Optional[str] = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
@@ -235,15 +231,14 @@ def get_namefile_paths(
     by parent directory name prefix or pattern, or by
     packages used.
     """
+    path = Path(path)
 
     # if path doesn't exist, return empty list
-    if not Path(path).is_dir():
+    if not path.is_dir():
         return []
 
     # find simulation namefiles
-    paths = [
-        p for p in Path(path).rglob(f"{prefix}*/**/{namefile}" if prefix else namefile)
-    ]
+    paths = list(path.rglob(f"{prefix}*/**/{namefile}" if prefix else namefile))
 
     # remove excluded
     paths = [
@@ -255,7 +250,7 @@ def get_namefile_paths(
         filtered = []
         for nfp in paths:
             nf_pkgs = get_packages(nfp)
-            shared = set(nf_pkgs).intersection(set([p.lower() for p in packages]))
+            shared = set(nf_pkgs).intersection({p.lower() for p in packages})
             if any(shared):
                 filtered.append(nfp)
         paths = filtered
@@ -273,7 +268,7 @@ def get_namefile_paths(
 
 def get_model_paths(
     path: PathLike,
-    prefix: str = None,
+    prefix: Optional[str] = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
@@ -304,16 +299,12 @@ def get_model_paths(
     example_paths = [p for p in globbed if p.is_dir()]
     for p in example_paths:
         for mp in sorted(
-            list(
-                set(
-                    [
-                        p.parent
-                        for p in get_namefile_paths(
-                            p, prefix, namefile, excluded, selected, packages
-                        )
-                    ]
+            {
+                p.parent
+                for p in get_namefile_paths(
+                    p, prefix, namefile, excluded, selected, packages
                 )
-            ),
+            },
             key=keyfunc,
         ):
             if mp not in model_paths:

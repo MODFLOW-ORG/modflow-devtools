@@ -23,8 +23,8 @@ def test_compressall(function_tmpdir):
     zip_file = function_tmpdir / "output.zip"
     input_dir = function_tmpdir / "input"
     input_dir.mkdir()
-    with open(input_dir / "data.txt", "w") as f:
-        f.write("hello world")
+    file = input_dir / "data.txt"
+    file.write_text("hello world")
 
     MFZipFile.compressall(str(zip_file), dir_pths=str(input_dir))
     pprint(list(function_tmpdir.iterdir()))
@@ -42,8 +42,7 @@ def empty_archive(module_tmpdir) -> Path:
     # https://stackoverflow.com/a/25195628/6514033
     data = b"PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # noqa: E501
     path = module_tmpdir / "empty.zip"
-    with open(path, "wb") as zip:
-        zip.write(data)
+    path.write_bytes(data)
     yield path
 
 

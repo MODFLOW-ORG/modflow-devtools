@@ -1,14 +1,14 @@
 from os import PathLike
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Optional, Union
 
 
 def build_table(
     caption: str,
     fpth: Union[str, PathLike],
     arr,
-    headings: Iterable[str] = None,
-    col_widths: Iterable[float] = None,
+    headings: Optional[Iterable[str]] = None,
+    col_widths: Optional[Iterable[float]] = None,
 ):
     """
     Build a LaTeX table from the given NumPy array.
@@ -32,7 +32,7 @@ def build_table(
     if headings is None:
         headings = arr.dtype.names
     ncols = len(arr.dtype.names)
-    label = "tab:{}".format(fpth.stem)
+    label = f"tab:{fpth.stem}"
 
     line = get_header(caption, label, headings, col_widths=col_widths)
 
@@ -49,15 +49,14 @@ def build_table(
     # footer
     line += get_footer()
 
-    with open(fpth, "w") as f:
-        f.write(line)
+    fpth.write_text(line)
 
 
 def get_header(
     caption: str,
     label: str,
     headings: Iterable[str],
-    col_widths: Iterable[float] = None,
+    col_widths: Optional[Iterable[float]] = None,
     center: bool = True,
     firsthead: bool = False,
 ):

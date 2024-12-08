@@ -319,7 +319,7 @@ def pytest_generate_tests(metafunc):
                 namefile_paths, key=example_name_from_namfile_path
             ):
                 # sort alphabetically (gwf < gwt)
-                nfpaths = sorted(list(paths))
+                nfpaths = sorted(paths)
 
                 # skip if no models found
                 if len(nfpaths) == 0:
@@ -333,9 +333,7 @@ def pytest_generate_tests(metafunc):
             # find MODFLOW 6 namfiles
             examples_path = repo_path / "examples"
             namfiles = (
-                [p for p in examples_path.rglob("mfsim.nam")]
-                if examples_path.is_dir()
-                else []
+                list(examples_path.rglob("mfsim.nam")) if examples_path.is_dir() else []
             )
 
             # group by scenario
@@ -377,9 +375,9 @@ def pytest_generate_tests(metafunc):
 
             return examples
 
-        example_scenarios = get_examples() if repo_path else dict()
+        example_scenarios = get_examples() if repo_path else {}
         metafunc.parametrize(
             key,
-            [(name, nfps) for name, nfps in example_scenarios.items()],
+            list(example_scenarios.items()),
             ids=list(example_scenarios.keys()),
         )
