@@ -25,7 +25,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.x
           cache: 'pip'
           cache-dependency-path: pyproject.toml
 
@@ -52,7 +52,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.x
 
       - name: Install Python packages
         run: |
@@ -79,7 +79,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-22.04, macos-13, windows-2022 ]
-        python: [ 3.8, 3.9, "3.10", "3.11", "3.12" ]
+        python: [ 3.9, "3.10", "3.11", "3.12", "3.13" ]
     env:
       GCC_V: 11
     steps:
@@ -137,7 +137,6 @@ jobs:
         run: pip install ".[test]"
 
       - name: Cache modflow6 examples
-        if: matrix.python != 3.8
         id: cache-examples
         uses: actions/cache@v3
         with:
@@ -145,18 +144,16 @@ jobs:
           key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
       
       - name: Install extra Python packages
-        if: matrix.python != 3.8
         working-directory: modflow6-examples/etc
         run: |
           pip install -r requirements.pip.txt
           pip install -r requirements.usgs.txt
 
       - name: Update FloPy packages
-        if: matrix.python != 3.8
         run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Build modflow6 example models
-        if: matrix.python != 3.8 && steps.cache-examples.outputs.cache-hit != 'true'
+        if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/autotest
         run: pytest -v -n auto test_scripts.py --init
 
@@ -171,7 +168,7 @@ jobs:
         # only invoke the GH API on one OS and Python version
         # to avoid rate limits (1000 rqs / hour / repository)
         # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
-        if: runner.os == 'Linux' && matrix.python == '3.8'
+        if: runner.os == 'Linux' && matrix.python == '3.9'
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}

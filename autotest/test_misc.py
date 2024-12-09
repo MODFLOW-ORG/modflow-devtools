@@ -4,7 +4,6 @@ import shutil
 from os import environ
 from pathlib import Path
 from time import sleep
-from typing import List
 
 import pytest
 
@@ -122,7 +121,7 @@ def test_has_package():
     assert not has_package(namefile_path, "wel")
 
 
-def get_expected_model_dirs(path, pattern="mfsim.nam") -> List[Path]:
+def get_expected_model_dirs(path, pattern="mfsim.nam") -> list[Path]:
     folders = []
     for root, dirs, _ in os.walk(path):
         for d in dirs:
@@ -132,7 +131,7 @@ def get_expected_model_dirs(path, pattern="mfsim.nam") -> List[Path]:
     return sorted(set(folders))
 
 
-def get_expected_namefiles(path, pattern="mfsim.nam") -> List[Path]:
+def get_expected_namefiles(path, pattern="mfsim.nam") -> list[Path]:
     folders = []
     for root, dirs, _ in os.walk(path):
         for d in dirs:

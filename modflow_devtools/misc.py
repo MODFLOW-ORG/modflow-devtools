@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from shutil import which
 from subprocess import run
 from timeit import timeit
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 from urllib import request
 from urllib.error import URLError
 
@@ -67,7 +67,7 @@ def get_ostag() -> str:
     raise ValueError(f"platform {sys.platform!r} not supported")
 
 
-def get_suffixes(ostag) -> Tuple[str, str]:
+def get_suffixes(ostag) -> tuple[str, str]:
     """
     Returns executable and library suffixes for the
     given OS (as returned by sys.platform)
@@ -144,7 +144,7 @@ def get_current_branch() -> str:
     raise ValueError(f"Could not determine current branch: {stderr}")
 
 
-def get_packages(namefile_path: PathLike) -> List[str]:
+def get_packages(namefile_path: PathLike) -> list[str]:
     """
     Return a list of packages used by the simulation
     or model defined in the given namefile. The namefile
@@ -273,7 +273,7 @@ def get_model_paths(
     excluded=None,
     selected=None,
     packages=None,
-) -> List[Path]:
+) -> list[Path]:
     """
     Find model directories recursively in the given location.
     A model directory is any directory containing one or more
@@ -378,7 +378,7 @@ def has_exe(exe):
 
 
 def has_pkg(
-    pkg: str, strict: bool = False, name_map: Optional[Dict[str, str]] = None
+    pkg: str, strict: bool = False, name_map: Optional[dict[str, str]] = None
 ) -> bool:
     """
     Determines if the given Python package is installed.

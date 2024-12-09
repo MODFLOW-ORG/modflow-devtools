@@ -6,7 +6,7 @@ import timeit
 import urllib.request
 from os import PathLike
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 from uuid import uuid4
 from warnings import warn
 
@@ -39,7 +39,7 @@ def get_request(url, params={}):
 
 def get_releases(
     repo, per_page=30, max_pages=10, retries=3, verbose=False
-) -> List[dict]:
+) -> list[dict]:
     """
     Get available releases for the given repository.
 
@@ -221,7 +221,7 @@ def get_latest_version(repo, retries=3, verbose=False) -> str:
 
 def get_release_assets(
     repo, tag="latest", simple=False, retries=3, verbose=False
-) -> Union[dict, List[dict]]:
+) -> Union[dict, list[dict]]:
     """
     Get assets corresponding to the given release.
 
@@ -264,7 +264,7 @@ def get_release_assets(
 
 def list_artifacts(
     repo, name=None, per_page=30, max_pages=10, retries=3, verbose=False
-) -> List[dict]:
+) -> list[dict]:
     """
     List artifacts for the given repository, optionally filtering by name (exact match).
     If more artifacts are available than will fit within the given page size, by default
@@ -401,9 +401,10 @@ def download_artifact(
     while True:
         tries += 1
         try:
-            with urllib.request.urlopen(request) as url_file, zip_path.open(
-                "wb"
-            ) as out_file:
+            with (
+                urllib.request.urlopen(request) as url_file,
+                zip_path.open("wb") as out_file,
+            ):
                 content = url_file.read()
                 out_file.write(content)
                 break
@@ -479,9 +480,10 @@ def download_and_unzip(
     while True:
         tries += 1
         try:
-            with urllib.request.urlopen(request) as url_file, file_path.open(
-                "wb"
-            ) as out_file:
+            with (
+                urllib.request.urlopen(request) as url_file,
+                file_path.open("wb") as out_file,
+            ):
                 content = url_file.read()
                 out_file.write(content)
 

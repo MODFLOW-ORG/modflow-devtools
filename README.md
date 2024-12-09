@@ -52,7 +52,7 @@ Pytest features include:
 
 ## Requirements
 
-Python3.8+, dependency-free, but pairs well with `pytest` and select plugins, e.g.
+Python3.9+, dependency-free, but pairs well with `pytest` and select plugins, e.g.
 
 - [`pytest-dotenv`](https://github.com/quiqua/pytest-dotenv)
 - [`pytest-xdist`](https://github.com/pytest-dev/pytest-xdist)

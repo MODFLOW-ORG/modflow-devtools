@@ -1,9 +1,10 @@
 from collections import OrderedDict
+from collections.abc import Generator
 from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
 from shutil import copytree, rmtree
-from typing import Dict, Generator, List, Optional
+from typing import Optional
 
 from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import get_namefile_paths, get_packages
@@ -313,7 +314,7 @@ def pytest_generate_tests(metafunc):
         def example_name_from_namfile_path(path: PathLike) -> str:
             return example_path_from_namfile_path(path).name
 
-        def group_examples(namefile_paths) -> Dict[str, List[Path]]:
+        def group_examples(namefile_paths) -> dict[str, list[Path]]:
             d = OrderedDict()
             for name, paths in groupby(
                 namefile_paths, key=example_name_from_namfile_path

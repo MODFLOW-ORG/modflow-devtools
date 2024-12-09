@@ -5,7 +5,7 @@ Occasionally useful to directly assert environment expectations.
 
 from os import environ
 from platform import python_version, system
-from typing import Dict, Optional
+from typing import Optional
 
 from packaging.version import Version
 
@@ -48,7 +48,7 @@ def requires_python(version, bound="lower"):
         )
 
 
-def requires_pkg(*pkgs, name_map: Optional[Dict[str, str]] = None):
+def requires_pkg(*pkgs, name_map: Optional[dict[str, str]] = None):
     missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True, name_map=name_map)}
     return pytest.mark.skipif(
         missing,

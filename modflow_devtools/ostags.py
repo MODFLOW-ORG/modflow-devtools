@@ -5,7 +5,7 @@ systems differently. This module contains conversion utilities.
 
 import sys
 from platform import processor, system
-from typing import Optional, Tuple
+from typing import Optional
 
 _system = system()
 _processor = processor()
@@ -42,7 +42,7 @@ def get_ostag(kind: str = "modflow") -> str:
         raise ValueError(f"Invalid kind: {kind}")
 
 
-def get_binary_suffixes(ostag: Optional[str] = None) -> Tuple[str, str]:
+def get_binary_suffixes(ostag: Optional[str] = None) -> tuple[str, str]:
     """
     Returns executable and library suffixes for the given OS tag, if provided,
     otherwise for the current operating system.

@@ -1,6 +1,7 @@
+from collections.abc import Iterable
 from os import PathLike
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Optional, Union
 
 
 def build_table(
