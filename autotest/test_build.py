@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from modflow_devtools.build import meson_build
-from modflow_devtools.markers import requires_pkg
+from modflow_devtools.markers import requires_exe
 
 _repos_path = environ.get("REPOS_PATH")
 if _repos_path is None:
@@ -20,7 +20,7 @@ _lib_ext = (
 )
 
 
-@requires_pkg("meson", "ninja")
+@requires_exe("meson", "ninja")
 @pytest.mark.skipif(
     not _modflow6_repo_path.is_dir(), reason="modflow6 repository not found"
 )
