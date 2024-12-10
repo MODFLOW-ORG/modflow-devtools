@@ -7,11 +7,8 @@ from os import PathLike
 from pathlib import Path
 from typing import (
     Any,
-    Dict,
-    List,
     Literal,
     Optional,
-    Tuple,
     TypedDict,
     Union,
 )
@@ -58,9 +55,9 @@ DfnFmtVersion = Literal[1, 2]
 """DFN format version number."""
 
 
-Vars = Dict[str, "Var"]
-Refs = Dict[str, "Ref"]
-Dfns = Dict[str, "Dfn"]
+Vars = dict[str, "Var"]
+Refs = dict[str, "Ref"]
+Dfns = dict[str, "Dfn"]
 
 
 class Var(TypedDict):
@@ -107,7 +104,7 @@ class Dfn(TypedDict):
     """
 
     @staticmethod
-    def _load_v1_flat(f, common: Optional[dict] = None) -> Tuple[Mapping, List[str]]:
+    def _load_v1_flat(f, common: Optional[dict] = None) -> tuple[Mapping, list[str]]:
         var = {}
         flat = []
         meta = []
@@ -195,7 +192,7 @@ class Dfn(TypedDict):
         # load dfn as flat multidict + str metadata
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
-        def _load_variable(var: Dict[str, Any]) -> Var:
+        def _load_variable(var: dict[str, Any]) -> Var:
             """
             Convert an input variable from its original representation
             in a definition file to a structured, Python-friendly form.
