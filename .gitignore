@@ -144,3 +144,5 @@ bin
 
 **.DS_Store
 data_backup
+
+autotest/temp/

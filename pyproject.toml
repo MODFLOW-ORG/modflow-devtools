@@ -43,6 +43,7 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 
 [project.optional-dependencies]
+dev=["modflow-devtools[lint,test,docs,dfn]"]
 lint = [
     "codespell[toml]",
     "ruff"
@@ -67,6 +68,10 @@ docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "myst-parser"
+]
+dfn = [
+    "boltons",
+    "tomlkit"
 ]
 
 [project.urls]
