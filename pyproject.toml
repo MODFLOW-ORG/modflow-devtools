@@ -44,6 +44,10 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev=["modflow-devtools[lint,test,docs,dfn]"]
+build = [
+    "build",
+    "twine"
+]
 lint = [
     "codespell[toml]",
     "ruff"

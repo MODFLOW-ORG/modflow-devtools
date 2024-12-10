@@ -6,7 +6,7 @@ Work is underway to migrate MODFLOW 6 input specifications to a standard data in
 
 The `modflow_devtools.dfn` module contains a parser for the legacy DFN format, a format-agnostic representation for input specifications, and a TOML conversion utility.
 
-We envision MODFLOW 6 and FloPy will use these utilities for a relatively short while the TOML migration is underway. This will involve adapting automated code- and documentation-generation systems in both MF6 and FloPy to consume TOML rather than DFN files. When this is complete, these utilities should no longer be necessary.
+We envision MODFLOW 6 and FloPy will use these utilities for a relatively short period while the TOML migration is underway. This will involve adapting automated code- and documentation-generation systems in both MF6 and FloPy to consume TOML rather than DFN files. When this is complete, these utilities should no longer be necessary.
 
 ## TOML conversion
 

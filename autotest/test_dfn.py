@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from modflow_devtools.dfn import Dfn, get_dfns
+from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
 DFN_PATH = PROJ_ROOT / "autotest" / "temp" / "dfn"
@@ -21,6 +22,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
 
+@requires_pkg("boltons")
 def test_dfn_load(dfn_name):
     with (
         (DFN_PATH / "common.dfn").open() as common_file,

@@ -57,8 +57,7 @@ jobs:
       - name: Install Python packages
         run: |
           pip install --upgrade pip
-          pip install build twine
-          pip --verbose install .
+          pip install ".[build]"
 
       - name: Print package version
         run: python -c "import modflow_devtools; print(modflow_devtools.__version__)"
@@ -134,7 +133,7 @@ jobs:
 
       - name: Install Python packages
         working-directory: modflow-devtools
-        run: pip install ".[test]"
+        run: pip install ".[dev]"
 
       - name: Cache modflow6 examples
         id: cache-examples
