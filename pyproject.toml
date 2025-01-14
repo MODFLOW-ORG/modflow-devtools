@@ -43,7 +43,6 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev=["modflow-devtools[lint,test,docs,dfn]"]
 build = [
     "build",
     "twine"
@@ -76,6 +75,49 @@ docs = [
 dfn = [
     "boltons",
     "tomlkit"
+]
+dev = ["modflow-devtools[lint,test,docs,dfn]"]
+
+[dependency-groups]
+build = [
+    "build",
+    "twine"
+]
+lint = [
+    "codespell[toml]",
+    "ruff"
+]
+test = [
+    "modflow-devtools[lint]",
+    "coverage",
+    "flaky",
+    "filelock",
+    "meson!=0.63.0",
+    "ninja",
+    "numpy",
+    "pandas",
+    "pytest!=8.1.0",
+    "pytest-cov",
+    "pytest-dotenv",
+    "pytest-xdist",
+    "PyYaml",
+    "syrupy"
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst-parser"
+]
+dfn = [
+    "boltons",
+    "tomlkit"
+]
+dev = [
+    {include-group = "build"},
+    {include-group = "lint"},
+    {include-group = "test"},
+    {include-group = "docs"},
+    {include-group = "dfn"}
 ]
 
 [project.urls]

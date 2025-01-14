@@ -13,6 +13,9 @@ on:
       - '**.md'
       - '.github/workflows/release.yml'
       - '.gitignore'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   lint:
     name: Lint
@@ -22,24 +25,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.x
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
+          version: "0.5.18"
 
-      - name: Install Python packages
-        run: pip install ".[lint]"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+
+      - name: Install project
+        run: uv sync --group lint
 
       - name: Run ruff check
-        run: ruff check
+        run: uv run ruff check
 
       - name: Run ruff format
-        run: ruff format --check
+        run: uv run ruff format --check
 
       - name: Check spelling
-        run: codespell
+        run: uv run codespell
 
   build:
     name: Build
@@ -49,24 +55,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.x
+          version: "0.5.18"
 
-      - name: Install Python packages
-        run: |
-          pip install --upgrade pip
-          pip install ".[build]"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: pyproject.toml
+
+      - name: Install project
+        run: uv sync --group build
 
       - name: Print package version
-        run: python -c "import modflow_devtools; print(modflow_devtools.__version__)"
+        run: uv run python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
       - name: Build package
-        run: python -m build
+        run: uv run python -m build
       
       - name: Check distribution
-        run: twine check --strict dist/*
+        run: uv run twine check --strict dist/*
 
   test:
     name: Test
@@ -126,14 +135,20 @@ jobs:
           compiler: gcc
           version: ${{ env.GCC_V }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
+          version: "0.5.18"
           python-version: ${{ matrix.python }}
 
-      - name: Install Python packages
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: modflow-devtools/pyproject.toml
+
+      - name: Install project
         working-directory: modflow-devtools
-        run: pip install ".[dev]"
+        run: uv sync --all-extras
 
       - name: Cache modflow6 examples
         id: cache-examples
@@ -145,23 +160,23 @@ jobs:
       - name: Install extra Python packages
         working-directory: modflow6-examples/etc
         run: |
-          pip install -r requirements.pip.txt
-          pip install -r requirements.usgs.txt
+          uv pip install -r requirements.pip.txt
+          uv pip install -r requirements.usgs.txt
 
       - name: Update FloPy packages
-        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
+        run: uv run python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
 
       - name: Build modflow6 example models
         if: steps.cache-examples.outputs.cache-hit != 'true'
         working-directory: modflow6-examples/autotest
-        run: pytest -v -n auto test_scripts.py --init
+        run: uv run pytest -v -n auto test_scripts.py --init
 
       - name: Run local tests
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py
+        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py
       
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
@@ -172,7 +187,7 @@ jobs:
         env:
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: pytest -v -n auto --durations 0 test_download.py
+        run: uv run pytest -v -n auto --durations 0 test_download.py
   
   rtd:
     name: Docs

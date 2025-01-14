@@ -44,9 +44,9 @@ def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 
 @pytest.fixture(scope="class")
 def class_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
-    assert (
-        request.cls is not None
-    ), "Class-scoped temp dir fixture must be used on class"
+    assert request.cls is not None, (
+        "Class-scoped temp dir fixture must be used on class"
+    )
     temp = Path(tmpdir_factory.mktemp(request.cls.__name__))
     yield temp
 
