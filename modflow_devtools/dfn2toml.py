@@ -1,7 +1,12 @@
 import argparse
 from collections.abc import Mapping
+from os import PathLike
 from pathlib import Path
 from typing import Any
+
+import tomli_w as tomli
+
+from modflow_devtools.dfn import Dfn
 
 
 class Shim:
@@ -27,12 +32,17 @@ class Shim:
         return Shim._attach_children(Shim._drop_none(d))
 
 
+def convert(indir: PathLike, outdir: PathLike):
+    indir = Path(indir).expanduser().absolute()
+    outdir = Path(outdir).expanduser().absolute()
+    outdir.mkdir(exist_ok=True, parents=True)
+    for dfn in Dfn.load_all(indir).values():
+        with Path.open(outdir / f"{dfn['name']}.toml", "wb") as f:
+            tomli.dump(Shim.apply(dfn), f)
+
+
 if __name__ == "__main__":
     """Convert DFN files to TOML."""
-
-    import tomlkit
-
-    from modflow_devtools.dfn import Dfn
 
     parser = argparse.ArgumentParser(description="Convert DFN files to TOML.")
     parser.add_argument(
@@ -47,9 +57,4 @@ if __name__ == "__main__":
         help="Output directory.",
     )
     args = parser.parse_args()
-    indir = Path(args.indir)
-    outdir = Path(args.outdir)
-    outdir.mkdir(exist_ok=True, parents=True)
-    for dfn in Dfn.load_all(indir).values():
-        with Path.open(outdir / f"{dfn['name']}.toml", "w") as f:
-            tomlkit.dump(Shim.apply(dfn), f)
+    convert(args.indir, args.outdir)

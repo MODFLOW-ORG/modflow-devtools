@@ -14,7 +14,10 @@ from typing import (
 )
 from warnings import warn
 
+import tomli
 from boltons.dictutils import OMD
+
+from modflow_devtools.download import download_and_unzip
 
 # DFN representation with a
 # parser for the DFN format
@@ -467,6 +470,17 @@ class Dfn(TypedDict):
         )
 
     @classmethod
+    def _load_v2(cls, f, name) -> "Dfn":
+        # load data
+        data = tomli.load(f)
+
+        # if name provided, make sure it matches
+        if name and name != data.get("name", None):
+            raise ValueError(f"Name mismatch, expected {name}")
+
+        return cls(**data)
+
+    @classmethod
     def load(
         cls,
         f,
@@ -480,6 +494,8 @@ class Dfn(TypedDict):
 
         if version == 1:
             return cls._load_v1(f, name, **kwargs)
+        elif version == 2:
+            return cls._load_v2(f, name)
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
@@ -517,11 +533,29 @@ class Dfn(TypedDict):
         return dfns
 
     @staticmethod
+    def _load_all_v2(dfndir: PathLike) -> Dfns:
+        # find definition files
+        paths: list[Path] = [
+            p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
+        ]
+
+        # load all the input definitions
+        dfns: Dfns = {}
+        for path in paths:
+            with path.open(mode="rb") as f:
+                dfn = Dfn.load(f, name=path.stem, version=2)
+                dfns[path.stem] = dfn
+
+        return dfns
+
+    @staticmethod
     def load_all(dfndir: PathLike, version: DfnFmtVersion = 1) -> Dfns:
         """Load all input definitions from the given directory."""
 
         if version == 1:
             return Dfn._load_all_v1(dfndir)
+        elif version == 2:
+            return Dfn._load_all_v2(dfndir)
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
@@ -532,8 +566,6 @@ class Dfn(TypedDict):
 def get_dfns(
     owner: str, repo: str, ref: str, outdir: Union[str, PathLike], verbose: bool = False
 ):
-    from modflow_devtools.download import download_and_unzip
-
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
     if verbose:
         print(f"Downloading MODFLOW 6 repository from {url}")

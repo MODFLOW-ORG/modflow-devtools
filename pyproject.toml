@@ -74,7 +74,8 @@ docs = [
 ]
 dfn = [
     "boltons",
-    "tomlkit"
+    "tomli",
+    "tomli-w"
 ]
 dev = ["modflow-devtools[lint,test,docs,dfn]"]
 
@@ -110,7 +111,8 @@ docs = [
 ]
 dfn = [
     "boltons",
-    "tomlkit"
+    "tomli",
+    "tomli-w"
 ]
 dev = [
     {include-group = "build"},
