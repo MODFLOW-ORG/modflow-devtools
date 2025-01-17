@@ -1,6 +1,6 @@
 # Web utilities 
 
-Some utility functions are provided for common web requests. Most use the GitHub API to query information or download artifacts and assets. See this project's test cases (in particular `test_download.py`) for detailed usage examples.
+Some utility functions are provided for GitHub-related web requests. See this project's test cases (in particular `test_download.py`) for detailed usage examples.
 
 **Note:** to avoid GitHub API rate limits when using these functions, it is recommended to set the `GITHUB_TOKEN` environment variable. If this variable is set, the token will be borne on requests sent to the API.
 
@@ -18,56 +18,11 @@ assets = release["assets"]
 print([asset["name"] for asset in assets])
 ```
 
-This yields `['code.json', 'linux.zip', 'mac.zip', 'win64.zip']`.
-
-Equivalently, using the `get_release_assets()` function to list the latest release assets directly:
-
-```python
-from modflow_devtools.download import get_release_assets
-
-assets = get_release_assets("MODFLOW-USGS/executables")
-print([asset["name"] for asset in assets])
-```
-
-The `simple` parameter, defaulting to `False`, can be toggled to return a simple dictionary mapping asset names to download URLs:
-
-```python
-from pprint import pprint
-
-assets = get_release_assets("MODFLOW-USGS/executables", simple=True)
-pprint(assets)
-```
-
-This prints:
-
-```
-{'code.json': 'https://github.com/MODFLOW-USGS/executables/releases/download/12.0/code.json',
- 'linux.zip': 'https://github.com/MODFLOW-USGS/executables/releases/download/12.0/linux.zip',
- 'mac.zip': 'https://github.com/MODFLOW-USGS/executables/releases/download/12.0/mac.zip',
- 'win64.zip': 'https://github.com/MODFLOW-USGS/executables/releases/download/12.0/win64.zip'}
-```
+This prints `['code.json', 'linux.zip', 'mac.zip', 'win64.zip']`.
 
 ## Downloads
 
-The `download_artifact` function downloads and unzips the GitHub Actions artifact with the given ID to the given path, optionally deleting the zipfile afterwards. The `repo` format is `owner/name`, as in GitHub URLs. For instance:
-
-```python
-from modflow_devtools.download import list_artifacts, download_artifact
-
-repo = "MODFLOW-USGS/modflow6"
-artifacts = list_artifacts(repo, max_pages=1, verbose=True)
-artifact = next(iter(artifacts), None)
-if artifact:
-    download_artifact(
-        repo=repo,
-        id=artifact["id"],
-        path=function_tmpdir,
-        delete_zip=False,
-        verbose=False,
-    )
-```
-
-The `download_and_unzip` function is a more generic alternative for downloading and unzipping files from arbitrary URLs.
+The `download_and_unzip` function downloads and unzips zip files.
 
 For instance, to download a MODFLOW 6.4.1 Linux distribution and delete the zipfile after extracting:
 

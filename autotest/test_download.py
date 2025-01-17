@@ -3,10 +3,8 @@ from flaky import flaky
 
 from modflow_devtools.download import (
     download_and_unzip,
-    download_artifact,
     get_release,
     get_releases,
-    list_artifacts,
 )
 from modflow_devtools.markers import requires_github
 
@@ -58,47 +56,6 @@ def test_get_release(repo):
         }
     else:
         assert set(actual_names) >= set(expected_names)
-
-
-@flaky
-@requires_github
-@pytest.mark.parametrize("name", [None, "rtd-files", "run-time-comparison"])
-@pytest.mark.parametrize("per_page", [None, 100])
-def test_list_artifacts(name, per_page):
-    artifacts = list_artifacts(
-        "MODFLOW-USGS/modflow6",
-        name=name,
-        per_page=per_page,
-        max_pages=2,
-        verbose=True,
-    )
-
-    if any(artifacts) and name:
-        assert all(name == a["name"] for a in artifacts)
-
-
-@flaky
-@requires_github
-@pytest.mark.parametrize("delete_zip", [True, False])
-def test_download_artifact(function_tmpdir, delete_zip):
-    repo = "MODFLOW-USGS/modflow6"
-    artifacts = list_artifacts(repo, max_pages=1, verbose=True)
-    first = next(iter(artifacts), None)
-
-    if not first:
-        pytest.skip(f"No artifacts found for repo: {repo}")
-
-    artifact_id = first["id"]
-    download_artifact(
-        repo=repo,
-        id=artifact_id,
-        path=function_tmpdir,
-        delete_zip=delete_zip,
-        verbose=False,
-    )
-
-    assert len(list(function_tmpdir.rglob("*"))) >= (0 if delete_zip else 1)
-    assert any(list(function_tmpdir.rglob("*.zip"))) != delete_zip
 
 
 @flaky
