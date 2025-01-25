@@ -21,6 +21,7 @@ from warnings import warn
 
 import tomli
 from boltons.dictutils import OMD
+from boltons.iterutils import remap
 
 from modflow_devtools.download import download_and_unzip
 
@@ -46,6 +47,39 @@ def _try_parse_bool(value: Any) -> Any:
         if value in ["true", "false"]:
             return value == "true"
     return value
+
+
+def _var_attr_sort_key(item) -> int:
+    """
+    Sort key for input variables. The order is:
+    0. name
+    1. type
+    2. shape
+    3. default
+    4. reader
+    5. optional
+    6. longname
+    7. description
+    """
+
+    k, _ = item
+    if k == "name":
+        return 0
+    if k == "type":
+        return 1
+    if k == "shape":
+        return 2
+    if k == "default":
+        return 3
+    if k == "reader":
+        return 4
+    if k == "optional":
+        return 5
+    if k == "longname":
+        return 6
+    if k == "description":
+        return 7
+    return 8
 
 
 _MF6_SCALARS = {
@@ -229,171 +263,160 @@ class Dfn(TypedDict):
             for a separate context will be given a reference to it.
             """
 
-            var = var.copy()
+            def _load(var) -> Var:
+                var = var.copy()
 
-            # parse booleans from strings. everything else can
-            # stay a string except default values, which we'll
-            # try to parse as arbitrary literals below, and at
-            # some point types, once we introduce type hinting
-            var = {k: _try_parse_bool(v) for k, v in var.items()}
+                # parse booleans from strings. everything else can
+                # stay a string except default values, which we'll
+                # try to parse as arbitrary literals below, and at
+                # some point types, once we introduce type hinting
+                var = {k: _try_parse_bool(v) for k, v in var.items()}
 
-            _name = var.pop("name")
-            _type = var.pop("type", None)
-            shape = var.pop("shape", None)
-            shape = None if shape == "" else shape
-            block = var.pop("block", None)
-            default = var.pop("default", None)
-            default = _try_literal_eval(default) if _type != "string" else default
-            description = var.pop("description", "")
-            ref = refs.get(_name, None)
+                _name = var.pop("name")
+                _type = var.pop("type", None)
+                shape = var.pop("shape", None)
+                shape = None if shape == "" else shape
+                block = var.pop("block", None)
+                default = var.pop("default", None)
+                default = _try_literal_eval(default) if _type != "string" else default
+                description = var.pop("description", "")
+                ref = refs.get(_name, None)
 
-            # if var is a foreign key, register it
-            if ref:
-                fkeys[_name] = ref
+                # if var is a foreign key, register it
+                if ref:
+                    fkeys[_name] = ref
 
-            def _items() -> Vars:
-                """Load a list's items."""
+                def _item() -> Var:
+                    """Load a list's item."""
 
-                names = _type.split()[1:]
-                types = [
-                    v["type"]
-                    for v in flat.values(multi=True)
-                    if v["name"] in names and v.get("in_record", False)
-                ]
-                n_names = len(names)
-                if n_names < 1:
-                    raise ValueError(f"Missing recarray definition: {_type}")
+                    item_names = _type.split()[1:]
+                    item_types = [
+                        v["type"]
+                        for v in flat.values(multi=True)
+                        if v["name"] in item_names and v.get("in_record", False)
+                    ]
+                    n_item_names = len(item_names)
+                    if n_item_names < 1:
+                        raise ValueError(f"Missing list definition: {_type}")
 
-                # list input can have records or unions as rows. lists
-                # that have a consistent item type can be considered
-                # tabular. lists that can possess multiple item types
-                # (unions) are considered irregular. regular lists can
-                # be defined with a nested record (explicit) or with a
-                # set of fields directly in the recarray (implicit). an
-                # irregular list is always defined with a nested union.
-                is_explicit = n_names == 1 and (
-                    types[0].startswith("record") or types[0].startswith("keystring")
-                )
+                    # explicit record
+                    if n_item_names == 1 and (
+                        item_types[0].startswith("record")
+                        or item_types[0].startswith("keystring")
+                    ):
+                        return _load_variable(next(iter(flat.getlist(item_names[0]))))
 
-                if is_explicit:
-                    child = next(iter(flat.getlist(names[0])))
-                    return {names[0]: _load_variable(child)}
-                elif all(t in _MF6_SCALARS for t in types):
-                    # implicit simple record (all fields are scalars)
-                    fields = _fields()
-                    return {
-                        _name: Var(
+                    # implicit simple record (no children)
+                    if all(t in _MF6_SCALARS for t in item_types):
+                        return Var(
                             name=_name,
                             type="record",
                             block=block,
-                            fields=fields,
+                            fields=_fields(),
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
                             **var,
                         )
-                    }
-                else:
-                    # implicit complex record (some fields are records or unions)
+
+                    # implicit complex record (has children)
                     fields = {
+                        v["name"]: _load_variable(v)
+                        for v in flat.values(multi=True)
+                        if v["name"] in item_names and v.get("in_record", False)
+                    }
+                    first = next(iter(fields.values()))
+                    single = len(fields) == 1
+                    item_type = (
+                        "union" if single and "keystring" in first["type"] else "record"
+                    )
+                    return Var(
+                        name=first["name"] if single else _name,
+                        type=item_type,
+                        block=block,
+                        fields=first["fields"] if single else fields,
+                        description=description.replace(
+                            "is the list of", f"is the {item_type} of"
+                        ),
+                        **var,
+                    )
+
+                def _choices() -> Vars:
+                    """Load a union's choices."""
+                    names = _type.split()[1:]
+                    return {
                         v["name"]: _load_variable(v)
                         for v in flat.values(multi=True)
                         if v["name"] in names and v.get("in_record", False)
                     }
-                    first = next(iter(fields.values()))
-                    single = len(fields) == 1
-                    name_ = first["name"] if single else _name
-                    child_type = (
-                        "union" if single and "keystring" in first["type"] else "record"
-                    )
-                    return {
-                        name_: Var(
-                            name=name_,
-                            type=child_type,
-                            block=block,
-                            fields=first["fields"] if single else fields,
-                            description=description.replace(
-                                "is the list of", f"is the {child_type} of"
-                            ),
-                            **var,
-                        )
-                    }
 
-            def _choices() -> Vars:
-                """Load a union's choices."""
-                names = _type.split()[1:]
-                return {
-                    v["name"]: _load_variable(v)
-                    for v in flat.values(multi=True)
-                    if v["name"] in names and v.get("in_record", False)
-                }
+                def _fields() -> Vars:
+                    """Load a record's fields."""
+                    names = _type.split()[1:]
+                    fields = {}
+                    for name in names:
+                        v = flat.get(name, None)
+                        if (
+                            not v
+                            or not v.get("in_record", False)
+                            or v["type"].startswith("record")
+                        ):
+                            continue
+                        fields[name] = v
+                    return fields
 
-            def _fields() -> Vars:
-                """Load a record's fields."""
-                names = _type.split()[1:]
-                fields = {}
-                for name in names:
-                    v = flat.get(name, None)
-                    if (
-                        not v
-                        or not v.get("in_record", False)
-                        or v["type"].startswith("record")
-                    ):
-                        continue
-                    fields[name] = v
-                return fields
-
-            var_ = Var(
-                name=_name,
-                shape=shape,
-                block=block,
-                description=description,
-                default=default,
-                **var,
-            )
-
-            if _type.startswith("recarray"):
-                var_["items"] = _items()
-                var_["type"] = "list"
-
-            elif _type.startswith("keystring"):
-                var_["choices"] = _choices()
-                var_["type"] = "union"
-
-            elif _type.startswith("record"):
-                var_["fields"] = _fields()
-                var_["type"] = "record"
-
-            # for now, we can tell a var is an array if its type
-            # is scalar and it has a shape. once we have proper
-            # typing, this can be read off the type itself.
-            elif shape is not None and _type not in _MF6_SCALARS:
-                raise TypeError(f"Unsupported array type: {_type}")
-
-            else:
-                var_["type"] = _type
-
-            # if var is a foreign key, return subpkg var instead
-            if ref:
-                return Var(
-                    name=ref["param" if name == ("sim", "nam") else "val"],
-                    type=_type,
+                var_ = Var(
+                    name=_name,
                     shape=shape,
                     block=block,
-                    description=(
-                        f"Contains data for the {ref['abbr']} package. Data can be "
-                        f"stored in a dictionary containing data for the {ref['abbr']} "
-                        "package with variable names as keys and package data as "
-                        f"values. Data just for the {ref['val']} variable is also "
-                        f"acceptable. See {ref['abbr']} package documentation for more "
-                        "information"
-                    ),
-                    default=None,
-                    subpackage=ref,
+                    description=description,
+                    default=default,
                     **var,
                 )
 
-            return var_
+                if _type.startswith("recarray"):
+                    var_["item"] = _item()
+                    var_["type"] = "list"
+
+                elif _type.startswith("keystring"):
+                    var_["choices"] = _choices()
+                    var_["type"] = "union"
+
+                elif _type.startswith("record"):
+                    var_["fields"] = _fields()
+                    var_["type"] = "record"
+
+                # for now, we can tell a var is an array if its type
+                # is scalar and it has a shape. once we have proper
+                # typing, this can be read off the type itself.
+                elif shape is not None and _type not in _MF6_SCALARS:
+                    raise TypeError(f"Unsupported array type: {_type}")
+
+                else:
+                    var_["type"] = _type
+
+                # if var is a foreign key, return subpkg var instead
+                if ref:
+                    return Var(
+                        name=ref["param" if name == ("sim", "nam") else "val"],
+                        type=_type,
+                        shape=shape,
+                        block=block,
+                        description=(
+                            f"Contains data for the {ref['abbr']} package. Data can be "
+                            f"passed as a dictionary to the {ref['abbr']} package with "
+                            "variable names as keys and package data as values. Data "
+                            f"for the {ref['val']} variable is also acceptable. See "
+                            f"{ref['abbr']} package documentation for more information."
+                        ),
+                        default=None,
+                        subpackage=ref,
+                        **var,
+                    )
+
+                return var_
+
+            return dict(sorted(_load(var).items(), key=_var_attr_sort_key))
 
         # load top-level variables. any nested
         # variables will be loaded recursively
@@ -405,9 +428,17 @@ class Dfn(TypedDict):
 
         # group variables by block
         blocks = {
-            name: {v["name"]: v for v in block}
-            for name, block in groupby(vars_.values(), lambda v: v["block"])
+            block_name: {v["name"]: v for v in block}
+            for block_name, block in groupby(vars_.values(), lambda v: v["block"])
         }
+
+        # remove unneeded attributes
+        def remove_attrs(path, key, value):
+            if key in ["block", "in_record", "tagged", "preserve_case"]:
+                return False
+            return True
+
+        blocks = remap(blocks, visit=remove_attrs)
 
         def _advanced() -> Optional[bool]:
             return any("package-type advanced" in m for m in meta)
@@ -482,7 +513,7 @@ class Dfn(TypedDict):
             multi=_multi(),
             sln=_sln(),
             sub=_sub(),
-            blocks=blocks,
+            **blocks,
         )
 
     @classmethod
@@ -501,7 +532,7 @@ class Dfn(TypedDict):
         **kwargs,
     ) -> "Dfn":
         """
-        Load a component definition from a DFN file.
+        Load a component definition from a definition file.
         """
 
         if version == 1:
@@ -513,7 +544,6 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v1(dfndir: PathLike) -> Dfns:
-        # find definition files
         paths: list[Path] = [
             p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
         ]
@@ -531,7 +561,7 @@ class Dfn(TypedDict):
         for path in paths:
             with path.open() as f:
                 dfn = Dfn.load(f, name=path.stem, common=common)
-                subpkg = dfn.get("subpackage", None)
+                subpkg = dfn.get("sub", None)
                 if subpkg:
                     refs[subpkg["key"]] = subpkg
 
@@ -546,12 +576,9 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v2(dfndir: PathLike) -> Dfns:
-        # find definition files
         paths: list[Path] = [
             p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
         ]
-
-        # load definitions
         dfns: Dfns = {}
         for path in paths:
             with path.open(mode="rb") as f:
