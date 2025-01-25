@@ -229,20 +229,22 @@ class Dfn(TypedDict):
             for a separate context will be given a reference to it.
             """
 
+            var = var.copy()
+
             # parse booleans from strings. everything else can
             # stay a string except default values, which we'll
             # try to parse as arbitrary literals below, and at
             # some point types, once we introduce type hinting
             var = {k: _try_parse_bool(v) for k, v in var.items()}
 
-            _name = var["name"]
-            _type = var.get("type", None)
-            shape = var.get("shape", None)
+            _name = var.pop("name")
+            _type = var.pop("type", None)
+            shape = var.pop("shape", None)
             shape = None if shape == "" else shape
-            block = var.get("block", None)
-            default = var.get("default", None)
+            block = var.pop("block", None)
+            default = var.pop("default", None)
             default = _try_literal_eval(default) if _type != "string" else default
-            description = var.get("description", "")
+            description = var.pop("description", "")
             ref = refs.get(_name, None)
 
             # if var is a foreign key, register it
@@ -288,6 +290,7 @@ class Dfn(TypedDict):
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
+                            **var,
                         )
                     }
                 else:
@@ -312,6 +315,7 @@ class Dfn(TypedDict):
                             description=description.replace(
                                 "is the list of", f"is the {child_type} of"
                             ),
+                            **var,
                         )
                     }
 
@@ -345,6 +349,7 @@ class Dfn(TypedDict):
                 block=block,
                 description=description,
                 default=default,
+                **var,
             )
 
             if _type.startswith("recarray"):
@@ -385,6 +390,7 @@ class Dfn(TypedDict):
                     ),
                     default=None,
                     subpackage=ref,
+                    **var,
                 )
 
             return var_
