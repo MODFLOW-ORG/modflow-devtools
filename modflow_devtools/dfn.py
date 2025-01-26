@@ -110,19 +110,23 @@ class Var(TypedDict):
     description: Optional[str] = None
 
 
-class Sub(TypedDict):
+class Ref(TypedDict):
     """
-    A subpackage specification.
-
     A foreign-key-like reference between a file input variable
-    in a referring input component and another input component.
+    in a referring input component and another input component
+    referenced by it. Previously known as a "subpackage".
 
-    A `Dfn` which declares itself a subpackage can be referred
-    to by other definitions, via a filepath variable acting as
-    a foreign key. The referring component's `__init__` method
-    is modified, the subpackage variable named `val` replacing
-    the `key` parameter, such that the referring component can
-    accept data for the subpackage directly instead of by file.
+    A `Dfn` with a nonempty `ref` can be referred to by other
+    component definitions, via a filepath variable which acts
+    as a foreign key. If such a variable is detected when any
+    component is loaded, the component's `__init__` method is
+    modified, such that the variable named `val`, residing in
+    the referenced component, replaces the variable with name
+    `key` in the referencing component, i.e., the foreign key
+    filepath variable, This forces a referencing component to
+    accept a subcomponent's data directly, as if it were just
+    a variable, rather than indirectly, with the subcomponent
+    loaded up from a file identified by the filepath variable.
     """
 
     key: str
@@ -152,9 +156,8 @@ class Dfn(TypedDict):
     name: str
     advanced: bool = False
     multi: bool = False
-    sub: Optional[Sub] = None
+    ref: Optional[Ref] = None
     sln: Optional[Sln] = None
-    blocks: Optional[dict[str, Vars]] = None
     fkeys: Optional[Dfns] = None
 
     @staticmethod
@@ -237,22 +240,14 @@ class Dfn(TypedDict):
         Temporary load routine for the v1 DFN format.
         """
 
-        # if we have any subpackage references
-        # we need to watch for foreign key vars
-        # (file input vars) and register matches
-        refs = kwargs.pop("refs", {})
         fkeys = {}
-
-        # load dfn as flat multidict + str metadata
+        refs = kwargs.pop("refs", {})
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
         def _load_variable(var: dict[str, Any]) -> Var:
             """
-            Convert an input variable from its original representation
-            in a definition file to a structured, Python-friendly form.
-
-            This involves trimming unneeded attributes and setting
-            some others.
+            Convert an input variable from its representation in a
+            legacy definition file to a structured form.
 
             Notes
             -----
@@ -410,7 +405,7 @@ class Dfn(TypedDict):
                             f"{ref['abbr']} package documentation for more information."
                         ),
                         default=None,
-                        subpackage=ref,
+                        ref=ref,
                         **var,
                     )
 
@@ -438,7 +433,7 @@ class Dfn(TypedDict):
             transient_block = transient_index["block"]
             blocks[transient_block]["transient"] = True
 
-        # remove unneeded attributes
+        # remove unneeded variable attributes
         def remove_attrs(path, key, value):
             if key in ["block", "in_record", "tagged", "preserve_case"]:
                 return False
@@ -466,7 +461,7 @@ class Dfn(TypedDict):
                 return Sln(abbr=abbr, pattern=pattern)
             return None
 
-        def _sub() -> Optional[Sub]:
+        def _sub() -> Optional[Ref]:
             def _parent():
                 line = next(
                     iter(
@@ -509,7 +504,7 @@ class Dfn(TypedDict):
             parent = _parent()
             rest = _rest()
             if parent and rest:
-                return Sub(parent=parent, **rest)
+                return Ref(parent=parent, **rest)
             return None
 
         return cls(
@@ -562,14 +557,14 @@ class Dfn(TypedDict):
             with common_path.open() as f:
                 common, _ = Dfn._load_v1_flat(f)
 
-        # load subpackages
+        # load references (subpackages)
         refs = {}
         for path in paths:
             with path.open() as f:
                 dfn = Dfn.load(f, name=path.stem, common=common)
-                subpkg = dfn.get("sub", None)
-                if subpkg:
-                    refs[subpkg["key"]] = subpkg
+                ref = dfn.get("ref", None)
+                if ref:
+                    refs[ref["key"]] = ref
 
         # load definitions
         dfns: Dfns = {}

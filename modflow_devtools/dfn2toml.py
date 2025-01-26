@@ -5,9 +5,9 @@ from os import PathLike
 from pathlib import Path
 
 import tomli_w as tomli
+from boltons.iterutils import remap
 
 from modflow_devtools.dfn import Dfn
-from modflow_devtools.misc import filter_recursive
 
 
 def convert(indir: PathLike, outdir: PathLike):
@@ -16,14 +16,13 @@ def convert(indir: PathLike, outdir: PathLike):
     outdir.mkdir(exist_ok=True, parents=True)
     for dfn in Dfn.load_all(indir).values():
         with Path.open(outdir / f"{dfn['name']}.toml", "wb") as f:
-            tomli.dump(
-                filter_recursive(
-                    dfn,
-                    lambda v: v is not None
-                    and not (isinstance(v, dict) and not any(v)),
-                ),
-                f,
-            )
+
+            def drop_none_or_empty(path, key, value):
+                if value is None or value == "" or value == [] or value == {}:
+                    return False
+                return True
+
+            tomli.dump(remap(dfn, visit=drop_none_or_empty), f)
 
 
 if __name__ == "__main__":
