@@ -432,6 +432,12 @@ class Dfn(TypedDict):
             for block_name, block in groupby(vars_.values(), lambda v: v["block"])
         }
 
+        # mark transient blocks
+        transient_index_vars = flat.getlist("iper")
+        for transient_index in transient_index_vars:
+            transient_block = transient_index["block"]
+            blocks[transient_block]["transient"] = True
+
         # remove unneeded attributes
         def remove_attrs(path, key, value):
             if key in ["block", "in_record", "tagged", "preserve_case"]:
