@@ -513,7 +513,7 @@ class Dfn(TypedDict):
             advanced=_advanced(),
             multi=_multi(),
             sln=_sln(),
-            sub=_sub(),
+            ref=_sub(),
             **blocks,
         )
 
