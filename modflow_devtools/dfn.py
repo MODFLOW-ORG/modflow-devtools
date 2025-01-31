@@ -393,7 +393,7 @@ class Dfn(TypedDict):
                 # if var is a foreign key, return subpkg var instead
                 if ref:
                     return Var(
-                        name=ref["param" if name == ("sim", "nam") else "val"],
+                        name=ref["val"],
                         type=_type,
                         shape=shape,
                         block=block,
