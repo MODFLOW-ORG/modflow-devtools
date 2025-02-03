@@ -52,6 +52,7 @@ def _try_parse_bool(value: Any) -> Any:
 def _var_attr_sort_key(item) -> int:
     """
     Sort key for input variables. The order is:
+    -1. block
     0. name
     1. type
     2. shape
@@ -63,6 +64,8 @@ def _var_attr_sort_key(item) -> int:
     """
 
     k, _ = item
+    if k == "block":
+        return -1
     if k == "name":
         return 0
     if k == "type":
