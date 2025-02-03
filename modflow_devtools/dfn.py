@@ -435,7 +435,7 @@ class Dfn(TypedDict):
 
         # remove unneeded variable attributes
         def remove_attrs(path, key, value):
-            if key in ["block", "in_record", "tagged", "preserve_case"]:
+            if key in ["in_record", "tagged", "preserve_case"]:
                 return False
             return True
 
