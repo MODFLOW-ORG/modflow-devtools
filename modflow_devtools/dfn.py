@@ -434,7 +434,7 @@ class Dfn(TypedDict):
         transient_index_vars = flat.getlist("iper")
         for transient_index in transient_index_vars:
             transient_block = transient_index["block"]
-            blocks[transient_block]["transient"] = True
+            blocks[transient_block]["transient_block"] = True
 
         # remove unneeded variable attributes
         def remove_attrs(path, key, value):
