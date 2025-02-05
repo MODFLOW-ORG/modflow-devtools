@@ -28,24 +28,19 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.5.18"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: pyproject.toml
+          cache-dependency-glob: "**/pyproject.toml"
 
       - name: Install project
         run: uv sync --group lint
 
       - name: Run ruff check
-        run: uv run ruff check
+        run: uvx ruff check
 
       - name: Run ruff format
-        run: uv run ruff format --check
+        run: uvx ruff format --check
 
       - name: Check spelling
-        run: uv run codespell
+        run: uvx codespell
 
   build:
     name: Build
@@ -58,12 +53,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.5.18"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: pyproject.toml
+          cache-dependency-glob: "**/pyproject.toml"
 
       - name: Install project
         run: uv sync --group build
@@ -72,10 +62,10 @@ jobs:
         run: uv run python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
       - name: Build package
-        run: uv run python -m build
+        run: uv build
       
       - name: Check distribution
-        run: uv run twine check --strict dist/*
+        run: uvx twine check --strict dist/*
 
   test:
     name: Test
@@ -138,13 +128,8 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.5.18"
+          cache-dependency-glob: "**/pyproject.toml"
           python-version: ${{ matrix.python }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: modflow-devtools/pyproject.toml
 
       - name: Install project
         working-directory: modflow-devtools
