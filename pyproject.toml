@@ -1,9 +1,6 @@
 [build-system]
-# Minimum requirements for the build system to execute
-requires = [
-    "setuptools>=61",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "modflow-devtools"
@@ -127,16 +124,14 @@ dev = [
 "Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
 "Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
 
-[tool.setuptools]
+[tool.hatch.build.targets.sdist]
+only-include = ["modflow_devtools"]
+
+[tool.hatch.build.targets.wheel]
 packages = ["modflow_devtools"]
-include-package-data = true
-zip-safe = false
 
-[tool.setuptools.dynamic]
-version = {file = "version.txt"}
-
-[tool.setuptools_scm]
-fallback_version = "999"
+[tool.hatch.version]
+path = "modflow_devtools/__init__.py"
 
 [tool.codespell]
 skip = "cliff.toml"
