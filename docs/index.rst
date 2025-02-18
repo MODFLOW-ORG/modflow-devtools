@@ -42,12 +42,3 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/act.md
    md/doctoc.md
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
