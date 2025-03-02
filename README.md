@@ -1,9 +1,9 @@
 # MODFLOW developer tools
 
-[![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
+[![CI](https://github.com/MODFLOW-ORG/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-ORG/modflow-devtools/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/modflow-devtools/badge/?version=latest)](https://modflow-devtools.readthedocs.io/en/latest/?badge=latest)
-[![GitHub contributors](https://img.shields.io/github/contributors/MODFLOW-USGS/modflow-devtools)](https://img.shields.io/github/contributors/MODFLOW-USGS/modflow-devtools)
-[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-USGS/modflow-devtools.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
+[![GitHub contributors](https://img.shields.io/github/contributors/MODFLOW-ORG/modflow-devtools)](https://img.shields.io/github/contributors/MODFLOW-ORG/modflow-devtools)
+[![GitHub tag](https://img.shields.io/github/tag/MODFLOW-ORG/modflow-devtools.svg)](https://github.com/MODFLOW-ORG/modflow-devtools/tags/latest)
 
 [![PyPI License](https://img.shields.io/pypi/l/modflow-devtools)](https://pypi.python.org/pypi/modflow-devtools)
 [![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
@@ -46,9 +46,9 @@ Pytest features include:
   - Python packages installed
   - executables available on the PATH
 - test fixtures for example / test models in
-  - `MODFLOW-USGS/modflow6-examples`
-  - `MODFLOW-USGS/modflow6-testmodels`
-  - `MODFLOW-USGS/modflow6-largetestmodels`
+  - `MODFLOW-ORG/modflow6-examples`
+  - `MODFLOW-ORG/modflow6-testmodels`
+  - `MODFLOW-ORG/modflow6-largetestmodels`
 
 ## Requirements
 

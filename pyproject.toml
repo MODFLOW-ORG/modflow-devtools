@@ -121,8 +121,8 @@ dev = [
 
 [project.urls]
 "Documentation" = "https://modflow-devtools.readthedocs.io/en/latest/"
-"Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
-"Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
+"Bug Tracker" = "https://github.com/MODFLOW-ORG/modflow-devtools/issues"
+"Source Code" = "https://github.com/MODFLOW-ORG/modflow-devtools"
 
 [tool.hatch.build.targets.sdist]
 only-include = ["modflow_devtools"]

@@ -40,9 +40,9 @@ There is also a `--keep-failed <path>` option which preserves outputs only from 
 
 Fixtures are provided to find models from the MODFLOW 6 example and test model repositories and feed them to test functions. Models can be loaded from:
 
-- [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples)
-- [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels)
-- [`MODFLOW-USGS/modflow6-largetestmodels`](https://github.com/MODFLOW-USGS/modflow6-largetestmodels)
+- [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples)
+- [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels)
+- [`MODFLOW-ORG/modflow6-largetestmodels`](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
 
 These models can be requested like any other `pytest` fixture, by adding one of the following parameters to test functions:
 
@@ -68,7 +68,7 @@ It is recommended to set the environment variable `REPOS_PATH` to the location o
 
 #### MODFLOW 2005 test models
 
-The `test_model_mf5to6` fixture are each a `Path` to the model's namefile. For example, to load `mf5to6` models from the `MODFLOW-USGS/modflow6-testmodels` repo:
+The `test_model_mf5to6` fixture are each a `Path` to the model's namefile. For example, to load `mf5to6` models from the `MODFLOW-ORG/modflow6-testmodels` repo:
 
 ```python
 def test_mf5to6_model(test_model_mf5to6):
@@ -77,11 +77,11 @@ def test_mf5to6_model(test_model_mf5to6):
     assert test_model_mf5to6.suffix == ".nam"
 ```
 
-This test function will be parametrized with all models found in the `mf5to6` subdirectory of the [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels) repository. Note that MODFLOW-2005 namefiles need not be named `mfsim.nam`.
+This test function will be parametrized with all models found in the `mf5to6` subdirectory of the [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels) repository. Note that MODFLOW-2005 namefiles need not be named `mfsim.nam`.
 
 #### MODFLOW 6 test models
 
-The `test_model_mf6` fixture loads all MODFLOW 6 models found in the `mf6` subdirectory of the `MODFLOW-USGS/modflow6-testmodels` repository.
+The `test_model_mf6` fixture loads all MODFLOW 6 models found in the `mf6` subdirectory of the `MODFLOW-ORG/modflow6-testmodels` repository.
 
 ```python
 def test_test_model_mf6(test_model_mf6):
@@ -94,7 +94,7 @@ Because these are MODFLOW 6 models, each namefile will be named `mfsim.nam`. The
 
 #### Large test models
 
-The `large_test_model` fixture loads all MODFLOW 6 models found in the `MODFLOW-USGS/modflow6-largetestmodels` repository.
+The `large_test_model` fixture loads all MODFLOW 6 models found in the `MODFLOW-ORG/modflow6-largetestmodels` repository.
 
 ```python
 def test_large_test_model(large_test_model):
@@ -106,7 +106,7 @@ def test_large_test_model(large_test_model):
 
 #### Example scenarios
 
-The [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples) repository contains a collection of example scenarios, each with 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of MODFLOW 6 namefile `Path`s, ordered alphabetically by name, with models generally named as follows:
+The [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples) repository contains a collection of example scenarios, each with 1 or more models. The `example_scenario` fixture is a `Tuple[str, List[Path]]`. The first item is the name of the scenario. The second item is a list of MODFLOW 6 namefile `Path`s, ordered alphabetically by name, with models generally named as follows:
 
 - groundwater flow models begin with `gwf*`
 - transport models begin with `gwt*`
@@ -133,7 +133,7 @@ External model test cases can be filtered by model name or by the packages the m
 
 Filtering models by name is functionally equivalent to filtering `pytest` cases with `-k`. (In the former case the filter is applied before test collection, while the latter collects tests as usual and then applies the filter.)
 
-For instance, running the `test_largetestmodels.py` script in the `MODFLOW-USGS/modflow6` repository's `autotest/` folder, and selecting a particular model from the `MODFLOW-USGS/largetestmodels` repository by name:
+For instance, running the `test_largetestmodels.py` script in the `MODFLOW-ORG/modflow6` repository's `autotest/` folder, and selecting a particular model from the `MODFLOW-ORG/largetestmodels` repository by name:
 
 ```shell
 autotest % pytest -v test_largetestmodels.py --collect-only --model test1002_biscqtg_disv_gnc_nr_dev

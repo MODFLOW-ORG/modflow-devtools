@@ -74,7 +74,7 @@ The `modflow-devtools` release procedure is automated with GitHub Actions in [`.
 2. Reinitialize the `develop` branch
 3. Publish the package to PyPI
 
-To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-USGS/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
+To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-ORG/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
 
 - update version strings to match the version number in the release branch name
 - generate a changelog since the last release and update `HISTORY.md`

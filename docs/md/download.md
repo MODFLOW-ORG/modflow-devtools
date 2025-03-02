@@ -13,7 +13,7 @@ For instance, to retrieve information about the latest executables release, then
 ```python
 from modflow_devtools.download import get_release
 
-release = get_release("MODFLOW-USGS/executables")
+release = get_release("MODFLOW-ORG/executables")
 assets = release["assets"]
 print([asset["name"] for asset in assets])
 ```
@@ -29,7 +29,7 @@ For instance, to download a MODFLOW 6.4.1 Linux distribution and delete the zipf
 ```python
 from modflow_devtools.download import download_and_unzip
 
-url = f"https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip"
+url = f"https://github.com/MODFLOW-ORG/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip"
 download_and_unzip(url, "~/Downloads", delete_zip=True, verbose=True)
 ```
 

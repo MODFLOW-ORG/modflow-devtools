@@ -13,7 +13,7 @@ pip install modflow-devtools
 To set up a `modflow-devtools` development environment, first clone the repository:
 
 ```shell
-git clone https://github.com/MODFLOW-USGS/modflow-devtools.git
+git clone https://github.com/MODFLOW-ORG/modflow-devtools.git
 ```
 
 Then install the local copy as well as testing, linting, and docs dependencies:
@@ -35,9 +35,9 @@ pytest_plugins = ["modflow_devtools.fixtures"]
 
 `modflow-devtools` provides fixtures to load models from external repositories:
 
-- [`MODFLOW-USGS/modflow6-examples`](https://github.com/MODFLOW-USGS/modflow6-examples)
-- [`MODFLOW-USGS/modflow6-testmodels`](https://github.com/MODFLOW-USGS/modflow6-testmodels)
-- [`MODFLOW-USGS/modflow6-largetestmodels`](https://github.com/MODFLOW-USGS/modflow6-largetestmodels)
+- [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples)
+- [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels)
+- [`MODFLOW-ORG/modflow6-largetestmodels`](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
 
 By default, these fixtures expect model repositories to live next to (i.e. in the same parent directory as) the consuming project repository. If the repos are somewhere else, you can set the `REPOS_PATH` environment variable to point to their parent directory.
 
@@ -48,8 +48,8 @@ By default, these fixtures expect model repositories to live next to (i.e. in th
 The test model repos can simply be cloned &mdash; ideally, into the parent directory of the `modflow6` repository, so that repositories live side-by-side:
 
 ```shell
-git clone https://github.com/MODFLOW-USGS/modflow6-testmodels.git
-git clone https://github.com/MODFLOW-USGS/modflow6-largetestmodels.git
+git clone https://github.com/MODFLOW-ORG/modflow6-testmodels.git
+git clone https://github.com/MODFLOW-ORG/modflow6-largetestmodels.git
 ```
 
 ### Installing example models
@@ -57,7 +57,7 @@ git clone https://github.com/MODFLOW-USGS/modflow6-largetestmodels.git
 First clone the example models repo:
 
 ```shell
-git clone https://github.com/MODFLOW-USGS/modflow6-examples.git
+git clone https://github.com/MODFLOW-ORG/modflow6-examples.git
 ```
 
 The example models require some setup after cloning. Some extra Python dependencies are required to build the examples: 
