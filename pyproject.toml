@@ -154,6 +154,8 @@ skip = "cliff.toml"
 ignore-words-list = [
     "nam",
     "wel",
+    "gage",
+    "sav",
 ]
 
 [tool.ruff]
