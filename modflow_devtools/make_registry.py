@@ -5,16 +5,9 @@ from pathlib import Path
 import tomli_w as tomli
 
 from modflow_devtools.misc import get_model_paths
+from modflow_devtools.models import BASE_URL, DATA_PATH
 
-REPO_OWNER = "MODFLOW-ORG"
-REPO_NAME = "modflow-devtools"
-REPO_REF = "develop"
-PROJ_ROOT = Path(__file__).parents[1]
-DATA_RELPATH = "data"
-DATA_PATH = PROJ_ROOT / REPO_NAME / DATA_RELPATH
 REGISTRY_PATH = DATA_PATH / "registry.txt"
-MODELS_PATH = DATA_PATH / "models.toml"
-BASE_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/raw/{REPO_REF}/{DATA_RELPATH}/"
 
 
 def _sha256(path: Path) -> str:
@@ -86,5 +79,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     path = Path(args.path) if args.path else DATA_PATH
     base_url = args.base_url if args.base_url else BASE_URL
-
     write_registry(path, REGISTRY_PATH, base_url, args.append)

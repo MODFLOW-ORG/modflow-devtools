@@ -141,6 +141,11 @@ only-include = ["modflow_devtools"]
 [tool.hatch.build.targets.wheel]
 packages = ["modflow_devtools"]
 
+[tool.hatch.build]
+include = [
+    "modflow_devtools/data/*"
+]
+
 [tool.hatch.version]
 path = "modflow_devtools/__init__.py"
 
