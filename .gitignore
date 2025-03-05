@@ -149,3 +149,5 @@ autotest/temp/
 
 # uv lockfile
 uv.lock
+
+modflow_devtools/data

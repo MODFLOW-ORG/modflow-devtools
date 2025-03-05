@@ -1,91 +1,49 @@
-import hashlib
 from pathlib import Path
-from typing import Iterator
 
-import pkg_resources
+import pooch
+import tomli
 
-from modflow_devtools.imports import import_optional_dependency
+import modflow_devtools
 
-pooch = import_optional_dependency("pooch")
-
-
-def _sha256(filename) -> str:
-    """
-    Compute the SHA256 hash of the given file.
-    Reference: https://stackoverflow.com/a/44873382/6514033
-    """
-    h = hashlib.sha256()
-    b = bytearray(128 * 1024)
-    mv = memoryview(b)
-    with open(filename, "rb", buffering=0) as f:
-        for n in iter(lambda: f.readinto(mv), 0):
-            h.update(mv[:n])
-    return h.hexdigest()
-
-
+REPO_OWNER = "MODFLOW-ORG"
+REPO_NAME = "modflow-devtools"
+REPO_REF = "develop"
 PROJ_ROOT = Path(__file__).parents[1]
-DATA_PATH = PROJ_ROOT / "data"
-OWNER = "wpbonelli"
-PACKAGE = "modflow-devtools"
-VERSION = pkg_resources.get_distribution(PACKAGE).version.rpartition(".dev")[0]
-EXCLUDED = [
-    ".DS_Store",
-]
-REGISTRY = {
-    p.name: _sha256(p)
-    for p in DATA_PATH.rglob("*")
-    if p.is_file() and not any(e in p.name for e in EXCLUDED)
-}
+DATA_RELPATH = "data"
+DATA_PATH = PROJ_ROOT / REPO_NAME / DATA_RELPATH
+REGISTRY_PATH = DATA_PATH / "registry.txt"
+MODELS_PATH = DATA_PATH / "models.toml"
+BASE_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/raw/{REPO_REF}/{DATA_RELPATH}/"
+VERSION = modflow_devtools.__version__.rpartition(".dev")[0]
 FETCHER = pooch.create(
-    # Folder where the data will be stored. For a sensible default, use the
-    # default cache folder for your OS.
-    path=pooch.os_cache(PACKAGE),
-    # Base URL of the remote data store. Will call .format on this string
-    # to insert the version (see below).
-    base_url="https://github.com/"
-    + OWNER
-    + "/"
-    + PACKAGE
-    + "/raw/models-api/data/",  # todo: replace branch (debugging)
-    # Pooches are versioned so that you can use multiple versions of a
-    # package simultaneously. Use PEP440 compliant version number. The
-    # version will be appended to the path.
+    path=pooch.os_cache(REPO_NAME),
+    base_url=BASE_URL,
     version=VERSION,
-    # The cache file registry. A dictionary with all files managed by this
-    # pooch. Keys are the file names (relative to *base_url*) and values
-    # are their respective SHA256 hashes. Files will be downloaded
-    # automatically when needed (see fetch_gravity_data).
-    registry=REGISTRY,
+    registry=None,
 )
 
+if not REGISTRY_PATH.exists():
+    raise FileNotFoundError(f"Registry file {REGISTRY_PATH} not found.")
 
-def to_paths(strs) -> Iterator[Path]:
-    for s in strs:
-        yield Path(s).expanduser().absolute()
+if not MODELS_PATH.exists():
+    raise FileNotFoundError(f"Models file {MODELS_PATH} not found.")
 
-
-def mf2005_freyberg():
-    """
-    Load the MF2005 Freyberg example model files.
-    """
-    return list(
-        to_paths(FETCHER.fetch("mf2005_freyberg.zip", processor=pooch.Unzip()))
-    )
+FETCHER.load_registry(REGISTRY_PATH)
 
 
-def mf6_freyberg():
-    """
-    Load the MF6 Freyberg example model files.
-    """
-    return list(
-        to_paths(FETCHER.fetch("mf6_freyberg.zip", processor=pooch.Unzip()))
-    )
+def _generate_function(model_name: str, files: list) -> callable:
+    def model_function() -> list:
+        return [FETCHER.fetch(file) for file in files]
+
+    model_function.__name__ = model_name
+    return model_function
 
 
-def mfusg_freyberg():
-    """
-    Load the MFUSG Freyberg example model files.
-    """
-    return list(
-        to_paths(FETCHER.fetch("mfusg_freyberg.zip", processor=pooch.Unzip()))
-    )
+def _make_functions(models_path: Path, registry_path: Path):
+    with models_path.open("rb") as f:
+        models = tomli.load(f)
+        for model_name, files in models.items():
+            globals()[model_name] = _generate_function(model_name, files)
+
+
+_make_functions(MODELS_PATH, REGISTRY_PATH)
