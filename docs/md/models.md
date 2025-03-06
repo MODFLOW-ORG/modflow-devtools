@@ -26,5 +26,5 @@ For example, to create a registry of models in the MF6 test models repositories,
 
 ```shell
 python -m modflow_devtools.make_registry -p modflow6-testmodels -b https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master
-python -m modflow_devtools.make_registry -p modflow6-largetestmodels -a -b https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master
+python -m modflow_devtools.make_registry -a -p modflow6-largetestmodels -b https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master
 ```

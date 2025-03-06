@@ -53,7 +53,7 @@ def write_registry(
 
     models_path = registry_path.parent / "models.toml"
     with models_path.open("ab+" if append else "wb") as mf:
-        tomli.dump(models, mf)
+        tomli.dump(dict(sorted(models.items())), mf)
 
 
 if __name__ == "__main__":

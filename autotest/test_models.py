@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 
 import pytest
@@ -52,4 +53,5 @@ def test_generated_functions_return_files(models_toml, temp_cache_dir):
             assert Path(temp_cache_dir) / Path(fetched_file).name in cached_files, (
                 f"Fetched file {fetched_file} is not in the temp cache directory"
             )
-        break  # just the first one so we dont ddos github
+        if random.randint(0, 5) % 5 == 0:
+            break  # just the first few so we dont ddos github
