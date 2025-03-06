@@ -43,7 +43,7 @@ def _generate_function(model_name, files) -> callable:
     return model_function
 
 
-def _make_functions(models):
+def _attach_functions(models):
     if isinstance(models, IOBase):
         models = tomli.load(models)
     else:
@@ -55,6 +55,6 @@ def _make_functions(models):
 
 try:
     with pkg_resources.open_binary(DATA_ANCHOR, MODELMAP_NAME) as f:
-        _make_functions(f)
+        _attach_functions(f)
 except:  # noqa: E722
     print(f"Could not load model mapping from {DATA_PATH}/{MODELMAP_NAME}.")
