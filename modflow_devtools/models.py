@@ -37,7 +37,7 @@ except:  # noqa: E722
 
 def _generate_function(model_name, files) -> callable:
     def model_function():
-        return [FETCHER.fetch(file) for file in files]
+        return [Path(FETCHER.fetch(file)) for file in files]
 
     model_function.__name__ = model_name
     return model_function
@@ -49,8 +49,13 @@ def _attach_functions(models):
     else:
         with Path(models).open("rb") as f:
             models = tomli.load(f)
+    globals()["_models"] = models
     for name, files in models.items():
         globals()[name] = _generate_function(name, files)
+
+
+def model_map() -> dict[str, list[Path]]:
+    return globals().get("_models", {})
 
 
 try:

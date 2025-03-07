@@ -29,9 +29,20 @@ def temp_cache_dir(tmpdir, monkeypatch):
     return temp_dir
 
 
-def test_registry_loaded():
+def test_registry():
     assert models.FETCHER.registry is not None, "Registry was not loaded"
     assert len(models.FETCHER.registry) > 0, "Registry is empty"
+
+
+def test_model_map(models_toml):
+    assert models.model_map()
+    for model_name, files in models_toml.items():
+        assert model_name in models.model_map().keys(), (
+            f"Model {model_name} not found in model map"
+        )
+        assert files == models.model_map()[model_name], (
+            f"Files for model {model_name} do not match"
+        )
 
 
 def test_generated_functions_exist(models_toml):
