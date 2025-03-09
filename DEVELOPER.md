@@ -19,7 +19,7 @@ This document provides guidance to set up a development environment and discusse
 
 ## Requirements
 
-Python3.9+ is currently required. This project supports several recent versions of Python, loosely following [NEP 29](https://numpy.org/neps/nep-0029-deprecation_policy.html#implementation) and aiming to stay synchronized with [FloPy](https://github.com/modflowpy/flopy).
+Python3.10+ is currently required. This project has historically aimed to support several recent versions of Python, loosely following [NEP 29](https://numpy.org/neps/nep-0029-deprecation_policy.html#implementation). In current and future development this window may narrow to follow [SPEC 0](https://scientific-python.org/specs/spec-0000/#support-window) instead.
 
 ## Installation
 

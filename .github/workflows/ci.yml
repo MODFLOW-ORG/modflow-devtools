@@ -77,7 +77,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-22.04, macos-13, windows-2022 ]
-        python: [ 3.9, "3.10", "3.11", "3.12", "3.13" ]
+        python: [ "3.10", "3.11", "3.12", "3.13" ]
     env:
       GCC_V: 11
     steps:
@@ -167,7 +167,7 @@ jobs:
         # only invoke the GH API on one OS and Python version
         # to avoid rate limits (1000 rqs / hour / repository)
         # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
-        if: runner.os == 'Linux' && matrix.python == '3.9'
+        if: runner.os == 'Linux' && matrix.python == '3.10'
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}

@@ -10,11 +10,6 @@ import modflow_devtools.models as models
 MODELS_TOML_PATH = Path(models.DATA_PATH) / models.MODELMAP_NAME
 
 
-# TODO: Remove when we drop support for python 3.9 (soon?)
-if sys.version_info[:2] == (3, 9):
-    pytest.skip("Unsupported for python 3.9", allow_module_level=True)
-
-
 @pytest.fixture
 def models_toml():
     with MODELS_TOML_PATH.open("rb") as f:
