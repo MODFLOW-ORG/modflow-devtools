@@ -9,6 +9,8 @@ from boltons.iterutils import remap
 
 from modflow_devtools.dfn import Dfn
 
+# mypy: ignore-errors
+
 
 def convert(indir: PathLike, outdir: PathLike):
     indir = Path(indir).expanduser().absolute()

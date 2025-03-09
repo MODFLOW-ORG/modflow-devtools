@@ -24,6 +24,10 @@ from boltons.iterutils import remap
 
 from modflow_devtools.download import download_and_unzip
 
+# TODO: use dataclasses instead of typed dicts, static
+# methods on typed dicts are evidently not allowed
+# mypy: ignore-errors
+
 
 def _try_literal_eval(value: str) -> Any:
     """

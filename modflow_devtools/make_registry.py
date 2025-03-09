@@ -30,7 +30,7 @@ def write_registry(
     if not registry_path.exists():
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
-    models = {}
+    models: dict[str, list[str]] = {}
     exclude = [".DS_Store"]
     with registry_path.open("a+" if append else "w") as f:
         if not path.is_dir():

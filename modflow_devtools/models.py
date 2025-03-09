@@ -1,4 +1,5 @@
 import importlib.resources as pkg_resources
+from collections.abc import Callable
 from io import IOBase
 from pathlib import Path
 
@@ -29,13 +30,13 @@ FETCHER = pooch.create(
 )
 
 try:
-    with pkg_resources.open_text(DATA_ANCHOR, REGISTRY_NAME) as f:
-        FETCHER.load_registry(f)
+    with pkg_resources.open_text(DATA_ANCHOR, REGISTRY_NAME) as rf:
+        FETCHER.load_registry(rf)
 except:  # noqa: E722
     print(f"Could not load registry from {DATA_PATH}/{REGISTRY_NAME}.")
 
 
-def _generate_function(model_name, files) -> callable:
+def _generate_function(model_name, files) -> Callable:
     def model_function():
         return [Path(FETCHER.fetch(file)) for file in files]
 
@@ -59,7 +60,7 @@ def model_map() -> dict[str, list[Path]]:
 
 
 try:
-    with pkg_resources.open_binary(DATA_ANCHOR, MODELMAP_NAME) as f:
-        _attach_functions(f)
+    with pkg_resources.open_binary(DATA_ANCHOR, MODELMAP_NAME) as mf:
+        _attach_functions(mf)
 except:  # noqa: E722
     print(f"Could not load model mapping from {DATA_PATH}/{MODELMAP_NAME}.")

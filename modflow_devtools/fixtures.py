@@ -86,7 +86,8 @@ def session_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 @pytest.fixture
 def repos_path() -> Path | None:
     """Path to directory containing test model and example repositories"""
-    return environ.get("REPOS_PATH", None)
+    path = environ.get("REPOS_PATH", None)
+    return Path(path) if path else None
 
 
 @pytest.fixture

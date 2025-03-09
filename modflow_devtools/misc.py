@@ -162,7 +162,7 @@ def get_packages(namefile_path: PathLike) -> list[str]:
         a list of packages used by the simulation or model
     """
 
-    packages = []
+    packages: list[str] = []
     path = Path(namefile_path).expanduser().resolve()
     lines = path.read_text().splitlines()
     gwf_lines = [ln for ln in lines if ln.strip().lower().startswith("gwf6 ")]
@@ -188,12 +188,12 @@ def get_packages(namefile_path: PathLike) -> list[str]:
 
     for line in lines:
         # Skip over blank and commented lines
-        line = line.strip().split()
-        if len(line) < 2:
+        words = line.strip().split()
+        if len(words) < 2:
             continue
 
-        line = line[0].lower()
-        if any(line.startswith(c) for c in ["#", "!", "data", "list"]) or line in [
+        word = words[0].lower()
+        if any(word.startswith(c) for c in ["#", "!", "data", "list"]) or word in [
             "begin",
             "end",
             "memory_print_option",
@@ -201,9 +201,9 @@ def get_packages(namefile_path: PathLike) -> list[str]:
             continue
 
         # strip "6" from package name
-        line = line.replace("6", "")
+        word = word.replace("6", "")
 
-        packages.append(line.lower())
+        packages.append(word.lower())
 
     return list(set(packages))
 
@@ -293,6 +293,7 @@ def get_model_paths(
         else:
             return 1
 
+    path = Path(path).expanduser().absolute()
     model_paths = []
     globbed = path.rglob(f"{prefix if prefix else ''}*")
     example_paths = [p for p in globbed if p.is_dir()]
@@ -499,7 +500,8 @@ def get_env(name: str, default: object = None) -> object | None:
     otherwise the default value if the environment variable is not set.
     """
     try:
-        v = environ.get(name)
+        if (v := environ.get(name, None)) is None:
+            return default
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)

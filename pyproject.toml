@@ -45,7 +45,8 @@ build = [
 ]
 lint = [
     "codespell[toml]",
-    "ruff"
+    "ruff",
+    "mypy"
 ]
 test = [
     "modflow-devtools[lint]",
@@ -87,7 +88,8 @@ build = [
 ]
 lint = [
     "codespell[toml]",
-    "ruff"
+    "ruff",
+    "mypy",
 ]
 test = [
     "modflow-devtools[lint]",
@@ -178,3 +180,8 @@ select = [
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+
+[tool.mypy]
+mypy_path = "modflow_devtools"
+ignore_missing_imports = true
+warn_unreachable = true

@@ -30,17 +30,20 @@ jobs:
         with:
           cache-dependency-glob: "**/pyproject.toml"
 
-      - name: Install project
+      - name: Install
         run: uv sync --group lint
 
-      - name: Run ruff check
+      - name: Lint
         run: uvx ruff check
 
-      - name: Run ruff format
+      - name: Format
         run: uvx ruff format --check
 
-      - name: Check spelling
+      - name: Spelling
         run: uvx codespell
+
+      - name: Typing
+        run: uv run mypy modflow_devtools
 
   build:
     name: Build

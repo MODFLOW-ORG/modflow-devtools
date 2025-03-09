@@ -146,7 +146,6 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
         else f"{req_url}/releases/tags/{tag}"
     )
     request = get_request(req_url)
-    releases = None
     num_tries = 0
 
     while True:
@@ -169,12 +168,7 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
                     f"use GITHUB_TOKEN env to bypass rate limit ({err})"
                 ) from err
             elif err.code == 404:
-                if releases is None:
-                    releases = get_releases(repo, verbose=verbose)
-                if tag not in releases:
-                    raise ValueError(
-                        f"Release {tag} not found (choose from {', '.join(releases)})"
-                    )
+                raise ValueError(f"Release {tag} not found")
             elif err.code == 503 and num_tries < retries:
                 # GitHub sometimes returns this error for valid URLs, so retry
                 warn(f"URL request {num_tries} failed ({err})")

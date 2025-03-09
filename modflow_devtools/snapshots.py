@@ -1,5 +1,5 @@
 from io import BytesIO, StringIO
-from typing import Optional
+from typing import Optional, Union
 
 from modflow_devtools.imports import import_optional_dependency
 
@@ -107,7 +107,7 @@ def snapshot_disable(pytestconfig) -> bool:
 
 
 @pytest.fixture
-def snapshot(request, snapshot_disable) -> "SnapshotAssertion":
+def snapshot(request, snapshot_disable) -> Union[MatchAnything, "SnapshotAssertion"]:
     return (
         MatchAnything()
         if snapshot_disable

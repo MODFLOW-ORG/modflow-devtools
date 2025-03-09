@@ -42,6 +42,9 @@ import warnings
 
 from packaging.version import Version
 
+# mypy: ignore-errors
+
+
 VERSIONS = {}
 
 
