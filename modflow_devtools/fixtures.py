@@ -4,7 +4,6 @@ from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
 from shutil import copytree, rmtree
-from typing import Optional
 
 from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import get_namefile_paths, get_packages
@@ -85,7 +84,7 @@ def session_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def repos_path() -> Optional[Path]:
+def repos_path() -> Path | None:
     """Path to directory containing test model and example repositories"""
     return environ.get("REPOS_PATH", None)
 
@@ -233,7 +232,7 @@ def pytest_generate_tests(metafunc):
         # requesting these fixtures will be skipped.
         repos_path = Path.cwd().parent.parent
 
-    def get_repo_path(repo_name: str) -> Optional[Path]:
+    def get_repo_path(repo_name: str) -> Path | None:
         """Get the path for the repository with the given name
         (optionally with .git suffix), or None if not found"""
         repo_path = repos_path / repo_name

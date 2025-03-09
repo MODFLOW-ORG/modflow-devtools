@@ -12,7 +12,6 @@ from pathlib import Path, PurePosixPath
 from shutil import which
 from subprocess import run
 from timeit import timeit
-from typing import Optional
 from urllib import request
 from urllib.error import URLError
 
@@ -219,7 +218,7 @@ def has_package(namefile_path: PathLike, package: str) -> bool:
 
 def get_namefile_paths(
     path: PathLike,
-    prefix: Optional[str] = None,
+    prefix: str | None = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
@@ -268,7 +267,7 @@ def get_namefile_paths(
 
 def get_model_paths(
     path: PathLike,
-    prefix: Optional[str] = None,
+    prefix: str | None = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
@@ -339,7 +338,7 @@ def is_in_ci():
     return bool(environ.get("CI", None))
 
 
-def is_github_rate_limited() -> Optional[bool]:
+def is_github_rate_limited() -> bool | None:
     """
     Determines if a GitHub API rate limit is applied to the current IP.
     Calling this function will consume an API request!
@@ -378,7 +377,7 @@ def has_exe(exe):
 
 
 def has_pkg(
-    pkg: str, strict: bool = False, name_map: Optional[dict[str, str]] = None
+    pkg: str, strict: bool = False, name_map: dict[str, str] | None = None
 ) -> bool:
     """
     Determines if the given Python package is installed.
@@ -479,7 +478,7 @@ def timed(f):
     return _timed
 
 
-def get_env(name: str, default: object = None) -> Optional[object]:
+def get_env(name: str, default: object = None) -> object | None:
     """
     Try to parse the given environment variable as the type of the given
     default value, if one is provided, otherwise any type is acceptable.

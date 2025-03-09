@@ -6,7 +6,6 @@ import timeit
 import urllib.request
 from os import PathLike
 from pathlib import Path
-from typing import Optional
 from warnings import warn
 
 from modflow_devtools.zip import MFZipFile
@@ -220,7 +219,7 @@ def get_latest_version(repo, retries=3, verbose=False) -> str:
 
 def download_and_unzip(
     url: str,
-    path: Optional[PathLike] = None,
+    path: PathLike | None = None,
     delete_zip=True,
     retries=3,
     verbose=False,

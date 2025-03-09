@@ -15,7 +15,6 @@ from typing import (
     Literal,
     Optional,
     TypedDict,
-    Union,
 )
 from warnings import warn
 
@@ -106,11 +105,11 @@ class Var(TypedDict):
 
     name: str
     type: str
-    shape: Optional[Any] = None
-    block: Optional[str] = None
-    default: Optional[Any] = None
+    shape: Any | None = None
+    block: str | None = None
+    default: Any | None = None
     children: Optional["Vars"] = None
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class Ref(TypedDict):
@@ -137,7 +136,7 @@ class Ref(TypedDict):
     abbr: str
     param: str
     parent: str
-    description: Optional[str]
+    description: str | None
 
 
 class Sln(TypedDict):
@@ -159,12 +158,12 @@ class Dfn(TypedDict):
     name: str
     advanced: bool = False
     multi: bool = False
-    ref: Optional[Ref] = None
-    sln: Optional[Sln] = None
-    fkeys: Optional[Dfns] = None
+    ref: Ref | None = None
+    sln: Sln | None = None
+    fkeys: Dfns | None = None
 
     @staticmethod
-    def _load_v1_flat(f, common: Optional[dict] = None) -> tuple[Mapping, list[str]]:
+    def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
         var = {}
         flat = []
         meta = []
@@ -444,13 +443,13 @@ class Dfn(TypedDict):
 
         blocks = remap(blocks, visit=remove_attrs)
 
-        def _advanced() -> Optional[bool]:
+        def _advanced() -> bool | None:
             return any("package-type advanced" in m for m in meta)
 
         def _multi() -> bool:
             return any("multi-package" in m for m in meta)
 
-        def _sln() -> Optional[Sln]:
+        def _sln() -> Sln | None:
             sln = next(
                 iter(
                     m
@@ -464,7 +463,7 @@ class Dfn(TypedDict):
                 return Sln(abbr=abbr, pattern=pattern)
             return None
 
-        def _sub() -> Optional[Ref]:
+        def _sub() -> Ref | None:
             def _parent():
                 line = next(
                     iter(
@@ -531,7 +530,7 @@ class Dfn(TypedDict):
     def load(
         cls,
         f,
-        name: Optional[str] = None,
+        name: str | None = None,
         version: DfnFmtVersion = 1,
         **kwargs,
     ) -> "Dfn":
@@ -553,7 +552,7 @@ class Dfn(TypedDict):
         ]
 
         # load common variables
-        common_path: Optional[Path] = dfndir / "common.dfn"
+        common_path: Path | None = dfndir / "common.dfn"
         if not common_path.is_file:
             common = None
         else:
@@ -603,7 +602,7 @@ class Dfn(TypedDict):
 
 
 def get_dfns(
-    owner: str, repo: str, ref: str, outdir: Union[str, PathLike], verbose: bool = False
+    owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False
 ):
     """Fetch definition files from the MODFLOW 6 repository."""
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
