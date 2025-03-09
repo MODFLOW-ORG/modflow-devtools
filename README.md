@@ -38,7 +38,6 @@ Python development tools for MODFLOW 6 and related projects.
   - [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples)
   - [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels)
   - [`MODFLOW-ORG/modflow6-largetestmodels`](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
-* a parser for MODFLOW 6 [definition files](https://modflow6.readthedocs.io/en/stable/_dev/dfn.html)
 
 ## Requirements
 
