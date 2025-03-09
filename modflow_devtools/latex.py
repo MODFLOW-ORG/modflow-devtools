@@ -1,15 +1,14 @@
 from collections.abc import Iterable, Sequence
 from os import PathLike
 from pathlib import Path
-from typing import Optional
 
 
 def build_table(
     caption: str,
     fpth: str | PathLike,
     arr,
-    headings: Optional[Sequence[str]] = None,
-    col_widths: Optional[Sequence[float]] = None,
+    headings: Sequence[str] | None = None,
+    col_widths: Sequence[float] | None = None,
 ):
     """
     Build a LaTeX table from the given NumPy array.
@@ -57,7 +56,7 @@ def get_header(
     caption: str,
     label: str,
     headings: Sequence[str],
-    col_widths: Optional[Iterable[float]] = None,
+    col_widths: Iterable[float] | None = None,
     center: bool = True,
     firsthead: bool = False,
 ):
