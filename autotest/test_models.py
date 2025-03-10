@@ -1,68 +1,59 @@
-import random
+from itertools import islice
 from pathlib import Path
 
 import pytest
 import tomli
 
 import modflow_devtools.models as models
+from modflow_devtools.misc import is_in_ci
 
-MODELS_TOML_PATH = Path(models.DATA_PATH) / models.MODELMAP_NAME
-
-
-@pytest.fixture
-def models_toml():
-    with MODELS_TOML_PATH.open("rb") as f:
-        return tomli.load(f)
-
-
-@pytest.fixture
-def temp_cache_dir(tmpdir, monkeypatch):
-    temp_dir = tmpdir.mkdir("pooch_cache")
-    monkeypatch.setenv("MF_DATA_DIR", str(temp_dir))
-    models.FETCHER.path = temp_dir  # Update the fetcher path
-    return temp_dir
+TAKE = 5 if is_in_ci() else None
+PROJ_ROOT = Path(__file__).parents[1]
+MODELMAP_PATH = PROJ_ROOT / "modflow_devtools" / "registry" / models.MODELMAP_FILE_NAME
+with MODELMAP_PATH.open("rb") as f:
+    MODELMAP = tomli.load(f)
 
 
 def test_registry():
-    assert models.FETCHER.registry is not None, "Registry was not loaded"
-    assert len(models.FETCHER.registry) > 0, "Registry is empty"
+    registry = models.get_registry()
+    assert registry is not None, "Registry was not loaded"
+    assert registry is models.POOCH.registry
+    assert any(registry), "Registry is empty"
 
 
-def test_model_map(models_toml):
-    assert models.model_map()
-    for model_name, files in models_toml.items():
-        assert model_name in models.model_map().keys(), (
-            f"Model {model_name} not found in model map"
+@pytest.mark.parametrize("model_name, files", MODELMAP.items())
+def test_models(model_name, files):
+    model_names = models.list_models()
+    assert model_name in model_names, f"Model {model_name} not found in model map"
+    assert files == models.MODELMAP[model_name], (
+        f"Files for model {model_name} do not match"
+    )
+    assert hasattr(models, model_name), (
+        f"Function {model_name} not found in models module"
+    )
+
+
+@pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
+def test_copy_to(model_name, files, tmp_path):
+    model = models.copy_to(tmp_path, model_name)
+    assert model.exists(), f"Model {model_name} was not copied to {tmp_path}"
+    assert model.is_dir(), f"Model {model_name} is not a directory"
+    assert len(list(model.iterdir())) == len(files), (
+        f"Model {model_name} does not have the correct number of files"
+    )
+
+
+@pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
+def test_generated_functions_return_files(model_name, files):
+    model_function = getattr(models, model_name)
+    fetched_files = model_function()
+    assert isinstance(fetched_files, list), (
+        f"Function {model_name} did not return a list"
+    )
+    assert len(fetched_files) == len(files), (
+        f"Function {model_name} did not return the correct number of files"
+    )
+    for fetched_file in fetched_files:
+        assert Path(fetched_file).exists(), (
+            f"Fetched file {fetched_file} does not exist"
         )
-        assert files == models.model_map()[model_name], (
-            f"Files for model {model_name} do not match"
-        )
-
-
-def test_generated_functions_exist(models_toml):
-    for model_name in models_toml.keys():
-        assert hasattr(models, model_name), (
-            f"Function {model_name} not found in models module"
-        )
-
-
-def test_generated_functions_return_files(models_toml, temp_cache_dir):
-    for model_name, files in models_toml.items():
-        model_function = getattr(models, model_name)
-        fetched_files = model_function()
-        cached_files = temp_cache_dir.listdir()
-        assert isinstance(fetched_files, list), (
-            f"Function {model_name} did not return a list"
-        )
-        assert len(fetched_files) == len(files), (
-            f"Function {model_name} did not return the correct number of files"
-        )
-        for fetched_file in fetched_files:
-            assert Path(fetched_file).exists(), (
-                f"Fetched file {fetched_file} does not exist"
-            )
-            assert Path(temp_cache_dir) / Path(fetched_file).name in cached_files, (
-                f"Fetched file {fetched_file} is not in the temp cache directory"
-            )
-        if random.randint(0, 5) % 5 == 0:
-            break  # just the first few so we dont ddos github
