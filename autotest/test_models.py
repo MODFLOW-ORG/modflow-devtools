@@ -35,10 +35,10 @@ def test_models(model_name, files):
 
 @pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
 def test_copy_to(model_name, files, tmp_path):
-    model = models.copy_to(tmp_path, model_name)
-    assert model.exists(), f"Model {model_name} was not copied to {tmp_path}"
-    assert model.is_dir(), f"Model {model_name} is not a directory"
-    assert len(list(model.iterdir())) == len(files), (
+    workspace = models.copy_to(tmp_path, model_name)
+    assert workspace.exists(), f"Model {model_name} was not copied to {tmp_path}"
+    assert workspace.is_dir(), f"Model {model_name} is not a directory"
+    assert len(list(workspace.iterdir())) == len(files), (
         f"Model {model_name} does not have the correct number of files"
     )
 

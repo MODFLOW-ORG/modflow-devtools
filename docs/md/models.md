@@ -16,15 +16,15 @@ files = models.some_model()
 
 The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models. This script should be run in the CI pipeline at release time before the package is built. The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
 
-The script can be executed with `python -m modflow_devtools.make_registry` and accepts the following options:
+The script can be executed with `python -m modflow_devtools.make_registry`. It accepts a single positional argument, specifying the base directory containing model directories. It accepts two named arguments:
 
-- `--path` or `-p`: Specifies the directory containing model directories. If not provided, the default path is used.
 - `--append` or `-a`: If specified, the script will append to the existing registry file instead of overwriting it.
-- `--base-url` or `-b`: Specifies the base URL for the registry file. If not provided, the default base URL is used.
+- `--url` or `-u`: Specifies the base URL for the registry file. If not provided, the default base URL is used.
 
-For example, to create a registry of models in the MF6 test models repositories, each of which is checked out in the current working directory:
+For example, to create a registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
 
 ```shell
-python -m modflow_devtools.make_registry -p modflow6-testmodels -b https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master
-python -m modflow_devtools.make_registry -a -p modflow6-largetestmodels -b https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master
+python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip
+python -m modflow_devtools.make_registry ../modflow6-testmodels --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master
+python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master
 ```
