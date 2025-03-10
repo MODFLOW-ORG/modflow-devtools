@@ -153,7 +153,7 @@ include = [
 path = "modflow_devtools/__init__.py"
 
 [tool.codespell]
-skip = "cliff.toml"
+skip = "cliff.toml,./modflow_devtools/registry/**,./docs/_build/**,./autotest/temp/**,./build/**"
 ignore-words-list = [
     "nam",
     "wel",
