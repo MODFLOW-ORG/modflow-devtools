@@ -18,6 +18,7 @@ import modflow_devtools
 REGISTRY_ANCHOR = f"{modflow_devtools.__name__}.registry"
 REGISTRY_FILE_NAME = "registry.toml"
 MODELMAP_FILE_NAME = "models.toml"
+EXAMPLES_FILE_NAME = "examples.toml"
 
 # the mf6 examples release is our base url
 BASE_URL = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current"
@@ -26,7 +27,8 @@ ZIP_NAME = "mf6examples.zip"
 # set up the pooch
 FETCHERS = {}
 REGISTRY: dict[str, str] = {}
-MODELMAP: dict[str, list[Path]] = {}
+MODELMAP: dict[str, list[str]] = {}
+EXAMPLES: dict[str, list[str]] = {}
 POOCH = pooch.create(
     path=pooch.os_cache(modflow_devtools.__name__.replace("_", "-")),
     base_url=BASE_URL,
@@ -84,6 +86,22 @@ except:  # noqa: E722
         f"No model mapping file '{MODELMAP_FILE_NAME}' "
         f"in module '{REGISTRY_ANCHOR}' resources"
     )
+
+
+try:
+    with pkg_resources.open_binary(
+        REGISTRY_ANCHOR, EXAMPLES_FILE_NAME
+    ) as examples_file:
+        EXAMPLES = tomli.load(examples_file)
+except:  # noqa: E722
+    warn(
+        f"No examples file '{EXAMPLES_FILE_NAME}' "
+        f"in module '{REGISTRY_ANCHOR}' resources"
+    )
+
+
+def get_examples() -> dict[str, list[str]]:
+    return EXAMPLES
 
 
 def get_registry() -> dict[str, str]:

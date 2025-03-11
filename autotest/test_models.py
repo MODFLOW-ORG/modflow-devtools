@@ -35,6 +35,13 @@ def test_models(model_name, files):
         assert any(Path(f).name == "mfsim.nam" for f in files)
 
 
+@pytest.mark.parametrize("example_name, model_names", models.get_examples().items())
+def test_get_examples(example_name, model_names):
+    assert example_name in models.EXAMPLES
+    for model_name in model_names:
+        assert model_name in models.MODELMAP
+
+
 @pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
 def test_copy_to(model_name, files, tmp_path):
     workspace = models.copy_to(tmp_path, model_name)
