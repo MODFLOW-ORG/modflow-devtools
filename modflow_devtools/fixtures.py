@@ -4,6 +4,7 @@ from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
 from shutil import copytree, rmtree
+from warnings import warn
 
 from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import get_namefile_paths, get_packages
@@ -245,6 +246,10 @@ def pytest_generate_tests(metafunc):
 
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -261,6 +266,10 @@ def pytest_generate_tests(metafunc):
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -278,6 +287,10 @@ def pytest_generate_tests(metafunc):
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-largetestmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -295,6 +308,10 @@ def pytest_generate_tests(metafunc):
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-examples")
 
         def is_nested(namfile_path: PathLike) -> bool:

@@ -31,6 +31,8 @@ def test_models(model_name, files):
     assert hasattr(models, model_name), (
         f"Function {model_name} not found in models module"
     )
+    if "mf6" in model_name:
+        assert any(Path(f).name == "mfsim.nam" for f in files)
 
 
 @pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
@@ -41,6 +43,8 @@ def test_copy_to(model_name, files, tmp_path):
     assert len(list(workspace.iterdir())) == len(files), (
         f"Model {model_name} does not have the correct number of files"
     )
+    if "mf6" in model_name:
+        assert any(Path(f).name == "mfsim.nam" for f in files)
 
 
 @pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
@@ -53,6 +57,8 @@ def test_generated_functions_return_files(model_name, files):
     assert len(fetched_files) == len(files), (
         f"Function {model_name} did not return the correct number of files"
     )
+    if "mf6" in model_name:
+        assert any(Path(f).name == "mfsim.nam" for f in files)
     for fetched_file in fetched_files:
         assert Path(fetched_file).exists(), (
             f"Fetched file {fetched_file} does not exist"

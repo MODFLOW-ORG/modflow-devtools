@@ -7,7 +7,9 @@ from _pytest.config import ExitCode
 
 system = platform.system()
 proj_root = Path(__file__).parents[1]
-module_path = Path(inspect.getmodulename(__file__))
+module_name = inspect.getmodulename(__file__)
+assert module_name is not None  # appease mypy
+module_path = Path(module_name)
 
 
 # test temporary directory fixtures
@@ -248,36 +250,6 @@ def test_meta():
         "test_meta",
     ]
     assert pytest.main(args, plugins=[TestMeta()]) == ExitCode.OK
-
-
-# test fixtures dynamically generated from examples and test models
-
-
-def test_example_scenario(example_scenario):
-    assert isinstance(example_scenario, tuple)
-    name, namefiles = example_scenario
-    assert isinstance(name, str)
-    assert isinstance(namefiles, list)
-    assert all(namefile.is_file() for namefile in namefiles)
-
-
-def test_test_model_mf6(test_model_mf6):
-    assert isinstance(test_model_mf6, Path)
-    assert test_model_mf6.is_file()
-    assert test_model_mf6.name == "mfsim.nam"
-
-
-def test_test_model_mf5to6(test_model_mf5to6):
-    assert isinstance(test_model_mf5to6, Path)
-    assert test_model_mf5to6.is_file()
-    assert test_model_mf5to6.suffix == ".nam"
-
-
-def test_large_test_model(large_test_model):
-    print(large_test_model)
-    assert isinstance(large_test_model, Path)
-    assert large_test_model.is_file()
-    assert large_test_model.name == "mfsim.nam"
 
 
 # test tabular data format fixture
