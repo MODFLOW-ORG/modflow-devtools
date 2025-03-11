@@ -89,45 +89,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: modflow-devtools
-      
-      - name: Checkout modflow6
-        uses: actions/checkout@v4
-        with:
-          repository: MODFLOW-ORG/modflow6
-          path: modflow6
-      
-      - name: Checkout modflow6 examples
-        uses: actions/checkout@v4
-        with:
-          repository: MODFLOW-ORG/modflow6-examples
-          path: modflow6-examples
-      
-      - name: Checkout modflow6 test models
-        uses: actions/checkout@v3
-        with:
-          repository: MODFLOW-ORG/modflow6-testmodels
-          path: modflow6-testmodels
-      
-      - name: Checkout modflow6 large test models
-        uses: actions/checkout@v3
-        with:
-          repository: MODFLOW-ORG/modflow6-largetestmodels
-          path: modflow6-largetestmodels
-
-      - name: Install executables
-        uses: modflowpy/install-modflow-action@v1
-      
-      - name: Install nightly build
-        uses: modflowpy/install-modflow-action@v1
-        with:
-          repo: modflow6-nightly-build
-
-      - name: Setup GNU Fortran ${{ env.GCC_V }}
-        uses: awvwgk/setup-fortran@main
-        with:
-          compiler: gcc
-          version: ${{ env.GCC_V }}
-
+ 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -137,27 +99,6 @@ jobs:
       - name: Install project
         working-directory: modflow-devtools
         run: uv sync --all-extras
-
-      - name: Cache modflow6 examples
-        id: cache-examples
-        uses: actions/cache@v3
-        with:
-          path: modflow6-examples/examples
-          key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
-      
-      - name: Install extra Python packages
-        working-directory: modflow6-examples/etc
-        run: |
-          uv pip install -r requirements.pip.txt
-          uv pip install -r requirements.usgs.txt
-
-      - name: Update FloPy packages
-        run: uv run python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
-
-      - name: Build modflow6 example models
-        if: steps.cache-examples.outputs.cache-hit != 'true'
-        working-directory: modflow6-examples/autotest
-        run: uv run pytest -v -n auto test_scripts.py --init
 
       - name: Run local tests
         working-directory: modflow-devtools/autotest

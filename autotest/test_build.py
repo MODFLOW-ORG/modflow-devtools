@@ -7,11 +7,11 @@ import pytest
 from modflow_devtools.build import meson_build
 from modflow_devtools.markers import requires_exe
 
-_repos_path = environ.get("REPOS_PATH")
-if _repos_path is None:
-    _repos_path = Path(__file__).parent.parent.parent.parent
+if from_env := environ.get("REPOS_PATH"):
+    _repos_path = Path(from_env).expanduser().absolute()
+else:
+    _repos_path = Path(__file__).parents[3]
 _repos_path = Path(_repos_path).expanduser().absolute()
-_project_root_path = Path(__file__).parent.parent.parent.parent
 _modflow6_repo_path = _repos_path / "modflow6"
 _system = platform.system()
 _exe_ext = ".exe" if _system == "Windows" else ""
