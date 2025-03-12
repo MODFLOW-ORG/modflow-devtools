@@ -1,4 +1,4 @@
-ex_gwe_ates = [
+ex-gwe-ates = [
     "ex-gwe-ates/gwe-ates.gwfgwe",
     "ex-gwe-ates/gwf-ates.sto",
     "ex-gwe-ates/gwf-ates.ic",
@@ -20,7 +20,7 @@ ex_gwe_ates = [
     "ex-gwe-ates/gwe-ates.oc",
     "ex-gwe-ates/gwe-ates.est",
 ]
-ex_gwe_barends_mf6gwe = [
+"ex-gwe-barends/mf6gwe" = [
     "ex-gwe-barends/mf6gwe/ex-gwe-barends.tdis",
     "ex-gwe-barends/mf6gwe/ex-gwe-barends.fmi",
     "ex-gwe-barends/mf6gwe/ex-gwe-barends.oc",
@@ -35,7 +35,7 @@ ex_gwe_barends_mf6gwe = [
     "ex-gwe-barends/mf6gwe/ex-gwe-barends.adv",
     "ex-gwe-barends/mf6gwe/ex-gwe-barends.ims",
 ]
-ex_gwe_barends_mf6gwf = [
+"ex-gwe-barends/mf6gwf" = [
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.npf",
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.tdis",
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.wel-right",
@@ -48,7 +48,7 @@ ex_gwe_barends_mf6gwf = [
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.dis",
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.ims",
 ]
-ex_gwe_danckwerts = [
+ex-gwe-danckwerts = [
     "ex-gwe-danckwerts/gwe-danckwerts.adv",
     "ex-gwe-danckwerts/gwe-danckwerts.uze",
     "ex-gwe-danckwerts/gwe-danckwerts.ims",
@@ -72,7 +72,7 @@ ex_gwe_danckwerts = [
     "ex-gwe-danckwerts/mfsim.nam",
     "ex-gwe-danckwerts/gwe-danckwerts.ic",
 ]
-ex_gwe_geotherm_mf6gwe = [
+"ex-gwe-geotherm/mf6gwe" = [
     "ex-gwe-geotherm/mf6gwe/gwe-geotherm.est",
     "ex-gwe-geotherm/mf6gwe/gwe-geotherm.adv",
     "ex-gwe-geotherm/mf6gwe/gwe-geotherm.oc",
@@ -87,7 +87,7 @@ ex_gwe_geotherm_mf6gwe = [
     "ex-gwe-geotherm/mf6gwe/gwe-geotherm.fmi",
     "ex-gwe-geotherm/mf6gwe/gwe-geotherm.disv",
 ]
-ex_gwe_geotherm_mf6gwf = [
+"ex-gwe-geotherm/mf6gwf" = [
     "ex-gwe-geotherm/mf6gwf/gwf-geotherm.npf",
     "ex-gwe-geotherm/mf6gwf/gwf-geotherm.oc",
     "ex-gwe-geotherm/mf6gwf/ex-gwe-geotherm.left.chd",
@@ -100,7 +100,7 @@ ex_gwe_geotherm_mf6gwf = [
     "ex-gwe-geotherm/mf6gwf/ex-gwe-geotherm.right.chd",
     "ex-gwe-geotherm/mf6gwf/gwf-geotherm.ic",
 ]
-ex_gwe_prt_gwe = [
+"ex-gwe-prt/gwe" = [
     "ex-gwe-prt/gwe/ex-gwe-prt-gwe.cnd",
     "ex-gwe-prt/gwe/ex-gwe-prt-gwe.ssm",
     "ex-gwe-prt/gwe/ex-gwe-prt-gwe.ic",
@@ -114,7 +114,7 @@ ex_gwe_prt_gwe = [
     "ex-gwe-prt/gwe/ex-gwe-prt-gwe.nam",
     "ex-gwe-prt/gwe/ex-gwe-prt.tdis",
 ]
-ex_gwe_prt_gwf = [
+"ex-gwe-prt/gwf" = [
     "ex-gwe-prt/gwf/ex-gwe-prt-gwf.wel",
     "ex-gwe-prt/gwf/ex-gwe-prt-gwf.oc",
     "ex-gwe-prt/gwf/ex-gwe-prt-gwf.npf",
@@ -127,7 +127,7 @@ ex_gwe_prt_gwf = [
     "ex-gwe-prt/gwf/ex-gwe-prt.tdis",
     "ex-gwe-prt/gwf/ex-gwe-prt-gwf.sto",
 ]
-ex_gwe_prt_prt = [
+"ex-gwe-prt/prt" = [
     "ex-gwe-prt/prt/ex-gwe-prt-prt.mip",
     "ex-gwe-prt/prt/ex-gwe-prt-prt.disv",
     "ex-gwe-prt/prt/ex-gwe-prt-prt.fmi",
@@ -138,7 +138,7 @@ ex_gwe_prt_prt = [
     "ex-gwe-prt/prt/ex-gwe-prt-prt_1.prp",
     "ex-gwe-prt/prt/ex-gwe-prt-prt.oc",
 ]
-ex_gwe_radial_slow_mf6gwe_b = [
+"ex-gwe-radial-slow/mf6gwe-b" = [
     "ex-gwe-radial-slow/mf6gwe-b/gwe-radial.est",
     "ex-gwe-radial-slow/mf6gwe-b/gwe-radial.adv",
     "ex-gwe-radial-slow/mf6gwe-b/gwe-radial.ims",
@@ -153,7 +153,7 @@ ex_gwe_radial_slow_mf6gwe_b = [
     "ex-gwe-radial-slow/mf6gwe-b/gwe-radial.fmi",
     "ex-gwe-radial-slow/mf6gwe-b/ex-gwe-radial-slow-b.tdis",
 ]
-ex_gwe_radial_slow_mf6gwf = [
+"ex-gwe-radial-slow/mf6gwf" = [
     "ex-gwe-radial-slow/mf6gwf/gwf-radial.oc",
     "ex-gwe-radial-slow/mf6gwf/ex-gwe-radial-slow.tdis",
     "ex-gwe-radial-slow/mf6gwf/gwf-radial.npf",
@@ -166,7 +166,7 @@ ex_gwe_radial_slow_mf6gwf = [
     "ex-gwe-radial-slow/mf6gwf/mfsim.nam",
     "ex-gwe-radial-slow/mf6gwf/gwf-radial.disv",
 ]
-ex_gwe_vsc = [
+ex-gwe-vsc = [
     "ex-gwe-vsc/ex-gwf-vsc-01.dis",
     "ex-gwe-vsc/ex-gwt-vsc-01.oc",
     "ex-gwe-vsc/ex-gwt-vsc-02.cnc",
@@ -224,7 +224,7 @@ ex_gwe_vsc = [
     "ex-gwe-vsc/ex-gwf-vsc-01.ic",
     "ex-gwe-vsc/ex-gwe-vsc-02.dis",
 ]
-ex_gwf_advtidal = [
+ex-gwf-advtidal = [
     "ex-gwf-advtidal/ex-gwf-advtidal.npf",
     "ex-gwf-advtidal/ex-gwf-advtidal.ghb.obs",
     "ex-gwf-advtidal/ex-gwf-advtidal.tdis",
@@ -250,7 +250,7 @@ ex_gwf_advtidal = [
     "ex-gwf-advtidal/ex-gwf-advtidal.ghb",
     "ex-gwf-advtidal/ex-gwf-advtidal.rch2",
 ]
-ex_gwf_bcf2ss_p01a = [
+ex-gwf-bcf2ss-p01a = [
     "ex-gwf-bcf2ss-p01a/ex-gwf-bcf2ss.ims",
     "ex-gwf-bcf2ss-p01a/ex-gwf-bcf2ss.ic",
     "ex-gwf-bcf2ss-p01a/ex-gwf-bcf2ss.dis",
@@ -263,7 +263,7 @@ ex_gwf_bcf2ss_p01a = [
     "ex-gwf-bcf2ss-p01a/ex-gwf-bcf2ss.wel",
     "ex-gwf-bcf2ss-p01a/ex-gwf-bcf2ss.npf",
 ]
-ex_gwf_bcf2ss_p02a = [
+ex-gwf-bcf2ss-p02a = [
     "ex-gwf-bcf2ss-p02a/ex-gwf-bcf2ss.ims",
     "ex-gwf-bcf2ss-p02a/ex-gwf-bcf2ss.ic",
     "ex-gwf-bcf2ss-p02a/ex-gwf-bcf2ss.dis",
@@ -276,7 +276,7 @@ ex_gwf_bcf2ss_p02a = [
     "ex-gwf-bcf2ss-p02a/ex-gwf-bcf2ss.wel",
     "ex-gwf-bcf2ss-p02a/ex-gwf-bcf2ss.npf",
 ]
-ex_gwf_bump_p01a = [
+ex-gwf-bump-p01a = [
     "ex-gwf-bump-p01a/ex-gwf-bump.dis",
     "ex-gwf-bump-p01a/ex-gwf-bump.chd",
     "ex-gwf-bump-p01a/ex-gwf-bump.ims",
@@ -287,7 +287,7 @@ ex_gwf_bump_p01a = [
     "ex-gwf-bump-p01a/mfsim.nam",
     "ex-gwf-bump-p01a/ex-gwf-bump.npf",
 ]
-ex_gwf_bump_p01b = [
+ex-gwf-bump-p01b = [
     "ex-gwf-bump-p01b/ex-gwf-bump.dis",
     "ex-gwf-bump-p01b/ex-gwf-bump.chd",
     "ex-gwf-bump-p01b/ex-gwf-bump.ims",
@@ -298,7 +298,7 @@ ex_gwf_bump_p01b = [
     "ex-gwf-bump-p01b/mfsim.nam",
     "ex-gwf-bump-p01b/ex-gwf-bump.npf",
 ]
-ex_gwf_bump_p01c = [
+ex-gwf-bump-p01c = [
     "ex-gwf-bump-p01c/ex-gwf-bump.dis",
     "ex-gwf-bump-p01c/ex-gwf-bump.chd",
     "ex-gwf-bump-p01c/ex-gwf-bump.ims",
@@ -309,7 +309,7 @@ ex_gwf_bump_p01c = [
     "ex-gwf-bump-p01c/mfsim.nam",
     "ex-gwf-bump-p01c/ex-gwf-bump.npf",
 ]
-ex_gwf_capture = [
+ex-gwf-capture = [
     "ex-gwf-capture/ex-gwf-capture.ic",
     "ex-gwf-capture/ex-gwf-capture.riv",
     "ex-gwf-capture/ex-gwf-capture.npf",
@@ -324,7 +324,7 @@ ex_gwf_capture = [
     "ex-gwf-capture/ex-gwf-capture.nam",
     "ex-gwf-capture/ex-gwf-capture.tdis",
 ]
-ex_gwf_csub_p01 = [
+ex-gwf-csub-p01 = [
     "ex-gwf-csub-p01/ex-gwf-csub-p01.npf",
     "ex-gwf-csub-p01/ex-gwf-csub-p01.ic",
     "ex-gwf-csub-p01/ex-gwf-csub-p01.load.ts",
@@ -338,7 +338,7 @@ ex_gwf_csub_p01 = [
     "ex-gwf-csub-p01/ex-gwf-csub-p01.obs",
     "ex-gwf-csub-p01/ex-gwf-csub-p01.dis",
 ]
-ex_gwf_csub_p02a = [
+ex-gwf-csub-p02a = [
     "ex-gwf-csub-p02a/ex-gwf-csub-p02a.ims",
     "ex-gwf-csub-p02a/ex-gwf-csub-p02a.obs",
     "ex-gwf-csub-p02a/ex-gwf-csub-p02a.csub.obs",
@@ -353,7 +353,7 @@ ex_gwf_csub_p02a = [
     "ex-gwf-csub-p02a/ex-gwf-csub-p02a.npf",
     "ex-gwf-csub-p02a/ex-gwf-csub-p02a.ic",
 ]
-ex_gwf_csub_p02b = [
+ex-gwf-csub-p02b = [
     "ex-gwf-csub-p02b/ex-gwf-csub-p02b.obs",
     "ex-gwf-csub-p02b/ex-gwf-csub-p02b.chd",
     "ex-gwf-csub-p02b/ex-gwf-csub-p02b.ims",
@@ -368,7 +368,7 @@ ex_gwf_csub_p02b = [
     "ex-gwf-csub-p02b/ex-gwf-csub-p02b.tdis",
     "ex-gwf-csub-p02b/ex-gwf-csub-p02b.npf",
 ]
-ex_gwf_csub_p02c_es_001 = [
+"ex-gwf-csub-p02c/es-001" = [
     "ex-gwf-csub-p02c/es-001/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-001/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-001/ex-gwf-csub-p02c.ims",
@@ -383,7 +383,7 @@ ex_gwf_csub_p02c_es_001 = [
     "ex-gwf-csub-p02c/es-001/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-001/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_002 = [
+"ex-gwf-csub-p02c/es-002" = [
     "ex-gwf-csub-p02c/es-002/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-002/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-002/ex-gwf-csub-p02c.ims",
@@ -398,7 +398,7 @@ ex_gwf_csub_p02c_es_002 = [
     "ex-gwf-csub-p02c/es-002/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-002/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_005 = [
+"ex-gwf-csub-p02c/es-005" = [
     "ex-gwf-csub-p02c/es-005/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-005/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-005/ex-gwf-csub-p02c.ims",
@@ -413,7 +413,7 @@ ex_gwf_csub_p02c_es_005 = [
     "ex-gwf-csub-p02c/es-005/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-005/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_010 = [
+"ex-gwf-csub-p02c/es-010" = [
     "ex-gwf-csub-p02c/es-010/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-010/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-010/ex-gwf-csub-p02c.ims",
@@ -428,7 +428,7 @@ ex_gwf_csub_p02c_es_010 = [
     "ex-gwf-csub-p02c/es-010/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-010/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_020 = [
+"ex-gwf-csub-p02c/es-020" = [
     "ex-gwf-csub-p02c/es-020/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-020/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-020/ex-gwf-csub-p02c.ims",
@@ -443,7 +443,7 @@ ex_gwf_csub_p02c_es_020 = [
     "ex-gwf-csub-p02c/es-020/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-020/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_050 = [
+"ex-gwf-csub-p02c/es-050" = [
     "ex-gwf-csub-p02c/es-050/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-050/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-050/ex-gwf-csub-p02c.ims",
@@ -458,7 +458,7 @@ ex_gwf_csub_p02c_es_050 = [
     "ex-gwf-csub-p02c/es-050/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-050/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_es_100 = [
+"ex-gwf-csub-p02c/es-100" = [
     "ex-gwf-csub-p02c/es-100/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/es-100/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/es-100/ex-gwf-csub-p02c.ims",
@@ -473,7 +473,7 @@ ex_gwf_csub_p02c_es_100 = [
     "ex-gwf-csub-p02c/es-100/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/es-100/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_001 = [
+"ex-gwf-csub-p02c/hb-001" = [
     "ex-gwf-csub-p02c/hb-001/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-001/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-001/ex-gwf-csub-p02c.ims",
@@ -488,7 +488,7 @@ ex_gwf_csub_p02c_hb_001 = [
     "ex-gwf-csub-p02c/hb-001/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-001/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_002 = [
+"ex-gwf-csub-p02c/hb-002" = [
     "ex-gwf-csub-p02c/hb-002/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-002/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-002/ex-gwf-csub-p02c.ims",
@@ -503,7 +503,7 @@ ex_gwf_csub_p02c_hb_002 = [
     "ex-gwf-csub-p02c/hb-002/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-002/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_005 = [
+"ex-gwf-csub-p02c/hb-005" = [
     "ex-gwf-csub-p02c/hb-005/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-005/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-005/ex-gwf-csub-p02c.ims",
@@ -518,7 +518,7 @@ ex_gwf_csub_p02c_hb_005 = [
     "ex-gwf-csub-p02c/hb-005/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-005/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_010 = [
+"ex-gwf-csub-p02c/hb-010" = [
     "ex-gwf-csub-p02c/hb-010/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-010/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-010/ex-gwf-csub-p02c.ims",
@@ -533,7 +533,7 @@ ex_gwf_csub_p02c_hb_010 = [
     "ex-gwf-csub-p02c/hb-010/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-010/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_020 = [
+"ex-gwf-csub-p02c/hb-020" = [
     "ex-gwf-csub-p02c/hb-020/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-020/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-020/ex-gwf-csub-p02c.ims",
@@ -548,7 +548,7 @@ ex_gwf_csub_p02c_hb_020 = [
     "ex-gwf-csub-p02c/hb-020/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-020/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_050 = [
+"ex-gwf-csub-p02c/hb-050" = [
     "ex-gwf-csub-p02c/hb-050/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-050/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-050/ex-gwf-csub-p02c.ims",
@@ -563,7 +563,7 @@ ex_gwf_csub_p02c_hb_050 = [
     "ex-gwf-csub-p02c/hb-050/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-050/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p02c_hb_100 = [
+"ex-gwf-csub-p02c/hb-100" = [
     "ex-gwf-csub-p02c/hb-100/ex-gwf-csub-p02c.chd",
     "ex-gwf-csub-p02c/hb-100/ex-gwf-csub-p02c.obs",
     "ex-gwf-csub-p02c/hb-100/ex-gwf-csub-p02c.ims",
@@ -578,7 +578,7 @@ ex_gwf_csub_p02c_hb_100 = [
     "ex-gwf-csub-p02c/hb-100/ex-gwf-csub-p02c.tdis",
     "ex-gwf-csub-p02c/hb-100/ex-gwf-csub-p02c.npf",
 ]
-ex_gwf_csub_p03a = [
+ex-gwf-csub-p03a = [
     "ex-gwf-csub-p03a/ex-gwf-csub-p03a.dis",
     "ex-gwf-csub-p03a/ex-gwf-csub-p03a.chd",
     "ex-gwf-csub-p03a/ex-gwf-csub-p03a.csub",
@@ -594,7 +594,7 @@ ex_gwf_csub_p03a = [
     "ex-gwf-csub-p03a/ex-gwf-csub-p03a.npf",
     "ex-gwf-csub-p03a/ex-gwf-csub-p03a.ic",
 ]
-ex_gwf_csub_p03b = [
+ex-gwf-csub-p03b = [
     "ex-gwf-csub-p03b/ex-gwf-csub-p03b.dis",
     "ex-gwf-csub-p03b/ex-gwf-csub-p03b.ic",
     "ex-gwf-csub-p03b/ex-gwf-csub-p03b.ims",
@@ -610,7 +610,7 @@ ex_gwf_csub_p03b = [
     "ex-gwf-csub-p03b/ex-gwf-csub-p03b.csub.obs",
     "ex-gwf-csub-p03b/ex-gwf-csub-p03b.gwf.obs",
 ]
-ex_gwf_csub_p04 = [
+ex-gwf-csub-p04 = [
     "ex-gwf-csub-p04/ex-gwf-csub-p04.csub.obs",
     "ex-gwf-csub-p04/ex-gwf-csub-p04.npf",
     "ex-gwf-csub-p04/ex-gwf-csub-p04.wel",
@@ -627,7 +627,7 @@ ex_gwf_csub_p04 = [
     "ex-gwf-csub-p04/ex-gwf-csub-p04.ims",
     "ex-gwf-csub-p04/ex-gwf-csub-p04.oc",
 ]
-ex_gwf_curve_90 = [
+ex-gwf-curve-90 = [
     "ex-gwf-curve-90/ex-gwf-curve-90.outer.chd",
     "ex-gwf-curve-90/ex-gwf-curve-90.ims",
     "ex-gwf-curve-90/ex-gwf-curve-90.inner.chd",
@@ -640,7 +640,7 @@ ex_gwf_curve_90 = [
     "ex-gwf-curve-90/ex-gwf-curve-90.tdis",
     "ex-gwf-curve-90/ex-gwf-curve-90.ic",
 ]
-ex_gwf_curvilin = [
+ex-gwf-curvilin = [
     "ex-gwf-curvilin/ex-gwf-curvilin.npf",
     "ex-gwf-curvilin/ex-gwf-curvilin.left.chd",
     "ex-gwf-curvilin/ex-gwf-curvilin.disv",
@@ -653,7 +653,7 @@ ex_gwf_curvilin = [
     "ex-gwf-curvilin/ex-gwf-curvilin.tdis",
     "ex-gwf-curvilin/ex-gwf-curvilin.right.chd",
 ]
-ex_gwf_disvmesh = [
+ex-gwf-disvmesh = [
     "ex-gwf-disvmesh/ex-gwf-disvmesh.rch",
     "ex-gwf-disvmesh/ex-gwf-disvmesh.ghb",
     "ex-gwf-disvmesh/ex-gwf-disvmesh.ims",
@@ -665,7 +665,7 @@ ex_gwf_disvmesh = [
     "ex-gwf-disvmesh/mfsim.nam",
     "ex-gwf-disvmesh/ex-gwf-disvmesh.npf",
 ]
-ex_gwf_drn_p01a = [
+ex-gwf-drn-p01a = [
     "ex-gwf-drn-p01a/ex-gwf-drn-p01.nam",
     "ex-gwf-drn-p01a/ex-gwf-drn-p01.sfr",
     "ex-gwf-drn-p01a/ex-gwf-drn-p01.sto",
@@ -683,7 +683,7 @@ ex_gwf_drn_p01a = [
     "ex-gwf-drn-p01a/ex-gwf-drn-p01.uzf",
     "ex-gwf-drn-p01a/ex-gwf-drn-p01.surfrate.obs",
 ]
-ex_gwf_drn_p01b = [
+ex-gwf-drn-p01b = [
     "ex-gwf-drn-p01b/ex-gwf-drn-p01.nam",
     "ex-gwf-drn-p01b/ex-gwf-drn-p01.sfr",
     "ex-gwf-drn-p01b/ex-gwf-drn-p01.sto",
@@ -700,7 +700,7 @@ ex_gwf_drn_p01b = [
     "ex-gwf-drn-p01b/ex-gwf-drn-p01.uzf",
     "ex-gwf-drn-p01b/ex-gwf-drn-p01.surfrate.obs",
 ]
-ex_gwf_fhb = [
+ex-gwf-fhb = [
     "ex-gwf-fhb/ex-gwf-fhb.sto",
     "ex-gwf-fhb/ex-gwf-fhb.nam",
     "ex-gwf-fhb/ex-gwf-fhb.ic",
@@ -716,7 +716,7 @@ ex_gwf_fhb = [
     "ex-gwf-fhb/ex-gwf-fhb.tdis",
     "ex-gwf-fhb/ex-gwf-fhb.oc",
 ]
-ex_gwf_hanic = [
+ex-gwf-hanic = [
     "ex-gwf-hanic/ex-gwf-hanic.wel",
     "ex-gwf-hanic/ex-gwf-hanic.npf",
     "ex-gwf-hanic/ex-gwf-hanic.ic",
@@ -728,7 +728,7 @@ ex_gwf_hanic = [
     "ex-gwf-hanic/ex-gwf-hanic.ims",
     "ex-gwf-hanic/ex-gwf-hanic.dis",
 ]
-ex_gwf_hanir = [
+ex-gwf-hanir = [
     "ex-gwf-hanir/ex-gwf-hanir.oc",
     "ex-gwf-hanir/ex-gwf-hanir.npf",
     "ex-gwf-hanir/ex-gwf-hanir.wel",
@@ -740,7 +740,7 @@ ex_gwf_hanir = [
     "ex-gwf-hanir/ex-gwf-hanir.chd",
     "ex-gwf-hanir/ex-gwf-hanir.ims",
 ]
-ex_gwf_hanix = [
+ex-gwf-hanix = [
     "ex-gwf-hanix/ex-gwf-hanix.dis",
     "ex-gwf-hanix/ex-gwf-hanix.tdis",
     "ex-gwf-hanix/ex-gwf-hanix.ims",
@@ -752,7 +752,7 @@ ex_gwf_hanix = [
     "ex-gwf-hanix/ex-gwf-hanix.ic",
     "ex-gwf-hanix/ex-gwf-hanix.wel",
 ]
-ex_gwf_lak_p01 = [
+ex-gwf-lak-p01 = [
     "ex-gwf-lak-p01/ex-gwf-lak-p01.rcha",
     "ex-gwf-lak-p01/ex-gwf-lak-p01.chd",
     "ex-gwf-lak-p01/ex-gwf-lak-p01.lak.obs",
@@ -769,7 +769,7 @@ ex_gwf_lak_p01 = [
     "ex-gwf-lak-p01/ex-gwf-lak-p01.lak",
     "ex-gwf-lak-p01/ex-gwf-lak-p01.npf",
 ]
-ex_gwf_lak_p02 = [
+ex-gwf-lak-p02 = [
     "ex-gwf-lak-p02/ex-gwf-lak-p02.ims",
     "ex-gwf-lak-p02/ex-gwf-lak-p02.chd",
     "ex-gwf-lak-p02/ex-gwf-lak-p02.mvr",
@@ -788,7 +788,7 @@ ex_gwf_lak_p02 = [
     "ex-gwf-lak-p02/ex-gwf-lak-p02.npf",
     "ex-gwf-lak-p02/ex-gwf-lak-p02.rcha",
 ]
-ex_gwf_lgr = [
+ex-gwf-lgr = [
     "ex-gwf-lgr/gwf-lgr-child.oc",
     "ex-gwf-lgr/gwf-lgr-child.npf",
     "ex-gwf-lgr/lgr.exg",
@@ -809,7 +809,7 @@ ex_gwf_lgr = [
     "ex-gwf-lgr/gwf-lgr-parent.chd1.chd",
     "ex-gwf-lgr/gwf-lgr-parent.oc",
 ]
-ex_gwf_lgrv_gc = [
+ex-gwf-lgrv-gc = [
     "ex-gwf-lgrv-gc/parent.dis",
     "ex-gwf-lgrv-gc/parent.oc",
     "ex-gwf-lgrv-gc/ex-gwf-lgrv-gc.ims",
@@ -821,7 +821,7 @@ ex_gwf_lgrv_gc = [
     "ex-gwf-lgrv-gc/parent.npf",
     "ex-gwf-lgrv-gc/parent.rcha",
 ]
-ex_gwf_lgrv_gr = [
+ex-gwf-lgrv-gr = [
     "ex-gwf-lgrv-gr/parent.dis",
     "ex-gwf-lgrv-gr/parent.oc",
     "ex-gwf-lgrv-gr/ex-gwf-lgrv-gr.tdis",
@@ -833,7 +833,7 @@ ex_gwf_lgrv_gr = [
     "ex-gwf-lgrv-gr/parent.npf",
     "ex-gwf-lgrv-gr/parent.rcha",
 ]
-ex_gwf_lgrv_lgr = [
+ex-gwf-lgrv-lgr = [
     "ex-gwf-lgrv-lgr/parent.dis",
     "ex-gwf-lgrv-lgr/child.rcha",
     "ex-gwf-lgrv-lgr/parent.oc",
@@ -853,7 +853,7 @@ ex_gwf_lgrv_lgr = [
     "ex-gwf-lgrv-lgr/ex-gwf-lgrv-lgr.ims",
     "ex-gwf-lgrv-lgr/child.npf",
 ]
-ex_gwf_maw_p01a = [
+ex-gwf-maw-p01a = [
     "ex-gwf-maw-p01a/ex-gwf-maw-p01.maw.obs",
     "ex-gwf-maw-p01a/ex-gwf-maw-p01.nam",
     "ex-gwf-maw-p01a/ex-gwf-maw-p01.sto",
@@ -866,7 +866,7 @@ ex_gwf_maw_p01a = [
     "ex-gwf-maw-p01a/mfsim.nam",
     "ex-gwf-maw-p01a/ex-gwf-maw-p01.oc",
 ]
-ex_gwf_maw_p01b = [
+ex-gwf-maw-p01b = [
     "ex-gwf-maw-p01b/ex-gwf-maw-p01.maw.obs",
     "ex-gwf-maw-p01b/ex-gwf-maw-p01.nam",
     "ex-gwf-maw-p01b/ex-gwf-maw-p01.sto",
@@ -879,7 +879,7 @@ ex_gwf_maw_p01b = [
     "ex-gwf-maw-p01b/mfsim.nam",
     "ex-gwf-maw-p01b/ex-gwf-maw-p01.oc",
 ]
-ex_gwf_maw_p02 = [
+ex-gwf-maw-p02 = [
     "ex-gwf-maw-p02/ex-gwf-maw-p02.nam",
     "ex-gwf-maw-p02/ex-gwf-maw-p02.oc",
     "ex-gwf-maw-p02/ex-gwf-maw-p02.sto",
@@ -892,7 +892,7 @@ ex_gwf_maw_p02 = [
     "ex-gwf-maw-p02/ex-gwf-maw-p02.npf",
     "ex-gwf-maw-p02/mfsim.nam",
 ]
-ex_gwf_maw_p03a = [
+ex-gwf-maw-p03a = [
     "ex-gwf-maw-p03a/ex-gwf-maw-p03.nam",
     "ex-gwf-maw-p03a/ex-gwf-maw-p03.oc",
     "ex-gwf-maw-p03a/ex-gwf-maw-p03.chd",
@@ -904,7 +904,7 @@ ex_gwf_maw_p03a = [
     "ex-gwf-maw-p03a/mfsim.nam",
     "ex-gwf-maw-p03a/ex-gwf-maw-p03.rcha",
 ]
-ex_gwf_maw_p03b = [
+ex-gwf-maw-p03b = [
     "ex-gwf-maw-p03b/ex-gwf-maw-p03.nam",
     "ex-gwf-maw-p03b/ex-gwf-maw-p03.oc",
     "ex-gwf-maw-p03b/ex-gwf-maw-p03.chd",
@@ -918,7 +918,7 @@ ex_gwf_maw_p03b = [
     "ex-gwf-maw-p03b/mfsim.nam",
     "ex-gwf-maw-p03b/ex-gwf-maw-p03.rcha",
 ]
-ex_gwf_maw_p03c = [
+ex-gwf-maw-p03c = [
     "ex-gwf-maw-p03c/ex-gwf-maw-p03.nam",
     "ex-gwf-maw-p03c/ex-gwf-maw-p03.oc",
     "ex-gwf-maw-p03c/ex-gwf-maw-p03.chd",
@@ -931,7 +931,7 @@ ex_gwf_maw_p03c = [
     "ex-gwf-maw-p03c/mfsim.nam",
     "ex-gwf-maw-p03c/ex-gwf-maw-p03.rcha",
 ]
-ex_gwf_nwt_p02a = [
+ex-gwf-nwt-p02a = [
     "ex-gwf-nwt-p02a/ex-gwf-nwt-p02.nam",
     "ex-gwf-nwt-p02a/ex-gwf-nwt-p02.tdis",
     "ex-gwf-nwt-p02a/ex-gwf-nwt-p02.sto",
@@ -944,7 +944,7 @@ ex_gwf_nwt_p02a = [
     "ex-gwf-nwt-p02a/mfsim.nam",
     "ex-gwf-nwt-p02a/ex-gwf-nwt-p02.ic",
 ]
-ex_gwf_nwt_p02b = [
+ex-gwf-nwt-p02b = [
     "ex-gwf-nwt-p02b/ex-gwf-nwt-p02.nam",
     "ex-gwf-nwt-p02b/ex-gwf-nwt-p02.tdis",
     "ex-gwf-nwt-p02b/ex-gwf-nwt-p02.sto",
@@ -957,7 +957,7 @@ ex_gwf_nwt_p02b = [
     "ex-gwf-nwt-p02b/mfsim.nam",
     "ex-gwf-nwt-p02b/ex-gwf-nwt-p02.ic",
 ]
-ex_gwf_nwt_p03a = [
+ex-gwf-nwt-p03a = [
     "ex-gwf-nwt-p03a/ex-gwf-nwt-p03.nam",
     "ex-gwf-nwt-p03a/ex-gwf-nwt-p03.tdis",
     "ex-gwf-nwt-p03a/ex-gwf-nwt-p03.chd",
@@ -969,7 +969,7 @@ ex_gwf_nwt_p03a = [
     "ex-gwf-nwt-p03a/mfsim.nam",
     "ex-gwf-nwt-p03a/ex-gwf-nwt-p03.ic",
 ]
-ex_gwf_nwt_p03b = [
+ex-gwf-nwt-p03b = [
     "ex-gwf-nwt-p03b/ex-gwf-nwt-p03.nam",
     "ex-gwf-nwt-p03b/ex-gwf-nwt-p03.tdis",
     "ex-gwf-nwt-p03b/ex-gwf-nwt-p03.chd",
@@ -981,7 +981,7 @@ ex_gwf_nwt_p03b = [
     "ex-gwf-nwt-p03b/mfsim.nam",
     "ex-gwf-nwt-p03b/ex-gwf-nwt-p03.ic",
 ]
-ex_gwf_rad_disu = [
+ex-gwf-rad-disu = [
     "ex-gwf-rad-disu/ex-gwf-rad-disu.npf",
     "ex-gwf-rad-disu/ex-gwf-rad-disu.wel",
     "ex-gwf-rad-disu/ex-gwf-rad-disu.ic",
@@ -994,7 +994,7 @@ ex_gwf_rad_disu = [
     "ex-gwf-rad-disu/ex-gwf-rad-disu.obs",
     "ex-gwf-rad-disu/ex-gwf-rad-disu.ims",
 ]
-ex_gwf_sagehen = [
+ex-gwf-sagehen = [
     "ex-gwf-sagehen/ex-gwf-sagehen.npf",
     "ex-gwf-sagehen/ex-gwf-sagehen.tdis",
     "ex-gwf-sagehen/ex-gwf-sagehen.ic",
@@ -1010,7 +1010,7 @@ ex_gwf_sagehen = [
     "ex-gwf-sagehen/ex-gwf-sagehen.drn",
     "ex-gwf-sagehen/ex-gwf-sagehen.ims",
 ]
-ex_gwf_sfr_p01 = [
+ex-gwf-sfr-p01 = [
     "ex-gwf-sfr-p01/ex-gwf-sfr-p01.ic",
     "ex-gwf-sfr-p01/ex-gwf-sfr-p01.npf",
     "ex-gwf-sfr-p01/ex-gwf-sfr-p01.wel",
@@ -1027,7 +1027,7 @@ ex_gwf_sfr_p01 = [
     "ex-gwf-sfr-p01/ex-gwf-sfr-p01.tdis",
     "ex-gwf-sfr-p01/ex-gwf-sfr-p01.ghb",
 ]
-ex_gwf_sfr_p01b = [
+ex-gwf-sfr-p01b = [
     "ex-gwf-sfr-p01b/ex-gwf-sfr-p01b.uzf",
     "ex-gwf-sfr-p01b/ex-gwf-sfr-p01b.ic",
     "ex-gwf-sfr-p01b/ex-gwf-sfr-p01b.wel",
@@ -1047,7 +1047,7 @@ ex_gwf_sfr_p01b = [
     "ex-gwf-sfr-p01b/ex-gwf-sfr-p01b.sfr.obs",
     "ex-gwf-sfr-p01b/ex-gwf-sfr-p01b.sto",
 ]
-ex_gwf_sfr_pindersauera = [
+ex-gwf-sfr-pindersauera = [
     "ex-gwf-sfr-pindersauera/ex-gwf-sfr-psa.npf",
     "ex-gwf-sfr-pindersauera/ex-gwf-sfr-psa.sfr.obs",
     "ex-gwf-sfr-pindersauera/ex-gwf-sfr-psa.oc",
@@ -1061,7 +1061,7 @@ ex_gwf_sfr_pindersauera = [
     "ex-gwf-sfr-pindersauera/ex-gwf-sfr-psa.sfr.ts",
     "ex-gwf-sfr-pindersauera/ex-gwf-sfr-psa.tdis",
 ]
-ex_gwf_sfr_pindersauerb = [
+ex-gwf-sfr-pindersauerb = [
     "ex-gwf-sfr-pindersauerb/ex-gwf-sfr-psb.ic",
     "ex-gwf-sfr-pindersauerb/ex-gwf-sfr-psb.tdis",
     "ex-gwf-sfr-pindersauerb/ex-gwf-sfr-psb.npf",
@@ -1075,7 +1075,7 @@ ex_gwf_sfr_pindersauerb = [
     "ex-gwf-sfr-pindersauerb/ex-gwf-sfr-psb.dis",
     "ex-gwf-sfr-pindersauerb/ex-gwf-sfr-psb.ims",
 ]
-ex_gwf_spbc = [
+ex-gwf-spbc = [
     "ex-gwf-spbc/ex-gwf-spbc.nam",
     "ex-gwf-spbc/ex-gwf-spbc.ic",
     "ex-gwf-spbc/ex-gwf-spbc.dis",
@@ -1087,7 +1087,7 @@ ex_gwf_spbc = [
     "ex-gwf-spbc/mfsim.nam",
     "ex-gwf-spbc/ex-gwf-spbc.oc",
 ]
-ex_gwf_toth = [
+ex-gwf-toth = [
     "ex-gwf-toth/toth.chd",
     "ex-gwf-toth/toth.dis",
     "ex-gwf-toth/toth.oc",
@@ -1098,7 +1098,7 @@ ex_gwf_toth = [
     "ex-gwf-toth/toth.npf",
     "ex-gwf-toth/ex-gwf-toth.tdis",
 ]
-ex_gwf_twri01 = [
+ex-gwf-twri01 = [
     "ex-gwf-twri01/ex-gwf-twri01.tdis",
     "ex-gwf-twri01/ex-gwf-twri01.npf",
     "ex-gwf-twri01/ex-gwf-twri01.ic",
@@ -1112,7 +1112,7 @@ ex_gwf_twri01 = [
     "ex-gwf-twri01/ex-gwf-twri01.oc",
     "ex-gwf-twri01/ex-gwf-twri01.nam",
 ]
-ex_gwf_u1disv = [
+ex-gwf-u1disv = [
     "ex-gwf-u1disv/ex-gwf-u1disv.disv",
     "ex-gwf-u1disv/ex-gwf-u1disv.npf",
     "ex-gwf-u1disv/ex-gwf-u1disv.ic",
@@ -1124,7 +1124,7 @@ ex_gwf_u1disv = [
     "ex-gwf-u1disv/ex-gwf-u1disv.right.chd",
     "ex-gwf-u1disv/ex-gwf-u1disv.oc",
 ]
-ex_gwf_u1disv_x = [
+ex-gwf-u1disv-x = [
     "ex-gwf-u1disv-x/ex-gwf-u1disv-x.ic",
     "ex-gwf-u1disv-x/ex-gwf-u1disv-x.ims",
     "ex-gwf-u1disv-x/ex-gwf-u1disv-x.disv",
@@ -1136,7 +1136,7 @@ ex_gwf_u1disv_x = [
     "ex-gwf-u1disv-x/ex-gwf-u1disv-x.left.chd",
     "ex-gwf-u1disv-x/ex-gwf-u1disv-x.tdis",
 ]
-ex_gwf_u1gwfgwf_s1 = [
+ex-gwf-u1gwfgwf-s1 = [
     "ex-gwf-u1gwfgwf-s1/inner.npf",
     "ex-gwf-u1gwfgwf-s1/outer.left.chd",
     "ex-gwf-u1gwfgwf-s1/outer.ic",
@@ -1154,7 +1154,7 @@ ex_gwf_u1gwfgwf_s1 = [
     "ex-gwf-u1gwfgwf-s1/ex-gwf-u1gwfgwf-s1.gwfgwf",
     "ex-gwf-u1gwfgwf-s1/inner.ic",
 ]
-ex_gwf_u1gwfgwf_s2 = [
+ex-gwf-u1gwfgwf-s2 = [
     "ex-gwf-u1gwfgwf-s2/inner.npf",
     "ex-gwf-u1gwfgwf-s2/outer.left.chd",
     "ex-gwf-u1gwfgwf-s2/ex-gwf-u1gwfgwf-s2.gwfgwf",
@@ -1172,7 +1172,7 @@ ex_gwf_u1gwfgwf_s2 = [
     "ex-gwf-u1gwfgwf-s2/inner.dis",
     "ex-gwf-u1gwfgwf-s2/inner.ic",
 ]
-ex_gwf_u1gwfgwf_s3 = [
+ex-gwf-u1gwfgwf-s3 = [
     "ex-gwf-u1gwfgwf-s3/inner.npf",
     "ex-gwf-u1gwfgwf-s3/outer.left.chd",
     "ex-gwf-u1gwfgwf-s3/ex-gwf-u1gwfgwf-s3.tdis",
@@ -1190,7 +1190,7 @@ ex_gwf_u1gwfgwf_s3 = [
     "ex-gwf-u1gwfgwf-s3/inner.dis",
     "ex-gwf-u1gwfgwf-s3/inner.ic",
 ]
-ex_gwf_u1gwfgwf_s4 = [
+ex-gwf-u1gwfgwf-s4 = [
     "ex-gwf-u1gwfgwf-s4/ex-gwf-u1gwfgwf-s4.gwfgwf",
     "ex-gwf-u1gwfgwf-s4/inner.npf",
     "ex-gwf-u1gwfgwf-s4/outer.left.chd",
@@ -1208,7 +1208,7 @@ ex_gwf_u1gwfgwf_s4 = [
     "ex-gwf-u1gwfgwf-s4/inner.dis",
     "ex-gwf-u1gwfgwf-s4/inner.ic",
 ]
-ex_gwf_whirl = [
+ex-gwf-whirl = [
     "ex-gwf-whirl/ex-gwf-whirl.oc",
     "ex-gwf-whirl/ex-gwf-whirl.dis",
     "ex-gwf-whirl/ex-gwf-whirl.ims",
@@ -1219,7 +1219,7 @@ ex_gwf_whirl = [
     "ex-gwf-whirl/ex-gwf-whirl.tdis",
     "ex-gwf-whirl/ex-gwf-whirl.wel",
 ]
-ex_gwf_zaidel = [
+ex-gwf-zaidel = [
     "ex-gwf-zaidel/ex-gwf-zaidel.dis",
     "ex-gwf-zaidel/ex-gwf-zaidel.chd",
     "ex-gwf-zaidel/ex-gwf-zaidel.oc",
@@ -1230,7 +1230,7 @@ ex_gwf_zaidel = [
     "ex-gwf-zaidel/ex-gwf-zaidel.npf",
     "ex-gwf-zaidel/ex-gwf-zaidel.tdis",
 ]
-ex_gwt_gwtgwt_p10 = [
+ex-gwt-gwtgwt-p10 = [
     "ex-gwt-gwtgwt-p10/gwfsolver.ims",
     "ex-gwt-gwtgwt-p10/ex-gwt-gwtgwt-p10.tdis",
     "ex-gwt-gwtgwt-p10/gwf-inner.wel",
@@ -1272,7 +1272,7 @@ ex_gwt_gwtgwt_p10 = [
     "ex-gwt-gwtgwt-p10/gwf-outer.sto",
     "ex-gwt-gwtgwt-p10/gwt-inner.nam",
 ]
-ex_gwt_hecht_mendez_b_mf6gwf = [
+"ex-gwt-hecht-mendez-b/mf6gwf" = [
     "ex-gwt-hecht-mendez-b/mf6gwf/gwf-hecht-mendez.npf",
     "ex-gwt-hecht-mendez-b/mf6gwf/gwf-hecht-mendez.tdis",
     "ex-gwt-hecht-mendez-b/mf6gwf/gwf-hecht-mendez.oc",
@@ -1284,7 +1284,7 @@ ex_gwt_hecht_mendez_b_mf6gwf = [
     "ex-gwt-hecht-mendez-b/mf6gwf/gwf-hecht-mendez.ims",
     "ex-gwt-hecht-mendez-b/mf6gwf/gwf-hecht-mendez.chd",
 ]
-ex_gwt_hecht_mendez_b_mf6gwt = [
+"ex-gwt-hecht-mendez-b/mf6gwt" = [
     "ex-gwt-hecht-mendez-b/mf6gwt/gwt-hecht-mendez.nam",
     "ex-gwt-hecht-mendez-b/mf6gwt/gwt-hecht-mendez.src",
     "ex-gwt-hecht-mendez-b/mf6gwt/gwt-hecht-mendez.dsp",
@@ -1299,7 +1299,7 @@ ex_gwt_hecht_mendez_b_mf6gwt = [
     "ex-gwt-hecht-mendez-b/mf6gwt/gwt-hecht-mendez.ic",
     "ex-gwt-hecht-mendez-b/mf6gwt/gwt-hecht-mendez.mst",
 ]
-ex_gwt_hecht_mendez_c_mf6gwf = [
+"ex-gwt-hecht-mendez-c/mf6gwf" = [
     "ex-gwt-hecht-mendez-c/mf6gwf/gwf-hecht-mendez.npf",
     "ex-gwt-hecht-mendez-c/mf6gwf/gwf-hecht-mendez.tdis",
     "ex-gwt-hecht-mendez-c/mf6gwf/gwf-hecht-mendez.oc",
@@ -1311,7 +1311,7 @@ ex_gwt_hecht_mendez_c_mf6gwf = [
     "ex-gwt-hecht-mendez-c/mf6gwf/gwf-hecht-mendez.ims",
     "ex-gwt-hecht-mendez-c/mf6gwf/gwf-hecht-mendez.chd",
 ]
-ex_gwt_hecht_mendez_c_mf6gwt = [
+"ex-gwt-hecht-mendez-c/mf6gwt" = [
     "ex-gwt-hecht-mendez-c/mf6gwt/gwt-hecht-mendez.nam",
     "ex-gwt-hecht-mendez-c/mf6gwt/gwt-hecht-mendez.src",
     "ex-gwt-hecht-mendez-c/mf6gwt/gwt-hecht-mendez.dsp",
@@ -1326,7 +1326,7 @@ ex_gwt_hecht_mendez_c_mf6gwt = [
     "ex-gwt-hecht-mendez-c/mf6gwt/gwt-hecht-mendez.ic",
     "ex-gwt-hecht-mendez-c/mf6gwt/gwt-hecht-mendez.mst",
 ]
-ex_gwt_henry_a = [
+ex-gwt-henry-a = [
     "ex-gwt-henry-a/flow.ims",
     "ex-gwt-henry-a/trans.nam",
     "ex-gwt-henry-a/flow.ghb",
@@ -1349,7 +1349,7 @@ ex_gwt_henry_a = [
     "ex-gwt-henry-a/trans.mst",
     "ex-gwt-henry-a/trans.oc",
 ]
-ex_gwt_henry_b = [
+ex-gwt-henry-b = [
     "ex-gwt-henry-b/flow.ims",
     "ex-gwt-henry-b/trans.nam",
     "ex-gwt-henry-b/flow.ghb",
@@ -1372,7 +1372,7 @@ ex_gwt_henry_b = [
     "ex-gwt-henry-b/trans.mst",
     "ex-gwt-henry-b/trans.oc",
 ]
-ex_gwt_keating_mf6gwf = [
+"ex-gwt-keating/mf6gwf" = [
     "ex-gwt-keating/mf6gwf/flow.ims",
     "ex-gwt-keating/mf6gwf/flow.rch",
     "ex-gwt-keating/mf6gwf/flow.chd",
@@ -1384,7 +1384,7 @@ ex_gwt_keating_mf6gwf = [
     "ex-gwt-keating/mf6gwf/mfsim.nam",
     "ex-gwt-keating/mf6gwf/flow.npf",
 ]
-ex_gwt_keating_mf6gwt = [
+"ex-gwt-keating/mf6gwt" = [
     "ex-gwt-keating/mf6gwt/trans.nam",
     "ex-gwt-keating/mf6gwt/trans.dsp",
     "ex-gwt-keating/mf6gwt/trans.ims",
@@ -1399,7 +1399,7 @@ ex_gwt_keating_mf6gwt = [
     "ex-gwt-keating/mf6gwt/trans.mst",
     "ex-gwt-keating/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p01a_mf6gwf = [
+"ex-gwt-moc3d-p01a/mf6gwf" = [
     "ex-gwt-moc3d-p01a/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p01a/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p01a/mf6gwf/flow.dis",
@@ -1411,7 +1411,7 @@ ex_gwt_moc3d_p01a_mf6gwf = [
     "ex-gwt-moc3d-p01a/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p01a/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p01a_mf6gwt = [
+"ex-gwt-moc3d-p01a/mf6gwt" = [
     "ex-gwt-moc3d-p01a/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p01a/mf6gwt/trans.dsp",
     "ex-gwt-moc3d-p01a/mf6gwt/trans.ims",
@@ -1426,7 +1426,7 @@ ex_gwt_moc3d_p01a_mf6gwt = [
     "ex-gwt-moc3d-p01a/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p01a/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p01b_mf6gwf = [
+"ex-gwt-moc3d-p01b/mf6gwf" = [
     "ex-gwt-moc3d-p01b/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p01b/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p01b/mf6gwf/flow.dis",
@@ -1438,7 +1438,7 @@ ex_gwt_moc3d_p01b_mf6gwf = [
     "ex-gwt-moc3d-p01b/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p01b/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p01b_mf6gwt = [
+"ex-gwt-moc3d-p01b/mf6gwt" = [
     "ex-gwt-moc3d-p01b/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p01b/mf6gwt/trans.dsp",
     "ex-gwt-moc3d-p01b/mf6gwt/trans.ims",
@@ -1453,7 +1453,7 @@ ex_gwt_moc3d_p01b_mf6gwt = [
     "ex-gwt-moc3d-p01b/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p01b/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p01c_mf6gwf = [
+"ex-gwt-moc3d-p01c/mf6gwf" = [
     "ex-gwt-moc3d-p01c/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p01c/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p01c/mf6gwf/flow.dis",
@@ -1465,7 +1465,7 @@ ex_gwt_moc3d_p01c_mf6gwf = [
     "ex-gwt-moc3d-p01c/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p01c/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p01c_mf6gwt = [
+"ex-gwt-moc3d-p01c/mf6gwt" = [
     "ex-gwt-moc3d-p01c/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p01c/mf6gwt/trans.dsp",
     "ex-gwt-moc3d-p01c/mf6gwt/trans.ims",
@@ -1480,7 +1480,7 @@ ex_gwt_moc3d_p01c_mf6gwt = [
     "ex-gwt-moc3d-p01c/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p01c/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p01d_mf6gwf = [
+"ex-gwt-moc3d-p01d/mf6gwf" = [
     "ex-gwt-moc3d-p01d/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p01d/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p01d/mf6gwf/flow.dis",
@@ -1492,7 +1492,7 @@ ex_gwt_moc3d_p01d_mf6gwf = [
     "ex-gwt-moc3d-p01d/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p01d/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p01d_mf6gwt = [
+"ex-gwt-moc3d-p01d/mf6gwt" = [
     "ex-gwt-moc3d-p01d/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p01d/mf6gwt/trans.dsp",
     "ex-gwt-moc3d-p01d/mf6gwt/trans.ims",
@@ -1507,7 +1507,7 @@ ex_gwt_moc3d_p01d_mf6gwt = [
     "ex-gwt-moc3d-p01d/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p01d/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p02_mf6gwf = [
+"ex-gwt-moc3d-p02/mf6gwf" = [
     "ex-gwt-moc3d-p02/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p02/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p02/mf6gwf/flow.dis",
@@ -1519,7 +1519,7 @@ ex_gwt_moc3d_p02_mf6gwf = [
     "ex-gwt-moc3d-p02/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p02/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p02_mf6gwt = [
+"ex-gwt-moc3d-p02/mf6gwt" = [
     "ex-gwt-moc3d-p02/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p02/mf6gwt/trans.src",
     "ex-gwt-moc3d-p02/mf6gwt/trans.dsp",
@@ -1535,7 +1535,7 @@ ex_gwt_moc3d_p02_mf6gwt = [
     "ex-gwt-moc3d-p02/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p02/mf6gwt/trans.oc",
 ]
-ex_gwt_moc3d_p02tg_mf6gwf = [
+"ex-gwt-moc3d-p02tg/mf6gwf" = [
     "ex-gwt-moc3d-p02tg/mf6gwf/flow.ims",
     "ex-gwt-moc3d-p02tg/mf6gwf/flow.chd",
     "ex-gwt-moc3d-p02tg/mf6gwf/flow.oc",
@@ -1547,7 +1547,7 @@ ex_gwt_moc3d_p02tg_mf6gwf = [
     "ex-gwt-moc3d-p02tg/mf6gwf/flow.wel",
     "ex-gwt-moc3d-p02tg/mf6gwf/flow.npf",
 ]
-ex_gwt_moc3d_p02tg_mf6gwt = [
+"ex-gwt-moc3d-p02tg/mf6gwt" = [
     "ex-gwt-moc3d-p02tg/mf6gwt/trans.nam",
     "ex-gwt-moc3d-p02tg/mf6gwt/trans.src",
     "ex-gwt-moc3d-p02tg/mf6gwt/trans.dsp",
@@ -1563,7 +1563,7 @@ ex_gwt_moc3d_p02tg_mf6gwt = [
     "ex-gwt-moc3d-p02tg/mf6gwt/trans.mst",
     "ex-gwt-moc3d-p02tg/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p01a = [
+ex-gwt-mt3dms-p01a = [
     "ex-gwt-mt3dms-p01a/gwt-p01-mf6.ssm",
     "ex-gwt-mt3dms-p01a/gwf-p01-mf6.ims",
     "ex-gwt-mt3dms-p01a/ex-gwt-mt3dms-p01a.tdis",
@@ -1584,7 +1584,7 @@ ex_gwt_mt3dms_p01a = [
     "ex-gwt-mt3dms-p01a/gwf-p01-mf6.npf",
     "ex-gwt-mt3dms-p01a/gwf-p01-mf6.oc",
 ]
-ex_gwt_mt3dms_p01b = [
+ex-gwt-mt3dms-p01b = [
     "ex-gwt-mt3dms-p01b/gwt-p01-mf6.ssm",
     "ex-gwt-mt3dms-p01b/gwf-p01-mf6.ims",
     "ex-gwt-mt3dms-p01b/gwf-p01-mf6.chd",
@@ -1606,7 +1606,7 @@ ex_gwt_mt3dms_p01b = [
     "ex-gwt-mt3dms-p01b/ex-gwt-mt3dms-p01b.tdis",
     "ex-gwt-mt3dms-p01b/gwf-p01-mf6.oc",
 ]
-ex_gwt_mt3dms_p01c = [
+ex-gwt-mt3dms-p01c = [
     "ex-gwt-mt3dms-p01c/gwt-p01-mf6.ssm",
     "ex-gwt-mt3dms-p01c/gwf-p01-mf6.ims",
     "ex-gwt-mt3dms-p01c/gwf-p01-mf6.chd",
@@ -1628,7 +1628,7 @@ ex_gwt_mt3dms_p01c = [
     "ex-gwt-mt3dms-p01c/gwf-p01-mf6.npf",
     "ex-gwt-mt3dms-p01c/gwf-p01-mf6.oc",
 ]
-ex_gwt_mt3dms_p01d = [
+ex-gwt-mt3dms-p01d = [
     "ex-gwt-mt3dms-p01d/gwt-p01-mf6.ssm",
     "ex-gwt-mt3dms-p01d/gwf-p01-mf6.ims",
     "ex-gwt-mt3dms-p01d/gwf-p01-mf6.chd",
@@ -1650,7 +1650,7 @@ ex_gwt_mt3dms_p01d = [
     "ex-gwt-mt3dms-p01d/gwf-p01-mf6.npf",
     "ex-gwt-mt3dms-p01d/gwf-p01-mf6.oc",
 ]
-ex_gwt_mt3dms_p02a_mf6gwf = [
+"ex-gwt-mt3dms-p02a/mf6gwf" = [
     "ex-gwt-mt3dms-p02a/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02a/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02a/mf6gwf/flow.dis",
@@ -1662,7 +1662,7 @@ ex_gwt_mt3dms_p02a_mf6gwf = [
     "ex-gwt-mt3dms-p02a/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02a/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02a_mf6gwt = [
+"ex-gwt-mt3dms-p02a/mf6gwt" = [
     "ex-gwt-mt3dms-p02a/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02a/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02a/mf6gwt/trans.ims",
@@ -1677,7 +1677,7 @@ ex_gwt_mt3dms_p02a_mf6gwt = [
     "ex-gwt-mt3dms-p02a/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02a/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p02b_mf6gwf = [
+"ex-gwt-mt3dms-p02b/mf6gwf" = [
     "ex-gwt-mt3dms-p02b/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02b/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02b/mf6gwf/flow.dis",
@@ -1689,7 +1689,7 @@ ex_gwt_mt3dms_p02b_mf6gwf = [
     "ex-gwt-mt3dms-p02b/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02b/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02b_mf6gwt = [
+"ex-gwt-mt3dms-p02b/mf6gwt" = [
     "ex-gwt-mt3dms-p02b/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02b/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02b/mf6gwt/trans.ims",
@@ -1704,7 +1704,7 @@ ex_gwt_mt3dms_p02b_mf6gwt = [
     "ex-gwt-mt3dms-p02b/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02b/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p02c_mf6gwf = [
+"ex-gwt-mt3dms-p02c/mf6gwf" = [
     "ex-gwt-mt3dms-p02c/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02c/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02c/mf6gwf/flow.dis",
@@ -1716,7 +1716,7 @@ ex_gwt_mt3dms_p02c_mf6gwf = [
     "ex-gwt-mt3dms-p02c/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02c/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02c_mf6gwt = [
+"ex-gwt-mt3dms-p02c/mf6gwt" = [
     "ex-gwt-mt3dms-p02c/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02c/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02c/mf6gwt/trans.ims",
@@ -1731,7 +1731,7 @@ ex_gwt_mt3dms_p02c_mf6gwt = [
     "ex-gwt-mt3dms-p02c/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02c/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p02d_mf6gwf = [
+"ex-gwt-mt3dms-p02d/mf6gwf" = [
     "ex-gwt-mt3dms-p02d/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02d/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02d/mf6gwf/flow.dis",
@@ -1743,7 +1743,7 @@ ex_gwt_mt3dms_p02d_mf6gwf = [
     "ex-gwt-mt3dms-p02d/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02d/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02d_mf6gwt = [
+"ex-gwt-mt3dms-p02d/mf6gwt" = [
     "ex-gwt-mt3dms-p02d/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02d/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02d/mf6gwt/trans.ims",
@@ -1759,7 +1759,7 @@ ex_gwt_mt3dms_p02d_mf6gwt = [
     "ex-gwt-mt3dms-p02d/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02d/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p02e_mf6gwf = [
+"ex-gwt-mt3dms-p02e/mf6gwf" = [
     "ex-gwt-mt3dms-p02e/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02e/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02e/mf6gwf/flow.dis",
@@ -1771,7 +1771,7 @@ ex_gwt_mt3dms_p02e_mf6gwf = [
     "ex-gwt-mt3dms-p02e/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02e/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02e_mf6gwt = [
+"ex-gwt-mt3dms-p02e/mf6gwt" = [
     "ex-gwt-mt3dms-p02e/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02e/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02e/mf6gwt/trans.ims",
@@ -1787,7 +1787,7 @@ ex_gwt_mt3dms_p02e_mf6gwt = [
     "ex-gwt-mt3dms-p02e/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02e/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p02f_mf6gwf = [
+"ex-gwt-mt3dms-p02f/mf6gwf" = [
     "ex-gwt-mt3dms-p02f/mf6gwf/flow.ims",
     "ex-gwt-mt3dms-p02f/mf6gwf/flow.chd",
     "ex-gwt-mt3dms-p02f/mf6gwf/flow.dis",
@@ -1799,7 +1799,7 @@ ex_gwt_mt3dms_p02f_mf6gwf = [
     "ex-gwt-mt3dms-p02f/mf6gwf/flow.wel",
     "ex-gwt-mt3dms-p02f/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dms_p02f_mf6gwt = [
+"ex-gwt-mt3dms-p02f/mf6gwt" = [
     "ex-gwt-mt3dms-p02f/mf6gwt/trans.nam",
     "ex-gwt-mt3dms-p02f/mf6gwt/trans.dsp",
     "ex-gwt-mt3dms-p02f/mf6gwt/trans.ims",
@@ -1815,7 +1815,7 @@ ex_gwt_mt3dms_p02f_mf6gwt = [
     "ex-gwt-mt3dms-p02f/mf6gwt/trans.mst",
     "ex-gwt-mt3dms-p02f/mf6gwt/trans.oc",
 ]
-ex_gwt_mt3dms_p03 = [
+ex-gwt-mt3dms-p03 = [
     "ex-gwt-mt3dms-p03/ex-gwt-mt3dms-p03.tdis",
     "ex-gwt-mt3dms-p03/gwf-p03-mf6.sto",
     "ex-gwt-mt3dms-p03/gwt_p03-mf6.ims",
@@ -1839,7 +1839,7 @@ ex_gwt_mt3dms_p03 = [
     "ex-gwt-mt3dms-p03/gwt_p03-mf6.ic",
     "ex-gwt-mt3dms-p03/p03-mf6.gwfgwt",
 ]
-ex_gwt_mt3dms_p04a = [
+ex-gwt-mt3dms-p04a = [
     "ex-gwt-mt3dms-p04a/gwf-p04-mf6.oc",
     "ex-gwt-mt3dms-p04a/gwf-p04-mf6.npf",
     "ex-gwt-mt3dms-p04a/gwt_p04-mf6.ssm",
@@ -1862,7 +1862,7 @@ ex_gwt_mt3dms_p04a = [
     "ex-gwt-mt3dms-p04a/gwt_p04-mf6.dsp",
     "ex-gwt-mt3dms-p04a/gwf-p04-mf6.ims",
 ]
-ex_gwt_mt3dms_p04b = [
+ex-gwt-mt3dms-p04b = [
     "ex-gwt-mt3dms-p04b/gwf-p04-mf6.oc",
     "ex-gwt-mt3dms-p04b/gwf-p04-mf6.npf",
     "ex-gwt-mt3dms-p04b/gwt_p04-mf6.ssm",
@@ -1885,7 +1885,7 @@ ex_gwt_mt3dms_p04b = [
     "ex-gwt-mt3dms-p04b/gwt_p04-mf6.dsp",
     "ex-gwt-mt3dms-p04b/gwf-p04-mf6.ims",
 ]
-ex_gwt_mt3dms_p04c = [
+ex-gwt-mt3dms-p04c = [
     "ex-gwt-mt3dms-p04c/gwf-p04-mf6.oc",
     "ex-gwt-mt3dms-p04c/gwf-p04-mf6.npf",
     "ex-gwt-mt3dms-p04c/gwt_p04-mf6.ssm",
@@ -1908,7 +1908,7 @@ ex_gwt_mt3dms_p04c = [
     "ex-gwt-mt3dms-p04c/gwt_p04-mf6.dsp",
     "ex-gwt-mt3dms-p04c/gwf-p04-mf6.ims",
 ]
-ex_gwt_mt3dms_p05 = [
+ex-gwt-mt3dms-p05 = [
     "ex-gwt-mt3dms-p05/gwt_p05-mf6.mst",
     "ex-gwt-mt3dms-p05/gwf-p05-mf6.ic",
     "ex-gwt-mt3dms-p05/gwf-p05-mf6.wel",
@@ -1932,7 +1932,7 @@ ex_gwt_mt3dms_p05 = [
     "ex-gwt-mt3dms-p05/gwt_p05-mf6.nam",
     "ex-gwt-mt3dms-p05/gwf-p05-mf6.dis",
 ]
-ex_gwt_mt3dms_p06 = [
+ex-gwt-mt3dms-p06 = [
     "ex-gwt-mt3dms-p06/gwt_p06-mf6.ic",
     "ex-gwt-mt3dms-p06/gwf-p06-mf6.oc",
     "ex-gwt-mt3dms-p06/gwf-p06-mf6.wel",
@@ -1956,7 +1956,7 @@ ex_gwt_mt3dms_p06 = [
     "ex-gwt-mt3dms-p06/gwt_p06-mf6.obs",
     "ex-gwt-mt3dms-p06/gwf-p06-mf6.sto",
 ]
-ex_gwt_mt3dms_p07 = [
+ex-gwt-mt3dms-p07 = [
     "ex-gwt-mt3dms-p07/gwt-p07-mf6.dis",
     "ex-gwt-mt3dms-p07/gwt-p07-mf6.oc",
     "ex-gwt-mt3dms-p07/gwt-p07-mf6.ims",
@@ -1978,7 +1978,7 @@ ex_gwt_mt3dms_p07 = [
     "ex-gwt-mt3dms-p07/mfsim.nam",
     "ex-gwt-mt3dms-p07/gwf-p07-mf6.nam",
 ]
-ex_gwt_mt3dms_p08 = [
+ex-gwt-mt3dms-p08 = [
     "ex-gwt-mt3dms-p08/gwt_p08_mf6.ims",
     "ex-gwt-mt3dms-p08/gwt_p08_mf6.oc",
     "ex-gwt-mt3dms-p08/gwt_p08_mf6.adv",
@@ -2002,7 +2002,7 @@ ex_gwt_mt3dms_p08 = [
     "ex-gwt-mt3dms-p08/gwf_p08_mf6.nam",
     "ex-gwt-mt3dms-p08/gwf_p08_mf6.sto",
 ]
-ex_gwt_mt3dms_p09 = [
+ex-gwt-mt3dms-p09 = [
     "ex-gwt-mt3dms-p09/gwt-p09-mf6.mst",
     "ex-gwt-mt3dms-p09/gwf-p09-mf6.ic",
     "ex-gwt-mt3dms-p09/gwf-p09-mf6.dis",
@@ -2025,7 +2025,7 @@ ex_gwt_mt3dms_p09 = [
     "ex-gwt-mt3dms-p09/gwt-p09-mf6.nam",
     "ex-gwt-mt3dms-p09/gwf-p09-mf6.wel",
 ]
-ex_gwt_mt3dms_p10 = [
+ex-gwt-mt3dms-p10 = [
     "ex-gwt-mt3dms-p10/gwt-p10-mf6.mst",
     "ex-gwt-mt3dms-p10/gwf-p10-mf6.dis",
     "ex-gwt-mt3dms-p10/gwf-p10-mf6.rch",
@@ -2049,7 +2049,7 @@ ex_gwt_mt3dms_p10 = [
     "ex-gwt-mt3dms-p10/gwf-p10-mf6.wel",
     "ex-gwt-mt3dms-p10/gwt-p10-mf6.nam",
 ]
-ex_gwt_mt3dsupp631_mf6gwf = [
+"ex-gwt-mt3dsupp631/mf6gwf" = [
     "ex-gwt-mt3dsupp631/mf6gwf/flow.ims",
     "ex-gwt-mt3dsupp631/mf6gwf/flow.chd",
     "ex-gwt-mt3dsupp631/mf6gwf/flow.dis",
@@ -2061,7 +2061,7 @@ ex_gwt_mt3dsupp631_mf6gwf = [
     "ex-gwt-mt3dsupp631/mf6gwf/flow.wel",
     "ex-gwt-mt3dsupp631/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dsupp631_mf6gwt = [
+"ex-gwt-mt3dsupp631/mf6gwt" = [
     "ex-gwt-mt3dsupp631/mf6gwt/trans.nam",
     "ex-gwt-mt3dsupp631/mf6gwt/trans.dsp",
     "ex-gwt-mt3dsupp631/mf6gwt/trans.ims",
@@ -2075,7 +2075,7 @@ ex_gwt_mt3dsupp631_mf6gwt = [
     "ex-gwt-mt3dsupp631/mf6gwt/trans.tdis",
     "ex-gwt-mt3dsupp631/mf6gwt/trans.mst",
 ]
-ex_gwt_mt3dsupp632a_mf6gwf = [
+"ex-gwt-mt3dsupp632a/mf6gwf" = [
     "ex-gwt-mt3dsupp632a/mf6gwf/flow.ims",
     "ex-gwt-mt3dsupp632a/mf6gwf/flow.chd",
     "ex-gwt-mt3dsupp632a/mf6gwf/flow.dis",
@@ -2087,7 +2087,7 @@ ex_gwt_mt3dsupp632a_mf6gwf = [
     "ex-gwt-mt3dsupp632a/mf6gwf/flow.wel",
     "ex-gwt-mt3dsupp632a/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dsupp632a_mf6gwt = [
+"ex-gwt-mt3dsupp632a/mf6gwt" = [
     "ex-gwt-mt3dsupp632a/mf6gwt/trans.nam",
     "ex-gwt-mt3dsupp632a/mf6gwt/trans.dsp",
     "ex-gwt-mt3dsupp632a/mf6gwt/trans.ims",
@@ -2103,7 +2103,7 @@ ex_gwt_mt3dsupp632a_mf6gwt = [
     "ex-gwt-mt3dsupp632a/mf6gwt/trans.tdis",
     "ex-gwt-mt3dsupp632a/mf6gwt/trans.mst",
 ]
-ex_gwt_mt3dsupp632b_mf6gwf = [
+"ex-gwt-mt3dsupp632b/mf6gwf" = [
     "ex-gwt-mt3dsupp632b/mf6gwf/flow.ims",
     "ex-gwt-mt3dsupp632b/mf6gwf/flow.chd",
     "ex-gwt-mt3dsupp632b/mf6gwf/flow.dis",
@@ -2115,7 +2115,7 @@ ex_gwt_mt3dsupp632b_mf6gwf = [
     "ex-gwt-mt3dsupp632b/mf6gwf/flow.wel",
     "ex-gwt-mt3dsupp632b/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dsupp632b_mf6gwt = [
+"ex-gwt-mt3dsupp632b/mf6gwt" = [
     "ex-gwt-mt3dsupp632b/mf6gwt/trans.nam",
     "ex-gwt-mt3dsupp632b/mf6gwt/trans.dsp",
     "ex-gwt-mt3dsupp632b/mf6gwt/trans.ims",
@@ -2131,7 +2131,7 @@ ex_gwt_mt3dsupp632b_mf6gwt = [
     "ex-gwt-mt3dsupp632b/mf6gwt/trans.tdis",
     "ex-gwt-mt3dsupp632b/mf6gwt/trans.mst",
 ]
-ex_gwt_mt3dsupp632c_mf6gwf = [
+"ex-gwt-mt3dsupp632c/mf6gwf" = [
     "ex-gwt-mt3dsupp632c/mf6gwf/flow.ims",
     "ex-gwt-mt3dsupp632c/mf6gwf/flow.chd",
     "ex-gwt-mt3dsupp632c/mf6gwf/flow.dis",
@@ -2143,7 +2143,7 @@ ex_gwt_mt3dsupp632c_mf6gwf = [
     "ex-gwt-mt3dsupp632c/mf6gwf/flow.wel",
     "ex-gwt-mt3dsupp632c/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dsupp632c_mf6gwt = [
+"ex-gwt-mt3dsupp632c/mf6gwt" = [
     "ex-gwt-mt3dsupp632c/mf6gwt/trans.nam",
     "ex-gwt-mt3dsupp632c/mf6gwt/trans.dsp",
     "ex-gwt-mt3dsupp632c/mf6gwt/trans.ims",
@@ -2159,7 +2159,7 @@ ex_gwt_mt3dsupp632c_mf6gwt = [
     "ex-gwt-mt3dsupp632c/mf6gwt/trans.tdis",
     "ex-gwt-mt3dsupp632c/mf6gwt/trans.mst",
 ]
-ex_gwt_mt3dsupp82_mf6gwf = [
+"ex-gwt-mt3dsupp82/mf6gwf" = [
     "ex-gwt-mt3dsupp82/mf6gwf/flow.ims",
     "ex-gwt-mt3dsupp82/mf6gwf/flow.maw",
     "ex-gwt-mt3dsupp82/mf6gwf/flow.chd",
@@ -2172,7 +2172,7 @@ ex_gwt_mt3dsupp82_mf6gwf = [
     "ex-gwt-mt3dsupp82/mf6gwf/mfsim.nam",
     "ex-gwt-mt3dsupp82/mf6gwf/flow.npf",
 ]
-ex_gwt_mt3dsupp82_mf6gwt = [
+"ex-gwt-mt3dsupp82/mf6gwt" = [
     "ex-gwt-mt3dsupp82/mf6gwt/trans.nam",
     "ex-gwt-mt3dsupp82/mf6gwt/trans.dsp",
     "ex-gwt-mt3dsupp82/mf6gwt/trans.ims",
@@ -2188,7 +2188,7 @@ ex_gwt_mt3dsupp82_mf6gwt = [
     "ex-gwt-mt3dsupp82/mf6gwt/trans.mst",
     "ex-gwt-mt3dsupp82/mf6gwt/trans.oc",
 ]
-ex_gwt_prudic2004t2_mf6gwf = [
+"ex-gwt-prudic2004t2/mf6gwf" = [
     "ex-gwt-prudic2004t2/mf6gwf/flow.ims",
     "ex-gwt-prudic2004t2/mf6gwf/flow.chd",
     "ex-gwt-prudic2004t2/mf6gwf/flow.dis",
@@ -2204,7 +2204,7 @@ ex_gwt_prudic2004t2_mf6gwf = [
     "ex-gwt-prudic2004t2/mf6gwf/flow.lak",
     "ex-gwt-prudic2004t2/mf6gwf/flow.npf",
 ]
-ex_gwt_prudic2004t2_mf6gwt = [
+"ex-gwt-prudic2004t2/mf6gwt" = [
     "ex-gwt-prudic2004t2/mf6gwt/trans.lkt",
     "ex-gwt-prudic2004t2/mf6gwt/trans.sft",
     "ex-gwt-prudic2004t2/mf6gwt/trans.nam",
@@ -2224,7 +2224,7 @@ ex_gwt_prudic2004t2_mf6gwt = [
     "ex-gwt-prudic2004t2/mf6gwt/trans.mst",
     "ex-gwt-prudic2004t2/mf6gwt/trans.oc",
 ]
-ex_gwt_rotate = [
+ex-gwt-rotate = [
     "ex-gwt-rotate/flow.ims",
     "ex-gwt-rotate/trans.nam",
     "ex-gwt-rotate/flow.dis",
@@ -2243,7 +2243,7 @@ ex_gwt_rotate = [
     "ex-gwt-rotate/trans.mst",
     "ex-gwt-rotate/trans.oc",
 ]
-ex_gwt_saltlake = [
+ex-gwt-saltlake = [
     "ex-gwt-saltlake/flow.ims",
     "ex-gwt-saltlake/flow.rch",
     "ex-gwt-saltlake/flow.chd",
@@ -2268,7 +2268,7 @@ ex_gwt_saltlake = [
     "ex-gwt-saltlake/trans.mst",
     "ex-gwt-saltlake/trans.oc",
 ]
-ex_gwt_stallman = [
+ex-gwt-stallman = [
     "ex-gwt-stallman/flow.ims",
     "ex-gwt-stallman/flow.chd",
     "ex-gwt-stallman/trans.nam",
@@ -2290,7 +2290,7 @@ ex_gwt_stallman = [
     "ex-gwt-stallman/trans.mst",
     "ex-gwt-stallman/trans.oc",
 ]
-ex_gwt_synthetic_valley_mf6gwf = [
+"ex-gwt-synthetic-valley/mf6gwf" = [
     "ex-gwt-synthetic-valley/mf6gwf/flow.ims",
     "ex-gwt-synthetic-valley/mf6gwf/flow.evta",
     "ex-gwt-synthetic-valley/mf6gwf/flow.drn",
@@ -2306,7 +2306,7 @@ ex_gwt_synthetic_valley_mf6gwf = [
     "ex-gwt-synthetic-valley/mf6gwf/flow.wel",
     "ex-gwt-synthetic-valley/mf6gwf/flow.npf",
 ]
-ex_gwt_synthetic_valley_mf6gwt = [
+"ex-gwt-synthetic-valley/mf6gwt" = [
     "ex-gwt-synthetic-valley/mf6gwt/trans.nam",
     "ex-gwt-synthetic-valley/mf6gwt/trans.dsp",
     "ex-gwt-synthetic-valley/mf6gwt/trans.ims",
@@ -2320,7 +2320,7 @@ ex_gwt_synthetic_valley_mf6gwt = [
     "ex-gwt-synthetic-valley/mf6gwt/trans.mst",
     "ex-gwt-synthetic-valley/mf6gwt/trans.oc",
 ]
-ex_gwt_uzt_2d_a = [
+ex-gwt-uzt-2d-a = [
     "ex-gwt-uzt-2d-a/gwf-uzt-2d-mf6.ims",
     "ex-gwt-uzt-2d-a/gwf-uzt-2d-mf6.chd",
     "ex-gwt-uzt-2d-a/uzt-2d-mf6.gwfgwt",
@@ -2344,7 +2344,7 @@ ex_gwt_uzt_2d_a = [
     "ex-gwt-uzt-2d-a/gwf-uzt-2d-mf6.npf",
     "ex-gwt-uzt-2d-a/gwt-uzt-2d-mf6.dis",
 ]
-ex_gwt_uzt_2d_b = [
+ex-gwt-uzt-2d-b = [
     "ex-gwt-uzt-2d-b/gwf-uzt-2d-mf6.ims",
     "ex-gwt-uzt-2d-b/gwf-uzt-2d-mf6.chd",
     "ex-gwt-uzt-2d-b/uzt-2d-mf6.gwfgwt",
@@ -2368,7 +2368,7 @@ ex_gwt_uzt_2d_b = [
     "ex-gwt-uzt-2d-b/gwf-uzt-2d-mf6.npf",
     "ex-gwt-uzt-2d-b/gwt-uzt-2d-mf6.dis",
 ]
-ex_prt_mp7_p01_gwf = [
+"ex-prt-mp7-p01/gwf" = [
     "ex-prt-mp7-p01/gwf/mp7-p01-gwf.ims",
     "ex-prt-mp7-p01/gwf/mp7-p01-gwf.dis",
     "ex-prt-mp7-p01/gwf/mp7-p01-gwf.ic",
@@ -2381,7 +2381,7 @@ ex_prt_mp7_p01_gwf = [
     "ex-prt-mp7-p01/gwf/mp7-p01-gwf.wel",
     "ex-prt-mp7-p01/gwf/mp7-p01-gwf.npf",
 ]
-ex_prt_mp7_p01_prt = [
+"ex-prt-mp7-p01/prt" = [
     "ex-prt-mp7-p01/prt/mp7-p01-prt.oc",
     "ex-prt-mp7-p01/prt/mp7-p01-prt_1a.prp",
     "ex-prt-mp7-p01/prt/mp7-p01-prt_1b.prp",
@@ -2393,7 +2393,7 @@ ex_prt_mp7_p01_prt = [
     "ex-prt-mp7-p01/prt/mp7-p01-prt.tdis",
     "ex-prt-mp7-p01/prt/mp7-p01-prt.ems",
 ]
-ex_prt_mp7_p02_gwf = [
+"ex-prt-mp7-p02/gwf" = [
     "ex-prt-mp7-p02/gwf/mp7-p02-gwf.nam",
     "ex-prt-mp7-p02/gwf/mp7-p02-gwf.oc",
     "ex-prt-mp7-p02/gwf/mp7-p02-gwf.ims",
@@ -2406,7 +2406,7 @@ ex_prt_mp7_p02_gwf = [
     "ex-prt-mp7-p02/gwf/mp7-p02-gwf.riv",
     "ex-prt-mp7-p02/gwf/mp7-p02-gwf.tdis",
 ]
-ex_prt_mp7_p02_prt = [
+"ex-prt-mp7-p02/prt" = [
     "ex-prt-mp7-p02/prt/mp7-p02-prt_2B.prp",
     "ex-prt-mp7-p02/prt/mp7-p02-prt_2A.prp",
     "ex-prt-mp7-p02/prt/mp7-p02-prt.tdis",
@@ -2418,7 +2418,7 @@ ex_prt_mp7_p02_prt = [
     "ex-prt-mp7-p02/prt/mp7-p02-prt.mip",
     "ex-prt-mp7-p02/prt/mp7-p02-prt.fmi",
 ]
-ex_prt_mp7_p03_gwf = [
+"ex-prt-mp7-p03/gwf" = [
     "ex-prt-mp7-p03/gwf/mp7-p03-gwf.sto",
     "ex-prt-mp7-p03/gwf/mp7-p03-gwf.ic",
     "ex-prt-mp7-p03/gwf/ex-prt-mp7-p03.tdis",
@@ -2433,7 +2433,7 @@ ex_prt_mp7_p03_gwf = [
     "ex-prt-mp7-p03/gwf/ex-prt-mp7-p03.ims",
     "ex-prt-mp7-p03/gwf/mp7-p03-gwf.riv",
 ]
-ex_prt_mp7_p03_prt = [
+"ex-prt-mp7-p03/prt" = [
     "ex-prt-mp7-p03/prt/mp7-p03-prt.dis",
     "ex-prt-mp7-p03/prt/ex-prt-mp7-p03.tdis",
     "ex-prt-mp7-p03/prt/mp7-p03-prt.oc",
@@ -2444,7 +2444,7 @@ ex_prt_mp7_p03_prt = [
     "ex-prt-mp7-p03/prt/mp7-p03-prt.fmi",
     "ex-prt-mp7-p03/prt/mp7-p03-prt.mip",
 ]
-ex_prt_mp7_p04_gwf = [
+"ex-prt-mp7-p04/gwf" = [
     "ex-prt-mp7-p04/gwf/mp7-p04-gwf.disv",
     "ex-prt-mp7-p04/gwf/mp7-p04-gwf.npf",
     "ex-prt-mp7-p04/gwf/mp7-p04-gwf.wel",
@@ -2456,7 +2456,7 @@ ex_prt_mp7_p04_gwf = [
     "ex-prt-mp7-p04/gwf/mp7-p04-gwf.chd",
     "ex-prt-mp7-p04/gwf/mp7-p04-gwf.ims",
 ]
-ex_prt_mp7_p04_prt = [
+"ex-prt-mp7-p04/prt" = [
     "ex-prt-mp7-p04/prt/mp7-p04-prt.ems",
     "ex-prt-mp7-p04/prt/mp7-p04-prt_4.prp",
     "ex-prt-mp7-p04/prt/mp7-p04-prt.tdis",
@@ -2467,7 +2467,7 @@ ex_prt_mp7_p04_prt = [
     "ex-prt-mp7-p04/prt/mp7-p04-prt.nam",
     "ex-prt-mp7-p04/prt/mp7-p04-prt.oc",
 ]
-mf6_test001a_Tharmonic = [
+"mf6/test001a_Tharmonic" = [
     "mf6/test001a_Tharmonic/flow15_constant.chd",
     "mf6/test001a_Tharmonic/flow15.oc",
     "mf6/test001a_Tharmonic/flow15.npf",
@@ -2478,7 +2478,7 @@ mf6_test001a_Tharmonic = [
     "mf6/test001a_Tharmonic/mfsim.nam",
     "mf6/test001a_Tharmonic/flow15.nam",
 ]
-mf6_test001a_Tharmonic_extlist = [
+"mf6/test001a_Tharmonic_extlist" = [
     "mf6/test001a_Tharmonic_extlist/flow15_constant.chd",
     "mf6/test001a_Tharmonic_extlist/flow15.oc",
     "mf6/test001a_Tharmonic_extlist/chd.txt",
@@ -2490,7 +2490,7 @@ mf6_test001a_Tharmonic_extlist = [
     "mf6/test001a_Tharmonic_extlist/mfsim.nam",
     "mf6/test001a_Tharmonic_extlist/flow15.nam",
 ]
-mf6_test001a_Tharmonic_tabs = [
+"mf6/test001a_Tharmonic_tabs" = [
     "mf6/test001a_Tharmonic_tabs/flow15_constant.chd",
     "mf6/test001a_Tharmonic_tabs/flow15.oc",
     "mf6/test001a_Tharmonic_tabs/flow15.npf",
@@ -2501,7 +2501,7 @@ mf6_test001a_Tharmonic_tabs = [
     "mf6/test001a_Tharmonic_tabs/mfsim.nam",
     "mf6/test001a_Tharmonic_tabs/flow15.nam",
 ]
-mf6_test001b_Tlogarithmic = [
+"mf6/test001b_Tlogarithmic" = [
     "mf6/test001b_Tlogarithmic/flow15_constant.chd",
     "mf6/test001b_Tlogarithmic/flow15.oc",
     "mf6/test001b_Tlogarithmic/flow15.npf",
@@ -2512,7 +2512,7 @@ mf6_test001b_Tlogarithmic = [
     "mf6/test001b_Tlogarithmic/mfsim.nam",
     "mf6/test001b_Tlogarithmic/flow15.nam",
 ]
-mf6_test001c_Tamtlmk = [
+"mf6/test001c_Tamtlmk" = [
     "mf6/test001c_Tamtlmk/flow15_constant.chd",
     "mf6/test001c_Tamtlmk/flow15.oc",
     "mf6/test001c_Tamtlmk/flow15.npf",
@@ -2523,7 +2523,7 @@ mf6_test001c_Tamtlmk = [
     "mf6/test001c_Tamtlmk/mfsim.nam",
     "mf6/test001c_Tamtlmk/flow15.nam",
 ]
-mf6_test001d_Tnewton = [
+"mf6/test001d_Tnewton" = [
     "mf6/test001d_Tnewton/flow15_constant.chd",
     "mf6/test001d_Tnewton/flow15.oc",
     "mf6/test001d_Tnewton/flow15.npf",
@@ -2534,7 +2534,7 @@ mf6_test001d_Tnewton = [
     "mf6/test001d_Tnewton/mfsim.nam",
     "mf6/test001d_Tnewton/flow15.nam",
 ]
-mf6_test001e_Tnewton_2models = [
+"mf6/test001e_Tnewton_2models" = [
     "mf6/test001e_Tnewton_2models/model1.npf",
     "mf6/test001e_Tnewton_2models/model2.npf",
     "mf6/test001e_Tnewton_2models/model2.oc",
@@ -2552,7 +2552,7 @@ mf6_test001e_Tnewton_2models = [
     "mf6/test001e_Tnewton_2models/model2.chd",
     "mf6/test001e_Tnewton_2models/model1.chd",
 ]
-mf6_test001e_UZF_3lay = [
+"mf6/test001e_UZF_3lay" = [
     "mf6/test001e_UZF_3lay/test001e_UZF_3lay.nam",
     "mf6/test001e_UZF_3lay/test001e_UZF_3lay.sto",
     "mf6/test001e_UZF_3lay/test001e_UZF_3lay.chd",
@@ -2567,7 +2567,7 @@ mf6_test001e_UZF_3lay = [
     "mf6/test001e_UZF_3lay/test001e_UZF_3lay.oc",
     "mf6/test001e_UZF_3lay/test001e_UZF_3lay_head.obs",
 ]
-mf6_test001e_UZF_3layTS = [
+"mf6/test001e_UZF_3layTS" = [
     "mf6/test001e_UZF_3layTS/test001e_UZF_3lay.nam",
     "mf6/test001e_UZF_3layTS/test001e_UZF_3lay.sto",
     "mf6/test001e_UZF_3layTS/test001e_UZF_3lay.obs6",
@@ -2583,7 +2583,7 @@ mf6_test001e_UZF_3layTS = [
     "mf6/test001e_UZF_3layTS/test001e_UZF_3lay.uzf",
     "mf6/test001e_UZF_3layTS/test001e_UZF_3lay.oc",
 ]
-mf6_test001e_UZF_TS = [
+"mf6/test001e_UZF_TS" = [
     "mf6/test001e_UZF_TS/test001e_UZF_TS.uzf.sav",
     "mf6/test001e_UZF_TS/test001e_UZF_TS.uzf.obs6",
     "mf6/test001e_UZF_TS/test001e_UZF_TS.dis",
@@ -2600,7 +2600,7 @@ mf6_test001e_UZF_TS = [
     "mf6/test001e_UZF_TS/test001e_UZF_TS.uzf.ts",
     "mf6/test001e_UZF_TS/test001e_UZF_TS.npf",
 ]
-mf6_test001e_UZF_spring = [
+"mf6/test001e_UZF_spring" = [
     "mf6/test001e_UZF_spring/test001e_UZF.ims",
     "mf6/test001e_UZF_spring/test001e_UZF.chd",
     "mf6/test001e_UZF_spring/test001e_UZF.obs",
@@ -2614,7 +2614,7 @@ mf6_test001e_UZF_spring = [
     "mf6/test001e_UZF_spring/test001e_UZF.ic",
     "mf6/test001e_UZF_spring/test001e_UZF.npf",
 ]
-mf6_test001e_noUZF_3lay = [
+"mf6/test001e_noUZF_3lay" = [
     "mf6/test001e_noUZF_3lay/test001e_noUZF.npf",
     "mf6/test001e_noUZF_3lay/test001e_noUZF.oc",
     "mf6/test001e_noUZF_3lay/simulation.tdis",
@@ -2627,7 +2627,7 @@ mf6_test001e_noUZF_3lay = [
     "mf6/test001e_noUZF_3lay/test001e_noUZF.ic",
     "mf6/test001e_noUZF_3lay/test001e_noUZF.obs",
 ]
-mf6_test001f_hfb = [
+"mf6/test001f_hfb" = [
     "mf6/test001f_hfb/flow15_constant.chd",
     "mf6/test001f_hfb/flow15.hfb",
     "mf6/test001f_hfb/flow15.oc",
@@ -2640,7 +2640,7 @@ mf6_test001f_hfb = [
     "mf6/test001f_hfb/mfsim.nam",
     "mf6/test001f_hfb/flow15.nam",
 ]
-mf6_test001f_hfb_xt3d = [
+"mf6/test001f_hfb-xt3d" = [
     "mf6/test001f_hfb-xt3d/flow15_constant.chd",
     "mf6/test001f_hfb-xt3d/flow15.hfb",
     "mf6/test001f_hfb-xt3d/flow15.oc",
@@ -2653,7 +2653,7 @@ mf6_test001f_hfb_xt3d = [
     "mf6/test001f_hfb-xt3d/flow15.nam",
     "mf6/test001f_hfb-xt3d/description.txt",
 ]
-mf6_test001f_hfb_xt3d_nwt = [
+"mf6/test001f_hfb-xt3d-nwt" = [
     "mf6/test001f_hfb-xt3d-nwt/flow15_constant.chd",
     "mf6/test001f_hfb-xt3d-nwt/flow15.hfb",
     "mf6/test001f_hfb-xt3d-nwt/flow15.oc",
@@ -2666,7 +2666,7 @@ mf6_test001f_hfb_xt3d_nwt = [
     "mf6/test001f_hfb-xt3d-nwt/flow15.nam",
     "mf6/test001f_hfb-xt3d-nwt/description.txt",
 ]
-mf6_test001g_MVR = [
+"mf6/test001g_MVR" = [
     "mf6/test001g_MVR/flow15_constant.chd",
     "mf6/test001g_MVR/flow15.maw_2.maw",
     "mf6/test001g_MVR/flow15.maw_1.maw",
@@ -2680,7 +2680,7 @@ mf6_test001g_MVR = [
     "mf6/test001g_MVR/mfsim.nam",
     "mf6/test001g_MVR/flow15.nam",
 ]
-mf6_test001g_MVR_transient = [
+"mf6/test001g_MVR_transient" = [
     "mf6/test001g_MVR_transient/flow15_constant.chd",
     "mf6/test001g_MVR_transient/flow15.oc",
     "mf6/test001g_MVR_transient/flow15.maw_1.mawq",
@@ -2694,7 +2694,7 @@ mf6_test001g_MVR_transient = [
     "mf6/test001g_MVR_transient/mfsim.nam",
     "mf6/test001g_MVR_transient/flow15.nam",
 ]
-mf6_test001h_drn_list4 = [
+"mf6/test001h_drn_list4" = [
     "mf6/test001h_drn_list4/flow15_constant.chd",
     "mf6/test001h_drn_list4/flow15.oc",
     "mf6/test001h_drn_list4/flow15.npf",
@@ -2707,7 +2707,7 @@ mf6_test001h_drn_list4 = [
     "mf6/test001h_drn_list4/mfsim.nam",
     "mf6/test001h_drn_list4/flow15.nam",
 ]
-mf6_test001h_evt_array1 = [
+"mf6/test001h_evt_array1" = [
     "mf6/test001h_evt_array1/flow15_constant.chd",
     "mf6/test001h_evt_array1/flow15.evt",
     "mf6/test001h_evt_array1/flow15.oc",
@@ -2719,7 +2719,7 @@ mf6_test001h_evt_array1 = [
     "mf6/test001h_evt_array1/mfsim.nam",
     "mf6/test001h_evt_array1/flow15.nam",
 ]
-mf6_test001h_evt_array2 = [
+"mf6/test001h_evt_array2" = [
     "mf6/test001h_evt_array2/flow15_constant.chd",
     "mf6/test001h_evt_array2/flow15.evt",
     "mf6/test001h_evt_array2/flow15.oc",
@@ -2731,7 +2731,7 @@ mf6_test001h_evt_array2 = [
     "mf6/test001h_evt_array2/mfsim.nam",
     "mf6/test001h_evt_array2/flow15.nam",
 ]
-mf6_test001h_evt_array3 = [
+"mf6/test001h_evt_array3" = [
     "mf6/test001h_evt_array3/flow15_constant.chd",
     "mf6/test001h_evt_array3/flow15.evt",
     "mf6/test001h_evt_array3/flow15.evt.tas",
@@ -2744,7 +2744,7 @@ mf6_test001h_evt_array3 = [
     "mf6/test001h_evt_array3/mfsim.nam",
     "mf6/test001h_evt_array3/flow15.nam",
 ]
-mf6_test001h_evt_array4 = [
+"mf6/test001h_evt_array4" = [
     "mf6/test001h_evt_array4/flow15_constant.chd",
     "mf6/test001h_evt_array4/flow15.evt",
     "mf6/test001h_evt_array4/flow15.evt.tas",
@@ -2758,7 +2758,7 @@ mf6_test001h_evt_array4 = [
     "mf6/test001h_evt_array4/mfsim.nam",
     "mf6/test001h_evt_array4/flow15.nam",
 ]
-mf6_test001h_evt_list1 = [
+"mf6/test001h_evt_list1" = [
     "mf6/test001h_evt_list1/flow15_constant.chd",
     "mf6/test001h_evt_list1/flow15.evt",
     "mf6/test001h_evt_list1/flow15.oc",
@@ -2770,7 +2770,7 @@ mf6_test001h_evt_list1 = [
     "mf6/test001h_evt_list1/mfsim.nam",
     "mf6/test001h_evt_list1/flow15.nam",
 ]
-mf6_test001h_evt_list2 = [
+"mf6/test001h_evt_list2" = [
     "mf6/test001h_evt_list2/flow15_constant.chd",
     "mf6/test001h_evt_list2/flow15.evt",
     "mf6/test001h_evt_list2/flow15.oc",
@@ -2782,7 +2782,7 @@ mf6_test001h_evt_list2 = [
     "mf6/test001h_evt_list2/mfsim.nam",
     "mf6/test001h_evt_list2/flow15.nam",
 ]
-mf6_test001h_evt_list3 = [
+"mf6/test001h_evt_list3" = [
     "mf6/test001h_evt_list3/flow15_constant.chd",
     "mf6/test001h_evt_list3/flow15.evt",
     "mf6/test001h_evt_list3/flow15.oc",
@@ -2795,7 +2795,7 @@ mf6_test001h_evt_list3 = [
     "mf6/test001h_evt_list3/mfsim.nam",
     "mf6/test001h_evt_list3/flow15.nam",
 ]
-mf6_test001h_evt_list4 = [
+"mf6/test001h_evt_list4" = [
     "mf6/test001h_evt_list4/flow15_constant.chd",
     "mf6/test001h_evt_list4/flow15.evt",
     "mf6/test001h_evt_list4/flow15.oc",
@@ -2808,7 +2808,7 @@ mf6_test001h_evt_list4 = [
     "mf6/test001h_evt_list4/mfsim.nam",
     "mf6/test001h_evt_list4/flow15.nam",
 ]
-mf6_test001h_rch_array1 = [
+"mf6/test001h_rch_array1" = [
     "mf6/test001h_rch_array1/flow15_constant.chd",
     "mf6/test001h_rch_array1/flow15.oc",
     "mf6/test001h_rch_array1/flow15.npf",
@@ -2820,7 +2820,7 @@ mf6_test001h_rch_array1 = [
     "mf6/test001h_rch_array1/mfsim.nam",
     "mf6/test001h_rch_array1/flow15.nam",
 ]
-mf6_test001h_rch_array2 = [
+"mf6/test001h_rch_array2" = [
     "mf6/test001h_rch_array2/flow15_constant.chd",
     "mf6/test001h_rch_array2/flow15.oc",
     "mf6/test001h_rch_array2/flow15.npf",
@@ -2832,7 +2832,7 @@ mf6_test001h_rch_array2 = [
     "mf6/test001h_rch_array2/mfsim.nam",
     "mf6/test001h_rch_array2/flow15.nam",
 ]
-mf6_test001h_rch_array3 = [
+"mf6/test001h_rch_array3" = [
     "mf6/test001h_rch_array3/flow15.rch.tas",
     "mf6/test001h_rch_array3/flow15_constant.chd",
     "mf6/test001h_rch_array3/flow15.oc",
@@ -2845,7 +2845,7 @@ mf6_test001h_rch_array3 = [
     "mf6/test001h_rch_array3/mfsim.nam",
     "mf6/test001h_rch_array3/flow15.nam",
 ]
-mf6_test001h_rch_array4 = [
+"mf6/test001h_rch_array4" = [
     "mf6/test001h_rch_array4/flow15.rch.tas",
     "mf6/test001h_rch_array4/flow15_constant.chd",
     "mf6/test001h_rch_array4/flow15.oc",
@@ -2859,7 +2859,7 @@ mf6_test001h_rch_array4 = [
     "mf6/test001h_rch_array4/mfsim.nam",
     "mf6/test001h_rch_array4/flow15.nam",
 ]
-mf6_test001h_rch_list1 = [
+"mf6/test001h_rch_list1" = [
     "mf6/test001h_rch_list1/flow15_constant.chd",
     "mf6/test001h_rch_list1/flow15.oc",
     "mf6/test001h_rch_list1/flow15.npf",
@@ -2871,7 +2871,7 @@ mf6_test001h_rch_list1 = [
     "mf6/test001h_rch_list1/mfsim.nam",
     "mf6/test001h_rch_list1/flow15.nam",
 ]
-mf6_test001h_rch_list2 = [
+"mf6/test001h_rch_list2" = [
     "mf6/test001h_rch_list2/flow15_constant.chd",
     "mf6/test001h_rch_list2/flow15.oc",
     "mf6/test001h_rch_list2/flow15.npf",
@@ -2883,7 +2883,7 @@ mf6_test001h_rch_list2 = [
     "mf6/test001h_rch_list2/mfsim.nam",
     "mf6/test001h_rch_list2/flow15.nam",
 ]
-mf6_test001h_rch_list3 = [
+"mf6/test001h_rch_list3" = [
     "mf6/test001h_rch_list3/flow15_constant.chd",
     "mf6/test001h_rch_list3/flow15.oc",
     "mf6/test001h_rch_list3/flow15.npf",
@@ -2896,7 +2896,7 @@ mf6_test001h_rch_list3 = [
     "mf6/test001h_rch_list3/mfsim.nam",
     "mf6/test001h_rch_list3/flow15.nam",
 ]
-mf6_test001h_rch_list4 = [
+"mf6/test001h_rch_list4" = [
     "mf6/test001h_rch_list4/flow15_constant.chd",
     "mf6/test001h_rch_list4/flow15.oc",
     "mf6/test001h_rch_list4/flow15.npf",
@@ -2909,7 +2909,7 @@ mf6_test001h_rch_list4 = [
     "mf6/test001h_rch_list4/mfsim.nam",
     "mf6/test001h_rch_list4/flow15.nam",
 ]
-mf6_test001i_gwf_gwf = [
+"mf6/test001i_gwf-gwf" = [
     "mf6/test001i_gwf-gwf/flow-l2.nam",
     "mf6/test001i_gwf-gwf/flow.ims",
     "mf6/test001i_gwf-gwf/flow-8.exg",
@@ -2974,7 +2974,7 @@ mf6_test001i_gwf_gwf = [
     "mf6/test001i_gwf-gwf/flow-l2.ic",
     "mf6/test001i_gwf-gwf/flow-5.exg",
 ]
-mf6_test001i_multilayer = [
+"mf6/test001i_multilayer" = [
     "mf6/test001i_multilayer/flow15_constant.chd",
     "mf6/test001i_multilayer/flow15.oc",
     "mf6/test001i_multilayer/flow15.npf",
@@ -2985,7 +2985,7 @@ mf6_test001i_multilayer = [
     "mf6/test001i_multilayer/mfsim.nam",
     "mf6/test001i_multilayer/flow15.nam",
 ]
-mf6_test003_gwfs = [
+"mf6/test003_gwfs" = [
     "mf6/test003_gwfs/makemodel.py",
     "mf6/test003_gwfs/model_right.chd",
     "mf6/test003_gwfs/model.ic",
@@ -2999,7 +2999,7 @@ mf6_test003_gwfs = [
     "mf6/test003_gwfs/description.txt",
     "mf6/test003_gwfs/model_left.chd",
 ]
-mf6_test003_gwfs_disv = [
+"mf6/test003_gwfs_disv" = [
     "mf6/test003_gwfs_disv/model_right.chd",
     "mf6/test003_gwfs_disv/model.disv",
     "mf6/test003_gwfs_disv/model.ic",
@@ -3012,7 +3012,7 @@ mf6_test003_gwfs_disv = [
     "mf6/test003_gwfs_disv/description.txt",
     "mf6/test003_gwfs_disv/model_left.chd",
 ]
-mf6_test003_gwfs_disv_xt3d = [
+"mf6/test003_gwfs_disv_xt3d" = [
     "mf6/test003_gwfs_disv_xt3d/model_right.chd",
     "mf6/test003_gwfs_disv_xt3d/model.disv",
     "mf6/test003_gwfs_disv_xt3d/model.ic",
@@ -3025,7 +3025,7 @@ mf6_test003_gwfs_disv_xt3d = [
     "mf6/test003_gwfs_disv_xt3d/description.txt",
     "mf6/test003_gwfs_disv_xt3d/model_left.chd",
 ]
-mf6_test003_gwfs_obs = [
+"mf6/test003_gwfs_obs" = [
     "mf6/test003_gwfs_obs/makemodel.py",
     "mf6/test003_gwfs_obs/model_right.chd",
     "mf6/test003_gwfs_obs/model.ic",
@@ -3038,7 +3038,7 @@ mf6_test003_gwfs_obs = [
     "mf6/test003_gwfs_obs/model.nam",
     "mf6/test003_gwfs_obs/model_left.chd",
 ]
-mf6_test003_gwfs_reduced = [
+"mf6/test003_gwfs_reduced" = [
     "mf6/test003_gwfs_reduced/makemodel.py",
     "mf6/test003_gwfs_reduced/model_right.chd",
     "mf6/test003_gwfs_reduced/model.ic",
@@ -3053,7 +3053,7 @@ mf6_test003_gwfs_reduced = [
     "mf6/test003_gwfs_reduced/model.nam",
     "mf6/test003_gwfs_reduced/model_left.chd",
 ]
-mf6_test003_gwfs_tr = [
+"mf6/test003_gwfs_tr" = [
     "mf6/test003_gwfs_tr/model_right.chd",
     "mf6/test003_gwfs_tr/model.ic",
     "mf6/test003_gwfs_tr/model.npf",
@@ -3067,7 +3067,7 @@ mf6_test003_gwfs_tr = [
     "mf6/test003_gwfs_tr/model_left.chd",
     "mf6/test003_gwfs_tr/model.sto",
 ]
-mf6_test004_bcfss = [
+"mf6/test004_bcfss" = [
     "mf6/test004_bcfss/bcf2ss.oc",
     "mf6/test004_bcfss/bcf2ss.nam",
     "mf6/test004_bcfss/bcf2ss.dis",
@@ -3082,7 +3082,7 @@ mf6_test004_bcfss = [
     "mf6/test004_bcfss/description.txt",
     "mf6/test004_bcfss/bcf2ss.riv",
 ]
-mf6_test004_lpfss = [
+"mf6/test004_lpfss" = [
     "mf6/test004_lpfss/test004_lpfss.oc",
     "mf6/test004_lpfss/test004_lpfss.nam",
     "mf6/test004_lpfss/test004_lpfss.dis",
@@ -3096,7 +3096,7 @@ mf6_test004_lpfss = [
     "mf6/test004_lpfss/test004_lpfss.riv",
     "mf6/test004_lpfss/description.txt",
 ]
-mf6_test004_lpfss_disv = [
+"mf6/test004_lpfss_disv" = [
     "mf6/test004_lpfss_disv/t4.wel",
     "mf6/test004_lpfss_disv/bot2.dat",
     "mf6/test004_lpfss_disv/bot3.dat",
@@ -3113,7 +3113,7 @@ mf6_test004_lpfss_disv = [
     "mf6/test004_lpfss_disv/t4.ims",
     "mf6/test004_lpfss_disv/t4.ic",
 ]
-mf6_test004_lpfss_nr = [
+"mf6/test004_lpfss_nr" = [
     "mf6/test004_lpfss_nr/test004_lpfss_nr.oc",
     "mf6/test004_lpfss_nr/test004_lpfss_nr.nam",
     "mf6/test004_lpfss_nr/test004_lpfss_nr.tdis",
@@ -3127,7 +3127,7 @@ mf6_test004_lpfss_nr = [
     "mf6/test004_lpfss_nr/test004_lpfss_nr.riv",
     "mf6/test004_lpfss_nr/description.txt",
 ]
-mf6_test005_advgw_tidal = [
+"mf6/test005_advgw_tidal" = [
     "mf6/test005_advgw_tidal/AdvGW_tidal.nam",
     "mf6/test005_advgw_tidal/AdvGW_tidal.ic",
     "mf6/test005_advgw_tidal/recharge_rates_1.ts",
@@ -3160,7 +3160,7 @@ mf6_test005_advgw_tidal = [
     "mf6/test005_advgw_tidal/recharge_rates_3.ts",
     "mf6/test005_advgw_tidal/AdvGW_tidal.evt",
 ]
-mf6_test006_2models = [
+"mf6/test006_2models" = [
     "mf6/test006_2models/model1.npf",
     "mf6/test006_2models/simulation.exg",
     "mf6/test006_2models/model2.npf",
@@ -3183,7 +3183,7 @@ mf6_test006_2models = [
     "mf6/test006_2models/description.txt",
     "mf6/test006_2models/model1.chd",
 ]
-mf6_test006_2models_XT3D = [
+"mf6/test006_2models-XT3D" = [
     "mf6/test006_2models-XT3D/model1.npf",
     "mf6/test006_2models-XT3D/simulation.exg",
     "mf6/test006_2models-XT3D/model2.npf",
@@ -3202,7 +3202,7 @@ mf6_test006_2models_XT3D = [
     "mf6/test006_2models-XT3D/simulation.ims",
     "mf6/test006_2models-XT3D/model1.chd",
 ]
-mf6_test006_2models_gnc = [
+"mf6/test006_2models_gnc" = [
     "mf6/test006_2models_gnc/model1.npf",
     "mf6/test006_2models_gnc/simulation.exg",
     "mf6/test006_2models_gnc/model2.npf",
@@ -3222,7 +3222,7 @@ mf6_test006_2models_gnc = [
     "mf6/test006_2models_gnc/description.txt",
     "mf6/test006_2models_gnc/model1.chd",
 ]
-mf6_test006_2models_mvr_dev = [
+"mf6/test006_2models_mvr_dev" = [
     "mf6/test006_2models_mvr_dev/model1.npf",
     "mf6/test006_2models_mvr_dev/simulation.exg",
     "mf6/test006_2models_mvr_dev/model2.npf",
@@ -3245,7 +3245,7 @@ mf6_test006_2models_mvr_dev = [
     "mf6/test006_2models_mvr_dev/simulation.mvr",
     "mf6/test006_2models_mvr_dev/model1.chd",
 ]
-mf6_test006_2models_unconf = [
+"mf6/test006_2models_unconf" = [
     "mf6/test006_2models_unconf/model1.npf",
     "mf6/test006_2models_unconf/simulation.exg",
     "mf6/test006_2models_unconf/model2.npf",
@@ -3263,7 +3263,7 @@ mf6_test006_2models_unconf = [
     "mf6/test006_2models_unconf/simulation.ims",
     "mf6/test006_2models_unconf/model1.chd",
 ]
-mf6_test006_2models_unconf_nr = [
+"mf6/test006_2models_unconf_nr" = [
     "mf6/test006_2models_unconf_nr/model1.npf",
     "mf6/test006_2models_unconf_nr/simulation.exg",
     "mf6/test006_2models_unconf_nr/model2.npf",
@@ -3281,7 +3281,7 @@ mf6_test006_2models_unconf_nr = [
     "mf6/test006_2models_unconf_nr/simulation.ims",
     "mf6/test006_2models_unconf_nr/model1.chd",
 ]
-mf6_test006_2models_unconf_nr_gnc = [
+"mf6/test006_2models_unconf_nr_gnc" = [
     "mf6/test006_2models_unconf_nr_gnc/model1.npf",
     "mf6/test006_2models_unconf_nr_gnc/simulation.exg",
     "mf6/test006_2models_unconf_nr_gnc/model2.npf",
@@ -3300,7 +3300,7 @@ mf6_test006_2models_unconf_nr_gnc = [
     "mf6/test006_2models_unconf_nr_gnc/simulation.ims",
     "mf6/test006_2models_unconf_nr_gnc/model1.chd",
 ]
-mf6_test006_2models_unconf_tr_nr = [
+"mf6/test006_2models_unconf_tr_nr" = [
     "mf6/test006_2models_unconf_tr_nr/model1.npf",
     "mf6/test006_2models_unconf_tr_nr/simulation.exg",
     "mf6/test006_2models_unconf_tr_nr/model2.npf",
@@ -3320,7 +3320,7 @@ mf6_test006_2models_unconf_tr_nr = [
     "mf6/test006_2models_unconf_tr_nr/simulation.ims",
     "mf6/test006_2models_unconf_tr_nr/model1.chd",
 ]
-mf6_test006_gwf3 = [
+"mf6/test006_gwf3" = [
     "mf6/test006_gwf3/flow.ims",
     "mf6/test006_gwf3/flow.disu.cl12.dat",
     "mf6/test006_gwf3/flow.rch",
@@ -3338,7 +3338,7 @@ mf6_test006_gwf3 = [
     "mf6/test006_gwf3/mfsim.nam",
     "mf6/test006_gwf3/flow.npf",
 ]
-mf6_test006_gwf3_disv = [
+"mf6/test006_gwf3_disv" = [
     "mf6/test006_gwf3_disv/flow.ims",
     "mf6/test006_gwf3_disv/flow.rch",
     "mf6/test006_gwf3_disv/flow.chd",
@@ -3354,7 +3354,7 @@ mf6_test006_gwf3_disv = [
     "mf6/test006_gwf3_disv/description.txt",
     "mf6/test006_gwf3_disv/flow.npf",
 ]
-mf6_test006_gwf3_disv_ext = [
+"mf6/test006_gwf3_disv_ext" = [
     "mf6/test006_gwf3_disv_ext/flow.disv.dimensions.ref",
     "mf6/test006_gwf3_disv_ext/flow.ims",
     "mf6/test006_gwf3_disv_ext/flow.rch",
@@ -3371,7 +3371,7 @@ mf6_test006_gwf3_disv_ext = [
     "mf6/test006_gwf3_disv_ext/mfsim.nam",
     "mf6/test006_gwf3_disv_ext/flow.npf",
 ]
-mf6_test006_gwf3_disv_hani = [
+"mf6/test006_gwf3_disv_hani" = [
     "mf6/test006_gwf3_disv_hani/flow.ims",
     "mf6/test006_gwf3_disv_hani/flow.rch",
     "mf6/test006_gwf3_disv_hani/flow.chd",
@@ -3385,7 +3385,7 @@ mf6_test006_gwf3_disv_hani = [
     "mf6/test006_gwf3_disv_hani/mfsim.nam",
     "mf6/test006_gwf3_disv_hani/flow.npf",
 ]
-mf6_test006_gwf3_disv_trimesh = [
+"mf6/test006_gwf3_disv_trimesh" = [
     "mf6/test006_gwf3_disv_trimesh/flow.ims",
     "mf6/test006_gwf3_disv_trimesh/flow.rch",
     "mf6/test006_gwf3_disv_trimesh/flow.chd",
@@ -3401,7 +3401,7 @@ mf6_test006_gwf3_disv_trimesh = [
     "mf6/test006_gwf3_disv_trimesh/mfsim.nam",
     "mf6/test006_gwf3_disv_trimesh/flow.npf",
 ]
-mf6_test006_gwf3_disv_trimesh2 = [
+"mf6/test006_gwf3_disv_trimesh2" = [
     "mf6/test006_gwf3_disv_trimesh2/flow.ims",
     "mf6/test006_gwf3_disv_trimesh2/flow.chd",
     "mf6/test006_gwf3_disv_trimesh2/flow.oc",
@@ -3413,7 +3413,7 @@ mf6_test006_gwf3_disv_trimesh2 = [
     "mf6/test006_gwf3_disv_trimesh2/mfsim.nam",
     "mf6/test006_gwf3_disv_trimesh2/flow.npf",
 ]
-mf6_test006_gwf3_disv_trimesh2_3D_xt3d = [
+"mf6/test006_gwf3_disv_trimesh2-3D_xt3d" = [
     "mf6/test006_gwf3_disv_trimesh2-3D_xt3d/flow.ims",
     "mf6/test006_gwf3_disv_trimesh2-3D_xt3d/flow.chd",
     "mf6/test006_gwf3_disv_trimesh2-3D_xt3d/flow.oc",
@@ -3425,7 +3425,7 @@ mf6_test006_gwf3_disv_trimesh2_3D_xt3d = [
     "mf6/test006_gwf3_disv_trimesh2-3D_xt3d/mfsim.nam",
     "mf6/test006_gwf3_disv_trimesh2-3D_xt3d/flow.npf",
 ]
-mf6_test006_gwf3_disv_trimesh2_xt3d = [
+"mf6/test006_gwf3_disv_trimesh2_xt3d" = [
     "mf6/test006_gwf3_disv_trimesh2_xt3d/flow.ims",
     "mf6/test006_gwf3_disv_trimesh2_xt3d/flow.chd",
     "mf6/test006_gwf3_disv_trimesh2_xt3d/flow.oc",
@@ -3437,7 +3437,7 @@ mf6_test006_gwf3_disv_trimesh2_xt3d = [
     "mf6/test006_gwf3_disv_trimesh2_xt3d/mfsim.nam",
     "mf6/test006_gwf3_disv_trimesh2_xt3d/flow.npf",
 ]
-mf6_test006_gwf3_disv_trimesh_xt3d = [
+"mf6/test006_gwf3_disv_trimesh_xt3d" = [
     "mf6/test006_gwf3_disv_trimesh_xt3d/flow.ims",
     "mf6/test006_gwf3_disv_trimesh_xt3d/flow.rch",
     "mf6/test006_gwf3_disv_trimesh_xt3d/flow.chd",
@@ -3449,7 +3449,7 @@ mf6_test006_gwf3_disv_trimesh_xt3d = [
     "mf6/test006_gwf3_disv_trimesh_xt3d/mfsim.nam",
     "mf6/test006_gwf3_disv_trimesh_xt3d/flow.npf",
 ]
-mf6_test006_gwf3_disv_xt3d = [
+"mf6/test006_gwf3_disv_xt3d" = [
     "mf6/test006_gwf3_disv_xt3d/flow.ims",
     "mf6/test006_gwf3_disv_xt3d/flow.rch",
     "mf6/test006_gwf3_disv_xt3d/flow.chd",
@@ -3464,7 +3464,7 @@ mf6_test006_gwf3_disv_xt3d = [
     "mf6/test006_gwf3_disv_xt3d/description.txt",
     "mf6/test006_gwf3_disv_xt3d/flow.npf",
 ]
-mf6_test006_gwf3_gnc = [
+"mf6/test006_gwf3_gnc" = [
     "mf6/test006_gwf3_gnc/flow.ims",
     "mf6/test006_gwf3_gnc/flow.disu.cl12.dat",
     "mf6/test006_gwf3_gnc/flow.chd",
@@ -3482,7 +3482,7 @@ mf6_test006_gwf3_gnc = [
     "mf6/test006_gwf3_gnc/description.txt",
     "mf6/test006_gwf3_gnc/flow.npf",
 ]
-mf6_test006_gwf3_gnc_nr_dev = [
+"mf6/test006_gwf3_gnc_nr_dev" = [
     "mf6/test006_gwf3_gnc_nr_dev/flow.ims",
     "mf6/test006_gwf3_gnc_nr_dev/flow.disu.cl12.dat",
     "mf6/test006_gwf3_gnc_nr_dev/flow.chd",
@@ -3500,7 +3500,7 @@ mf6_test006_gwf3_gnc_nr_dev = [
     "mf6/test006_gwf3_gnc_nr_dev/description.txt",
     "mf6/test006_gwf3_gnc_nr_dev/flow.npf",
 ]
-mf6_test006_gwf3_nr_dev = [
+"mf6/test006_gwf3_nr_dev" = [
     "mf6/test006_gwf3_nr_dev/flow.ims",
     "mf6/test006_gwf3_nr_dev/flow.disu.cl12.dat",
     "mf6/test006_gwf3_nr_dev/flow.chd",
@@ -3517,7 +3517,7 @@ mf6_test006_gwf3_nr_dev = [
     "mf6/test006_gwf3_nr_dev/description.txt",
     "mf6/test006_gwf3_nr_dev/flow.npf",
 ]
-mf6_test006_gwf3_tr = [
+"mf6/test006_gwf3_tr" = [
     "mf6/test006_gwf3_tr/flow.ims",
     "mf6/test006_gwf3_tr/flow.disu.cl12.dat",
     "mf6/test006_gwf3_tr/flow.chd",
@@ -3535,7 +3535,7 @@ mf6_test006_gwf3_tr = [
     "mf6/test006_gwf3_tr/mfsim.nam",
     "mf6/test006_gwf3_tr/flow.npf",
 ]
-mf6_test006_gwf3_tr_nr = [
+"mf6/test006_gwf3_tr_nr" = [
     "mf6/test006_gwf3_tr_nr/flow.ims",
     "mf6/test006_gwf3_tr_nr/flow.disu.cl12.dat",
     "mf6/test006_gwf3_tr_nr/flow.chd",
@@ -3553,7 +3553,7 @@ mf6_test006_gwf3_tr_nr = [
     "mf6/test006_gwf3_tr_nr/mfsim.nam",
     "mf6/test006_gwf3_tr_nr/flow.npf",
 ]
-mf6_test006_gwf3_unconf = [
+"mf6/test006_gwf3_unconf" = [
     "mf6/test006_gwf3_unconf/flow.ims",
     "mf6/test006_gwf3_unconf/flow.disu.cl12.dat",
     "mf6/test006_gwf3_unconf/flow.chd",
@@ -3570,7 +3570,7 @@ mf6_test006_gwf3_unconf = [
     "mf6/test006_gwf3_unconf/description.txt",
     "mf6/test006_gwf3_unconf/flow.npf",
 ]
-mf6_test006a_gwf3_disv_thickstrt = [
+"mf6/test006a_gwf3_disv_thickstrt" = [
     "mf6/test006a_gwf3_disv_thickstrt/flow.ims",
     "mf6/test006a_gwf3_disv_thickstrt/flow.rch",
     "mf6/test006a_gwf3_disv_thickstrt/flow.chd",
@@ -3585,7 +3585,7 @@ mf6_test006a_gwf3_disv_thickstrt = [
     "mf6/test006a_gwf3_disv_thickstrt/mfsim.nam",
     "mf6/test006a_gwf3_disv_thickstrt/flow.npf",
 ]
-mf6_test007_75x75 = [
+"mf6/test007_75x75" = [
     "mf6/test007_75x75/mf6.npf",
     "mf6/test007_75x75/mf6.wel",
     "mf6/test007_75x75/mf6.oc",
@@ -3598,7 +3598,7 @@ mf6_test007_75x75 = [
     "mf6/test007_75x75/mf6.ims",
     "mf6/test007_75x75/mf6.chd",
 ]
-mf6_test007_75x75_confined = [
+"mf6/test007_75x75_confined" = [
     "mf6/test007_75x75_confined/mf6.npf",
     "mf6/test007_75x75_confined/mf6.wel",
     "mf6/test007_75x75_confined/mf6.oc",
@@ -3611,7 +3611,7 @@ mf6_test007_75x75_confined = [
     "mf6/test007_75x75_confined/mf6.ims",
     "mf6/test007_75x75_confined/mf6.chd",
 ]
-mf6_test009_3lay_disu = [
+"mf6/test009_3lay-disu" = [
     "mf6/test009_3lay-disu/flow.ims",
     "mf6/test009_3lay-disu/flow.chd",
     "mf6/test009_3lay-disu/flow.oc",
@@ -3624,7 +3624,7 @@ mf6_test009_3lay_disu = [
     "mf6/test009_3lay-disu/mfsim.nam",
     "mf6/test009_3lay-disu/flow.npf",
 ]
-mf6_test011_mflgr_ex3 = [
+"mf6/test011_mflgr_ex3" = [
     "mf6/test011_mflgr_ex3/simulation.exg",
     "mf6/test011_mflgr_ex3/ex3_child.ims",
     "mf6/test011_mflgr_ex3/ex3_parent-left.chd",
@@ -3655,7 +3655,7 @@ mf6_test011_mflgr_ex3 = [
     "mf6/test011_mflgr_ex3/ex3_child.npf",
     "mf6/test011_mflgr_ex3/ex3_parent.dis",
 ]
-mf6_test011_mflgr_ex3_sfr = [
+"mf6/test011_mflgr_ex3_sfr" = [
     "mf6/test011_mflgr_ex3_sfr/simulation.exg",
     "mf6/test011_mflgr_ex3_sfr/ex3_child.ims",
     "mf6/test011_mflgr_ex3_sfr/ex3_parent-left.chd",
@@ -3686,7 +3686,7 @@ mf6_test011_mflgr_ex3_sfr = [
     "mf6/test011_mflgr_ex3_sfr/ex3_child.npf",
     "mf6/test011_mflgr_ex3_sfr/ex3_parent.dis",
 ]
-mf6_test012_WaterTable = [
+"mf6/test012_WaterTable" = [
     "mf6/test012_WaterTable/watertable.dis",
     "mf6/test012_WaterTable/watertable.ghb",
     "mf6/test012_WaterTable/watertable.chd",
@@ -3699,7 +3699,7 @@ mf6_test012_WaterTable = [
     "mf6/test012_WaterTable/mfsim.nam",
     "mf6/test012_WaterTable/watertable.ic",
 ]
-mf6_test013_Zaidel = [
+"mf6/test013_Zaidel" = [
     "mf6/test013_Zaidel/zaidel5m.npf",
     "mf6/test013_Zaidel/zaidel5m.oc",
     "mf6/test013_Zaidel/simulation.tdis",
@@ -3711,7 +3711,7 @@ mf6_test013_Zaidel = [
     "mf6/test013_Zaidel/description.txt",
     "mf6/test013_Zaidel/zaidel5m.chd",
 ]
-mf6_test014_NWTP3High = [
+"mf6/test014_NWTP3High" = [
     "mf6/test014_NWTP3High/nwtp3.oc",
     "mf6/test014_NWTP3High/nwtp3_Rhigh.rch",
     "mf6/test014_NWTP3High/simulation.tdis",
@@ -3724,7 +3724,7 @@ mf6_test014_NWTP3High = [
     "mf6/test014_NWTP3High/nwtp3.nam",
     "mf6/test014_NWTP3High/description.txt",
 ]
-mf6_test014_NWTP3High_dev = [
+"mf6/test014_NWTP3High_dev" = [
     "mf6/test014_NWTP3High_dev/nwtp3.oc",
     "mf6/test014_NWTP3High_dev/nwtp3_Rhigh.rch",
     "mf6/test014_NWTP3High_dev/simulation.tdis",
@@ -3737,7 +3737,7 @@ mf6_test014_NWTP3High_dev = [
     "mf6/test014_NWTP3High_dev/nwtp3.nam",
     "mf6/test014_NWTP3High_dev/description.txt",
 ]
-mf6_test014_NWTP3Low = [
+"mf6/test014_NWTP3Low" = [
     "mf6/test014_NWTP3Low/nwtp3.oc",
     "mf6/test014_NWTP3Low/nwtp3_Rlow.rch",
     "mf6/test014_NWTP3Low/simulation.tdis",
@@ -3750,7 +3750,7 @@ mf6_test014_NWTP3Low = [
     "mf6/test014_NWTP3Low/nwtp3.nam",
     "mf6/test014_NWTP3Low/description.txt",
 ]
-mf6_test014_NWTP3Low_MAW = [
+"mf6/test014_NWTP3Low_MAW" = [
     "mf6/test014_NWTP3Low_MAW/nwtp3.oc",
     "mf6/test014_NWTP3Low_MAW/nwtp3_Rlow.rch",
     "mf6/test014_NWTP3Low_MAW/simulation.tdis",
@@ -3764,7 +3764,7 @@ mf6_test014_NWTP3Low_MAW = [
     "mf6/test014_NWTP3Low_MAW/nwtp3.nam",
     "mf6/test014_NWTP3Low_MAW/description.txt",
 ]
-mf6_test014_NWTP3Low_MD_dev = [
+"mf6/test014_NWTP3Low_MD_dev" = [
     "mf6/test014_NWTP3Low_MD_dev/nwtp3.oc",
     "mf6/test014_NWTP3Low_MD_dev/nwtp3_Rlow.rch",
     "mf6/test014_NWTP3Low_MD_dev/simulation.tdis",
@@ -3777,7 +3777,7 @@ mf6_test014_NWTP3Low_MD_dev = [
     "mf6/test014_NWTP3Low_MD_dev/nwtp3.nam",
     "mf6/test014_NWTP3Low_MD_dev/description.txt",
 ]
-mf6_test014_NWTP3Low_RCM_dev = [
+"mf6/test014_NWTP3Low_RCM_dev" = [
     "mf6/test014_NWTP3Low_RCM_dev/nwtp3.oc",
     "mf6/test014_NWTP3Low_RCM_dev/nwtp3_Rlow.rch",
     "mf6/test014_NWTP3Low_RCM_dev/simulation.tdis",
@@ -3790,7 +3790,7 @@ mf6_test014_NWTP3Low_RCM_dev = [
     "mf6/test014_NWTP3Low_RCM_dev/nwtp3.nam",
     "mf6/test014_NWTP3Low_RCM_dev/description.txt",
 ]
-mf6_test014_NWTP3Low_dev = [
+"mf6/test014_NWTP3Low_dev" = [
     "mf6/test014_NWTP3Low_dev/nwtp3.oc",
     "mf6/test014_NWTP3Low_dev/nwtp3_Rlow.rch",
     "mf6/test014_NWTP3Low_dev/simulation.tdis",
@@ -3803,7 +3803,7 @@ mf6_test014_NWTP3Low_dev = [
     "mf6/test014_NWTP3Low_dev/nwtp3.nam",
     "mf6/test014_NWTP3Low_dev/description.txt",
 ]
-mf6_test015_KeatingLike = [
+"mf6/test015_KeatingLike" = [
     "mf6/test015_KeatingLike/keatinglike.nam",
     "mf6/test015_KeatingLike/keatinglike.oc",
     "mf6/test015_KeatingLike/keatinglike.chd",
@@ -3815,31 +3815,7 @@ mf6_test015_KeatingLike = [
     "mf6/test015_KeatingLike/keatinglike.npf",
     "mf6/test015_KeatingLike/mfsim.nam",
 ]
-mf6_test015_KeatingLike_disu = [
-    "mf6/test015_KeatingLike_disu/keatinglike.nam",
-    "mf6/test015_KeatingLike_disu/keatinglike.oc",
-    "mf6/test015_KeatingLike_disu/keatinglike.chd",
-    "mf6/test015_KeatingLike_disu/keatinglike.rch",
-    "mf6/test015_KeatingLike_disu/simulation.tdis",
-    "mf6/test015_KeatingLike_disu/model.ims",
-    "mf6/test015_KeatingLike_disu/keatinglike.ic",
-    "mf6/test015_KeatingLike_disu/keatinglike.npf",
-    "mf6/test015_KeatingLike_disu/keatinglike.disu",
-    "mf6/test015_KeatingLike_disu/mfsim.nam",
-]
-mf6_test015_KeatingLike_disu_dev = [
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.nam",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.oc",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.chd",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.rch",
-    "mf6/test015_KeatingLike_disu_dev/simulation.tdis",
-    "mf6/test015_KeatingLike_disu_dev/model.ims",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.ic",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.npf",
-    "mf6/test015_KeatingLike_disu_dev/keatinglike.disu",
-    "mf6/test015_KeatingLike_disu_dev/mfsim.nam",
-]
-mf6_test015_KeatingLike_xt3d = [
+"mf6/test015_KeatingLike-xt3d" = [
     "mf6/test015_KeatingLike-xt3d/keatinglike.nam",
     "mf6/test015_KeatingLike-xt3d/keatinglike.oc",
     "mf6/test015_KeatingLike-xt3d/keatinglike.chd",
@@ -3852,7 +3828,7 @@ mf6_test015_KeatingLike_xt3d = [
     "mf6/test015_KeatingLike-xt3d/mfsim.nam",
     "mf6/test015_KeatingLike-xt3d/description.txt",
 ]
-mf6_test015_KeatingLike_xt3d_rhs = [
+"mf6/test015_KeatingLike-xt3d-rhs" = [
     "mf6/test015_KeatingLike-xt3d-rhs/keatinglike.nam",
     "mf6/test015_KeatingLike-xt3d-rhs/keatinglike.oc",
     "mf6/test015_KeatingLike-xt3d-rhs/keatinglike.chd",
@@ -3865,7 +3841,31 @@ mf6_test015_KeatingLike_xt3d_rhs = [
     "mf6/test015_KeatingLike-xt3d-rhs/mfsim.nam",
     "mf6/test015_KeatingLike-xt3d-rhs/description.txt",
 ]
-mf6_test016_Keating = [
+"mf6/test015_KeatingLike_disu" = [
+    "mf6/test015_KeatingLike_disu/keatinglike.nam",
+    "mf6/test015_KeatingLike_disu/keatinglike.oc",
+    "mf6/test015_KeatingLike_disu/keatinglike.chd",
+    "mf6/test015_KeatingLike_disu/keatinglike.rch",
+    "mf6/test015_KeatingLike_disu/simulation.tdis",
+    "mf6/test015_KeatingLike_disu/model.ims",
+    "mf6/test015_KeatingLike_disu/keatinglike.ic",
+    "mf6/test015_KeatingLike_disu/keatinglike.npf",
+    "mf6/test015_KeatingLike_disu/keatinglike.disu",
+    "mf6/test015_KeatingLike_disu/mfsim.nam",
+]
+"mf6/test015_KeatingLike_disu_dev" = [
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.nam",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.oc",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.chd",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.rch",
+    "mf6/test015_KeatingLike_disu_dev/simulation.tdis",
+    "mf6/test015_KeatingLike_disu_dev/model.ims",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.ic",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.npf",
+    "mf6/test015_KeatingLike_disu_dev/keatinglike.disu",
+    "mf6/test015_KeatingLike_disu_dev/mfsim.nam",
+]
+"mf6/test016_Keating" = [
     "mf6/test016_Keating/keating.chd",
     "mf6/test016_Keating/keating.rch",
     "mf6/test016_Keating/keating.dis",
@@ -3878,7 +3878,7 @@ mf6_test016_Keating = [
     "mf6/test016_Keating/keating.npf",
     "mf6/test016_Keating/keating.oc",
 ]
-mf6_test016_Keating_dev = [
+"mf6/test016_Keating_dev" = [
     "mf6/test016_Keating_dev/keating.chd",
     "mf6/test016_Keating_dev/keating.rch",
     "mf6/test016_Keating_dev/keating.dis",
@@ -3891,7 +3891,7 @@ mf6_test016_Keating_dev = [
     "mf6/test016_Keating_dev/keating.npf",
     "mf6/test016_Keating_dev/keating.oc",
 ]
-mf6_test016_Keating_disu_250 = [
+"mf6/test016_Keating_disu_250" = [
     "mf6/test016_Keating_disu_250/keating.rch",
     "mf6/test016_Keating_disu_250/keating.ghb",
     "mf6/test016_Keating_disu_250/keating.nam",
@@ -3904,7 +3904,7 @@ mf6_test016_Keating_disu_250 = [
     "mf6/test016_Keating_disu_250/keating.npf",
     "mf6/test016_Keating_disu_250/keating.oc",
 ]
-mf6_test016_Keating_disu_250_xt3d = [
+"mf6/test016_Keating_disu_250_xt3d" = [
     "mf6/test016_Keating_disu_250_xt3d/keating.rch",
     "mf6/test016_Keating_disu_250_xt3d/keating.ghb",
     "mf6/test016_Keating_disu_250_xt3d/keating.nam",
@@ -3916,7 +3916,7 @@ mf6_test016_Keating_disu_250_xt3d = [
     "mf6/test016_Keating_disu_250_xt3d/keating.npf",
     "mf6/test016_Keating_disu_250_xt3d/keating.oc",
 ]
-mf6_test016_Keating_disu_dev = [
+"mf6/test016_Keating_disu_dev" = [
     "mf6/test016_Keating_disu_dev/keating.rch",
     "mf6/test016_Keating_disu_dev/keating.ghb",
     "mf6/test016_Keating_disu_dev/keating.nam",
@@ -3930,7 +3930,7 @@ mf6_test016_Keating_disu_dev = [
     "mf6/test016_Keating_disu_dev/keating.npf",
     "mf6/test016_Keating_disu_dev/keating.oc",
 ]
-mf6_test017_Crinkle = [
+"mf6/test017_Crinkle" = [
     "mf6/test017_Crinkle/crinkle.oc",
     "mf6/test017_Crinkle/Array.MF-RechDIST.txt",
     "mf6/test017_Crinkle/crinkle.npf",
@@ -3946,7 +3946,7 @@ mf6_test017_Crinkle = [
     "mf6/test017_Crinkle/Array.MF-Top002.txt",
     "mf6/test017_Crinkle/crinkle.nam",
 ]
-mf6_test019_VilhelmsenGC = [
+"mf6/test019_VilhelmsenGC" = [
     "mf6/test019_VilhelmsenGC/parent.npf.hk1.ref",
     "mf6/test019_VilhelmsenGC/parent.dis",
     "mf6/test019_VilhelmsenGC/parent.npf.hk2.ref",
@@ -3972,7 +3972,7 @@ mf6_test019_VilhelmsenGC = [
     "mf6/test019_VilhelmsenGC/parent.dis.top.ref",
     "mf6/test019_VilhelmsenGC/description.txt",
 ]
-mf6_test019_VilhelmsenGF = [
+"mf6/test019_VilhelmsenGF" = [
     "mf6/test019_VilhelmsenGF/TM9_global_gv.npf.hk8.ref",
     "mf6/test019_VilhelmsenGF/TM9_global_gv.npf.hk15.ref",
     "mf6/test019_VilhelmsenGF/TM9_global_gv.dis.top.ref",
@@ -4013,7 +4013,7 @@ mf6_test019_VilhelmsenGF = [
     "mf6/test019_VilhelmsenGF/TM9_global_gv.npf.hk24.ref",
     "mf6/test019_VilhelmsenGF/TM9_global_gv.npf.hk5.ref",
 ]
-mf6_test019_VilhelmsenLGR = [
+"mf6/test019_VilhelmsenLGR" = [
     "mf6/test019_VilhelmsenLGR/TM9_parent_GN.npf.hk4.ref",
     "mf6/test019_VilhelmsenLGR/Child_GN.npf.hk12.ref",
     "mf6/test019_VilhelmsenLGR/TM9_parent_GN.ic",
@@ -4076,7 +4076,7 @@ mf6_test019_VilhelmsenLGR = [
     "mf6/test019_VilhelmsenLGR/TM9_parent_GN.npf.hk9.ref",
     "mf6/test019_VilhelmsenLGR/TM9_parent_GN.dis.top.ref",
 ]
-mf6_test019_VilhelmsenLGR_nr = [
+"mf6/test019_VilhelmsenLGR_nr" = [
     "mf6/test019_VilhelmsenLGR_nr/TM9_parent_GN.npf.hk4.ref",
     "mf6/test019_VilhelmsenLGR_nr/Child_GN.npf.hk12.ref",
     "mf6/test019_VilhelmsenLGR_nr/TM9_parent_GN.ic",
@@ -4142,7 +4142,7 @@ mf6_test019_VilhelmsenLGR_nr = [
     "mf6/test019_VilhelmsenLGR_nr/Child_GN.maw",
     "mf6/test019_VilhelmsenLGR_nr/TM9_parent_GN.dis.top.ref",
 ]
-mf6_test020_NT_EI = [
+"mf6/test020_NT_EI" = [
     "mf6/test020_NT_EI/NT_EI.nam",
     "mf6/test020_NT_EI/Injection.maw.obs",
     "mf6/test020_NT_EI/Injection.maw",
@@ -4161,7 +4161,7 @@ mf6_test020_NT_EI = [
     "mf6/test020_NT_EI/description.txt",
     "mf6/test020_NT_EI/NT_EI.ic",
 ]
-mf6_test020_NevilleTonkinTransient = [
+"mf6/test020_NevilleTonkinTransient" = [
     "mf6/test020_NevilleTonkinTransient/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransient/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransient/simulation.tdis",
@@ -4177,7 +4177,7 @@ mf6_test020_NevilleTonkinTransient = [
     "mf6/test020_NevilleTonkinTransient/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransient/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransientTS = [
+"mf6/test020_NevilleTonkinTransientTS" = [
     "mf6/test020_NevilleTonkinTransientTS/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransientTS/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransientTS/maw_rates.ts",
@@ -4193,7 +4193,7 @@ mf6_test020_NevilleTonkinTransientTS = [
     "mf6/test020_NevilleTonkinTransientTS/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransientTS/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransientTS2 = [
+"mf6/test020_NevilleTonkinTransientTS2" = [
     "mf6/test020_NevilleTonkinTransientTS2/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransientTS2/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransientTS2/maw_rates.ts",
@@ -4209,7 +4209,7 @@ mf6_test020_NevilleTonkinTransientTS2 = [
     "mf6/test020_NevilleTonkinTransientTS2/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransientTS2/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransient_aniso = [
+"mf6/test020_NevilleTonkinTransient_aniso" = [
     "mf6/test020_NevilleTonkinTransient_aniso/mf6.oc6",
     "mf6/test020_NevilleTonkinTransient_aniso/mf6.tdis6",
     "mf6/test020_NevilleTonkinTransient_aniso/mf6.ims6",
@@ -4221,7 +4221,7 @@ mf6_test020_NevilleTonkinTransient_aniso = [
     "mf6/test020_NevilleTonkinTransient_aniso/mfsim.nam",
     "mf6/test020_NevilleTonkinTransient_aniso/mf6.maw",
 ]
-mf6_test020_NevilleTonkinTransient_constantMAW = [
+"mf6/test020_NevilleTonkinTransient_constantMAW" = [
     "mf6/test020_NevilleTonkinTransient_constantMAW/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransient_constantMAW/maw_head.ts",
     "mf6/test020_NevilleTonkinTransient_constantMAW/NT_Transient.ic",
@@ -4238,7 +4238,7 @@ mf6_test020_NevilleTonkinTransient_constantMAW = [
     "mf6/test020_NevilleTonkinTransient_constantMAW/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransient_constantMAW/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransient_cumcond = [
+"mf6/test020_NevilleTonkinTransient_cumcond" = [
     "mf6/test020_NevilleTonkinTransient_cumcond/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransient_cumcond/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransient_cumcond/simulation.tdis",
@@ -4254,7 +4254,7 @@ mf6_test020_NevilleTonkinTransient_cumcond = [
     "mf6/test020_NevilleTonkinTransient_cumcond/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransient_cumcond/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransient_cumcond_dev = [
+"mf6/test020_NevilleTonkinTransient_cumcond_dev" = [
     "mf6/test020_NevilleTonkinTransient_cumcond_dev/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransient_cumcond_dev/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransient_cumcond_dev/simulation.tdis",
@@ -4270,7 +4270,7 @@ mf6_test020_NevilleTonkinTransient_cumcond_dev = [
     "mf6/test020_NevilleTonkinTransient_cumcond_dev/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransient_cumcond_dev/NT_Transient.obs",
 ]
-mf6_test020_NevilleTonkinTransient_thickstrt = [
+"mf6/test020_NevilleTonkinTransient_thickstrt" = [
     "mf6/test020_NevilleTonkinTransient_thickstrt/NT_Transient.npf",
     "mf6/test020_NevilleTonkinTransient_thickstrt/NT_Transient.ic",
     "mf6/test020_NevilleTonkinTransient_thickstrt/simulation.tdis",
@@ -4286,7 +4286,7 @@ mf6_test020_NevilleTonkinTransient_thickstrt = [
     "mf6/test020_NevilleTonkinTransient_thickstrt/NT_Transient.maw",
     "mf6/test020_NevilleTonkinTransient_thickstrt/NT_Transient.obs",
 ]
-mf6_test020_mawconfined = [
+"mf6/test020_mawconfined" = [
     "mf6/test020_mawconfined/test020_mawconfined.npf",
     "mf6/test020_mawconfined/test020_mawconfined.oc",
     "mf6/test020_mawconfined/test020_mawconfined.ic",
@@ -4298,7 +4298,7 @@ mf6_test020_mawconfined = [
     "mf6/test020_mawconfined/test020_mawconfined.maw",
     "mf6/test020_mawconfined/test020_mawconfined.tdis",
 ]
-mf6_test020_mawconfined_openclose = [
+"mf6/test020_mawconfined_openclose" = [
     "mf6/test020_mawconfined_openclose/test020_mawconfined.maw.connect.ref",
     "mf6/test020_mawconfined_openclose/test020_mawconfined.npf",
     "mf6/test020_mawconfined_openclose/test020_mawconfined.oc",
@@ -4313,7 +4313,7 @@ mf6_test020_mawconfined_openclose = [
     "mf6/test020_mawconfined_openclose/test020_mawconfined.maw",
     "mf6/test020_mawconfined_openclose/test020_mawconfined.tdis",
 ]
-mf6_test021_twri = [
+"mf6/test021_twri" = [
     "mf6/test021_twri/twri.rch",
     "mf6/test021_twri/twri.chd",
     "mf6/test021_twri/twri.drn",
@@ -4328,7 +4328,7 @@ mf6_test021_twri = [
     "mf6/test021_twri/twri.ic",
     "mf6/test021_twri/twri.npf",
 ]
-mf6_test023_FlowingWell = [
+"mf6/test023_FlowingWell" = [
     "mf6/test023_FlowingWell/FW_Transient.ic",
     "mf6/test023_FlowingWell/FW_Transient.npf",
     "mf6/test023_FlowingWell/simulation.tdis",
@@ -4344,7 +4344,7 @@ mf6_test023_FlowingWell = [
     "mf6/test023_FlowingWell/description.txt",
     "mf6/test023_FlowingWell/FW_Transient.dis",
 ]
-mf6_test024_Reilly = [
+"mf6/test024_Reilly" = [
     "mf6/test024_Reilly/Reilly.nam",
     "mf6/test024_Reilly/Reilly.oc",
     "mf6/test024_Reilly/Reilly.obs",
@@ -4363,7 +4363,7 @@ mf6_test024_Reilly = [
     "mf6/test024_Reilly/description.txt",
     "mf6/test024_Reilly/delr.ref",
 ]
-mf6_test024_Reilly_ext = [
+"mf6/test024_Reilly_ext" = [
     "mf6/test024_Reilly_ext/Reilly.nam",
     "mf6/test024_Reilly_ext/Reilly.oc",
     "mf6/test024_Reilly_ext/Reilly.obs",
@@ -4387,7 +4387,7 @@ mf6_test024_Reilly_ext = [
     "mf6/test024_Reilly_ext/description.txt",
     "mf6/test024_Reilly_ext/delr.ref",
 ]
-mf6_test025_ConstantCV = [
+"mf6/test025_ConstantCV" = [
     "mf6/test025_ConstantCV/model.ic",
     "mf6/test025_ConstantCV/model.wel",
     "mf6/test025_ConstantCV/model.npf",
@@ -4399,7 +4399,7 @@ mf6_test025_ConstantCV = [
     "mf6/test025_ConstantCV/model.nam",
     "mf6/test025_ConstantCV/model.sto",
 ]
-mf6_test025_ConstantCV_perched = [
+"mf6/test025_ConstantCV_perched" = [
     "mf6/test025_ConstantCV_perched/model.ic",
     "mf6/test025_ConstantCV_perched/model.wel",
     "mf6/test025_ConstantCV_perched/model.npf",
@@ -4411,7 +4411,7 @@ mf6_test025_ConstantCV_perched = [
     "mf6/test025_ConstantCV_perched/model.nam",
     "mf6/test025_ConstantCV_perched/model.sto",
 ]
-mf6_test025_VariableCV = [
+"mf6/test025_VariableCV" = [
     "mf6/test025_VariableCV/model.ic",
     "mf6/test025_VariableCV/model.wel",
     "mf6/test025_VariableCV/model.npf",
@@ -4423,7 +4423,7 @@ mf6_test025_VariableCV = [
     "mf6/test025_VariableCV/model.nam",
     "mf6/test025_VariableCV/model.sto",
 ]
-mf6_test025_Vertically_Staggered = [
+"mf6/test025_Vertically_Staggered" = [
     "mf6/test025_Vertically_Staggered/flow.ims",
     "mf6/test025_Vertically_Staggered/flow.chd",
     "mf6/test025_Vertically_Staggered/flow.oc",
@@ -4435,7 +4435,7 @@ mf6_test025_Vertically_Staggered = [
     "mf6/test025_Vertically_Staggered/mfsim.nam",
     "mf6/test025_Vertically_Staggered/flow.npf",
 ]
-mf6_test026_WellReduction = [
+"mf6/test026_WellReduction" = [
     "mf6/test026_WellReduction/Well_Reduction.oc",
     "mf6/test026_WellReduction/Well_Reduction.wel",
     "mf6/test026_WellReduction/simulation.tdis",
@@ -4449,7 +4449,7 @@ mf6_test026_WellReduction = [
     "mf6/test026_WellReduction/Well_Reduction.sto",
     "mf6/test026_WellReduction/Well_Reduction.wel.obs",
 ]
-mf6_test027_TimeseriesTest = [
+"mf6/test027_TimeseriesTest" = [
     "mf6/test027_TimeseriesTest/timeseriestest.ghb.ref",
     "mf6/test027_TimeseriesTest/timearrayseries.rch.tas",
     "mf6/test027_TimeseriesTest/timeseriestest.npf",
@@ -4471,7 +4471,7 @@ mf6_test027_TimeseriesTest = [
     "mf6/test027_TimeseriesTest/timeseriestest.obs",
     "mf6/test027_TimeseriesTest/timeseriestest.rch",
 ]
-mf6_test027_TimeseriesTest_idomain = [
+"mf6/test027_TimeseriesTest_idomain" = [
     "mf6/test027_TimeseriesTest_idomain/timearrayseries.rch.tas",
     "mf6/test027_TimeseriesTest_idomain/timeseriestest.npf",
     "mf6/test027_TimeseriesTest_idomain/timeseriestest.wel",
@@ -4493,7 +4493,7 @@ mf6_test027_TimeseriesTest_idomain = [
     "mf6/test027_TimeseriesTest_idomain/timeseriestest.obs",
     "mf6/test027_TimeseriesTest_idomain/timeseriestest.rch",
 ]
-mf6_test028_sfr = [
+"mf6/test028_sfr" = [
     "mf6/test028_sfr/test1tr.sto",
     "mf6/test028_sfr/test1tr.nam",
     "mf6/test028_sfr/test1tr.oc",
@@ -4512,7 +4512,7 @@ mf6_test028_sfr = [
     "mf6/test028_sfr/description.txt",
     "mf6/test028_sfr/test1tr.sfr.obs",
 ]
-mf6_test028_sfr_mvr = [
+"mf6/test028_sfr_mvr" = [
     "mf6/test028_sfr_mvr/test1tr.sto",
     "mf6/test028_sfr_mvr/test1tr.nam",
     "mf6/test028_sfr_mvr/test1tr.oc",
@@ -4530,7 +4530,7 @@ mf6_test028_sfr_mvr = [
     "mf6/test028_sfr_mvr/test1tr.sfr8",
     "mf6/test028_sfr_mvr/description.txt",
 ]
-mf6_test028_sfr_mvr_openclose = [
+"mf6/test028_sfr_mvr_openclose" = [
     "mf6/test028_sfr_mvr_openclose/test1tr.sto",
     "mf6/test028_sfr_mvr_openclose/test1tr.nam",
     "mf6/test028_sfr_mvr_openclose/test1tr.oc",
@@ -4554,7 +4554,7 @@ mf6_test028_sfr_mvr_openclose = [
     "mf6/test028_sfr_mvr_openclose/description.txt",
     "mf6/test028_sfr_mvr_openclose/test1tr.sfr.reaches.ref",
 ]
-mf6_test028_sfr_rewet = [
+"mf6/test028_sfr_rewet" = [
     "mf6/test028_sfr_rewet/mf6.oc6",
     "mf6/test028_sfr_rewet/mf6.tdis6",
     "mf6/test028_sfr_rewet/mf6.ims6",
@@ -4567,7 +4567,7 @@ mf6_test028_sfr_rewet = [
     "mf6/test028_sfr_rewet/mf6.sfr.obs6",
     "mf6/test028_sfr_rewet/mf6.sfr6",
 ]
-mf6_test028_sfr_rewet_drain = [
+"mf6/test028_sfr_rewet_drain" = [
     "mf6/test028_sfr_rewet_drain/mf6.obs6",
     "mf6/test028_sfr_rewet_drain/mf6.oc6",
     "mf6/test028_sfr_rewet_drain/mf6.tdis6",
@@ -4582,7 +4582,7 @@ mf6_test028_sfr_rewet_drain = [
     "mf6/test028_sfr_rewet_drain/mf6.sfr6",
     "mf6/test028_sfr_rewet_drain/mf6_sfr_manning.ts",
 ]
-mf6_test028_sfr_rewet_nr = [
+"mf6/test028_sfr_rewet_nr" = [
     "mf6/test028_sfr_rewet_nr/mf6.obs6",
     "mf6/test028_sfr_rewet_nr/mf6.oc6",
     "mf6/test028_sfr_rewet_nr/mf6.tdis6",
@@ -4596,7 +4596,7 @@ mf6_test028_sfr_rewet_nr = [
     "mf6/test028_sfr_rewet_nr/mf6.sfr.obs6",
     "mf6/test028_sfr_rewet_nr/mf6.sfr6",
 ]
-mf6_test028_sfr_rewet_simple = [
+"mf6/test028_sfr_rewet_simple" = [
     "mf6/test028_sfr_rewet_simple/mf6.obs6",
     "mf6/test028_sfr_rewet_simple/mf6.oc6",
     "mf6/test028_sfr_rewet_simple/mf6.tdis6",
@@ -4610,7 +4610,7 @@ mf6_test028_sfr_rewet_simple = [
     "mf6/test028_sfr_rewet_simple/mf6.sfr.obs6",
     "mf6/test028_sfr_rewet_simple/mf6.sfr6",
 ]
-mf6_test028_sfr_simple = [
+"mf6/test028_sfr_simple" = [
     "mf6/test028_sfr_simple/mf6.oc6",
     "mf6/test028_sfr_simple/mf6.wel6",
     "mf6/test028_sfr_simple/mf6.tdis6",
@@ -4628,7 +4628,7 @@ mf6_test028_sfr_simple = [
     "mf6/test028_sfr_simple/description.txt",
     "mf6/test028_sfr_simple/mf6.sfr6",
 ]
-mf6_test029_lgr_parentchild = [
+"mf6/test029_lgr_parentchild" = [
     "mf6/test029_lgr_parentchild/PARENT.dis",
     "mf6/test029_lgr_parentchild/PARENT_CHILD.exg",
     "mf6/test029_lgr_parentchild/PARENT.oc",
@@ -4649,7 +4649,7 @@ mf6_test029_lgr_parentchild = [
     "mf6/test029_lgr_parentchild/CHILD.oc",
     "mf6/test029_lgr_parentchild/CHILD.npf",
 ]
-mf6_test029_lgrsfr_parent = [
+"mf6/test029_lgrsfr_parent" = [
     "mf6/test029_lgrsfr_parent/test029.nam",
     "mf6/test029_lgrsfr_parent/test029.oc",
     "mf6/test029_lgrsfr_parent/hk.ref",
@@ -4664,7 +4664,7 @@ mf6_test029_lgrsfr_parent = [
     "mf6/test029_lgrsfr_parent/description.txt",
     "mf6/test029_lgrsfr_parent/test029.sfr8",
 ]
-mf6_test029_lgrsfr_parent_hole = [
+"mf6/test029_lgrsfr_parent_hole" = [
     "mf6/test029_lgrsfr_parent_hole/sfr_hole.nam",
     "mf6/test029_lgrsfr_parent_hole/sfr_hole.sfr",
     "mf6/test029_lgrsfr_parent_hole/sfr_hole.ic",
@@ -4677,7 +4677,7 @@ mf6_test029_lgrsfr_parent_hole = [
     "mf6/test029_lgrsfr_parent_hole/mfsim.nam",
     "mf6/test029_lgrsfr_parent_hole/sfr_hole.tdis",
 ]
-mf6_test029_lgrsfr_parentchild = [
+"mf6/test029_lgrsfr_parentchild" = [
     "mf6/test029_lgrsfr_parentchild/PARENT.dis",
     "mf6/test029_lgrsfr_parentchild/PARENT_CHILD.exg",
     "mf6/test029_lgrsfr_parentchild/PARENT.oc",
@@ -4701,7 +4701,7 @@ mf6_test029_lgrsfr_parentchild = [
     "mf6/test029_lgrsfr_parentchild/CHILD.oc",
     "mf6/test029_lgrsfr_parentchild/CHILD.npf",
 ]
-mf6_test030_hani_col = [
+"mf6/test030_hani_col" = [
     "mf6/test030_hani_col/model.ic",
     "mf6/test030_hani_col/model.wel",
     "mf6/test030_hani_col/model.npf",
@@ -4714,7 +4714,7 @@ mf6_test030_hani_col = [
     "mf6/test030_hani_col/model.nam",
     "mf6/test030_hani_col/description.txt",
 ]
-mf6_test030_hani_col_disu = [
+"mf6/test030_hani_col_disu" = [
     "mf6/test030_hani_col_disu/model.ic",
     "mf6/test030_hani_col_disu/model.wel",
     "mf6/test030_hani_col_disu/model.npf",
@@ -4727,7 +4727,7 @@ mf6_test030_hani_col_disu = [
     "mf6/test030_hani_col_disu/model.nam",
     "mf6/test030_hani_col_disu/description.txt",
 ]
-mf6_test030_hani_row = [
+"mf6/test030_hani_row" = [
     "mf6/test030_hani_row/model.ic",
     "mf6/test030_hani_row/model.wel",
     "mf6/test030_hani_row/model.npf",
@@ -4740,7 +4740,7 @@ mf6_test030_hani_row = [
     "mf6/test030_hani_row/model.nam",
     "mf6/test030_hani_row/description.txt",
 ]
-mf6_test030_hani_row_disu = [
+"mf6/test030_hani_row_disu" = [
     "mf6/test030_hani_row_disu/model.ic",
     "mf6/test030_hani_row_disu/model.wel",
     "mf6/test030_hani_row_disu/model.npf",
@@ -4753,7 +4753,7 @@ mf6_test030_hani_row_disu = [
     "mf6/test030_hani_row_disu/model.nam",
     "mf6/test030_hani_row_disu/description.txt",
 ]
-mf6_test030_hani_xt3d = [
+"mf6/test030_hani_xt3d" = [
     "mf6/test030_hani_xt3d/model.ic",
     "mf6/test030_hani_xt3d/model.wel",
     "mf6/test030_hani_xt3d/model.npf",
@@ -4766,7 +4766,7 @@ mf6_test030_hani_xt3d = [
     "mf6/test030_hani_xt3d/model.nam",
     "mf6/test030_hani_xt3d/description.txt",
 ]
-mf6_test030_hani_xt3d_disu = [
+"mf6/test030_hani_xt3d_disu" = [
     "mf6/test030_hani_xt3d_disu/model.ic",
     "mf6/test030_hani_xt3d_disu/model.wel",
     "mf6/test030_hani_xt3d_disu/model.npf",
@@ -4779,7 +4779,7 @@ mf6_test030_hani_xt3d_disu = [
     "mf6/test030_hani_xt3d_disu/model.nam",
     "mf6/test030_hani_xt3d_disu/description.txt",
 ]
-mf6_test031_many_gwf = [
+"mf6/test031_many_gwf" = [
     "mf6/test031_many_gwf/gwf2_1-gwf2_2.right.exg",
     "mf6/test031_many_gwf/gwf3_1-gwf3_2.right.exg",
     "mf6/test031_many_gwf/gwf1_1-gwf1_2.right.exg",
@@ -4806,7 +4806,7 @@ mf6_test031_many_gwf = [
     "mf6/test031_many_gwf/gwf1_3-gwf2_3.front.exg",
     "mf6/test031_many_gwf/m1_2.nam",
 ]
-mf6_test032_sfr = [
+"mf6/test032_sfr" = [
     "mf6/test032_sfr/test032.oc",
     "mf6/test032_sfr/simulation.tdis",
     "mf6/test032_sfr/test032.npf",
@@ -4819,7 +4819,7 @@ mf6_test032_sfr = [
     "mf6/test032_sfr/test032.sfr8",
     "mf6/test032_sfr/time.ts",
 ]
-mf6_test033_wtdecay = [
+"mf6/test033_wtdecay" = [
     "mf6/test033_wtdecay/ihead.ref",
     "mf6/test033_wtdecay/K.ref",
     "mf6/test033_wtdecay/simulation.tdis",
@@ -4835,7 +4835,7 @@ mf6_test033_wtdecay = [
     "mf6/test033_wtdecay/test033.ic",
     "mf6/test033_wtdecay/test033.sto",
 ]
-mf6_test034_nwtp2 = [
+"mf6/test034_nwtp2" = [
     "mf6/test034_nwtp2/test034_nwtp2.nam",
     "mf6/test034_nwtp2/test034_nwtp2.ic",
     "mf6/test034_nwtp2/test034_nwtp2.sto",
@@ -4850,7 +4850,7 @@ mf6_test034_nwtp2 = [
     "mf6/test034_nwtp2/test034_nwtp2_constant.chd",
     "mf6/test034_nwtp2/description.txt",
 ]
-mf6_test034_nwtp2_1d = [
+"mf6/test034_nwtp2_1d" = [
     "mf6/test034_nwtp2_1d/test034_nwtp2.nam",
     "mf6/test034_nwtp2_1d/test034_nwtp2.ic",
     "mf6/test034_nwtp2_1d/test034_nwtp2.sto",
@@ -4866,7 +4866,7 @@ mf6_test034_nwtp2_1d = [
     "mf6/test034_nwtp2_1d/description.txt",
     "mf6/test034_nwtp2_1d/test034_nwtp2_constant.ts",
 ]
-mf6_test035_fhb = [
+"mf6/test035_fhb" = [
     "mf6/test035_fhb/fhb2015.ic",
     "mf6/test035_fhb/fhb2015.npf",
     "mf6/test035_fhb/fhb2015.wel",
@@ -4882,7 +4882,7 @@ mf6_test035_fhb = [
     "mf6/test035_fhb/fhb2015.nam",
     "mf6/test035_fhb/fhb2015.tdis",
 ]
-mf6_test036_twrihfb = [
+"mf6/test036_twrihfb" = [
     "mf6/test036_twrihfb/twrihfb2015.hfb",
     "mf6/test036_twrihfb/twrihfb2015.oc",
     "mf6/test036_twrihfb/twrihfb2015.npf",
@@ -4898,7 +4898,7 @@ mf6_test036_twrihfb = [
     "mf6/test036_twrihfb/description.txt",
     "mf6/test036_twrihfb/twrihfb2015.nam",
 ]
-mf6_test036_twrihfb_5lay = [
+"mf6/test036_twrihfb_5lay" = [
     "mf6/test036_twrihfb_5lay/test036_twrihfb.hfb",
     "mf6/test036_twrihfb_5lay/test036_twrihfb.ic",
     "mf6/test036_twrihfb_5lay/test036_twrihfb.npf",
@@ -4914,7 +4914,7 @@ mf6_test036_twrihfb_5lay = [
     "mf6/test036_twrihfb_5lay/description.txt",
     "mf6/test036_twrihfb_5lay/test036_twrihfb.nam",
 ]
-mf6_test036_twrihfb_lpf = [
+"mf6/test036_twrihfb_lpf" = [
     "mf6/test036_twrihfb_lpf/test036_twrihfb.hfb",
     "mf6/test036_twrihfb_lpf/test036_twrihfb.ic",
     "mf6/test036_twrihfb_lpf/test036_twrihfb.npf",
@@ -4930,7 +4930,7 @@ mf6_test036_twrihfb_lpf = [
     "mf6/test036_twrihfb_lpf/description.txt",
     "mf6/test036_twrihfb_lpf/test036_twrihfb.nam",
 ]
-mf6_test036_twrihfb_nr = [
+"mf6/test036_twrihfb_nr" = [
     "mf6/test036_twrihfb_nr/test036_twrihfb_nr.dis",
     "mf6/test036_twrihfb_nr/test036_twrihfb_nr.ic",
     "mf6/test036_twrihfb_nr/test036_twrihfb_nr.rch",
@@ -4946,7 +4946,7 @@ mf6_test036_twrihfb_nr = [
     "mf6/test036_twrihfb_nr/test036_twrihfb_nr.wel",
     "mf6/test036_twrihfb_nr/test036_twrihfb_nr.ibound.chd",
 ]
-mf6_test036_twrihfb_openclose = [
+"mf6/test036_twrihfb_openclose" = [
     "mf6/test036_twrihfb_openclose/twrihfb2015.hfb",
     "mf6/test036_twrihfb_openclose/twrihfb2015.drn.per1.ref",
     "mf6/test036_twrihfb_openclose/twrihfb2015.oc",
@@ -4965,7 +4965,7 @@ mf6_test036_twrihfb_openclose = [
     "mf6/test036_twrihfb_openclose/twrihfb2015.chd.per1.ref",
     "mf6/test036_twrihfb_openclose/twrihfb2015.nam",
 ]
-mf6_test037_mfcp3 = [
+"mf6/test037_mfcp3" = [
     "mf6/test037_mfcp3/test037.riv",
     "mf6/test037_mfcp3/test037.tdis",
     "mf6/test037_mfcp3/test037.npf",
@@ -4980,7 +4980,7 @@ mf6_test037_mfcp3 = [
     "mf6/test037_mfcp3/test037.ic",
     "mf6/test037_mfcp3/test037.nam",
 ]
-mf6_test038_idomain = [
+"mf6/test038_idomain" = [
     "mf6/test038_idomain/model.ic",
     "mf6/test038_idomain/model.wel",
     "mf6/test038_idomain/model.npf",
@@ -4993,7 +4993,7 @@ mf6_test038_idomain = [
     "mf6/test038_idomain/model.oc",
     "mf6/test038_idomain/model.nam",
 ]
-mf6_test041_flowdivert = [
+"mf6/test041_flowdivert" = [
     "mf6/test041_flowdivert/flowdivert.nam",
     "mf6/test041_flowdivert/flowdivert.dis",
     "mf6/test041_flowdivert/flowdivert.chd",
@@ -5005,7 +5005,7 @@ mf6_test041_flowdivert = [
     "mf6/test041_flowdivert/description.txt",
     "mf6/test041_flowdivert/flowdivert.ic",
 ]
-mf6_test041_flowdivert_nr = [
+"mf6/test041_flowdivert_nr" = [
     "mf6/test041_flowdivert_nr/flowdivert.nam",
     "mf6/test041_flowdivert_nr/flowdivert.dis",
     "mf6/test041_flowdivert_nr/flowdivert.chd",
@@ -5017,7 +5017,7 @@ mf6_test041_flowdivert_nr = [
     "mf6/test041_flowdivert_nr/description.txt",
     "mf6/test041_flowdivert_nr/flowdivert.ic",
 ]
-mf6_test041_flowdivert_nr_dev = [
+"mf6/test041_flowdivert_nr_dev" = [
     "mf6/test041_flowdivert_nr_dev/flowdivert.nam",
     "mf6/test041_flowdivert_nr_dev/flowdivert.dis",
     "mf6/test041_flowdivert_nr_dev/flowdivert.chd",
@@ -5029,7 +5029,7 @@ mf6_test041_flowdivert_nr_dev = [
     "mf6/test041_flowdivert_nr_dev/description.txt",
     "mf6/test041_flowdivert_nr_dev/flowdivert.ic",
 ]
-mf6_test041_flowdivert_nwt_dev = [
+"mf6/test041_flowdivert_nwt_dev" = [
     "mf6/test041_flowdivert_nwt_dev/flowdivert.nam",
     "mf6/test041_flowdivert_nwt_dev/flowdivert.dis",
     "mf6/test041_flowdivert_nwt_dev/flowdivert.chd",
@@ -5041,7 +5041,7 @@ mf6_test041_flowdivert_nwt_dev = [
     "mf6/test041_flowdivert_nwt_dev/description.txt",
     "mf6/test041_flowdivert_nwt_dev/flowdivert.ic",
 ]
-mf6_test042_lake0_dev = [
+"mf6/test042_lake0_dev" = [
     "mf6/test042_lake0_dev/lake0.npf",
     "mf6/test042_lake0_dev/lake0.oc",
     "mf6/test042_lake0_dev/lake0.lak",
@@ -5053,7 +5053,7 @@ mf6_test042_lake0_dev = [
     "mf6/test042_lake0_dev/lake0.tdis",
     "mf6/test042_lake0_dev/lake0.chd",
 ]
-mf6_test042_lake0_embeddedh = [
+"mf6/test042_lake0_embeddedh" = [
     "mf6/test042_lake0_embeddedh/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedh/l3_table.ref",
     "mf6/test042_lake0_embeddedh/lake0_embedded.chd",
@@ -5072,7 +5072,7 @@ mf6_test042_lake0_embeddedh = [
     "mf6/test042_lake0_embeddedh/lake0_embedded.lak.obs",
     "mf6/test042_lake0_embeddedh/chd.ts",
 ]
-mf6_test042_lake0_embeddedh_conf = [
+"mf6/test042_lake0_embeddedh_conf" = [
     "mf6/test042_lake0_embeddedh_conf/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedh_conf/l3_table.ref",
     "mf6/test042_lake0_embeddedh_conf/lake0_embedded.chd",
@@ -5090,7 +5090,7 @@ mf6_test042_lake0_embeddedh_conf = [
     "mf6/test042_lake0_embeddedh_conf/lake0_embedded.lak.obs",
     "mf6/test042_lake0_embeddedh_conf/chd.ts",
 ]
-mf6_test042_lake0_embeddedh_openclose = [
+"mf6/test042_lake0_embeddedh_openclose" = [
     "mf6/test042_lake0_embeddedh_openclose/l2_table_data.ref",
     "mf6/test042_lake0_embeddedh_openclose/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedh_openclose/lake_connection.ref",
@@ -5114,7 +5114,7 @@ mf6_test042_lake0_embeddedh_openclose = [
     "mf6/test042_lake0_embeddedh_openclose/lake_table.ref",
     "mf6/test042_lake0_embeddedh_openclose/chd.ts",
 ]
-mf6_test042_lake0_embeddedv = [
+"mf6/test042_lake0_embeddedv" = [
     "mf6/test042_lake0_embeddedv/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedv/embededb_lake_tables.xlsx",
     "mf6/test042_lake0_embeddedv/l3_table.ref",
@@ -5133,7 +5133,7 @@ mf6_test042_lake0_embeddedv = [
     "mf6/test042_lake0_embeddedv/lake0_embedded.lak.obs",
     "mf6/test042_lake0_embeddedv/chd.ts",
 ]
-mf6_test042_lake0_embeddedv_conf = [
+"mf6/test042_lake0_embeddedv_conf" = [
     "mf6/test042_lake0_embeddedv_conf/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedv_conf/l3_table.ref",
     "mf6/test042_lake0_embeddedv_conf/lake0_embedded.chd",
@@ -5151,7 +5151,7 @@ mf6_test042_lake0_embeddedv_conf = [
     "mf6/test042_lake0_embeddedv_conf/lake0_embedded.lak.obs",
     "mf6/test042_lake0_embeddedv_conf/chd.ts",
 ]
-mf6_test042_lake0_embeddedv_dev = [
+"mf6/test042_lake0_embeddedv_dev" = [
     "mf6/test042_lake0_embeddedv_dev/lake0_embedded.nam",
     "mf6/test042_lake0_embeddedv_dev/l3_table.ref",
     "mf6/test042_lake0_embeddedv_dev/lake0_embedded.chd",
@@ -5170,7 +5170,7 @@ mf6_test042_lake0_embeddedv_dev = [
     "mf6/test042_lake0_embeddedv_dev/lake0_embedded.lak.obs",
     "mf6/test042_lake0_embeddedv_dev/chd.ts",
 ]
-mf6_test043_drylake_dev = [
+"mf6/test043_drylake_dev" = [
     "mf6/test043_drylake_dev/drylake.npf",
     "mf6/test043_drylake_dev/drylake.oc",
     "mf6/test043_drylake_dev/drylake.lak",
@@ -5183,7 +5183,7 @@ mf6_test043_drylake_dev = [
     "mf6/test043_drylake_dev/drylake.ic",
     "mf6/test043_drylake_dev/drylake.tdis",
 ]
-mf6_test044_lakebotfill_dev = [
+"mf6/test044_lakebotfill_dev" = [
     "mf6/test044_lakebotfill_dev/lbf.ims",
     "mf6/test044_lakebotfill_dev/lbf.rch",
     "mf6/test044_lakebotfill_dev/lbf.obs",
@@ -5198,7 +5198,7 @@ mf6_test044_lakebotfill_dev = [
     "mf6/test044_lakebotfill_dev/lbf.lak",
     "mf6/test044_lakebotfill_dev/lbf.npf",
 ]
-mf6_test045_lake1ss = [
+"mf6/test045_lake1ss" = [
     "mf6/test045_lake1ss/lakeex1b.evt",
     "mf6/test045_lake1ss/lakeex1b.oc",
     "mf6/test045_lake1ss/lakeex1b.lak",
@@ -5213,7 +5213,7 @@ mf6_test045_lake1ss = [
     "mf6/test045_lake1ss/lakeex1b.ic",
     "mf6/test045_lake1ss/description.txt",
 ]
-mf6_test045_lake1ss_1layer_alt_dev = [
+"mf6/test045_lake1ss_1layer_alt_dev" = [
     "mf6/test045_lake1ss_1layer_alt_dev/lakeex1b_1layerb.npf",
     "mf6/test045_lake1ss_1layer_alt_dev/lakeex1b_1layerb.lak",
     "mf6/test045_lake1ss_1layer_alt_dev/lakeex1b_1layerb.hds.ex",
@@ -5228,7 +5228,7 @@ mf6_test045_lake1ss_1layer_alt_dev = [
     "mf6/test045_lake1ss_1layer_alt_dev/lakeex1b_1layerb.chd",
     "mf6/test045_lake1ss_1layer_alt_dev/lakeex1b_1layerb.ims",
 ]
-mf6_test045_lake1ss_1layer_dev = [
+"mf6/test045_lake1ss_1layer_dev" = [
     "mf6/test045_lake1ss_1layer_dev/lakeex1b_1layer.evt",
     "mf6/test045_lake1ss_1layer_dev/lakeex1b_1layer.oc",
     "mf6/test045_lake1ss_1layer_dev/lakeex1b_1layer.npf",
@@ -5244,7 +5244,7 @@ mf6_test045_lake1ss_1layer_dev = [
     "mf6/test045_lake1ss_1layer_dev/mfsim.nam",
     "mf6/test045_lake1ss_1layer_dev/lakeex1b_1layer.nam",
 ]
-mf6_test045_lake1ss_1layer_thickstrt_dev = [
+"mf6/test045_lake1ss_1layer_thickstrt_dev" = [
     "mf6/test045_lake1ss_1layer_thickstrt_dev/lakeex1b_1layerc.npf",
     "mf6/test045_lake1ss_1layer_thickstrt_dev/lakeex1b_1layerc.lak",
     "mf6/test045_lake1ss_1layer_thickstrt_dev/lakeex1b_1layerc.ic",
@@ -5260,7 +5260,7 @@ mf6_test045_lake1ss_1layer_thickstrt_dev = [
     "mf6/test045_lake1ss_1layer_thickstrt_dev/lakeex1b_1layerc.rch",
     "mf6/test045_lake1ss_1layer_thickstrt_dev/lakeex1b_1layerc.ims",
 ]
-mf6_test045_lake1ss_dev = [
+"mf6/test045_lake1ss_dev" = [
     "mf6/test045_lake1ss_dev/lakeex1b.evt",
     "mf6/test045_lake1ss_dev/lakeex1b.oc",
     "mf6/test045_lake1ss_dev/lakeex1b.lak",
@@ -5276,7 +5276,7 @@ mf6_test045_lake1ss_dev = [
     "mf6/test045_lake1ss_dev/lakeex1b.ic",
     "mf6/test045_lake1ss_dev/description.txt",
 ]
-mf6_test045_lake1ss_none_dev = [
+"mf6/test045_lake1ss_none_dev" = [
     "mf6/test045_lake1ss_none_dev/lakeex1b.evt",
     "mf6/test045_lake1ss_none_dev/lakeex1b.oc",
     "mf6/test045_lake1ss_none_dev/lakeex1b.lak",
@@ -5292,7 +5292,7 @@ mf6_test045_lake1ss_none_dev = [
     "mf6/test045_lake1ss_none_dev/lakeex1b.ic",
     "mf6/test045_lake1ss_none_dev/description.txt",
 ]
-mf6_test045_lake1ss_table_dev = [
+"mf6/test045_lake1ss_table_dev" = [
     "mf6/test045_lake1ss_table_dev/lakeex1b.evt",
     "mf6/test045_lake1ss_table_dev/lakeex1b.oc",
     "mf6/test045_lake1ss_table_dev/lakeex1b.lak",
@@ -5309,7 +5309,7 @@ mf6_test045_lake1ss_table_dev = [
     "mf6/test045_lake1ss_table_dev/lakeex1b.ic",
     "mf6/test045_lake1ss_table_dev/description.txt",
 ]
-mf6_test045_lake1tr_dev = [
+"mf6/test045_lake1tr_dev" = [
     "mf6/test045_lake1tr_dev/lakeex1a.hds.ex",
     "mf6/test045_lake1tr_dev/lakeex1a.evt",
     "mf6/test045_lake1tr_dev/lakeex1a.ic",
@@ -5328,7 +5328,7 @@ mf6_test045_lake1tr_dev = [
     "mf6/test045_lake1tr_dev/lakeex1a.sto",
     "mf6/test045_lake1tr_dev/lakeex1a.lak.obs",
 ]
-mf6_test045_lake1tr_nr = [
+"mf6/test045_lake1tr_nr" = [
     "mf6/test045_lake1tr_nr/lakeex1a.evt",
     "mf6/test045_lake1tr_nr/lakeex1a.ic",
     "mf6/test045_lake1tr_nr/lakeex1a.lak",
@@ -5345,7 +5345,7 @@ mf6_test045_lake1tr_nr = [
     "mf6/test045_lake1tr_nr/lakeex1a.sto",
     "mf6/test045_lake1tr_nr/lakeex1a.lak.obs",
 ]
-mf6_test045_lake2tr_dev = [
+"mf6/test045_lake2tr_dev" = [
     "mf6/test045_lake2tr_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_dev/lakeex2a.nam",
     "mf6/test045_lake2tr_dev/lakeex2a.ic",
@@ -5366,7 +5366,7 @@ mf6_test045_lake2tr_dev = [
     "mf6/test045_lake2tr_dev/lakeex2a.tdis",
     "mf6/test045_lake2tr_dev/lakeex2a.sfr.obs",
 ]
-mf6_test045_lake2tr_il_dev = [
+"mf6/test045_lake2tr_il_dev" = [
     "mf6/test045_lake2tr_il_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_il_dev/lakeex2a.nam",
     "mf6/test045_lake2tr_il_dev/lakeex2a.ic",
@@ -5380,7 +5380,7 @@ mf6_test045_lake2tr_il_dev = [
     "mf6/test045_lake2tr_il_dev/mfsim.nam",
     "mf6/test045_lake2tr_il_dev/lakeex2a.tdis",
 ]
-mf6_test045_lake2tr_nr = [
+"mf6/test045_lake2tr_nr" = [
     "mf6/test045_lake2tr_nr/lakeex2a.sto",
     "mf6/test045_lake2tr_nr/lakeex2a.nam",
     "mf6/test045_lake2tr_nr/lakeex2a.ic",
@@ -5400,7 +5400,7 @@ mf6_test045_lake2tr_nr = [
     "mf6/test045_lake2tr_nr/lakeex2a.tdis",
     "mf6/test045_lake2tr_nr/lakeex2a.sfr.obs",
 ]
-mf6_test045_lake2tr_xsfra_dev = [
+"mf6/test045_lake2tr_xsfra_dev" = [
     "mf6/test045_lake2tr_xsfra_dev/lake_rates.ts",
     "mf6/test045_lake2tr_xsfra_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_xsfra_dev/lakeex2a.nam",
@@ -5417,7 +5417,7 @@ mf6_test045_lake2tr_xsfra_dev = [
     "mf6/test045_lake2tr_xsfra_dev/lakeex2a.tdis",
     "mf6/test045_lake2tr_xsfra_dev/lakeex2a_xsfr.lak",
 ]
-mf6_test045_lake2tr_xsfrb_dev = [
+"mf6/test045_lake2tr_xsfrb_dev" = [
     "mf6/test045_lake2tr_xsfrb_dev/lake_rates.ts",
     "mf6/test045_lake2tr_xsfrb_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_xsfrb_dev/lakeex2a.nam",
@@ -5434,7 +5434,7 @@ mf6_test045_lake2tr_xsfrb_dev = [
     "mf6/test045_lake2tr_xsfrb_dev/lakeex2a.tdis",
     "mf6/test045_lake2tr_xsfrb_dev/lakeex2a_xsfr.lak",
 ]
-mf6_test045_lake2tr_xsfrc_dev = [
+"mf6/test045_lake2tr_xsfrc_dev" = [
     "mf6/test045_lake2tr_xsfrc_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_xsfrc_dev/lakeex2a.nam",
     "mf6/test045_lake2tr_xsfrc_dev/lakeex2a.ic",
@@ -5451,7 +5451,7 @@ mf6_test045_lake2tr_xsfrc_dev = [
     "mf6/test045_lake2tr_xsfrc_dev/mfsim.nam",
     "mf6/test045_lake2tr_xsfrc_dev/lakeex2a.tdis",
 ]
-mf6_test045_lake2tr_xsfrd_dev = [
+"mf6/test045_lake2tr_xsfrd_dev" = [
     "mf6/test045_lake2tr_xsfrd_dev/lakeex2a_xsfrd.lak",
     "mf6/test045_lake2tr_xsfrd_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_xsfrd_dev/lakeex2a.nam",
@@ -5468,7 +5468,7 @@ mf6_test045_lake2tr_xsfrd_dev = [
     "mf6/test045_lake2tr_xsfrd_dev/lake_xsfrd.ts",
     "mf6/test045_lake2tr_xsfrd_dev/lakeex2a.tdis",
 ]
-mf6_test045_lake2tr_xsfre_dev = [
+"mf6/test045_lake2tr_xsfre_dev" = [
     "mf6/test045_lake2tr_xsfre_dev/lakeex2a.sto",
     "mf6/test045_lake2tr_xsfre_dev/lakeex2a_xsfre.lak",
     "mf6/test045_lake2tr_xsfre_dev/lakeex2a.nam",
@@ -5486,7 +5486,7 @@ mf6_test045_lake2tr_xsfre_dev = [
     "mf6/test045_lake2tr_xsfre_dev/lake_xsfrd.ts",
     "mf6/test045_lake2tr_xsfre_dev/lakeex2a.tdis",
 ]
-mf6_test045_lake4ss = [
+"mf6/test045_lake4ss" = [
     "mf6/test045_lake4ss/lakeex4.dis",
     "mf6/test045_lake4ss/lakeex4.ims",
     "mf6/test045_lake4ss/lakeex4.rch",
@@ -5502,7 +5502,7 @@ mf6_test045_lake4ss = [
     "mf6/test045_lake4ss/lakeex4.lak",
     "mf6/test045_lake4ss/description.txt",
 ]
-mf6_test045_lake4ss_cl_dev = [
+"mf6/test045_lake4ss_cl_dev" = [
     "mf6/test045_lake4ss_cl_dev/lakeex4.dis",
     "mf6/test045_lake4ss_cl_dev/lakeex4.ims",
     "mf6/test045_lake4ss_cl_dev/lakeex4.rch",
@@ -5516,7 +5516,7 @@ mf6_test045_lake4ss_cl_dev = [
     "mf6/test045_lake4ss_cl_dev/lakeex4.oc",
     "mf6/test045_lake4ss_cl_dev/lakeex4.lak",
 ]
-mf6_test045_lake4ss_dev = [
+"mf6/test045_lake4ss_dev" = [
     "mf6/test045_lake4ss_dev/lakeex4.dis",
     "mf6/test045_lake4ss_dev/lakeex4.ims",
     "mf6/test045_lake4ss_dev/lakeex4.rch",
@@ -5532,7 +5532,7 @@ mf6_test045_lake4ss_dev = [
     "mf6/test045_lake4ss_dev/lakeex4.lak",
     "mf6/test045_lake4ss_dev/description.txt",
 ]
-mf6_test045_lake4ss_il_dev = [
+"mf6/test045_lake4ss_il_dev" = [
     "mf6/test045_lake4ss_il_dev/lakeex4_il.ibound.chd",
     "mf6/test045_lake4ss_il_dev/lakeex4_il.npf",
     "mf6/test045_lake4ss_il_dev/lakeex4_il.lak",
@@ -5546,7 +5546,7 @@ mf6_test045_lake4ss_il_dev = [
     "mf6/test045_lake4ss_il_dev/lakeex4_il.oc",
     "mf6/test045_lake4ss_il_dev/lakeex4_il.nam",
 ]
-mf6_test045_lake4ss_nr_dev = [
+"mf6/test045_lake4ss_nr_dev" = [
     "mf6/test045_lake4ss_nr_dev/lakeex4.dis",
     "mf6/test045_lake4ss_nr_dev/lakeex4.ims",
     "mf6/test045_lake4ss_nr_dev/lakeex4.rch",
@@ -5561,7 +5561,7 @@ mf6_test045_lake4ss_nr_dev = [
     "mf6/test045_lake4ss_nr_dev/lakeex4.lak",
     "mf6/test045_lake4ss_nr_dev/description.txt",
 ]
-mf6_test045_lake4ss_nr_embedded = [
+"mf6/test045_lake4ss_nr_embedded" = [
     "mf6/test045_lake4ss_nr_embedded/lakeex4.dis",
     "mf6/test045_lake4ss_nr_embedded/lakeex4.ims",
     "mf6/test045_lake4ss_nr_embedded/lake4ss_tabledata.xlsx",
@@ -5579,7 +5579,7 @@ mf6_test045_lake4ss_nr_embedded = [
     "mf6/test045_lake4ss_nr_embedded/lakeex4.lak",
     "mf6/test045_lake4ss_nr_embedded/description.txt",
 ]
-mf6_test046_periodic_bc = [
+"mf6/test046_periodic_bc" = [
     "mf6/test046_periodic_bc/pbc.nam",
     "mf6/test046_periodic_bc/pbc.oc",
     "mf6/test046_periodic_bc/pbc.ims",
@@ -5592,7 +5592,7 @@ mf6_test046_periodic_bc = [
     "mf6/test046_periodic_bc/mfsim.nam",
     "mf6/test046_periodic_bc/description.txt",
 ]
-mf6_test046_periodic_bc_openclose = [
+"mf6/test046_periodic_bc_openclose" = [
     "mf6/test046_periodic_bc_openclose/pbc.nam",
     "mf6/test046_periodic_bc_openclose/pbc.oc",
     "mf6/test046_periodic_bc_openclose/pbc.exg.exgdata.ref",
@@ -5606,7 +5606,7 @@ mf6_test046_periodic_bc_openclose = [
     "mf6/test046_periodic_bc_openclose/mfsim.nam",
     "mf6/test046_periodic_bc_openclose/description.txt",
 ]
-mf6_test048_lgr3d_conf = [
+"mf6/test048_lgr3d_conf" = [
     "mf6/test048_lgr3d_conf/parent.dis",
     "mf6/test048_lgr3d_conf/simulation.exg",
     "mf6/test048_lgr3d_conf/parent.oc",
@@ -5626,7 +5626,7 @@ mf6_test048_lgr3d_conf = [
     "mf6/test048_lgr3d_conf/child.oc",
     "mf6/test048_lgr3d_conf/child.npf",
 ]
-mf6_test048_lgr3d_unconf = [
+"mf6/test048_lgr3d_unconf" = [
     "mf6/test048_lgr3d_unconf/parent.dis",
     "mf6/test048_lgr3d_unconf/simulation.exg",
     "mf6/test048_lgr3d_unconf/parent.oc",
@@ -5647,7 +5647,7 @@ mf6_test048_lgr3d_unconf = [
     "mf6/test048_lgr3d_unconf/child.oc",
     "mf6/test048_lgr3d_unconf/child.npf",
 ]
-mf6_test048_lgr3d_unconfB = [
+"mf6/test048_lgr3d_unconfB" = [
     "mf6/test048_lgr3d_unconfB/parent.dis",
     "mf6/test048_lgr3d_unconfB/simulation.exg",
     "mf6/test048_lgr3d_unconfB/parent.oc",
@@ -5668,7 +5668,7 @@ mf6_test048_lgr3d_unconfB = [
     "mf6/test048_lgr3d_unconfB/child.oc",
     "mf6/test048_lgr3d_unconfB/child.npf",
 ]
-mf6_test048_lgr3d_unconfC = [
+"mf6/test048_lgr3d_unconfC" = [
     "mf6/test048_lgr3d_unconfC/parent.dis",
     "mf6/test048_lgr3d_unconfC/simulation.exg",
     "mf6/test048_lgr3d_unconfC/parent.oc",
@@ -5689,7 +5689,7 @@ mf6_test048_lgr3d_unconfC = [
     "mf6/test048_lgr3d_unconfC/child.oc",
     "mf6/test048_lgr3d_unconfC/child.npf",
 ]
-mf6_test048_lgr3d_unconfD = [
+"mf6/test048_lgr3d_unconfD" = [
     "mf6/test048_lgr3d_unconfD/parent.dis",
     "mf6/test048_lgr3d_unconfD/simulation.exg",
     "mf6/test048_lgr3d_unconfD/parent.oc",
@@ -5709,7 +5709,7 @@ mf6_test048_lgr3d_unconfD = [
     "mf6/test048_lgr3d_unconfD/child.oc",
     "mf6/test048_lgr3d_unconfD/child.npf",
 ]
-mf6_test049_gwfexgrewet = [
+"mf6/test049_gwfexgrewet" = [
     "mf6/test049_gwfexgrewet/model1.npf",
     "mf6/test049_gwfexgrewet/model2.npf",
     "mf6/test049_gwfexgrewet/simulation_2to3.exg",
@@ -5734,7 +5734,7 @@ mf6_test049_gwfexgrewet = [
     "mf6/test049_gwfexgrewet/model3.chd",
     "mf6/test049_gwfexgrewet/model1.chd",
 ]
-mf6_test050_circle_island = [
+"mf6/test050_circle_island" = [
     "mf6/test050_circle_island/ci.oc",
     "mf6/test050_circle_island/ci.disv",
     "mf6/test050_circle_island/ci.npf",
@@ -5750,7 +5750,7 @@ mf6_test050_circle_island = [
     "mf6/test050_circle_island/description.txt",
     "mf6/test050_circle_island/argus.exp",
 ]
-mf6_test051_uzfp2 = [
+"mf6/test051_uzfp2" = [
     "mf6/test051_uzfp2/uzfp2.ghb",
     "mf6/test051_uzfp2/uzfp2.ims",
     "mf6/test051_uzfp2/uzfp2.dis",
@@ -5767,7 +5767,7 @@ mf6_test051_uzfp2 = [
     "mf6/test051_uzfp2/description.txt",
     "mf6/test051_uzfp2/uzfp2.npf",
 ]
-mf6_test051_uzfp2TS = [
+"mf6/test051_uzfp2TS" = [
     "mf6/test051_uzfp2TS/uzfp2.ghb",
     "mf6/test051_uzfp2TS/uzfp2.ims",
     "mf6/test051_uzfp2TS/uzfp2.dis",
@@ -5786,7 +5786,7 @@ mf6_test051_uzfp2TS = [
     "mf6/test051_uzfp2TS/description.txt",
     "mf6/test051_uzfp2TS/uzfp2.npf",
 ]
-mf6_test051_uzfp2_mvr = [
+"mf6/test051_uzfp2_mvr" = [
     "mf6/test051_uzfp2_mvr/uzfp2_mvr.ims",
     "mf6/test051_uzfp2_mvr/uzfp2_mvr.ghb",
     "mf6/test051_uzfp2_mvr/uzfp2_mvr.dis",
@@ -5803,7 +5803,7 @@ mf6_test051_uzfp2_mvr = [
     "mf6/test051_uzfp2_mvr/uzfp2_mvr.npf",
     "mf6/test051_uzfp2_mvr/uzfp2_mvr.ic",
 ]
-mf6_test051_uzfp2_nouzf = [
+"mf6/test051_uzfp2_nouzf" = [
     "mf6/test051_uzfp2_nouzf/uzfp2_nouzf.dis",
     "mf6/test051_uzfp2_nouzf/uzfp2_nouzf.rch",
     "mf6/test051_uzfp2_nouzf/uzfp2_nouzf.tdis",
@@ -5819,7 +5819,7 @@ mf6_test051_uzfp2_nouzf = [
     "mf6/test051_uzfp2_nouzf/uzfp2_nouzf.npf",
     "mf6/test051_uzfp2_nouzf/uzfp2_nouzf.wel",
 ]
-mf6_test051_uzfp2_openclose = [
+"mf6/test051_uzfp2_openclose" = [
     "mf6/test051_uzfp2_openclose/uzfp2.ghb",
     "mf6/test051_uzfp2_openclose/uzfp2.ims",
     "mf6/test051_uzfp2_openclose/uzfp2.dis",
@@ -5847,7 +5847,7 @@ mf6_test051_uzfp2_openclose = [
     "mf6/test051_uzfp2_openclose/description.txt",
     "mf6/test051_uzfp2_openclose/uzfp2.npf",
 ]
-mf6_test051_uzfp3_aeET_lakmvr_dev = [
+"mf6/test051_uzfp3_aeET_lakmvr_dev" = [
     "mf6/test051_uzfp3_aeET_lakmvr_dev/uzfp3_lakmvr.npf",
     "mf6/test051_uzfp3_aeET_lakmvr_dev/uzfp3_lakmvr.wel",
     "mf6/test051_uzfp3_aeET_lakmvr_dev/uzfp3_lakmvr.lak",
@@ -5865,7 +5865,7 @@ mf6_test051_uzfp3_aeET_lakmvr_dev = [
     "mf6/test051_uzfp3_aeET_lakmvr_dev/uzfp3_lakmvr.ic",
     "mf6/test051_uzfp3_aeET_lakmvr_dev/uzfp3_lakmvr.ims",
 ]
-mf6_test051_uzfp3_lakmvr_2uzfmodels_dev = [
+"mf6/test051_uzfp3_lakmvr_2uzfmodels_dev" = [
     "mf6/test051_uzfp3_lakmvr_2uzfmodels_dev/uzfp3_lakmvr.npf",
     "mf6/test051_uzfp3_lakmvr_2uzfmodels_dev/uzfp3_lakmvr.wel",
     "mf6/test051_uzfp3_lakmvr_2uzfmodels_dev/uzfp3_lakmvr.lak",
@@ -5884,7 +5884,7 @@ mf6_test051_uzfp3_lakmvr_2uzfmodels_dev = [
     "mf6/test051_uzfp3_lakmvr_2uzfmodels_dev/uzfp3_lakmvr.ic",
     "mf6/test051_uzfp3_lakmvr_2uzfmodels_dev/uzfp3_lakmvr.ims",
 ]
-mf6_test051_uzfp3_lakmvr_dev = [
+"mf6/test051_uzfp3_lakmvr_dev" = [
     "mf6/test051_uzfp3_lakmvr_dev/uzfp3_lakmvr.npf",
     "mf6/test051_uzfp3_lakmvr_dev/uzfp3_lakmvr.wel",
     "mf6/test051_uzfp3_lakmvr_dev/uzfp3_lakmvr.lak",
@@ -5902,7 +5902,7 @@ mf6_test051_uzfp3_lakmvr_dev = [
     "mf6/test051_uzfp3_lakmvr_dev/uzfp3_lakmvr.ic",
     "mf6/test051_uzfp3_lakmvr_dev/uzfp3_lakmvr.ims",
 ]
-mf6_test051_uzfp3_lakmvr_nouzf_dev = [
+"mf6/test051_uzfp3_lakmvr_nouzf_dev" = [
     "mf6/test051_uzfp3_lakmvr_nouzf_dev/uzfp3_lakmvr_nouzf.evt",
     "mf6/test051_uzfp3_lakmvr_nouzf_dev/uzfp3_lakmvr_nouzf.oc",
     "mf6/test051_uzfp3_lakmvr_nouzf_dev/uzfp3_lakmvr_nouzf.npf",
@@ -5921,7 +5921,7 @@ mf6_test051_uzfp3_lakmvr_nouzf_dev = [
     "mf6/test051_uzfp3_lakmvr_nouzf_dev/uzfp3_lakmvr_nouzf.nam",
     "mf6/test051_uzfp3_lakmvr_nouzf_dev/uzfp3_lakmvr_nouzf.sfr",
 ]
-mf6_test051_uzfp3_lakmvr_v2_dev = [
+"mf6/test051_uzfp3_lakmvr_v2_dev" = [
     "mf6/test051_uzfp3_lakmvr_v2_dev/uzfp3_lakmvr_v2.npf",
     "mf6/test051_uzfp3_lakmvr_v2_dev/uzfp3_lakmvr_v2.oc",
     "mf6/test051_uzfp3_lakmvr_v2_dev/uzfp3_lakmvr_v2.lak",
@@ -5943,7 +5943,7 @@ mf6_test051_uzfp3_lakmvr_v2_dev = [
     "mf6/test051_uzfp3_lakmvr_v2_dev/uzfp3_lakmvr_v2.ims",
     "mf6/test051_uzfp3_lakmvr_v2_dev/uzfp3_lakmvr_v2.ghb",
 ]
-mf6_test051_uzfp3_wellakmvr_v2 = [
+"mf6/test051_uzfp3_wellakmvr_v2" = [
     "mf6/test051_uzfp3_wellakmvr_v2/uzfp3_lakmvr_v2.npf",
     "mf6/test051_uzfp3_wellakmvr_v2/uzfp3_lakmvr_v2.oc",
     "mf6/test051_uzfp3_wellakmvr_v2/uzfp3_lakmvr_v2.lak",
@@ -5965,7 +5965,7 @@ mf6_test051_uzfp3_wellakmvr_v2 = [
     "mf6/test051_uzfp3_wellakmvr_v2/uzfp3_lakmvr_v2.ims",
     "mf6/test051_uzfp3_wellakmvr_v2/uzfp3_lakmvr_v2.ghb",
 ]
-mf6_test052_uzf_3col = [
+"mf6/test052_uzf_3col" = [
     "mf6/test052_uzf_3col/mf6.npf",
     "mf6/test052_uzf_3col/mf6.ibound.chd",
     "mf6/test052_uzf_3col/mf6.oc",
@@ -5979,7 +5979,7 @@ mf6_test052_uzf_3col = [
     "mf6/test052_uzf_3col/description.txt",
     "mf6/test052_uzf_3col/mf6.ims",
 ]
-mf6_test053_npf_a = [
+"mf6/test053_npf-a" = [
     "mf6/test053_npf-a/mf6.npf",
     "mf6/test053_npf-a/mf6.wel",
     "mf6/test053_npf-a/mf6.oc",
@@ -5994,7 +5994,7 @@ mf6_test053_npf_a = [
     "mf6/test053_npf-a/mf6.ghb",
     "mf6/test053_npf-a/mf6.rch",
 ]
-mf6_test053_npf_a_nwt_dev = [
+"mf6/test053_npf-a-nwt_dev" = [
     "mf6/test053_npf-a-nwt_dev/mf6.npf",
     "mf6/test053_npf-a-nwt_dev/mf6.wel",
     "mf6/test053_npf-a-nwt_dev/mf6.oc",
@@ -6009,7 +6009,7 @@ mf6_test053_npf_a_nwt_dev = [
     "mf6/test053_npf-a-nwt_dev/mf6.ghb",
     "mf6/test053_npf-a-nwt_dev/mf6.rch",
 ]
-mf6_test053_npf_b = [
+"mf6/test053_npf-b" = [
     "mf6/test053_npf-b/mf6.npf",
     "mf6/test053_npf-b/mf6.wel",
     "mf6/test053_npf-b/mf6.oc",
@@ -6024,7 +6024,7 @@ mf6_test053_npf_b = [
     "mf6/test053_npf-b/mf6.ghb",
     "mf6/test053_npf-b/mf6.rch",
 ]
-mf6_test053_npf_b_nwt_dev = [
+"mf6/test053_npf-b-nwt_dev" = [
     "mf6/test053_npf-b-nwt_dev/mf6.npf",
     "mf6/test053_npf-b-nwt_dev/mf6.wel",
     "mf6/test053_npf-b-nwt_dev/mf6.oc",
@@ -6039,7 +6039,7 @@ mf6_test053_npf_b_nwt_dev = [
     "mf6/test053_npf-b-nwt_dev/mf6.ghb",
     "mf6/test053_npf-b-nwt_dev/mf6.rch",
 ]
-mf6_test054_xt3d_whirlsA = [
+"mf6/test054_xt3d_whirlsA" = [
     "mf6/test054_xt3d_whirlsA/model.ic",
     "mf6/test054_xt3d_whirlsA/model.wel",
     "mf6/test054_xt3d_whirlsA/model.npf",
@@ -6053,7 +6053,7 @@ mf6_test054_xt3d_whirlsA = [
     "mf6/test054_xt3d_whirlsA/model.nam",
     "mf6/test054_xt3d_whirlsA/description.txt",
 ]
-mf6_test054_xt3d_whirlsB = [
+"mf6/test054_xt3d_whirlsB" = [
     "mf6/test054_xt3d_whirlsB/model.ic",
     "mf6/test054_xt3d_whirlsB/model.wel",
     "mf6/test054_xt3d_whirlsB/model.npf",
@@ -6066,7 +6066,7 @@ mf6_test054_xt3d_whirlsB = [
     "mf6/test054_xt3d_whirlsB/model.oc",
     "mf6/test054_xt3d_whirlsB/model.nam",
 ]
-mf6_test054_xt3d_whirlsC = [
+"mf6/test054_xt3d_whirlsC" = [
     "mf6/test054_xt3d_whirlsC/model.ic",
     "mf6/test054_xt3d_whirlsC/model.wel",
     "mf6/test054_xt3d_whirlsC/model.npf",
@@ -6079,7 +6079,7 @@ mf6_test054_xt3d_whirlsC = [
     "mf6/test054_xt3d_whirlsC/model.oc",
     "mf6/test054_xt3d_whirlsC/model.nam",
 ]
-mf6_test055_xt3d_lvda_doc_test1 = [
+"mf6/test055_xt3d_lvda-doc-test1" = [
     "mf6/test055_xt3d_lvda-doc-test1/model.ic",
     "mf6/test055_xt3d_lvda-doc-test1/model.wel",
     "mf6/test055_xt3d_lvda-doc-test1/model.npf",
@@ -6091,7 +6091,7 @@ mf6_test055_xt3d_lvda_doc_test1 = [
     "mf6/test055_xt3d_lvda-doc-test1/model.oc",
     "mf6/test055_xt3d_lvda-doc-test1/model.nam",
 ]
-mf6_test056_mt3dms_usgs_gwtex_IR_dev = [
+"mf6/test056_mt3dms_usgs_gwtex_IR_dev" = [
     "mf6/test056_mt3dms_usgs_gwtex_IR_dev/mf6-gwt.ims",
     "mf6/test056_mt3dms_usgs_gwtex_IR_dev/mf6-gwt.rch",
     "mf6/test056_mt3dms_usgs_gwtex_IR_dev/mf6-gwt.chd",
@@ -6106,7 +6106,7 @@ mf6_test056_mt3dms_usgs_gwtex_IR_dev = [
     "mf6/test056_mt3dms_usgs_gwtex_IR_dev/mf6-gwt.ic",
     "mf6/test056_mt3dms_usgs_gwtex_IR_dev/mf6-gwt.npf",
 ]
-mf6_test056_mt3dms_usgs_gwtex_dev = [
+"mf6/test056_mt3dms_usgs_gwtex_dev" = [
     "mf6/test056_mt3dms_usgs_gwtex_dev/mf6-gwt.ims",
     "mf6/test056_mt3dms_usgs_gwtex_dev/mf6-gwt.rch",
     "mf6/test056_mt3dms_usgs_gwtex_dev/mf6-gwt.chd",
@@ -6121,7 +6121,7 @@ mf6_test056_mt3dms_usgs_gwtex_dev = [
     "mf6/test056_mt3dms_usgs_gwtex_dev/mf6-gwt.ic",
     "mf6/test056_mt3dms_usgs_gwtex_dev/mf6-gwt.npf",
 ]
-mf6_test057_transientchd = [
+"mf6/test057_transientchd" = [
     "mf6/test057_transientchd/model_ul-lr.chd",
     "mf6/test057_transientchd/model.ic",
     "mf6/test057_transientchd/model.npf",
@@ -6133,7 +6133,7 @@ mf6_test057_transientchd = [
     "mf6/test057_transientchd/model.oc",
     "mf6/test057_transientchd/model.nam",
 ]
-mf6_test059_mvlake_lak_ss = [
+"mf6/test059_mvlake_lak_ss" = [
     "mf6/test059_mvlake_lak_ss/mv.wel",
     "mf6/test059_mvlake_lak_ss/mv.oc",
     "mf6/test059_mvlake_lak_ss/mv.lak",
@@ -6151,7 +6151,7 @@ mf6_test059_mvlake_lak_ss = [
     "mf6/test059_mvlake_lak_ss/idomain_layer_1.ref",
     "mf6/test059_mvlake_lak_ss/mv.dis",
 ]
-mf6_test060_gms_ets = [
+"mf6/test060_gms_ets" = [
     "mf6/test060_gms_ets/ets3_dis.ims",
     "mf6/test060_gms_ets/ets3_dis.chd",
     "mf6/test060_gms_ets/ets3_dis.rch",
@@ -6167,7 +6167,7 @@ mf6_test060_gms_ets = [
     "mf6/test060_gms_ets/ets3_dis.npf",
     "mf6/test060_gms_ets/ets3_dis.tdis",
 ]
-mf6_test061_csub_holly = [
+"mf6/test061_csub_holly" = [
     "mf6/test061_csub_holly/holly.chd",
     "mf6/test061_csub_holly/holly.ims",
     "mf6/test061_csub_holly/holly.csub.obs",
@@ -6184,7 +6184,7 @@ mf6_test061_csub_holly = [
     "mf6/test061_csub_holly/description.txt",
     "mf6/test061_csub_holly/holly.npf",
 ]
-mf6_test061_csub_jacob = [
+"mf6/test061_csub_jacob" = [
     "mf6/test061_csub_jacob/fig4_base.ic",
     "mf6/test061_csub_jacob/fig4_base.csub",
     "mf6/test061_csub_jacob/fig4_base.load.ts",
@@ -6200,7 +6200,7 @@ mf6_test061_csub_jacob = [
     "mf6/test061_csub_jacob/description.txt",
     "mf6/test061_csub_jacob/fig4_base.sto",
 ]
-mf6_test100_ss_ic = [
+"mf6/test100_ss_ic" = [
     "mf6/test100_ss_ic/test1ss_ic.nam",
     "mf6/test100_ss_ic/test1ss_ic.sfr",
     "mf6/test100_ss_ic/test1ss_ic.ghb",
@@ -6214,7 +6214,7 @@ mf6_test100_ss_ic = [
     "mf6/test100_ss_ic/test1ss_ic.ic",
     "mf6/test100_ss_ic/test1ss_ic.evt",
 ]
-mf6_test101_fhb = [
+"mf6/test101_fhb" = [
     "mf6/test101_fhb/test_fhb.fhb.wel",
     "mf6/test101_fhb/test_fhb.fhb.chd.ts",
     "mf6/test101_fhb/test_fhb.fhb.wel.ts",
@@ -6231,7 +6231,7 @@ mf6_test101_fhb = [
     "mf6/test101_fhb/test_fhb.ic",
     "mf6/test101_fhb/test_fhb.sto",
 ]
-mf6_test102_wel_mvr = [
+"mf6/test102_wel_mvr" = [
     "mf6/test102_wel_mvr/welmvr.maw",
     "mf6/test102_wel_mvr/welmvr.ims",
     "mf6/test102_wel_mvr/welmvr.oc",
@@ -6246,7 +6246,7 @@ mf6_test102_wel_mvr = [
     "mf6/test102_wel_mvr/welmvr.wel",
     "mf6/test102_wel_mvr/welmvr.npf",
 ]
-mf6_test103_drn_mvr = [
+"mf6/test103_drn_mvr" = [
     "mf6/test103_drn_mvr/drnmvr.ims",
     "mf6/test103_drn_mvr/drnmvr.ibound.chd",
     "mf6/test103_drn_mvr/drnmvr.oc",
@@ -6261,7 +6261,7 @@ mf6_test103_drn_mvr = [
     "mf6/test103_drn_mvr/drnmvr.npf",
     "mf6/test103_drn_mvr/drnmvr.tdis",
 ]
-mf6_test104_riv_mvr = [
+"mf6/test104_riv_mvr" = [
     "mf6/test104_riv_mvr/rivmvr.drn",
     "mf6/test104_riv_mvr/rivmvr.ibound.chd",
     "mf6/test104_riv_mvr/rivmvr.maw",
@@ -6277,7 +6277,7 @@ mf6_test104_riv_mvr = [
     "mf6/test104_riv_mvr/mfsim.nam",
     "mf6/test104_riv_mvr/rivmvr.npf",
 ]
-mf6_test105_ghb_mvr = [
+"mf6/test105_ghb_mvr" = [
     "mf6/test105_ghb_mvr/ghbmvr.maw",
     "mf6/test105_ghb_mvr/ghbmvr.ims",
     "mf6/test105_ghb_mvr/ghbmvr.ic",
@@ -6292,7 +6292,7 @@ mf6_test105_ghb_mvr = [
     "mf6/test105_ghb_mvr/ghbmvr.npf",
     "mf6/test105_ghb_mvr/ghb.obs",
 ]
-mf6_test106_tsnodata = [
+"mf6/test106_tsnodata" = [
     "mf6/test106_tsnodata/model_right.chd",
     "mf6/test106_tsnodata/model.ic",
     "mf6/test106_tsnodata/model.wel",
@@ -6308,7 +6308,7 @@ mf6_test106_tsnodata = [
     "mf6/test106_tsnodata/model_left.chd",
     "mf6/test106_tsnodata/model.sto",
 ]
-mf6_test106_tsnodata_alt_model = [
+"mf6/test106_tsnodata/alt_model" = [
     "mf6/test106_tsnodata/alt_model/model_right.chd",
     "mf6/test106_tsnodata/alt_model/model_well1_pump.ts",
     "mf6/test106_tsnodata/alt_model/model_well3_pump.ts",
@@ -6328,7 +6328,7 @@ mf6_test106_tsnodata_alt_model = [
     "mf6/test106_tsnodata/alt_model/model.sto",
     "mf6/test106_tsnodata/alt_model/model_well5_pump.ts",
 ]
-mf6_test120_mv_dis_lgr = [
+"mf6/test120_mv_dis-lgr" = [
     "mf6/test120_mv_dis-lgr/model.riv",
     "mf6/test120_mv_dis-lgr/child.rcha",
     "mf6/test120_mv_dis-lgr/mv.oc",
@@ -6360,7 +6360,7 @@ mf6_test120_mv_dis_lgr = [
     "mf6/test120_mv_dis-lgr/mv.dis",
     "mf6/test120_mv_dis-lgr/child.npf",
 ]
-mf6_test120_mv_dis_lgr_3models = [
+"mf6/test120_mv_dis-lgr_3models" = [
     "mf6/test120_mv_dis-lgr_3models/mv_child1.gwfgwf",
     "mf6/test120_mv_dis-lgr_3models/child2.dis",
     "mf6/test120_mv_dis-lgr_3models/model.riv",
@@ -6401,7 +6401,7 @@ mf6_test120_mv_dis_lgr_3models = [
     "mf6/test120_mv_dis-lgr_3models/child1.npf",
     "mf6/test120_mv_dis-lgr_3models/mv.dis",
 ]
-mf6_test120_mv_disv_xt3d = [
+"mf6/test120_mv_disv_xt3d" = [
     "mf6/test120_mv_disv_xt3d/model.riv",
     "mf6/test120_mv_disv_xt3d/mv.tdis",
     "mf6/test120_mv_disv_xt3d/model.disv",
@@ -6416,7 +6416,7 @@ mf6_test120_mv_disv_xt3d = [
     "mf6/test120_mv_disv_xt3d/mv.ims",
     "mf6/test120_mv_disv_xt3d/quadtree.ipynb",
 ]
-mf6_test201_gwtbuy_henryCHD = [
+"mf6/test201_gwtbuy-henryCHD" = [
     "mf6/test201_gwtbuy-henryCHD/gwt_henry.sto",
     "mf6/test201_gwtbuy-henryCHD/gwf_henry.ims",
     "mf6/test201_gwtbuy-henryCHD/gwt_henry.dsp",
@@ -6440,7 +6440,7 @@ mf6_test201_gwtbuy_henryCHD = [
     "mf6/test201_gwtbuy-henryCHD/gwt_henry.cnc",
     "mf6/test201_gwtbuy-henryCHD/gwt_henry.ssm",
 ]
-mf6_test202_gwtbuy_henryCHDm = [
+"mf6/test202_gwtbuy-henryCHDm" = [
     "mf6/test202_gwtbuy-henryCHDm/gwt_henry.sto",
     "mf6/test202_gwtbuy-henryCHDm/gwf_henry.ims",
     "mf6/test202_gwtbuy-henryCHDm/gwt_henry.dsp",
@@ -6464,7 +6464,7 @@ mf6_test202_gwtbuy_henryCHDm = [
     "mf6/test202_gwtbuy-henryCHDm/gwt_henry.cnc",
     "mf6/test202_gwtbuy-henryCHDm/gwt_henry.ssm",
 ]
-mf6_test203_gwtbuy_henryGHB = [
+"mf6/test203_gwtbuy-henryGHB" = [
     "mf6/test203_gwtbuy-henryGHB/gwt_henry.sto",
     "mf6/test203_gwtbuy-henryGHB/gwf_henry.ims",
     "mf6/test203_gwtbuy-henryGHB/gwt_henry.dsp",
@@ -6487,7 +6487,7 @@ mf6_test203_gwtbuy_henryGHB = [
     "mf6/test203_gwtbuy-henryGHB/henry.gwfgwt",
     "mf6/test203_gwtbuy-henryGHB/gwt_henry.ssm",
 ]
-mf6_test204_gwtbuy_henryGHBm = [
+"mf6/test204_gwtbuy-henryGHBm" = [
     "mf6/test204_gwtbuy-henryGHBm/gwt_henry.sto",
     "mf6/test204_gwtbuy-henryGHBm/gwf_henry.ims",
     "mf6/test204_gwtbuy-henryGHBm/gwt_henry.dsp",
@@ -6510,7 +6510,7 @@ mf6_test204_gwtbuy_henryGHBm = [
     "mf6/test204_gwtbuy-henryGHBm/henry.gwfgwt",
     "mf6/test204_gwtbuy-henryGHBm/gwt_henry.ssm",
 ]
-mf6_test205_gwtbuy_henrytidal = [
+"mf6/test205_gwtbuy-henrytidal" = [
     "mf6/test205_gwtbuy-henrytidal/gwf_henry.ims",
     "mf6/test205_gwtbuy-henrytidal/gwf_henry.drn",
     "mf6/test205_gwtbuy-henrytidal/gwt_henry.dsp",
@@ -6864,7 +6864,7 @@ test1005_secp = [
     "test1005_secp/secp_mf6.oc",
     "test1005_secp/secp_mf6.sto",
 ]
-test1200_gwtbuy_goswami = [
+test1200_gwtbuy-goswami = [
     "test1200_gwtbuy-goswami/gwf_goswami.ic",
     "test1200_gwtbuy-goswami/gwt_goswami.nam",
     "test1200_gwtbuy-goswami/goswami.gwfgwt",
@@ -6886,7 +6886,7 @@ test1200_gwtbuy_goswami = [
     "test1200_gwtbuy-goswami/gwt_goswami.ssm",
     "test1200_gwtbuy-goswami/gwf_goswami.dis",
 ]
-test1201_gwtbuy_elderRa60 = [
+test1201_gwtbuy-elderRa60 = [
     "test1201_gwtbuy-elderRa60/gwt_elder.cnc",
     "test1201_gwtbuy-elderRa60/gwf_elder.npf",
     "test1201_gwtbuy-elderRa60/gwf_elder.oc",
@@ -6909,7 +6909,7 @@ test1201_gwtbuy_elderRa60 = [
     "test1201_gwtbuy-elderRa60/elder.gwfgwt",
     "test1201_gwtbuy-elderRa60/gwt_elder.dsp",
 ]
-test2001_gwtbuy_elderRa400 = [
+test2001_gwtbuy-elderRa400 = [
     "test2001_gwtbuy-elderRa400/gwt_elder.cnc",
     "test2001_gwtbuy-elderRa400/gwf_elder.npf",
     "test2001_gwtbuy-elderRa400/gwf_elder.oc",

@@ -1,377 +1,377 @@
 ex-gwe-ates = [
-    "ex_gwe_ates",
+    "ex-gwe-ates",
 ]
 ex-gwe-barends = [
-    "ex_gwe_barends_mf6gwf",
-    "ex_gwe_barends_mf6gwe",
+    "ex-gwe-barends/mf6gwf",
+    "ex-gwe-barends/mf6gwe",
 ]
 ex-gwe-danckwerts = [
-    "ex_gwe_danckwerts",
+    "ex-gwe-danckwerts",
 ]
 ex-gwe-geotherm = [
-    "ex_gwe_geotherm_mf6gwf",
-    "ex_gwe_geotherm_mf6gwe",
+    "ex-gwe-geotherm/mf6gwf",
+    "ex-gwe-geotherm/mf6gwe",
 ]
 ex-gwe-prt = [
-    "ex_gwe_prt_gwf",
-    "ex_gwe_prt_gwe",
-    "ex_gwe_prt_prt",
+    "ex-gwe-prt/gwf",
+    "ex-gwe-prt/prt",
+    "ex-gwe-prt/gwe",
 ]
 ex-gwe-radial-slow = [
-    "ex_gwe_radial_slow_mf6gwf",
-    "ex_gwe_radial_slow_mf6gwe_b",
+    "ex-gwe-radial-slow/mf6gwf",
+    "ex-gwe-radial-slow/mf6gwe-b",
 ]
 ex-gwe-vsc = [
-    "ex_gwe_vsc",
+    "ex-gwe-vsc",
 ]
 ex-gwf-advtidal = [
-    "ex_gwf_advtidal",
+    "ex-gwf-advtidal",
 ]
 ex-gwf-bcf2ss-p01a = [
-    "ex_gwf_bcf2ss_p01a",
+    "ex-gwf-bcf2ss-p01a",
 ]
 ex-gwf-bcf2ss-p02a = [
-    "ex_gwf_bcf2ss_p02a",
+    "ex-gwf-bcf2ss-p02a",
 ]
 ex-gwf-bump-p01a = [
-    "ex_gwf_bump_p01a",
+    "ex-gwf-bump-p01a",
 ]
 ex-gwf-bump-p01b = [
-    "ex_gwf_bump_p01b",
+    "ex-gwf-bump-p01b",
 ]
 ex-gwf-bump-p01c = [
-    "ex_gwf_bump_p01c",
+    "ex-gwf-bump-p01c",
 ]
 ex-gwf-capture = [
-    "ex_gwf_capture",
+    "ex-gwf-capture",
 ]
 ex-gwf-csub-p01 = [
-    "ex_gwf_csub_p01",
+    "ex-gwf-csub-p01",
 ]
 ex-gwf-csub-p02a = [
-    "ex_gwf_csub_p02a",
+    "ex-gwf-csub-p02a",
 ]
 ex-gwf-csub-p02b = [
-    "ex_gwf_csub_p02b",
+    "ex-gwf-csub-p02b",
 ]
 ex-gwf-csub-p02c = [
-    "ex_gwf_csub_p02c_hb_100",
-    "ex_gwf_csub_p02c_hb_050",
-    "ex_gwf_csub_p02c_es_002",
-    "ex_gwf_csub_p02c_es_001",
-    "ex_gwf_csub_p02c_es_050",
-    "ex_gwf_csub_p02c_es_020",
-    "ex_gwf_csub_p02c_es_010",
-    "ex_gwf_csub_p02c_hb_001",
-    "ex_gwf_csub_p02c_hb_020",
-    "ex_gwf_csub_p02c_hb_010",
-    "ex_gwf_csub_p02c_es_005",
-    "ex_gwf_csub_p02c_hb_005",
-    "ex_gwf_csub_p02c_es_100",
-    "ex_gwf_csub_p02c_hb_002",
+    "ex-gwf-csub-p02c/es-010",
+    "ex-gwf-csub-p02c/hb-002",
+    "ex-gwf-csub-p02c/hb-100",
+    "ex-gwf-csub-p02c/es-002",
+    "ex-gwf-csub-p02c/hb-010",
+    "ex-gwf-csub-p02c/hb-005",
+    "ex-gwf-csub-p02c/es-050",
+    "ex-gwf-csub-p02c/hb-020",
+    "ex-gwf-csub-p02c/es-001",
+    "ex-gwf-csub-p02c/hb-050",
+    "ex-gwf-csub-p02c/hb-001",
+    "ex-gwf-csub-p02c/es-100",
+    "ex-gwf-csub-p02c/es-005",
+    "ex-gwf-csub-p02c/es-020",
 ]
 ex-gwf-csub-p03a = [
-    "ex_gwf_csub_p03a",
+    "ex-gwf-csub-p03a",
 ]
 ex-gwf-csub-p03b = [
-    "ex_gwf_csub_p03b",
+    "ex-gwf-csub-p03b",
 ]
 ex-gwf-csub-p04 = [
-    "ex_gwf_csub_p04",
+    "ex-gwf-csub-p04",
 ]
 ex-gwf-curve-90 = [
-    "ex_gwf_curve_90",
+    "ex-gwf-curve-90",
 ]
 ex-gwf-curvilin = [
-    "ex_gwf_curvilin",
+    "ex-gwf-curvilin",
 ]
 ex-gwf-disvmesh = [
-    "ex_gwf_disvmesh",
+    "ex-gwf-disvmesh",
 ]
 ex-gwf-drn-p01a = [
-    "ex_gwf_drn_p01a",
+    "ex-gwf-drn-p01a",
 ]
 ex-gwf-drn-p01b = [
-    "ex_gwf_drn_p01b",
+    "ex-gwf-drn-p01b",
 ]
 ex-gwf-fhb = [
-    "ex_gwf_fhb",
+    "ex-gwf-fhb",
 ]
 ex-gwf-hanic = [
-    "ex_gwf_hanic",
+    "ex-gwf-hanic",
 ]
 ex-gwf-hanir = [
-    "ex_gwf_hanir",
+    "ex-gwf-hanir",
 ]
 ex-gwf-hanix = [
-    "ex_gwf_hanix",
+    "ex-gwf-hanix",
 ]
 ex-gwf-lak-p01 = [
-    "ex_gwf_lak_p01",
+    "ex-gwf-lak-p01",
 ]
 ex-gwf-lak-p02 = [
-    "ex_gwf_lak_p02",
+    "ex-gwf-lak-p02",
 ]
 ex-gwf-lgr = [
-    "ex_gwf_lgr",
+    "ex-gwf-lgr",
 ]
 ex-gwf-lgrv-gc = [
-    "ex_gwf_lgrv_gc",
+    "ex-gwf-lgrv-gc",
 ]
 ex-gwf-lgrv-gr = [
-    "ex_gwf_lgrv_gr",
+    "ex-gwf-lgrv-gr",
 ]
 ex-gwf-lgrv-lgr = [
-    "ex_gwf_lgrv_lgr",
+    "ex-gwf-lgrv-lgr",
 ]
 ex-gwf-maw-p01a = [
-    "ex_gwf_maw_p01a",
+    "ex-gwf-maw-p01a",
 ]
 ex-gwf-maw-p01b = [
-    "ex_gwf_maw_p01b",
+    "ex-gwf-maw-p01b",
 ]
 ex-gwf-maw-p02 = [
-    "ex_gwf_maw_p02",
+    "ex-gwf-maw-p02",
 ]
 ex-gwf-maw-p03a = [
-    "ex_gwf_maw_p03a",
+    "ex-gwf-maw-p03a",
 ]
 ex-gwf-maw-p03b = [
-    "ex_gwf_maw_p03b",
+    "ex-gwf-maw-p03b",
 ]
 ex-gwf-maw-p03c = [
-    "ex_gwf_maw_p03c",
+    "ex-gwf-maw-p03c",
 ]
 ex-gwf-nwt-p02a = [
-    "ex_gwf_nwt_p02a",
+    "ex-gwf-nwt-p02a",
 ]
 ex-gwf-nwt-p02b = [
-    "ex_gwf_nwt_p02b",
+    "ex-gwf-nwt-p02b",
 ]
 ex-gwf-nwt-p03a = [
-    "ex_gwf_nwt_p03a",
+    "ex-gwf-nwt-p03a",
 ]
 ex-gwf-nwt-p03b = [
-    "ex_gwf_nwt_p03b",
+    "ex-gwf-nwt-p03b",
 ]
 ex-gwf-rad-disu = [
-    "ex_gwf_rad_disu",
+    "ex-gwf-rad-disu",
 ]
 ex-gwf-sagehen = [
-    "ex_gwf_sagehen",
+    "ex-gwf-sagehen",
 ]
 ex-gwf-sfr-p01 = [
-    "ex_gwf_sfr_p01",
+    "ex-gwf-sfr-p01",
 ]
 ex-gwf-sfr-p01b = [
-    "ex_gwf_sfr_p01b",
+    "ex-gwf-sfr-p01b",
 ]
 ex-gwf-sfr-pindersauera = [
-    "ex_gwf_sfr_pindersauera",
+    "ex-gwf-sfr-pindersauera",
 ]
 ex-gwf-sfr-pindersauerb = [
-    "ex_gwf_sfr_pindersauerb",
+    "ex-gwf-sfr-pindersauerb",
 ]
 ex-gwf-spbc = [
-    "ex_gwf_spbc",
+    "ex-gwf-spbc",
 ]
 ex-gwf-toth = [
-    "ex_gwf_toth",
+    "ex-gwf-toth",
 ]
 ex-gwf-twri01 = [
-    "ex_gwf_twri01",
+    "ex-gwf-twri01",
 ]
 ex-gwf-u1disv = [
-    "ex_gwf_u1disv",
+    "ex-gwf-u1disv",
 ]
 ex-gwf-u1disv-x = [
-    "ex_gwf_u1disv_x",
+    "ex-gwf-u1disv-x",
 ]
 ex-gwf-u1gwfgwf-s1 = [
-    "ex_gwf_u1gwfgwf_s1",
+    "ex-gwf-u1gwfgwf-s1",
 ]
 ex-gwf-u1gwfgwf-s2 = [
-    "ex_gwf_u1gwfgwf_s2",
+    "ex-gwf-u1gwfgwf-s2",
 ]
 ex-gwf-u1gwfgwf-s3 = [
-    "ex_gwf_u1gwfgwf_s3",
+    "ex-gwf-u1gwfgwf-s3",
 ]
 ex-gwf-u1gwfgwf-s4 = [
-    "ex_gwf_u1gwfgwf_s4",
+    "ex-gwf-u1gwfgwf-s4",
 ]
 ex-gwf-whirl = [
-    "ex_gwf_whirl",
+    "ex-gwf-whirl",
 ]
 ex-gwf-zaidel = [
-    "ex_gwf_zaidel",
+    "ex-gwf-zaidel",
 ]
 ex-gwt-gwtgwt-p10 = [
-    "ex_gwt_gwtgwt_p10",
+    "ex-gwt-gwtgwt-p10",
 ]
 ex-gwt-hecht-mendez-b = [
-    "ex_gwt_hecht_mendez_b_mf6gwf",
-    "ex_gwt_hecht_mendez_b_mf6gwt",
+    "ex-gwt-hecht-mendez-b/mf6gwf",
+    "ex-gwt-hecht-mendez-b/mf6gwt",
 ]
 ex-gwt-hecht-mendez-c = [
-    "ex_gwt_hecht_mendez_c_mf6gwf",
-    "ex_gwt_hecht_mendez_c_mf6gwt",
+    "ex-gwt-hecht-mendez-c/mf6gwf",
+    "ex-gwt-hecht-mendez-c/mf6gwt",
 ]
 ex-gwt-henry-a = [
-    "ex_gwt_henry_a",
+    "ex-gwt-henry-a",
 ]
 ex-gwt-henry-b = [
-    "ex_gwt_henry_b",
+    "ex-gwt-henry-b",
 ]
 ex-gwt-keating = [
-    "ex_gwt_keating_mf6gwf",
-    "ex_gwt_keating_mf6gwt",
+    "ex-gwt-keating/mf6gwf",
+    "ex-gwt-keating/mf6gwt",
 ]
 ex-gwt-moc3d-p01a = [
-    "ex_gwt_moc3d_p01a_mf6gwf",
-    "ex_gwt_moc3d_p01a_mf6gwt",
+    "ex-gwt-moc3d-p01a/mf6gwf",
+    "ex-gwt-moc3d-p01a/mf6gwt",
 ]
 ex-gwt-moc3d-p01b = [
-    "ex_gwt_moc3d_p01b_mf6gwf",
-    "ex_gwt_moc3d_p01b_mf6gwt",
+    "ex-gwt-moc3d-p01b/mf6gwf",
+    "ex-gwt-moc3d-p01b/mf6gwt",
 ]
 ex-gwt-moc3d-p01c = [
-    "ex_gwt_moc3d_p01c_mf6gwf",
-    "ex_gwt_moc3d_p01c_mf6gwt",
+    "ex-gwt-moc3d-p01c/mf6gwf",
+    "ex-gwt-moc3d-p01c/mf6gwt",
 ]
 ex-gwt-moc3d-p01d = [
-    "ex_gwt_moc3d_p01d_mf6gwf",
-    "ex_gwt_moc3d_p01d_mf6gwt",
+    "ex-gwt-moc3d-p01d/mf6gwf",
+    "ex-gwt-moc3d-p01d/mf6gwt",
 ]
 ex-gwt-moc3d-p02 = [
-    "ex_gwt_moc3d_p02_mf6gwf",
-    "ex_gwt_moc3d_p02_mf6gwt",
+    "ex-gwt-moc3d-p02/mf6gwf",
+    "ex-gwt-moc3d-p02/mf6gwt",
 ]
 ex-gwt-moc3d-p02tg = [
-    "ex_gwt_moc3d_p02tg_mf6gwf",
-    "ex_gwt_moc3d_p02tg_mf6gwt",
+    "ex-gwt-moc3d-p02tg/mf6gwf",
+    "ex-gwt-moc3d-p02tg/mf6gwt",
 ]
 ex-gwt-mt3dms-p01a = [
-    "ex_gwt_mt3dms_p01a",
+    "ex-gwt-mt3dms-p01a",
 ]
 ex-gwt-mt3dms-p01b = [
-    "ex_gwt_mt3dms_p01b",
+    "ex-gwt-mt3dms-p01b",
 ]
 ex-gwt-mt3dms-p01c = [
-    "ex_gwt_mt3dms_p01c",
+    "ex-gwt-mt3dms-p01c",
 ]
 ex-gwt-mt3dms-p01d = [
-    "ex_gwt_mt3dms_p01d",
+    "ex-gwt-mt3dms-p01d",
 ]
 ex-gwt-mt3dms-p02a = [
-    "ex_gwt_mt3dms_p02a_mf6gwf",
-    "ex_gwt_mt3dms_p02a_mf6gwt",
+    "ex-gwt-mt3dms-p02a/mf6gwf",
+    "ex-gwt-mt3dms-p02a/mf6gwt",
 ]
 ex-gwt-mt3dms-p02b = [
-    "ex_gwt_mt3dms_p02b_mf6gwf",
-    "ex_gwt_mt3dms_p02b_mf6gwt",
+    "ex-gwt-mt3dms-p02b/mf6gwf",
+    "ex-gwt-mt3dms-p02b/mf6gwt",
 ]
 ex-gwt-mt3dms-p02c = [
-    "ex_gwt_mt3dms_p02c_mf6gwf",
-    "ex_gwt_mt3dms_p02c_mf6gwt",
+    "ex-gwt-mt3dms-p02c/mf6gwf",
+    "ex-gwt-mt3dms-p02c/mf6gwt",
 ]
 ex-gwt-mt3dms-p02d = [
-    "ex_gwt_mt3dms_p02d_mf6gwf",
-    "ex_gwt_mt3dms_p02d_mf6gwt",
+    "ex-gwt-mt3dms-p02d/mf6gwf",
+    "ex-gwt-mt3dms-p02d/mf6gwt",
 ]
 ex-gwt-mt3dms-p02e = [
-    "ex_gwt_mt3dms_p02e_mf6gwf",
-    "ex_gwt_mt3dms_p02e_mf6gwt",
+    "ex-gwt-mt3dms-p02e/mf6gwf",
+    "ex-gwt-mt3dms-p02e/mf6gwt",
 ]
 ex-gwt-mt3dms-p02f = [
-    "ex_gwt_mt3dms_p02f_mf6gwf",
-    "ex_gwt_mt3dms_p02f_mf6gwt",
+    "ex-gwt-mt3dms-p02f/mf6gwf",
+    "ex-gwt-mt3dms-p02f/mf6gwt",
 ]
 ex-gwt-mt3dms-p03 = [
-    "ex_gwt_mt3dms_p03",
+    "ex-gwt-mt3dms-p03",
 ]
 ex-gwt-mt3dms-p04a = [
-    "ex_gwt_mt3dms_p04a",
+    "ex-gwt-mt3dms-p04a",
 ]
 ex-gwt-mt3dms-p04b = [
-    "ex_gwt_mt3dms_p04b",
+    "ex-gwt-mt3dms-p04b",
 ]
 ex-gwt-mt3dms-p04c = [
-    "ex_gwt_mt3dms_p04c",
+    "ex-gwt-mt3dms-p04c",
 ]
 ex-gwt-mt3dms-p05 = [
-    "ex_gwt_mt3dms_p05",
+    "ex-gwt-mt3dms-p05",
 ]
 ex-gwt-mt3dms-p06 = [
-    "ex_gwt_mt3dms_p06",
+    "ex-gwt-mt3dms-p06",
 ]
 ex-gwt-mt3dms-p07 = [
-    "ex_gwt_mt3dms_p07",
+    "ex-gwt-mt3dms-p07",
 ]
 ex-gwt-mt3dms-p08 = [
-    "ex_gwt_mt3dms_p08",
+    "ex-gwt-mt3dms-p08",
 ]
 ex-gwt-mt3dms-p09 = [
-    "ex_gwt_mt3dms_p09",
+    "ex-gwt-mt3dms-p09",
 ]
 ex-gwt-mt3dms-p10 = [
-    "ex_gwt_mt3dms_p10",
+    "ex-gwt-mt3dms-p10",
 ]
 ex-gwt-mt3dsupp631 = [
-    "ex_gwt_mt3dsupp631_mf6gwf",
-    "ex_gwt_mt3dsupp631_mf6gwt",
+    "ex-gwt-mt3dsupp631/mf6gwf",
+    "ex-gwt-mt3dsupp631/mf6gwt",
 ]
 ex-gwt-mt3dsupp632a = [
-    "ex_gwt_mt3dsupp632a_mf6gwf",
-    "ex_gwt_mt3dsupp632a_mf6gwt",
+    "ex-gwt-mt3dsupp632a/mf6gwf",
+    "ex-gwt-mt3dsupp632a/mf6gwt",
 ]
 ex-gwt-mt3dsupp632b = [
-    "ex_gwt_mt3dsupp632b_mf6gwf",
-    "ex_gwt_mt3dsupp632b_mf6gwt",
+    "ex-gwt-mt3dsupp632b/mf6gwf",
+    "ex-gwt-mt3dsupp632b/mf6gwt",
 ]
 ex-gwt-mt3dsupp632c = [
-    "ex_gwt_mt3dsupp632c_mf6gwf",
-    "ex_gwt_mt3dsupp632c_mf6gwt",
+    "ex-gwt-mt3dsupp632c/mf6gwf",
+    "ex-gwt-mt3dsupp632c/mf6gwt",
 ]
 ex-gwt-mt3dsupp82 = [
-    "ex_gwt_mt3dsupp82_mf6gwf",
-    "ex_gwt_mt3dsupp82_mf6gwt",
+    "ex-gwt-mt3dsupp82/mf6gwf",
+    "ex-gwt-mt3dsupp82/mf6gwt",
 ]
 ex-gwt-prudic2004t2 = [
-    "ex_gwt_prudic2004t2_mf6gwf",
-    "ex_gwt_prudic2004t2_mf6gwt",
+    "ex-gwt-prudic2004t2/mf6gwf",
+    "ex-gwt-prudic2004t2/mf6gwt",
 ]
 ex-gwt-rotate = [
-    "ex_gwt_rotate",
+    "ex-gwt-rotate",
 ]
 ex-gwt-saltlake = [
-    "ex_gwt_saltlake",
+    "ex-gwt-saltlake",
 ]
 ex-gwt-stallman = [
-    "ex_gwt_stallman",
+    "ex-gwt-stallman",
 ]
 ex-gwt-synthetic-valley = [
-    "ex_gwt_synthetic_valley_mf6gwf",
-    "ex_gwt_synthetic_valley_mf6gwt",
+    "ex-gwt-synthetic-valley/mf6gwf",
+    "ex-gwt-synthetic-valley/mf6gwt",
 ]
 ex-gwt-uzt-2d-a = [
-    "ex_gwt_uzt_2d_a",
+    "ex-gwt-uzt-2d-a",
 ]
 ex-gwt-uzt-2d-b = [
-    "ex_gwt_uzt_2d_b",
+    "ex-gwt-uzt-2d-b",
 ]
 ex-prt-mp7-p01 = [
-    "ex_prt_mp7_p01_gwf",
-    "ex_prt_mp7_p01_prt",
+    "ex-prt-mp7-p01/gwf",
+    "ex-prt-mp7-p01/prt",
 ]
 ex-prt-mp7-p02 = [
-    "ex_prt_mp7_p02_gwf",
-    "ex_prt_mp7_p02_prt",
+    "ex-prt-mp7-p02/gwf",
+    "ex-prt-mp7-p02/prt",
 ]
 ex-prt-mp7-p03 = [
-    "ex_prt_mp7_p03_gwf",
-    "ex_prt_mp7_p03_prt",
+    "ex-prt-mp7-p03/gwf",
+    "ex-prt-mp7-p03/prt",
 ]
 ex-prt-mp7-p04 = [
-    "ex_prt_mp7_p04_gwf",
-    "ex_prt_mp7_p04_prt",
+    "ex-prt-mp7-p04/gwf",
+    "ex-prt-mp7-p04/prt",
 ]
