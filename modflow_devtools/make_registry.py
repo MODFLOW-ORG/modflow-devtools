@@ -59,7 +59,7 @@ def write_registry(
         model_path = model_path.expanduser().absolute()
         base_path = _find_examples_dir(model_path) if is_zip else path
         rel_path = model_path.relative_to(base_path)
-        model_name = str(rel_path)#.replace("/", "_").replace("-", "_")
+        model_name = "/".join(rel_path.parts)
         modelmap[model_name] = []
         if is_zip:
             if rel_path.parts[0] not in examples:
@@ -70,12 +70,12 @@ def write_registry(
                 continue
             if is_zip:
                 relpath = p.expanduser().absolute().relative_to(base_path)
-                name = str(relpath)
+                name = "/".join(relpath.parts)
                 url_ = url
                 hash = None
             else:
                 relpath = p.expanduser().absolute().relative_to(base_path)
-                name = str(relpath)
+                name = "/".join(relpath.parts)
                 url_ = f"{url}/{relpath!s}"
                 hash = _sha256(p)
             registry[name] = {"hash": hash, "url": url_}
