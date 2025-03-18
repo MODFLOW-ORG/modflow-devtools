@@ -76,6 +76,7 @@ dfn = [
 ]
 models = [
     "boltons",
+    "filelock",
     "pooch",
     "tomli",
     "tomli-w"
@@ -120,6 +121,7 @@ dfn = [
 ]
 models = [
     "boltons",
+    "filelock",
     "pooch",
     "tomli",
     "tomli-w"

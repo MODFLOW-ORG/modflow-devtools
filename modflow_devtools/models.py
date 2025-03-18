@@ -12,6 +12,7 @@ from warnings import warn
 
 import pooch
 import tomli
+from filelock import FileLock
 
 import modflow_devtools
 
@@ -26,7 +27,7 @@ ZIP_NAME = "mf6examples.zip"
 
 # set up the pooch
 FETCHERS = {}
-REGISTRY: dict[str, str] = {}
+REGISTRY: dict[str, dict] = {}
 MODELMAP: dict[str, list[str]] = {}
 EXAMPLES: dict[str, list[str]] = {}
 POOCH = pooch.create(
@@ -42,12 +43,13 @@ def _fetch(model_name, file_names) -> Callable:
         return [Path(POOCH.fetch(fname)) for fname in file_names]
 
     def _fetch_zip(zip_name):
-        return [
-            Path(f)
-            for f in POOCH.fetch(
-                zip_name, processor=pooch.Unzip(members=MODELMAP[model_name])
-            )
-        ]
+        with FileLock(f"{zip_name}.lock"):
+            return [
+                Path(f)
+                for f in POOCH.fetch(
+                    zip_name, processor=pooch.Unzip(members=MODELMAP[model_name])
+                )
+            ]
 
     urls = [POOCH.registry[fname] for fname in file_names]
     if not any(url for url in urls) or set(urls) == {f"{BASE_URL}/{ZIP_NAME}"}:
@@ -62,10 +64,11 @@ try:
     with pkg_resources.open_binary(
         REGISTRY_ANCHOR, REGISTRY_FILE_NAME
     ) as registry_file:
-        registry = tomli.load(registry_file)
-        urls = {k: v["url"] for k, v in registry.items() if v.get("url", None)}
-        registry = {k: v.get("hash", None) for k, v in registry.items()}
-        POOCH.registry = registry
+        REGISTRY = tomli.load(registry_file)
+        # extract urls then drop them, leaving a direct map of name to hash
+        urls = {k: v["url"] for k, v in REGISTRY.items() if v.get("url", None)}
+        REGISTRY = {k: v.get("hash", None) for k, v in REGISTRY.items()}
+        POOCH.registry = REGISTRY
         POOCH.urls = urls
 except:  # noqa: E722
     warn(
@@ -105,7 +108,7 @@ def get_examples() -> dict[str, list[str]]:
 
 
 def get_registry() -> dict[str, str]:
-    return POOCH.registry
+    return REGISTRY
 
 
 def list_models() -> list[str]:
