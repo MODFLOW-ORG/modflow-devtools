@@ -27,9 +27,9 @@ ZIP_NAME = "mf6examples.zip"
 
 # set up the pooch
 FETCHERS = {}
-REGISTRY: dict[str, dict] = {}
-MODELMAP: dict[str, list[str]] = {}
-EXAMPLES: dict[str, list[str]] = {}
+REGISTRY: dict = {}
+MODELMAP: dict = {}
+EXAMPLES: dict = {}
 POOCH = pooch.create(
     path=pooch.os_cache(modflow_devtools.__name__.replace("_", "-")),
     base_url=BASE_URL,
