@@ -56,19 +56,19 @@ ex-gwf-csub-p02b = [
 ]
 ex-gwf-csub-p02c = [
     "ex-gwf-csub-p02c/es-001",
-    "ex-gwf-csub-p02c/es-020",
+    "ex-gwf-csub-p02c/hb-001",
     "ex-gwf-csub-p02c/hb-002",
-    "ex-gwf-csub-p02c/hb-100",
-    "ex-gwf-csub-p02c/hb-050",
+    "ex-gwf-csub-p02c/es-100",
     "ex-gwf-csub-p02c/hb-005",
+    "ex-gwf-csub-p02c/hb-100",
+    "ex-gwf-csub-p02c/es-020",
+    "ex-gwf-csub-p02c/es-010",
+    "ex-gwf-csub-p02c/hb-020",
     "ex-gwf-csub-p02c/hb-010",
     "ex-gwf-csub-p02c/es-050",
-    "ex-gwf-csub-p02c/hb-001",
     "ex-gwf-csub-p02c/es-005",
+    "ex-gwf-csub-p02c/hb-050",
     "ex-gwf-csub-p02c/es-002",
-    "ex-gwf-csub-p02c/es-100",
-    "ex-gwf-csub-p02c/hb-020",
-    "ex-gwf-csub-p02c/es-010",
 ]
 ex-gwf-csub-p03a = [
     "ex-gwf-csub-p03a",

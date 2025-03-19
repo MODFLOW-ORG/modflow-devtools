@@ -120,12 +120,19 @@ def copy_to(
 ) -> Path | None:
     if not any(files := FETCHERS[model_name]()):
         return None
+    # create the workspace if needed
     workspace = Path(workspace).expanduser().absolute()
     if verbose:
         print(f"Creating workspace {workspace}")
     workspace.mkdir(parents=True, exist_ok=True)
+    # copy the files. some might be in nested folders,
+    # but the first is gauranteed not to be, so use it
+    # to determine relative path in the new workspace.
+    base = Path(files[0]).parent
     for file in files:
         if verbose:
             print(f"Copying {file} to workspace")
-        copy(file, workspace)
+        path = workspace / file.relative_to(base)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        copy(file, workspace / file.relative_to(base))
     return workspace

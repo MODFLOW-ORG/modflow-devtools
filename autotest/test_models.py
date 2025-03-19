@@ -44,11 +44,13 @@ def test_get_examples(example_name, model_names):
 
 @pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
 def test_copy_to(model_name, files, tmp_path):
-    workspace = models.copy_to(tmp_path, model_name)
+    workspace = models.copy_to(tmp_path, model_name, verbose=True)
     assert workspace.exists(), f"Model {model_name} was not copied to {tmp_path}"
     assert workspace.is_dir(), f"Model {model_name} is not a directory"
-    assert len(list(workspace.iterdir())) == len(files), (
-        f"Model {model_name} does not have the correct number of files"
+    found = [p for p in workspace.rglob("*") if p.is_file()]
+    assert len(found) == len(files), (
+        f"Model {model_name} does not have the correct number of files, "
+        f"expected {len(files)}, got {len(found)}"
     )
     if "mf6" in model_name:
         assert any(Path(f).name == "mfsim.nam" for f in files)

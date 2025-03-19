@@ -45,11 +45,6 @@ def write_registry(
     if is_zip := url.endswith((".zip", ".tar")):
         registry[url.rpartition("/")[2]] = {"hash": None, "url": url}
 
-    def _find_examples_dir(p):
-        while p.name != "examples":
-            p = p.parent
-        return p
-
     model_paths = get_model_paths(path)
     for model_path in model_paths:
         # TODO: the renaming is only necessary because we're attaching auto-
@@ -57,24 +52,23 @@ def write_registry(
         # and get by with a single function that takes model name as an arg,
         # then the model names could correspond directly to directory names.
         model_path = model_path.expanduser().absolute()
-        base_path = _find_examples_dir(model_path) if is_zip else path
-        rel_path = model_path.relative_to(base_path)
+        rel_path = model_path.relative_to(path)
         model_name = "/".join(rel_path.parts)
         modelmap[model_name] = []
         if is_zip:
             if rel_path.parts[0] not in examples:
                 examples[rel_path.parts[0]] = []
             examples[rel_path.parts[0]].append(model_name)
-        for p in model_path.glob("*"):
+        for p in model_path.rglob("*"):
             if not p.is_file() or any(e in p.name for e in exclude):
                 continue
             if is_zip:
-                relpath = p.expanduser().absolute().relative_to(base_path)
+                relpath = p.expanduser().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
                 url_ = url
                 hash = None
             else:
-                relpath = p.expanduser().absolute().relative_to(base_path)
+                relpath = p.expanduser().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
                 url_ = f"{url}/{relpath!s}"
                 hash = _sha256(p)
