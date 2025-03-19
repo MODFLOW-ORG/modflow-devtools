@@ -126,7 +126,7 @@ def copy_to(
         print(f"Creating workspace {workspace}")
     workspace.mkdir(parents=True, exist_ok=True)
     # copy the files. some might be in nested folders,
-    # but the first is gauranteed not to be, so use it
+    # but the first is guaranteed not to be, so use it
     # to determine relative path in the new workspace.
     base = Path(files[0]).parent
     for file in files:
