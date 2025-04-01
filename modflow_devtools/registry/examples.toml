@@ -5,10 +5,6 @@ ex-gwe-barends = [
     "example/ex-gwe-barends/mf6gwf",
     "example/ex-gwe-barends/mf6gwe",
 ]
-ex-gwe-bhe = [
-    "example/ex-gwe-bhe/mf6gwf",
-    "example/ex-gwe-bhe/mf6gwe",
-]
 ex-gwe-danckwerts = [
     "example/ex-gwe-danckwerts",
 ]

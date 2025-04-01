@@ -48,33 +48,6 @@
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.dis",
     "ex-gwe-barends/mf6gwf/ex-gwe-barends.ims",
 ]
-"example/ex-gwe-bhe/mf6gwe" = [
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.fmi",
-    "ex-gwe-bhe/mf6gwe/ex-gwe-bhe.ims",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.ic",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.ssm",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.cnd",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.esl",
-    "ex-gwe-bhe/mf6gwe/ex-gwe-bhe.tdis",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.nam",
-    "ex-gwe-bhe/mf6gwe/mfsim.nam",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.oc",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.adv",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.est",
-    "ex-gwe-bhe/mf6gwe/gwe-bhe.dis",
-]
-"example/ex-gwe-bhe/mf6gwf" = [
-    "ex-gwe-bhe/mf6gwf/ex-gwe-bhe.ims",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.npf",
-    "ex-gwe-bhe/mf6gwf/ex-gwe-bhe.tdis",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.oc",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.chd",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.dis",
-    "ex-gwe-bhe/mf6gwf/mfsim.nam",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.nam",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.sto",
-    "ex-gwe-bhe/mf6gwf/gwf-bhe.ic",
-]
 "example/ex-gwe-danckwerts" = [
     "ex-gwe-danckwerts/gwe-danckwerts.adv",
     "ex-gwe-danckwerts/gwe-danckwerts.uze",
