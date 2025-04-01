@@ -1,377 +1,381 @@
 ex-gwe-ates = [
-    "ex-gwe-ates",
+    "example/ex-gwe-ates",
 ]
 ex-gwe-barends = [
-    "ex-gwe-barends/mf6gwf",
-    "ex-gwe-barends/mf6gwe",
+    "example/ex-gwe-barends/mf6gwf",
+    "example/ex-gwe-barends/mf6gwe",
+]
+ex-gwe-bhe = [
+    "example/ex-gwe-bhe/mf6gwf",
+    "example/ex-gwe-bhe/mf6gwe",
 ]
 ex-gwe-danckwerts = [
-    "ex-gwe-danckwerts",
+    "example/ex-gwe-danckwerts",
 ]
 ex-gwe-geotherm = [
-    "ex-gwe-geotherm/mf6gwf",
-    "ex-gwe-geotherm/mf6gwe",
+    "example/ex-gwe-geotherm/mf6gwf",
+    "example/ex-gwe-geotherm/mf6gwe",
 ]
 ex-gwe-prt = [
-    "ex-gwe-prt/gwf",
-    "ex-gwe-prt/gwe",
-    "ex-gwe-prt/prt",
+    "example/ex-gwe-prt/gwf",
+    "example/ex-gwe-prt/prt",
+    "example/ex-gwe-prt/gwe",
 ]
 ex-gwe-radial-slow = [
-    "ex-gwe-radial-slow/mf6gwf",
-    "ex-gwe-radial-slow/mf6gwe-b",
+    "example/ex-gwe-radial-slow/mf6gwf",
+    "example/ex-gwe-radial-slow/mf6gwe-b",
 ]
 ex-gwe-vsc = [
-    "ex-gwe-vsc",
+    "example/ex-gwe-vsc",
 ]
 ex-gwf-advtidal = [
-    "ex-gwf-advtidal",
+    "example/ex-gwf-advtidal",
 ]
 ex-gwf-bcf2ss-p01a = [
-    "ex-gwf-bcf2ss-p01a",
+    "example/ex-gwf-bcf2ss-p01a",
 ]
 ex-gwf-bcf2ss-p02a = [
-    "ex-gwf-bcf2ss-p02a",
+    "example/ex-gwf-bcf2ss-p02a",
 ]
 ex-gwf-bump-p01a = [
-    "ex-gwf-bump-p01a",
+    "example/ex-gwf-bump-p01a",
 ]
 ex-gwf-bump-p01b = [
-    "ex-gwf-bump-p01b",
+    "example/ex-gwf-bump-p01b",
 ]
 ex-gwf-bump-p01c = [
-    "ex-gwf-bump-p01c",
+    "example/ex-gwf-bump-p01c",
 ]
 ex-gwf-capture = [
-    "ex-gwf-capture",
+    "example/ex-gwf-capture",
 ]
 ex-gwf-csub-p01 = [
-    "ex-gwf-csub-p01",
+    "example/ex-gwf-csub-p01",
 ]
 ex-gwf-csub-p02a = [
-    "ex-gwf-csub-p02a",
+    "example/ex-gwf-csub-p02a",
 ]
 ex-gwf-csub-p02b = [
-    "ex-gwf-csub-p02b",
+    "example/ex-gwf-csub-p02b",
 ]
 ex-gwf-csub-p02c = [
-    "ex-gwf-csub-p02c/es-001",
-    "ex-gwf-csub-p02c/hb-001",
-    "ex-gwf-csub-p02c/hb-002",
-    "ex-gwf-csub-p02c/es-100",
-    "ex-gwf-csub-p02c/hb-005",
-    "ex-gwf-csub-p02c/hb-100",
-    "ex-gwf-csub-p02c/es-020",
-    "ex-gwf-csub-p02c/es-010",
-    "ex-gwf-csub-p02c/hb-020",
-    "ex-gwf-csub-p02c/hb-010",
-    "ex-gwf-csub-p02c/es-050",
-    "ex-gwf-csub-p02c/es-005",
-    "ex-gwf-csub-p02c/hb-050",
-    "ex-gwf-csub-p02c/es-002",
+    "example/ex-gwf-csub-p02c/es-002",
+    "example/ex-gwf-csub-p02c/es-005",
+    "example/ex-gwf-csub-p02c/hb-020",
+    "example/ex-gwf-csub-p02c/es-020",
+    "example/ex-gwf-csub-p02c/hb-005",
+    "example/ex-gwf-csub-p02c/hb-002",
+    "example/ex-gwf-csub-p02c/hb-010",
+    "example/ex-gwf-csub-p02c/hb-100",
+    "example/ex-gwf-csub-p02c/es-001",
+    "example/ex-gwf-csub-p02c/es-100",
+    "example/ex-gwf-csub-p02c/hb-001",
+    "example/ex-gwf-csub-p02c/es-010",
+    "example/ex-gwf-csub-p02c/es-050",
+    "example/ex-gwf-csub-p02c/hb-050",
 ]
 ex-gwf-csub-p03a = [
-    "ex-gwf-csub-p03a",
+    "example/ex-gwf-csub-p03a",
 ]
 ex-gwf-csub-p03b = [
-    "ex-gwf-csub-p03b",
+    "example/ex-gwf-csub-p03b",
 ]
 ex-gwf-csub-p04 = [
-    "ex-gwf-csub-p04",
+    "example/ex-gwf-csub-p04",
 ]
 ex-gwf-curve-90 = [
-    "ex-gwf-curve-90",
+    "example/ex-gwf-curve-90",
 ]
 ex-gwf-curvilin = [
-    "ex-gwf-curvilin",
+    "example/ex-gwf-curvilin",
 ]
 ex-gwf-disvmesh = [
-    "ex-gwf-disvmesh",
+    "example/ex-gwf-disvmesh",
 ]
 ex-gwf-drn-p01a = [
-    "ex-gwf-drn-p01a",
+    "example/ex-gwf-drn-p01a",
 ]
 ex-gwf-drn-p01b = [
-    "ex-gwf-drn-p01b",
+    "example/ex-gwf-drn-p01b",
 ]
 ex-gwf-fhb = [
-    "ex-gwf-fhb",
+    "example/ex-gwf-fhb",
 ]
 ex-gwf-hanic = [
-    "ex-gwf-hanic",
+    "example/ex-gwf-hanic",
 ]
 ex-gwf-hanir = [
-    "ex-gwf-hanir",
+    "example/ex-gwf-hanir",
 ]
 ex-gwf-hanix = [
-    "ex-gwf-hanix",
+    "example/ex-gwf-hanix",
 ]
 ex-gwf-lak-p01 = [
-    "ex-gwf-lak-p01",
+    "example/ex-gwf-lak-p01",
 ]
 ex-gwf-lak-p02 = [
-    "ex-gwf-lak-p02",
+    "example/ex-gwf-lak-p02",
 ]
 ex-gwf-lgr = [
-    "ex-gwf-lgr",
+    "example/ex-gwf-lgr",
 ]
 ex-gwf-lgrv-gc = [
-    "ex-gwf-lgrv-gc",
+    "example/ex-gwf-lgrv-gc",
 ]
 ex-gwf-lgrv-gr = [
-    "ex-gwf-lgrv-gr",
+    "example/ex-gwf-lgrv-gr",
 ]
 ex-gwf-lgrv-lgr = [
-    "ex-gwf-lgrv-lgr",
+    "example/ex-gwf-lgrv-lgr",
 ]
 ex-gwf-maw-p01a = [
-    "ex-gwf-maw-p01a",
+    "example/ex-gwf-maw-p01a",
 ]
 ex-gwf-maw-p01b = [
-    "ex-gwf-maw-p01b",
+    "example/ex-gwf-maw-p01b",
 ]
 ex-gwf-maw-p02 = [
-    "ex-gwf-maw-p02",
+    "example/ex-gwf-maw-p02",
 ]
 ex-gwf-maw-p03a = [
-    "ex-gwf-maw-p03a",
+    "example/ex-gwf-maw-p03a",
 ]
 ex-gwf-maw-p03b = [
-    "ex-gwf-maw-p03b",
+    "example/ex-gwf-maw-p03b",
 ]
 ex-gwf-maw-p03c = [
-    "ex-gwf-maw-p03c",
+    "example/ex-gwf-maw-p03c",
 ]
 ex-gwf-nwt-p02a = [
-    "ex-gwf-nwt-p02a",
+    "example/ex-gwf-nwt-p02a",
 ]
 ex-gwf-nwt-p02b = [
-    "ex-gwf-nwt-p02b",
+    "example/ex-gwf-nwt-p02b",
 ]
 ex-gwf-nwt-p03a = [
-    "ex-gwf-nwt-p03a",
+    "example/ex-gwf-nwt-p03a",
 ]
 ex-gwf-nwt-p03b = [
-    "ex-gwf-nwt-p03b",
+    "example/ex-gwf-nwt-p03b",
 ]
 ex-gwf-rad-disu = [
-    "ex-gwf-rad-disu",
+    "example/ex-gwf-rad-disu",
 ]
 ex-gwf-sagehen = [
-    "ex-gwf-sagehen",
+    "example/ex-gwf-sagehen",
 ]
 ex-gwf-sfr-p01 = [
-    "ex-gwf-sfr-p01",
+    "example/ex-gwf-sfr-p01",
 ]
 ex-gwf-sfr-p01b = [
-    "ex-gwf-sfr-p01b",
+    "example/ex-gwf-sfr-p01b",
 ]
 ex-gwf-sfr-pindersauera = [
-    "ex-gwf-sfr-pindersauera",
+    "example/ex-gwf-sfr-pindersauera",
 ]
 ex-gwf-sfr-pindersauerb = [
-    "ex-gwf-sfr-pindersauerb",
+    "example/ex-gwf-sfr-pindersauerb",
 ]
 ex-gwf-spbc = [
-    "ex-gwf-spbc",
+    "example/ex-gwf-spbc",
 ]
 ex-gwf-toth = [
-    "ex-gwf-toth",
+    "example/ex-gwf-toth",
 ]
 ex-gwf-twri01 = [
-    "ex-gwf-twri01",
+    "example/ex-gwf-twri01",
 ]
 ex-gwf-u1disv = [
-    "ex-gwf-u1disv",
+    "example/ex-gwf-u1disv",
 ]
 ex-gwf-u1disv-x = [
-    "ex-gwf-u1disv-x",
+    "example/ex-gwf-u1disv-x",
 ]
 ex-gwf-u1gwfgwf-s1 = [
-    "ex-gwf-u1gwfgwf-s1",
+    "example/ex-gwf-u1gwfgwf-s1",
 ]
 ex-gwf-u1gwfgwf-s2 = [
-    "ex-gwf-u1gwfgwf-s2",
+    "example/ex-gwf-u1gwfgwf-s2",
 ]
 ex-gwf-u1gwfgwf-s3 = [
-    "ex-gwf-u1gwfgwf-s3",
+    "example/ex-gwf-u1gwfgwf-s3",
 ]
 ex-gwf-u1gwfgwf-s4 = [
-    "ex-gwf-u1gwfgwf-s4",
+    "example/ex-gwf-u1gwfgwf-s4",
 ]
 ex-gwf-whirl = [
-    "ex-gwf-whirl",
+    "example/ex-gwf-whirl",
 ]
 ex-gwf-zaidel = [
-    "ex-gwf-zaidel",
+    "example/ex-gwf-zaidel",
 ]
 ex-gwt-gwtgwt-p10 = [
-    "ex-gwt-gwtgwt-p10",
+    "example/ex-gwt-gwtgwt-p10",
 ]
 ex-gwt-hecht-mendez-b = [
-    "ex-gwt-hecht-mendez-b/mf6gwf",
-    "ex-gwt-hecht-mendez-b/mf6gwt",
+    "example/ex-gwt-hecht-mendez-b/mf6gwf",
+    "example/ex-gwt-hecht-mendez-b/mf6gwt",
 ]
 ex-gwt-hecht-mendez-c = [
-    "ex-gwt-hecht-mendez-c/mf6gwf",
-    "ex-gwt-hecht-mendez-c/mf6gwt",
+    "example/ex-gwt-hecht-mendez-c/mf6gwf",
+    "example/ex-gwt-hecht-mendez-c/mf6gwt",
 ]
 ex-gwt-henry-a = [
-    "ex-gwt-henry-a",
+    "example/ex-gwt-henry-a",
 ]
 ex-gwt-henry-b = [
-    "ex-gwt-henry-b",
+    "example/ex-gwt-henry-b",
 ]
 ex-gwt-keating = [
-    "ex-gwt-keating/mf6gwf",
-    "ex-gwt-keating/mf6gwt",
+    "example/ex-gwt-keating/mf6gwf",
+    "example/ex-gwt-keating/mf6gwt",
 ]
 ex-gwt-moc3d-p01a = [
-    "ex-gwt-moc3d-p01a/mf6gwf",
-    "ex-gwt-moc3d-p01a/mf6gwt",
+    "example/ex-gwt-moc3d-p01a/mf6gwf",
+    "example/ex-gwt-moc3d-p01a/mf6gwt",
 ]
 ex-gwt-moc3d-p01b = [
-    "ex-gwt-moc3d-p01b/mf6gwf",
-    "ex-gwt-moc3d-p01b/mf6gwt",
+    "example/ex-gwt-moc3d-p01b/mf6gwf",
+    "example/ex-gwt-moc3d-p01b/mf6gwt",
 ]
 ex-gwt-moc3d-p01c = [
-    "ex-gwt-moc3d-p01c/mf6gwf",
-    "ex-gwt-moc3d-p01c/mf6gwt",
+    "example/ex-gwt-moc3d-p01c/mf6gwf",
+    "example/ex-gwt-moc3d-p01c/mf6gwt",
 ]
 ex-gwt-moc3d-p01d = [
-    "ex-gwt-moc3d-p01d/mf6gwf",
-    "ex-gwt-moc3d-p01d/mf6gwt",
+    "example/ex-gwt-moc3d-p01d/mf6gwf",
+    "example/ex-gwt-moc3d-p01d/mf6gwt",
 ]
 ex-gwt-moc3d-p02 = [
-    "ex-gwt-moc3d-p02/mf6gwf",
-    "ex-gwt-moc3d-p02/mf6gwt",
+    "example/ex-gwt-moc3d-p02/mf6gwf",
+    "example/ex-gwt-moc3d-p02/mf6gwt",
 ]
 ex-gwt-moc3d-p02tg = [
-    "ex-gwt-moc3d-p02tg/mf6gwf",
-    "ex-gwt-moc3d-p02tg/mf6gwt",
+    "example/ex-gwt-moc3d-p02tg/mf6gwf",
+    "example/ex-gwt-moc3d-p02tg/mf6gwt",
 ]
 ex-gwt-mt3dms-p01a = [
-    "ex-gwt-mt3dms-p01a",
+    "example/ex-gwt-mt3dms-p01a",
 ]
 ex-gwt-mt3dms-p01b = [
-    "ex-gwt-mt3dms-p01b",
+    "example/ex-gwt-mt3dms-p01b",
 ]
 ex-gwt-mt3dms-p01c = [
-    "ex-gwt-mt3dms-p01c",
+    "example/ex-gwt-mt3dms-p01c",
 ]
 ex-gwt-mt3dms-p01d = [
-    "ex-gwt-mt3dms-p01d",
+    "example/ex-gwt-mt3dms-p01d",
 ]
 ex-gwt-mt3dms-p02a = [
-    "ex-gwt-mt3dms-p02a/mf6gwf",
-    "ex-gwt-mt3dms-p02a/mf6gwt",
+    "example/ex-gwt-mt3dms-p02a/mf6gwf",
+    "example/ex-gwt-mt3dms-p02a/mf6gwt",
 ]
 ex-gwt-mt3dms-p02b = [
-    "ex-gwt-mt3dms-p02b/mf6gwf",
-    "ex-gwt-mt3dms-p02b/mf6gwt",
+    "example/ex-gwt-mt3dms-p02b/mf6gwf",
+    "example/ex-gwt-mt3dms-p02b/mf6gwt",
 ]
 ex-gwt-mt3dms-p02c = [
-    "ex-gwt-mt3dms-p02c/mf6gwf",
-    "ex-gwt-mt3dms-p02c/mf6gwt",
+    "example/ex-gwt-mt3dms-p02c/mf6gwf",
+    "example/ex-gwt-mt3dms-p02c/mf6gwt",
 ]
 ex-gwt-mt3dms-p02d = [
-    "ex-gwt-mt3dms-p02d/mf6gwf",
-    "ex-gwt-mt3dms-p02d/mf6gwt",
+    "example/ex-gwt-mt3dms-p02d/mf6gwf",
+    "example/ex-gwt-mt3dms-p02d/mf6gwt",
 ]
 ex-gwt-mt3dms-p02e = [
-    "ex-gwt-mt3dms-p02e/mf6gwf",
-    "ex-gwt-mt3dms-p02e/mf6gwt",
+    "example/ex-gwt-mt3dms-p02e/mf6gwf",
+    "example/ex-gwt-mt3dms-p02e/mf6gwt",
 ]
 ex-gwt-mt3dms-p02f = [
-    "ex-gwt-mt3dms-p02f/mf6gwf",
-    "ex-gwt-mt3dms-p02f/mf6gwt",
+    "example/ex-gwt-mt3dms-p02f/mf6gwf",
+    "example/ex-gwt-mt3dms-p02f/mf6gwt",
 ]
 ex-gwt-mt3dms-p03 = [
-    "ex-gwt-mt3dms-p03",
+    "example/ex-gwt-mt3dms-p03",
 ]
 ex-gwt-mt3dms-p04a = [
-    "ex-gwt-mt3dms-p04a",
+    "example/ex-gwt-mt3dms-p04a",
 ]
 ex-gwt-mt3dms-p04b = [
-    "ex-gwt-mt3dms-p04b",
+    "example/ex-gwt-mt3dms-p04b",
 ]
 ex-gwt-mt3dms-p04c = [
-    "ex-gwt-mt3dms-p04c",
+    "example/ex-gwt-mt3dms-p04c",
 ]
 ex-gwt-mt3dms-p05 = [
-    "ex-gwt-mt3dms-p05",
+    "example/ex-gwt-mt3dms-p05",
 ]
 ex-gwt-mt3dms-p06 = [
-    "ex-gwt-mt3dms-p06",
+    "example/ex-gwt-mt3dms-p06",
 ]
 ex-gwt-mt3dms-p07 = [
-    "ex-gwt-mt3dms-p07",
+    "example/ex-gwt-mt3dms-p07",
 ]
 ex-gwt-mt3dms-p08 = [
-    "ex-gwt-mt3dms-p08",
+    "example/ex-gwt-mt3dms-p08",
 ]
 ex-gwt-mt3dms-p09 = [
-    "ex-gwt-mt3dms-p09",
+    "example/ex-gwt-mt3dms-p09",
 ]
 ex-gwt-mt3dms-p10 = [
-    "ex-gwt-mt3dms-p10",
+    "example/ex-gwt-mt3dms-p10",
 ]
 ex-gwt-mt3dsupp631 = [
-    "ex-gwt-mt3dsupp631/mf6gwf",
-    "ex-gwt-mt3dsupp631/mf6gwt",
+    "example/ex-gwt-mt3dsupp631/mf6gwf",
+    "example/ex-gwt-mt3dsupp631/mf6gwt",
 ]
 ex-gwt-mt3dsupp632a = [
-    "ex-gwt-mt3dsupp632a/mf6gwf",
-    "ex-gwt-mt3dsupp632a/mf6gwt",
+    "example/ex-gwt-mt3dsupp632a/mf6gwf",
+    "example/ex-gwt-mt3dsupp632a/mf6gwt",
 ]
 ex-gwt-mt3dsupp632b = [
-    "ex-gwt-mt3dsupp632b/mf6gwf",
-    "ex-gwt-mt3dsupp632b/mf6gwt",
+    "example/ex-gwt-mt3dsupp632b/mf6gwf",
+    "example/ex-gwt-mt3dsupp632b/mf6gwt",
 ]
 ex-gwt-mt3dsupp632c = [
-    "ex-gwt-mt3dsupp632c/mf6gwf",
-    "ex-gwt-mt3dsupp632c/mf6gwt",
+    "example/ex-gwt-mt3dsupp632c/mf6gwf",
+    "example/ex-gwt-mt3dsupp632c/mf6gwt",
 ]
 ex-gwt-mt3dsupp82 = [
-    "ex-gwt-mt3dsupp82/mf6gwf",
-    "ex-gwt-mt3dsupp82/mf6gwt",
+    "example/ex-gwt-mt3dsupp82/mf6gwf",
+    "example/ex-gwt-mt3dsupp82/mf6gwt",
 ]
 ex-gwt-prudic2004t2 = [
-    "ex-gwt-prudic2004t2/mf6gwf",
-    "ex-gwt-prudic2004t2/mf6gwt",
+    "example/ex-gwt-prudic2004t2/mf6gwf",
+    "example/ex-gwt-prudic2004t2/mf6gwt",
 ]
 ex-gwt-rotate = [
-    "ex-gwt-rotate",
+    "example/ex-gwt-rotate",
 ]
 ex-gwt-saltlake = [
-    "ex-gwt-saltlake",
+    "example/ex-gwt-saltlake",
 ]
 ex-gwt-stallman = [
-    "ex-gwt-stallman",
+    "example/ex-gwt-stallman",
 ]
 ex-gwt-synthetic-valley = [
-    "ex-gwt-synthetic-valley/mf6gwf",
-    "ex-gwt-synthetic-valley/mf6gwt",
+    "example/ex-gwt-synthetic-valley/mf6gwf",
+    "example/ex-gwt-synthetic-valley/mf6gwt",
 ]
 ex-gwt-uzt-2d-a = [
-    "ex-gwt-uzt-2d-a",
+    "example/ex-gwt-uzt-2d-a",
 ]
 ex-gwt-uzt-2d-b = [
-    "ex-gwt-uzt-2d-b",
+    "example/ex-gwt-uzt-2d-b",
 ]
 ex-prt-mp7-p01 = [
-    "ex-prt-mp7-p01/gwf",
-    "ex-prt-mp7-p01/prt",
+    "example/ex-prt-mp7-p01/gwf",
+    "example/ex-prt-mp7-p01/prt",
 ]
 ex-prt-mp7-p02 = [
-    "ex-prt-mp7-p02/gwf",
-    "ex-prt-mp7-p02/prt",
+    "example/ex-prt-mp7-p02/gwf",
+    "example/ex-prt-mp7-p02/prt",
 ]
 ex-prt-mp7-p03 = [
-    "ex-prt-mp7-p03/gwf",
-    "ex-prt-mp7-p03/prt",
+    "example/ex-prt-mp7-p03/gwf",
+    "example/ex-prt-mp7-p03/prt",
 ]
 ex-prt-mp7-p04 = [
-    "ex-prt-mp7-p04/gwf",
-    "ex-prt-mp7-p04/prt",
+    "example/ex-prt-mp7-p04/gwf",
+    "example/ex-prt-mp7-p04/prt",
 ]

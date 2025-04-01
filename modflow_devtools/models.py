@@ -81,9 +81,7 @@ try:
     with pkg_resources.open_binary(REGISTRY_ANCHOR, MODELMAP_FILE_NAME) as models_file:
         MODELMAP = tomli.load(models_file)
         for model_name, files in MODELMAP.items():
-            fetch = _fetch(model_name, files)
-            FETCHERS[model_name] = fetch
-            globals()[model_name] = fetch
+            FETCHERS[model_name] = _fetch(model_name, files)
 except:  # noqa: E722
     warn(
         f"No model mapping file '{MODELMAP_FILE_NAME}' "
@@ -104,21 +102,35 @@ except:  # noqa: E722
 
 
 def get_examples() -> dict[str, list[str]]:
+    """Get a map of example names to example scenarios."""
     return EXAMPLES
 
 
 def get_registry() -> dict[str, str]:
+    """
+    Get a map of file names to URLs. Note that this mapping
+    contains no information on which files belong to which
+    models. For that information, use `get_models()`.
+    """
     return REGISTRY
 
 
-def list_models() -> list[str]:
-    return list(MODELMAP.keys())
+def get_models() -> dict[str, str]:
+    """Get a map of model names to input files."""
+    return MODELMAP
 
 
 def copy_to(
     workspace: str | PathLike, model_name: str, verbose: bool = False
 ) -> Path | None:
-    if not any(files := FETCHERS[model_name]()):
+    """
+    Copy the model's input files to the given workspace.
+    The workspace will be created if it does not exist.
+    """
+
+    if (fetch := FETCHERS.get(model_name, None)) is None:
+        raise ValueError(f"Model '{model_name}' not in registry")
+    if not any(files := fetch()):
         return None
     # create the workspace if needed
     workspace = Path(workspace).expanduser().absolute()

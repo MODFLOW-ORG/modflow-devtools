@@ -32,6 +32,7 @@ def _sha256(path: Path) -> str:
 def write_registry(
     path: str | PathLike,
     url: str,
+    prefix: str = "",
     append: bool = False,
 ):
     path = Path(path).expanduser().absolute()
@@ -47,18 +48,16 @@ def write_registry(
 
     model_paths = get_model_paths(path)
     for model_path in model_paths:
-        # TODO: the renaming is only necessary because we're attaching auto-
-        # generated functions to the models module. If we can live without,
-        # and get by with a single function that takes model name as an arg,
-        # then the model names could correspond directly to directory names.
         model_path = model_path.expanduser().absolute()
         rel_path = model_path.relative_to(path)
-        model_name = "/".join(rel_path.parts)
+        parts = [prefix, *list(rel_path.parts)] if prefix else list(rel_path.parts)
+        model_name = "/".join(parts)
         modelmap[model_name] = []
         if is_zip:
-            if rel_path.parts[0] not in examples:
-                examples[rel_path.parts[0]] = []
-            examples[rel_path.parts[0]].append(model_name)
+            name = rel_path.parts[0]
+            if name not in examples:
+                examples[name] = []
+            examples[name].append(model_name)
         for p in model_path.rglob("*"):
             if not p.is_file() or any(e in p.name for e in exclude):
                 continue
@@ -95,7 +94,7 @@ def write_registry(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Make a registry of example models.")
+    parser = argparse.ArgumentParser(description="Make a registry of models.")
     parser.add_argument("path")
     parser.add_argument(
         "--append",
@@ -104,12 +103,14 @@ if __name__ == "__main__":
         help="Append instead of overwriting.",
     )
     parser.add_argument(
+        "--prefix", "-p", type=str, help="Prefix for models.", default=""
+    )
+    parser.add_argument(
         "--url",
         "-u",
         type=str,
-        help="Base URL for example models.",
+        help="Base URL for models.",
+        default=BASE_URL,
     )
     args = parser.parse_args()
-    path = Path(args.path)
-    url = args.url if args.url else BASE_URL
-    write_registry(path=path, url=url, append=args.append)
+    write_registry(path=args.path, url=args.url, prefix=args.prefix, append=args.append)

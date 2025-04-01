@@ -1,15 +1,13 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html).
-
-When the module is imported, it checks for the existence of the registry in models files. If they are found, it loads the registry and dynamically generates functions for each model, attaching them to the module namespace.
-
-Each function returns a list of files. Example usage:
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html). Example usage:
 
 ```python
 import modflow_devtools.models as models
+from flopy.mf6 import MFSimulation
 
-files = models.some_model()
+workspace = models.copy_to("some/path", "some_model")
+sim = MFSimulation.load(sim_ws=workspace)
 ```
 
 ## Developers
@@ -24,7 +22,7 @@ The script can be executed with `python -m modflow_devtools.make_registry`. It a
 For example, to create a registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
 
 ```shell
-python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip
-python -m modflow_devtools.make_registry ../modflow6-testmodels --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master
-python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master
+python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --prefix example
+python -m modflow_devtools.make_registry ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --prefix test
+python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --prefix large
 ```
