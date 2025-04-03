@@ -31,6 +31,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    md/dfn.md
    md/download.md
    md/latex.md
+   md/models.md
    md/ostags.md
    md/zip.md
    md/timed.md
