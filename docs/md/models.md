@@ -1,14 +1,50 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html). Example usage:
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html).
+
+## Listing models
+
+The `get_models()` function returns a mapping of model names to model input files.
 
 ```python
+from pprint import pprint
 import modflow_devtools.models as models
-from flopy.mf6 import MFSimulation
 
-workspace = models.copy_to("some/path", "some_model")
-sim = MFSimulation.load(sim_ws=workspace)
+pprint(list(models.get_models())[:5])
 ```
+
+```
+['example/ex-gwe-ates',
+ 'example/ex-gwe-barends/mf6gwe',
+ 'example/ex-gwe-barends/mf6gwf',
+ 'example/ex-gwe-danckwerts',
+ 'example/ex-gwe-geotherm/mf6gwe']
+```
+
+Model names follow a hierarchical addressing scheme.
+
+The leading prefix identifies where the model came from. Currently three prefixes are in use:
+
+- `example/...`: example models in https://github.com/MODFLOW-ORG/modflow6-examples
+- `test/...`: test models in https://github.com/MODFLOW-ORG/modflow6-testmodels
+- `large/...`: large test models in https://github.com/MODFLOW-ORG/modflow6-largetestmodels
+
+The remaining path parts reflect the relative location of the model within the source repository.
+
+**Note**: until this module stabilizes, model naming conventions may change without notice.
+
+## Using models
+
+To copy model input files to a workspace of your choosing:
+
+```python
+from tempfile import TemporaryDirectory
+
+with TemporaryDirectory() as td:
+    workspace = models.copy_to(td, "example/ex-gwe-ates", verbose=True)
+```
+
+If the target directory doesn't exist, it will be created.
 
 ## Developers
 
