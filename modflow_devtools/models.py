@@ -35,6 +35,7 @@ POOCH = pooch.create(
     base_url=BASE_URL,
     version=modflow_devtools.__version__,
     env="MFMODELS",
+    retry_if_failed=3,
 )
 
 
