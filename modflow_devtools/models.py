@@ -1,4 +1,5 @@
 # TODO
+# - support mf2005 models in modflow6-testmodels repo
 # - switch modflow6-testmodels and -largetestmodels to
 #   fetch zip of the repo instead of individual files?
 
@@ -66,7 +67,7 @@ try:
         REGISTRY_ANCHOR, REGISTRY_FILE_NAME
     ) as registry_file:
         REGISTRY = tomli.load(registry_file)
-        # extract urls then drop them, leaving a direct map of name to hash
+        # extract urls then drop them. registry directly maps file name to hash
         urls = {k: v["url"] for k, v in REGISTRY.items() if v.get("url", None)}
         REGISTRY = {k: v.get("hash", None) for k, v in REGISTRY.items()}
         POOCH.registry = REGISTRY

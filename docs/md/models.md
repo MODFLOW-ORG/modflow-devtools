@@ -61,4 +61,5 @@ For example, to create a registry of models in the MF6 examples and test models 
 python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --prefix example
 python -m modflow_devtools.make_registry ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --prefix test
 python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --prefix large
+python -m modflow_devtools.make_registry ../modflow6-testmodels/mf5to6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --prefix mf2005 --namefile "*.nam"
 ```

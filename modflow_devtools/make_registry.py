@@ -34,7 +34,34 @@ def write_registry(
     url: str,
     prefix: str = "",
     append: bool = False,
+    namefile: str = "mfsim.nam",
 ):
+    """
+    Make registry files for a directory of models.
+
+    The directory may contain model subdirectories
+    at arbitrary depth. Model input subdirectories
+    are identified by the presence of a namefile
+    matching the provided pattern. A prefix may be
+    specified for model names to avoid collisions.
+    The registry files are written to the registry
+    folder alongside this script. Typically, this
+    function will run once or more in append mode
+    to iteratively create a registry.
+
+    Parameters
+    ----------
+    path : str | PathLike
+        Path to the directory containing the models.
+    url : str
+        Base URL for the models.
+    prefix : str
+        Prefix to add to model names.
+    append : bool
+        Append to the registry files instead of overwriting them.
+    namefile : str
+        Namefile pattern to look for in the model directories.
+    """
     path = Path(path).expanduser().absolute()
     if not path.is_dir():
         raise NotADirectoryError(f"Path {path} is not a directory.")
@@ -46,7 +73,7 @@ def write_registry(
     if is_zip := url.endswith((".zip", ".tar")):
         registry[url.rpartition("/")[2]] = {"hash": None, "url": url}
 
-    model_paths = get_model_paths(path)
+    model_paths = get_model_paths(path, namefile=namefile)
     for model_path in model_paths:
         model_path = model_path.expanduser().absolute()
         rel_path = model_path.relative_to(path)
@@ -112,5 +139,18 @@ if __name__ == "__main__":
         help="Base URL for models.",
         default=BASE_URL,
     )
+    parser.add_argument(
+        "--namefile",
+        "-n",
+        type=str,
+        help="Namefile pattern to look for in the model directories.",
+        default="mfsim.nam",
+    )
     args = parser.parse_args()
-    write_registry(path=args.path, url=args.url, prefix=args.prefix, append=args.append)
+    write_registry(
+        path=args.path,
+        url=args.url,
+        prefix=args.prefix,
+        append=args.append,
+        namefile=args.namefile,
+    )

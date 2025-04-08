@@ -30645,3 +30645,1150 @@ url = "https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master/test20
 ["test2001_gwtbuy-elderRa400/mfsim.nam"]
 hash = "d4d8f1f5736fc4d674c93b8f6fd7fd0da8f1fb511ccdb8ad54650cb01047e3a3"
 url = "https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master/test2001_gwtbuy-elderRa400/mfsim.nam"
+["test1tr/test1tr.ba6"]
+hash = "456bedd3d0a6c54ca38464d617c1d63e230b31048786b79294d97f1c2ff36616"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.ba6"
+
+["test1tr/test1tr.chd"]
+hash = "6397a363473d3890c57bb68d69ef4ebf6df3c9b3ffd98ebb4877fd1f899e1b71"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.chd"
+
+["test1tr/test1tr.dis"]
+hash = "48ca6054395d3c3d21e2d89c271f26cca922032ad152fa56f35d370f5640b47d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.dis"
+
+["test1tr/test1tr.evt"]
+hash = "d59d04dd4ed9ba3a1c9714d7eae2b47580faee5df8fa53642bef57f86e6c0c47"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.evt"
+
+["test1tr/test1tr.gag"]
+hash = "62024bf1c58e98ec7b6e75030cc22e2fc5db84b3a0e5501e23e3cec5ff68fd17"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.gag"
+
+["test1tr/test1tr.ghb"]
+hash = "354bdc79e7e83e530c03a8c903cb3fd451c2aac78bba90573e781970047673dc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.ghb"
+
+["test1tr/test1tr.lpf"]
+hash = "d11ae45d329e65c44c465af9f30a1575894028ca3191355a290d4d14bc26d2d5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.lpf"
+
+["test1tr/test1tr.nam"]
+hash = "c58dfaf37ed57f0e3740c2e5d2deb2e7cb3d974d9d98cf3a78662e40c5bb7db2"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.nam"
+
+["test1tr/test1tr.oc"]
+hash = "ea5f73cfb62f8cc1feb85cef27943f4deb4bbe2622a64d49d11b6d1be20e77f4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.oc"
+
+["test1tr/test1tr.rch"]
+hash = "767272a22fc1dadb46ff3ff53ed7d9eb86447c2a9d88f978c4ec3f0dc3969e83"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.rch"
+
+["test1tr/test1tr.sfr"]
+hash = "523a52c6e6c34257b451883bee7875b4e5636c293e22882611c01ac8ebfb001e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.sfr"
+
+["test1tr/test1tr.sip"]
+hash = "1ecdd20cc577c3564c34231445c7241107368075fa7cedc144dbb04a5f9c2fc4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.sip"
+
+["test1tr/test1tr.wel"]
+hash = "8402debd63a639d9b59c836fef88c2547f635610fa531c0632cfb9d53e746aca"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr/test1tr.wel"
+
+["test1tr_chd/test1tr_chd.ba6"]
+hash = "456bedd3d0a6c54ca38464d617c1d63e230b31048786b79294d97f1c2ff36616"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.ba6"
+
+["test1tr_chd/test1tr_chd.chd"]
+hash = "240c3de4cdb84429a66ef401a74a167b2fed1e407bdac0390aaab7e45a6c494e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.chd"
+
+["test1tr_chd/test1tr_chd.dis"]
+hash = "48ca6054395d3c3d21e2d89c271f26cca922032ad152fa56f35d370f5640b47d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.dis"
+
+["test1tr_chd/test1tr_chd.evt"]
+hash = "d59d04dd4ed9ba3a1c9714d7eae2b47580faee5df8fa53642bef57f86e6c0c47"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.evt"
+
+["test1tr_chd/test1tr_chd.ghb"]
+hash = "354bdc79e7e83e530c03a8c903cb3fd451c2aac78bba90573e781970047673dc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.ghb"
+
+["test1tr_chd/test1tr_chd.lpf"]
+hash = "d11ae45d329e65c44c465af9f30a1575894028ca3191355a290d4d14bc26d2d5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.lpf"
+
+["test1tr_chd/test1tr_chd.nam"]
+hash = "9757cab91ea3d57147af61b076803f79b9d8752e01d2526a95626c2dfa5ce3a5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.nam"
+
+["test1tr_chd/test1tr_chd.oc"]
+hash = "ea5f73cfb62f8cc1feb85cef27943f4deb4bbe2622a64d49d11b6d1be20e77f4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.oc"
+
+["test1tr_chd/test1tr_chd.rch"]
+hash = "767272a22fc1dadb46ff3ff53ed7d9eb86447c2a9d88f978c4ec3f0dc3969e83"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.rch"
+
+["test1tr_chd/test1tr_chd.sfr"]
+hash = "52a65ad64ae2234bb9ba740e09d5d0234a841cfe1e90173b4244abff65f6662c"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.sfr"
+
+["test1tr_chd/test1tr_chd.sip"]
+hash = "1ecdd20cc577c3564c34231445c7241107368075fa7cedc144dbb04a5f9c2fc4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.sip"
+
+["test1tr_chd/test1tr_chd.wel"]
+hash = "8402debd63a639d9b59c836fef88c2547f635610fa531c0632cfb9d53e746aca"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_chd/test1tr_chd.wel"
+
+["test1tr_icalc012/test1tr_icalc012.ba6"]
+hash = "456bedd3d0a6c54ca38464d617c1d63e230b31048786b79294d97f1c2ff36616"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.ba6"
+
+["test1tr_icalc012/test1tr_icalc012.chd"]
+hash = "6397a363473d3890c57bb68d69ef4ebf6df3c9b3ffd98ebb4877fd1f899e1b71"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.chd"
+
+["test1tr_icalc012/test1tr_icalc012.dis"]
+hash = "48ca6054395d3c3d21e2d89c271f26cca922032ad152fa56f35d370f5640b47d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.dis"
+
+["test1tr_icalc012/test1tr_icalc012.evt"]
+hash = "d59d04dd4ed9ba3a1c9714d7eae2b47580faee5df8fa53642bef57f86e6c0c47"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.evt"
+
+["test1tr_icalc012/test1tr_icalc012.ghb"]
+hash = "354bdc79e7e83e530c03a8c903cb3fd451c2aac78bba90573e781970047673dc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.ghb"
+
+["test1tr_icalc012/test1tr_icalc012.lpf"]
+hash = "d11ae45d329e65c44c465af9f30a1575894028ca3191355a290d4d14bc26d2d5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.lpf"
+
+["test1tr_icalc012/test1tr_icalc012.nam"]
+hash = "8b551793416b688f9b6d38225315086423205cdca4baf72b35fa1ab21cbfe5d1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.nam"
+
+["test1tr_icalc012/test1tr_icalc012.oc"]
+hash = "ea5f73cfb62f8cc1feb85cef27943f4deb4bbe2622a64d49d11b6d1be20e77f4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.oc"
+
+["test1tr_icalc012/test1tr_icalc012.rch"]
+hash = "767272a22fc1dadb46ff3ff53ed7d9eb86447c2a9d88f978c4ec3f0dc3969e83"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.rch"
+
+["test1tr_icalc012/test1tr_icalc012.sfr"]
+hash = "d60fc397071b7136ec314de49c7e69ad86fab0e51fe4ff9eea3cbc4591727a80"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.sfr"
+
+["test1tr_icalc012/test1tr_icalc012.sip"]
+hash = "1ecdd20cc577c3564c34231445c7241107368075fa7cedc144dbb04a5f9c2fc4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.sip"
+
+["test1tr_icalc012/test1tr_icalc012.wel"]
+hash = "8402debd63a639d9b59c836fef88c2547f635610fa531c0632cfb9d53e746aca"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/test1tr_icalc012/test1tr_icalc012.wel"
+
+["testEts/arrays/testEts.ets.ETS_Mult_1"]
+hash = "75e055174092e71d3545843b137691e7ce31cd47052966f5b33a962efe8f1b4a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Mult_1"
+
+["testEts/arrays/testEts.ets.ETS_Mult_2"]
+hash = "4e25f15b458f1dc4e24e673081f7bd6b4c2b114d7bf4356215b3b0c13a98e2a6"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Mult_2"
+
+["testEts/arrays/testEts.ets.ETS_Mult_3"]
+hash = "0f1039cb111a892d4a48693fa8fb4041bfd8d6b36070d4e9c03f77d11d5c5bdb"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Mult_3"
+
+["testEts/arrays/testEts.ets.ETS_Zone_1"]
+hash = "5f2147ea0839ada49402bb4110a428129fd0826c103c8e8e797201233da7faee"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Zone_1"
+
+["testEts/arrays/testEts.ets.ETS_Zone_2"]
+hash = "986c7bc4a9c246e7a8b8afc3f83c9a6c6c9c9dc09f83377ea1ef3a33ef47fb70"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Zone_2"
+
+["testEts/arrays/testEts.ets.ETS_Zone_3"]
+hash = "51ad02155b0aedef90b5eb31981aa51fcf18a799c7d15c34bf727ab7b1111481"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/arrays/testEts.ets.ETS_Zone_3"
+
+["testEts/testEts.bas"]
+hash = "afb3b10c487f5db6486263465a9dd43037bd1841d3dbfa3f51b0dd9bf5844243"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.bas"
+
+["testEts/testEts.chd"]
+hash = "6136812eaf8c21fe5801ed234a2eab78b66746eb505a6248bfd2147586bf5346"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.chd"
+
+["testEts/testEts.chob"]
+hash = "93bc0acdc1475eac8b93eb626abd3be9993be4d3311f3a2d1425fe71d3ef4dd6"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.chob"
+
+["testEts/testEts.dis"]
+hash = "6d39ddfb820e70f3cff79fc993932beb6a26b670798aa9020db43f94b3169150"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.dis"
+
+["testEts/testEts.ets"]
+hash = "085229298d6e6c3ee6298fe2b6e3819f8ffabf48a5884c2e9db6baf3295a73e4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.ets"
+
+["testEts/testEts.jtf"]
+hash = "62bd3525ca350e6a454ca3c755c13ddd8250741b377ee3c57f2fd4259ec1614f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.jtf"
+
+["testEts/testEts.lpf"]
+hash = "6951f8a4e4e8e0701ee5454eb4a8d5c654267883d0ed44d9c118e188f2c76d83"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.lpf"
+
+["testEts/testEts.mlt"]
+hash = "399ce6583d5c33c9ebeacebb1704bf01483667219967010ee531c7ef95f5eefc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.mlt"
+
+["testEts/testEts.nam"]
+hash = "0afa94d676b588832ac8d6902fb16555261d3a89bad3aef4213366735e9b260d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.nam"
+
+["testEts/testEts.oc"]
+hash = "2b6633508138aad234864aefa175062a49f7a35b0b271a90d6ec94a8fec8407e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.oc"
+
+["testEts/testEts.pcg"]
+hash = "23b4263f8698c9e54add995e6c1d3bd6b65b385a70d073301846c5a204a442a8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.pcg"
+
+["testEts/testEts.pval"]
+hash = "39c3d4fef90251febb3cafef5d955f78bfff2ea0de78dfe67944e974906956d5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.pval"
+
+["testEts/testEts.zon"]
+hash = "5744b300109c8ba3d17a4333c0ebf5efd03d28621a26b9ecf5a3cae8b6b92891"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testEts/testEts.zon"
+
+["testLakeSim2/LakeTestSim2.bas"]
+hash = "bdd270b28cc97526e413eb98dbdabf711775f463f6b7ba7c74b615ca57c22825"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.bas"
+
+["testLakeSim2/LakeTestSim2.bcf"]
+hash = "ac5997569682ac8c2a87e999415d26a738a2f6ac83659be67171d7c38ae66c94"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.bcf"
+
+["testLakeSim2/LakeTestSim2.dis"]
+hash = "0326252d3464735555b27c4a031341ebcfed56092774b844aac40d972985ddc0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.dis"
+
+["testLakeSim2/LakeTestSim2.evt"]
+hash = "83baf7cc466d3c448a378aeda7599d941814d7e235e1dcc8535fc1d59da7c8cd"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.evt"
+
+["testLakeSim2/LakeTestSim2.fhb"]
+hash = "b2dfc9b6f493676f5b4e6dc650f97ccbfc849764a18fd23f1f326f544a914706"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.fhb"
+
+["testLakeSim2/LakeTestSim2.lak"]
+hash = "e2a4ec6aacce4c8fa126f24efc887a53ac78de6ac6aa3efc39f1373fee5922a0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.lak"
+
+["testLakeSim2/LakeTestSim2.oc"]
+hash = "4686beb5ff3d158290a1410b1e885bd663af68c1a066006ca22e62c09c9da9bc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.oc"
+
+["testLakeSim2/LakeTestSim2.rch"]
+hash = "5c03fd1267bfb24323b77de5f5aa3ea2cc35d96a30a073e04fb0daabe508556d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.rch"
+
+["testLakeSim2/LakeTestSim2.sfr"]
+hash = "4a8071cd701f6b7d42f34ab35b6f80be614c8af1bb6d09dcc78cd0f7a4d41fd0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.sfr"
+
+["testLakeSim2/LakeTestSim2.sip"]
+hash = "a7fd5e414e3276042e9360f5cbd092fa50a6f176f5a4b7862d61e53e9c9dfd02"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/LakeTestSim2.sip"
+
+["testLakeSim2/testLakeSim2.nam"]
+hash = "b170a373e804495e612b53cc02c640d28b915c4dce9c08062eaae10d11a8af25"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLakeSim2/testLakeSim2.nam"
+
+["testLgr/testLgr.lgr"]
+hash = "cf950edc17e031e9343164bd4a4f719bfe72edce454d882938a2795fec350dbd"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr.lgr"
+
+["testLgr/testLgr_child.ba6"]
+hash = "4c3dc33c2f8ec839e238351384546e6ef30dce1430f4b85f86d704aaf3196ddb"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.ba6"
+
+["testLgr/testLgr_child.bc6"]
+hash = "82b569545a066500743884b0d81fdd621de972c08bd5c344611c017c1daec6a8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.bc6"
+
+["testLgr/testLgr_child.bot"]
+hash = "9fb38c85f01f53a5082f388285d3c96d237ed86caf34933f5dfc9655c1a6c225"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.bot"
+
+["testLgr/testLgr_child.dis"]
+hash = "51408f38473bb43ad2f63b7eca37b33946f807c49f2aa19c6f5f0270a706106a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.dis"
+
+["testLgr/testLgr_child.ib"]
+hash = "8169d0e1f01c54dc1f2bdad8498d3c99816551c341c91a2b55eaea0436b99b10"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.ib"
+
+["testLgr/testLgr_child.nam"]
+hash = "d08a52c8cf8666df56de7c1b20539458f6c616822ff46431d9d7767b6caf7c4e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.nam"
+
+["testLgr/testLgr_child.oc"]
+hash = "33b3ad8c1d2e5a9eb899fb835e3a78e9255f909715e0a2a46cad0db7a810fa97"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.oc"
+
+["testLgr/testLgr_child.pcg"]
+hash = "8a157c0e69f4592459bbff6f687538385116836adcf6dd51169af4028ef165c5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.pcg"
+
+["testLgr/testLgr_child.riv"]
+hash = "51c7cb70087192046c607b50836253433e0c9b021e0224ab68d3a65c42bd83be"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.riv"
+
+["testLgr/testLgr_child.wel"]
+hash = "33111929f739e348f5b235c61b51995aaebd83866c5a2a628ce54de6d96738f0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_child.wel"
+
+["testLgr/testLgr_parent.ba6"]
+hash = "ab3ad5500e776c3cb7d24af466a0bc4ae2e7dc29663b4db1c497aa6d09665dc3"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.ba6"
+
+["testLgr/testLgr_parent.bc6"]
+hash = "06adf5aeb73785254a9d5ac6b80f23c7c43dc6b23150d428961d0e9f47f596f1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.bc6"
+
+["testLgr/testLgr_parent.bot"]
+hash = "677461326cb6adcd755ef4833f4620159466c9f4b86284922027331df33558d7"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.bot"
+
+["testLgr/testLgr_parent.dis"]
+hash = "9c15461b652f4b66d29ec9228f3f4ab5e1baf09d24a1d2e7485c553c7448f9de"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.dis"
+
+["testLgr/testLgr_parent.ib"]
+hash = "82eb4afaf8f30e793767950bf53ce1141552c837ed2555e7c0503473fb3ac6e1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.ib"
+
+["testLgr/testLgr_parent.nam"]
+hash = "773574405f659900404c5547fa1f3e30878dcf1026946f9c72258081d10c7c53"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.nam"
+
+["testLgr/testLgr_parent.oc"]
+hash = "41be56e1d4466d1a03fb737bafdf56535dbc07ddd2681de78c70754376e50804"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.oc"
+
+["testLgr/testLgr_parent.pcg"]
+hash = "8a157c0e69f4592459bbff6f687538385116836adcf6dd51169af4028ef165c5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.pcg"
+
+["testLgr/testLgr_parent.riv"]
+hash = "f3c33b4e948a8044d4b9c499adf87f934de776aedc68ac5b95c9f7e413c9f0b0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.riv"
+
+["testLgr/testLgr_parent.shd"]
+hash = "e04c5699599aea55898a20a5b4a99559352dd10d6d5cb3ec7e040ddd21c5fd83"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr/testLgr_parent.shd"
+
+["testLgr_2d/testLgr_2d.lgr"]
+hash = "9a82a91a313336928b785eebde4c4391c1e978581cb418c6f15ce11cdb4e6bcf"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d.lgr"
+
+["testLgr_2d/testLgr_2d_child.ba6"]
+hash = "390447f76b8f72fcc9c8654684636289c5aeb25aed6bc63bc5a2f62a9282e251"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.ba6"
+
+["testLgr_2d/testLgr_2d_child.dis"]
+hash = "34616be7f5d1476219d7bec01d162cbbda080741dda6d052e34f9032fbfbd5c4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.dis"
+
+["testLgr_2d/testLgr_2d_child.lpf"]
+hash = "78eed5eb8898b4ab4d9aea0ae9bb3f3f3f2e55e12c0f43ca10a776f3fa3c29a1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.lpf"
+
+["testLgr_2d/testLgr_2d_child.nam"]
+hash = "e0c9cc4bc7840df82fcca585f908f8b9669ce967a2b7951bd26c8c6e5560de98"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.nam"
+
+["testLgr_2d/testLgr_2d_child.oc"]
+hash = "fc7414f36d298734b176ffd14867de334c953e3bb9f80726542d3683f4c6df7b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.oc"
+
+["testLgr_2d/testLgr_2d_child.pcg"]
+hash = "8a157c0e69f4592459bbff6f687538385116836adcf6dd51169af4028ef165c5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.pcg"
+
+["testLgr_2d/testLgr_2d_child.riv"]
+hash = "9475e7d9d54dc9da8700693d29d0829e95e8d817819d4b3c50b6ff03768d92a5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.riv"
+
+["testLgr_2d/testLgr_2d_child.wel"]
+hash = "54e17717432982ab1be1bc9f7a3fac8ccd523901fac6fc32708b580354d69dd8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_child.wel"
+
+["testLgr_2d/testLgr_2d_parent.ba6"]
+hash = "825fb0effde7a5556ec0c0f8336fce5fd029a026df88c60dc5ddf50c66e1b4a8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.ba6"
+
+["testLgr_2d/testLgr_2d_parent.dis"]
+hash = "4ec7329648a6d26bdd7064952fbe4f3f6d086c3a7bf12615a5a6b536d23604ae"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.dis"
+
+["testLgr_2d/testLgr_2d_parent.lpf"]
+hash = "fda9b21f6b59857274721d4573aed976136c58ba710b3c620e8ec5c39334f12b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.lpf"
+
+["testLgr_2d/testLgr_2d_parent.nam"]
+hash = "5cfcc1248caeeef3b73783835faeba0a80ad3377be6947ba8c27d9cec1e36014"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.nam"
+
+["testLgr_2d/testLgr_2d_parent.oc"]
+hash = "57c5d60efa1dd5cd603c29b4338af5ffce0586cba3665209b9ebf7e9bdb7f854"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.oc"
+
+["testLgr_2d/testLgr_2d_parent.pcg"]
+hash = "8a157c0e69f4592459bbff6f687538385116836adcf6dd51169af4028ef165c5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.pcg"
+
+["testLgr_2d/testLgr_2d_parent.riv"]
+hash = "3d8f65b8b35697db02ec90a246ebb5d201fec014a7ad208de0602c540a2ccd23"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d/testLgr_2d_parent.riv"
+
+["testLgr_2d_conf/testLgr_2d.lgr"]
+hash = "9a82a91a313336928b785eebde4c4391c1e978581cb418c6f15ce11cdb4e6bcf"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d.lgr"
+
+["testLgr_2d_conf/testLgr_2d_child.ba6"]
+hash = "390447f76b8f72fcc9c8654684636289c5aeb25aed6bc63bc5a2f62a9282e251"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.ba6"
+
+["testLgr_2d_conf/testLgr_2d_child.dis"]
+hash = "34616be7f5d1476219d7bec01d162cbbda080741dda6d052e34f9032fbfbd5c4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.dis"
+
+["testLgr_2d_conf/testLgr_2d_child.lpf"]
+hash = "3ac2ff62eca22edb56297467a106b11c2906130290d035da0e34bbd19dc484dc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.lpf"
+
+["testLgr_2d_conf/testLgr_2d_child.nam"]
+hash = "02e28d248efd42c793d4dbdd67a3b9fa2c04df1ae0b9e6c7153a2932e8b430ce"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.nam"
+
+["testLgr_2d_conf/testLgr_2d_child.oc"]
+hash = "fc7414f36d298734b176ffd14867de334c953e3bb9f80726542d3683f4c6df7b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.oc"
+
+["testLgr_2d_conf/testLgr_2d_child.pcg"]
+hash = "c73a7f232c945b5b33b9cd6a88fc28eef09d5019016075a16f7fbacff7306465"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.pcg"
+
+["testLgr_2d_conf/testLgr_2d_child.riv"]
+hash = "9475e7d9d54dc9da8700693d29d0829e95e8d817819d4b3c50b6ff03768d92a5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.riv"
+
+["testLgr_2d_conf/testLgr_2d_child.wel"]
+hash = "54e17717432982ab1be1bc9f7a3fac8ccd523901fac6fc32708b580354d69dd8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_child.wel"
+
+["testLgr_2d_conf/testLgr_2d_parent.ba6"]
+hash = "825fb0effde7a5556ec0c0f8336fce5fd029a026df88c60dc5ddf50c66e1b4a8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.ba6"
+
+["testLgr_2d_conf/testLgr_2d_parent.dis"]
+hash = "4ec7329648a6d26bdd7064952fbe4f3f6d086c3a7bf12615a5a6b536d23604ae"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.dis"
+
+["testLgr_2d_conf/testLgr_2d_parent.lpf"]
+hash = "9c5b8c3f892f5be63c4a877a49d3fdf0feff2834735e4664ce770360be91c8af"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.lpf"
+
+["testLgr_2d_conf/testLgr_2d_parent.nam"]
+hash = "76b51cae998d508d3fc204d8dd6688dae869aa262e3194cf0518be3453f5abb1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.nam"
+
+["testLgr_2d_conf/testLgr_2d_parent.oc"]
+hash = "57c5d60efa1dd5cd603c29b4338af5ffce0586cba3665209b9ebf7e9bdb7f854"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.oc"
+
+["testLgr_2d_conf/testLgr_2d_parent.pcg"]
+hash = "c73a7f232c945b5b33b9cd6a88fc28eef09d5019016075a16f7fbacff7306465"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.pcg"
+
+["testLgr_2d_conf/testLgr_2d_parent.riv"]
+hash = "3d8f65b8b35697db02ec90a246ebb5d201fec014a7ad208de0602c540a2ccd23"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_2d_conf/testLgr_2d_parent.riv"
+
+["testLgr_3d_conf/testLgr_3d.lgr"]
+hash = "6d3f7ab9f4b060c019af822362a15e32dd6fbba3188f37a300e0d8a04d247005"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d.lgr"
+
+["testLgr_3d_conf/testLgr_3d_child.ba6"]
+hash = "ce58ac7265cf38582bfd0e245c43b673bba592ffdab460530dc0e15c9e437a26"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.ba6"
+
+["testLgr_3d_conf/testLgr_3d_child.dis"]
+hash = "968dd50de5b161ad8d0b0317a71f7ece6259956295d43ea80107110e70f9e874"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.dis"
+
+["testLgr_3d_conf/testLgr_3d_child.lpf"]
+hash = "8673f1b2f8fffaf09f7501c3040029f339489a977084cb586d44c2c059e2068f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.lpf"
+
+["testLgr_3d_conf/testLgr_3d_child.nam"]
+hash = "38e34068495cfc61b8d3173289caf87d5c902a6042db0fa8c17cd980f9248f88"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.nam"
+
+["testLgr_3d_conf/testLgr_3d_child.oc"]
+hash = "fc7414f36d298734b176ffd14867de334c953e3bb9f80726542d3683f4c6df7b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.oc"
+
+["testLgr_3d_conf/testLgr_3d_child.pcg"]
+hash = "c73a7f232c945b5b33b9cd6a88fc28eef09d5019016075a16f7fbacff7306465"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.pcg"
+
+["testLgr_3d_conf/testLgr_3d_child.riv"]
+hash = "9475e7d9d54dc9da8700693d29d0829e95e8d817819d4b3c50b6ff03768d92a5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.riv"
+
+["testLgr_3d_conf/testLgr_3d_child.wel"]
+hash = "54e17717432982ab1be1bc9f7a3fac8ccd523901fac6fc32708b580354d69dd8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_child.wel"
+
+["testLgr_3d_conf/testLgr_3d_parent.ba6"]
+hash = "1ac56d4aaef38e4b7f4df7cdc3c6391ed2567dab471f511e4d2140ecdf812017"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.ba6"
+
+["testLgr_3d_conf/testLgr_3d_parent.dis"]
+hash = "6e7359aa6c268f68c2220cbfeebfb4e731fb30efc45dcbf6fb3c843b15c88e29"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.dis"
+
+["testLgr_3d_conf/testLgr_3d_parent.lpf"]
+hash = "5a179397bc39b5a3985fd72b5f92b91cd47a80b77e2364f8f7818850a585e1ce"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.lpf"
+
+["testLgr_3d_conf/testLgr_3d_parent.nam"]
+hash = "8ab2b6c540267703705303327f0079b73ad8bb13a2c83b78be330c73f5dd49a0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.nam"
+
+["testLgr_3d_conf/testLgr_3d_parent.oc"]
+hash = "57c5d60efa1dd5cd603c29b4338af5ffce0586cba3665209b9ebf7e9bdb7f854"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.oc"
+
+["testLgr_3d_conf/testLgr_3d_parent.pcg"]
+hash = "c73a7f232c945b5b33b9cd6a88fc28eef09d5019016075a16f7fbacff7306465"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.pcg"
+
+["testLgr_3d_conf/testLgr_3d_parent.riv"]
+hash = "3d8f65b8b35697db02ec90a246ebb5d201fec014a7ad208de0602c540a2ccd23"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testLgr_3d_conf/testLgr_3d_parent.riv"
+
+["testPr2/testpr2.ba6"]
+hash = "e79fca663caf33cd1766bdd2c62fbc48a99e21da77ee158bb7f44b62016a0c75"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.ba6"
+
+["testPr2/testpr2.dis"]
+hash = "d4ccf15540b4b99f072c4e70ae36390856ed65733f7851a4a4313821aa019576"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.dis"
+
+["testPr2/testpr2.nam"]
+hash = "a05643ee9f1a7e506c897b72650253271cb1d5a5fc6680dc7cfca3f576378892"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.nam"
+
+["testPr2/testpr2.nwt"]
+hash = "e55d4c197146c15f313a485f3b6dff6b91b734edb5ecdd0461c3736a54b872a5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.nwt"
+
+["testPr2/testpr2.oc"]
+hash = "fe4e3232db65bfeabeee12569eb64828c3232a5e192f6b4bbb6743041b34d6b6"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.oc"
+
+["testPr2/testpr2.rch"]
+hash = "20d08f899fc24efddd5e081e92169975ec93ebe774967e6d27d0865d4f425098"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.rch"
+
+["testPr2/testpr2.upw"]
+hash = "2e69d1611eebc9922893d25a61f7796cf11db1d7f2cf354078ba39742df8f2f6"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testPr2/testpr2.upw"
+
+["testReillyA/testReilly.bas"]
+hash = "c2e22499006e7da0ccc4429f9b758a88de6932c092d7b17306ffb65969ad6298"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.bas"
+
+["testReillyA/testReilly.dis"]
+hash = "680848591b53514562b200ff34d23d62df29fc75ecb3524902d331df3115ae4f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.dis"
+
+["testReillyA/testReilly.lpf"]
+hash = "cd0d85b0276e00f007d3bd37047963319897d7f03a5db011b0280c1db4f76e3d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.lpf"
+
+["testReillyA/testReilly.mnw2"]
+hash = "deebf53d1346e17d74c8f1f52796a81c345da83033929613bb90a935d673b800"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.mnw2"
+
+["testReillyA/testReilly.mnwi"]
+hash = "cdc96f37ecce1ad0fb96e845d58b458621339fbfb9d931172d4eb822e3874f15"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.mnwi"
+
+["testReillyA/testReilly.nam"]
+hash = "734d16f8aa9f9928eb5ea80059d30ddd32c5826a5058009ec3e759c98b568037"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.nam"
+
+["testReillyA/testReilly.oc"]
+hash = "5f9875134b8894709deb05918e05becab57c73e11ba3ecf35809581b883ac91e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.oc"
+
+["testReillyA/testReilly.pcg"]
+hash = "7864c6d1b829b6ab9e5c32cb2241fcf96e8c5e4555422698a48d8489d7e032e0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.pcg"
+
+["testReillyA/testReilly.rch"]
+hash = "b2ef3b18b8a8566f157ba7fe12bf504c0214d24370c0e4e51fc1dba670924442"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReilly.rch"
+
+["testReillyA/testReillyA.nam"]
+hash = "734d16f8aa9f9928eb5ea80059d30ddd32c5826a5058009ec3e759c98b568037"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyA/testReillyA.nam"
+
+["testReillyB/testReilly.bas"]
+hash = "c2e22499006e7da0ccc4429f9b758a88de6932c092d7b17306ffb65969ad6298"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.bas"
+
+["testReillyB/testReilly.dis"]
+hash = "680848591b53514562b200ff34d23d62df29fc75ecb3524902d331df3115ae4f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.dis"
+
+["testReillyB/testReilly.lpf"]
+hash = "cd0d85b0276e00f007d3bd37047963319897d7f03a5db011b0280c1db4f76e3d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.lpf"
+
+["testReillyB/testReilly.mnw2"]
+hash = "011e65699d41d45832f002e3e04073a0b869394f040405187462783974d1ff73"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.mnw2"
+
+["testReillyB/testReilly.mnwi"]
+hash = "cdc96f37ecce1ad0fb96e845d58b458621339fbfb9d931172d4eb822e3874f15"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.mnwi"
+
+["testReillyB/testReilly.oc"]
+hash = "5f9875134b8894709deb05918e05becab57c73e11ba3ecf35809581b883ac91e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.oc"
+
+["testReillyB/testReilly.pcg"]
+hash = "7864c6d1b829b6ab9e5c32cb2241fcf96e8c5e4555422698a48d8489d7e032e0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.pcg"
+
+["testReillyB/testReilly.rch"]
+hash = "b2ef3b18b8a8566f157ba7fe12bf504c0214d24370c0e4e51fc1dba670924442"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReilly.rch"
+
+["testReillyB/testReillyB.nam"]
+hash = "734d16f8aa9f9928eb5ea80059d30ddd32c5826a5058009ec3e759c98b568037"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testReillyB/testReillyB.nam"
+
+["testTwriHfb/testTwriHfb.nam"]
+hash = "254d9234b94c3b19729b811473486f0586cdf2b944d79b235110b51c4274bf7a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/testTwriHfb.nam"
+
+["testTwriHfb/twrihfb.ba6"]
+hash = "e540328ea7e0296c8b9ff033c9f6350440f8769b6134cb9ddfad8e2a3de75ba1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.ba6"
+
+["testTwriHfb/twrihfb.bc6"]
+hash = "9ccbb179053f99be4fcc1bbedad86021bebc65d7f841862631509d7be7a64f9d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.bc6"
+
+["testTwriHfb/twrihfb.dis"]
+hash = "2ed7b3fb806e5503250cf893e31ba09dbd6a1e87f9da0e60624acef4630ad92a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.dis"
+
+["testTwriHfb/twrihfb.drn"]
+hash = "dd77b2c7db0ee1443f0e687b7922802441de0573fa767c6238cebad7c3d9eb2f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.drn"
+
+["testTwriHfb/twrihfb.hfb"]
+hash = "4d137fb447030c4e59eace76fe1d90037e0edd74b20332225b2095bd8ed3e994"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.hfb"
+
+["testTwriHfb/twrihfb.lpf"]
+hash = "1fca9afc36935ff5fe1dc095d3a4a894b88bafe12777cf6b3f21a607bb7164b1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.lpf"
+
+["testTwriHfb/twrihfb.oc"]
+hash = "4dd9da8628dfff592f17e32b621f95eaf8299867608639cf720f813247cc48a0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.oc"
+
+["testTwriHfb/twrihfb.pcg"]
+hash = "f5ce0dd52fc85d46ddde2869f8e947198ac9ea05abc756db5dbd36bb20c1a960"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.pcg"
+
+["testTwriHfb/twrihfb.rch"]
+hash = "51e7fa6c81a35e2225f34162d21347094ec1ecf9d04c840663f95550e75fb862"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.rch"
+
+["testTwriHfb/twrihfb.wel"]
+hash = "f1dd946bb112350dccdc7b8619f4587e06f1d49837196b2113f9d58b348176f7"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testTwriHfb/twrihfb.wel"
+
+["testUZF2/UZFtest2.ba6"]
+hash = "14200fa8a76010822c60370065c6ecfd6bfb048db5b21fb124ec14c43ed3d84b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.ba6"
+
+["testUZF2/UZFtest2.dis"]
+hash = "c93f9ed5b60c60843a2f0ac25c3ad44dfc38faaa6a2e144b9b31c3eea7e569c2"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.dis"
+
+["testUZF2/UZFtest2.gag"]
+hash = "721b11d00bc8da645c181e45e5ce16d60da6bb815cc4313d71609985f518cc68"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.gag"
+
+["testUZF2/UZFtest2.ghb"]
+hash = "1b50ddf51e8e0cd7c605bda9edeac3990c13fd9e9b202f01915e5a16bb3675e3"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.ghb"
+
+["testUZF2/UZFtest2.lpf"]
+hash = "92d8425dcca76993f8321d529fe6c5a234bec26ca8133a5dbb03773ae226862a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.lpf"
+
+["testUZF2/UZFtest2.oc"]
+hash = "d2312b09e8aa22baefb57d98776389884acfbc58ef36edad61cac770362e79d8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.oc"
+
+["testUZF2/UZFtest2.sfr"]
+hash = "0019dd795d35401c57bd5b9ff204501e6cdbfd4648aa71c05c016391a09dfef5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.sfr"
+
+["testUZF2/UZFtest2.sip"]
+hash = "5958174d76d36e4d8b5b29ea2a8e3e89d7778884ee93817a61c9d573dc0dca32"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.sip"
+
+["testUZF2/UZFtest2.uzf"]
+hash = "e36b806fcd29892cde843a145aecc6c08037cf9aed68ef2c8bd63b60aa7f9207"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.uzf"
+
+["testUZF2/UZFtest2.wel"]
+hash = "6cef2b3131731c881ac1f8dab0dfc51dba76977e32e3629cb28e0e08e265003d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/UZFtest2.wel"
+
+["testUZF2/testUZF2.nam"]
+hash = "0e993e356fb71a2e66c857f6d60d1563ad37009294ff05ed4a575e0dd8275b37"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUZF2/testUZF2.nam"
+
+["testUzfLakSfr/UzfLakSfrTest.ba6"]
+hash = "6724cea18c269e0681f89a4d2b772d565b25801af620bbf028c12bdfc7980168"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.ba6"
+
+["testUzfLakSfr/UzfLakSfrTest.dis"]
+hash = "1576c32dd4af3d769b3e7f5cbcb620a5b47c6eb27ed8b9fb8ff46f812e5ba69a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.dis"
+
+["testUzfLakSfr/UzfLakSfrTest.ghb"]
+hash = "1b50ddf51e8e0cd7c605bda9edeac3990c13fd9e9b202f01915e5a16bb3675e3"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.ghb"
+
+["testUzfLakSfr/UzfLakSfrTest.lak"]
+hash = "df16b3ccad8c48fe17a1c64d7a3145459febdda3a94966c89993de048ffea5be"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.lak"
+
+["testUzfLakSfr/UzfLakSfrTest.lpf"]
+hash = "8ada0e567223f72eb9b18f63d9c720275fc8064c61224a2e3f56f81aeebbebec"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.lpf"
+
+["testUzfLakSfr/UzfLakSfrTest.oc"]
+hash = "549fcef3700bc794e82fdadb9249c7feff6c508c526490cdc2286d26af664c7f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.oc"
+
+["testUzfLakSfr/UzfLakSfrTest.pcg"]
+hash = "a5f12835e7fc58fd37e195f02924d11bb92a6a2813114c23c3fb16e462bc7d9d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.pcg"
+
+["testUzfLakSfr/UzfLakSfrTest.sfr"]
+hash = "078138a1a6b6d843c35238161b5cafedf351bddfb3365b863acb6d94eb1b4d28"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.sfr"
+
+["testUzfLakSfr/UzfLakSfrTest.sip"]
+hash = "0ab7feefd59974377a95b7601106e5eea2256577bf05b1691ad13c0ade34713a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.sip"
+
+["testUzfLakSfr/UzfLakSfrTest.uzf"]
+hash = "9f9f02624ec5f63963f731a946ce155c517d1f4aa9199306d5834b6ca37b1f2b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.uzf"
+
+["testUzfLakSfr/UzfLakSfrTest.wel"]
+hash = "6cef2b3131731c881ac1f8dab0dfc51dba76977e32e3629cb28e0e08e265003d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/UzfLakSfrTest.wel"
+
+["testUzfLakSfr/testUzfLakSfr.nam"]
+hash = "6eff33e049112ecc11687493bfb73eb56783c46c58d4f0d964943e573b8c39bd"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr/testUzfLakSfr.nam"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.ba6"]
+hash = "6724cea18c269e0681f89a4d2b772d565b25801af620bbf028c12bdfc7980168"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.ba6"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.dis"]
+hash = "1576c32dd4af3d769b3e7f5cbcb620a5b47c6eb27ed8b9fb8ff46f812e5ba69a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.dis"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.ghb"]
+hash = "1b50ddf51e8e0cd7c605bda9edeac3990c13fd9e9b202f01915e5a16bb3675e3"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.ghb"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.lak"]
+hash = "72d95dd6275d132136f988f24543b73d22aa76f0aedef1bc7cc8a6ec060a3ddd"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.lak"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.lpf"]
+hash = "8ada0e567223f72eb9b18f63d9c720275fc8064c61224a2e3f56f81aeebbebec"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.lpf"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.oc"]
+hash = "549fcef3700bc794e82fdadb9249c7feff6c508c526490cdc2286d26af664c7f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.oc"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.pcg"]
+hash = "a5f12835e7fc58fd37e195f02924d11bb92a6a2813114c23c3fb16e462bc7d9d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.pcg"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.sfr"]
+hash = "078138a1a6b6d843c35238161b5cafedf351bddfb3365b863acb6d94eb1b4d28"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.sfr"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.uzf"]
+hash = "9f9f02624ec5f63963f731a946ce155c517d1f4aa9199306d5834b6ca37b1f2b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.uzf"
+
+["testUzfLakSfr_laketable/UzfLakSfrTest.wel"]
+hash = "6cef2b3131731c881ac1f8dab0dfc51dba76977e32e3629cb28e0e08e265003d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/UzfLakSfrTest.wel"
+
+["testUzfLakSfr_laketable/lake.table.1.txt"]
+hash = "b1f5d3a6a327d33572aa4e7a07007c3101a8893e8a89161c9750970ccc8059ba"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/lake.table.1.txt"
+
+["testUzfLakSfr_laketable/lake.table.2.txt"]
+hash = "3d7fbd65c4018340b9b39d473e67e53062ba39aa9e79a44f50512cd10461ee15"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/lake.table.2.txt"
+
+["testUzfLakSfr_laketable/testUzfLakSfr_laketable.nam"]
+hash = "923905fb6aac1ea7a5518124eb51b094ae4a8777c41bd78bb8a4618b0f4a9928"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testUzfLakSfr_laketable/testUzfLakSfr_laketable.nam"
+
+["testWetDry/mf2005/testWetDry.nam"]
+hash = "e9c7490a06df0e4c9d659bf52aacc7aa5b7d496eedc0a1596f412eb0b7e912fe"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/mf2005/testWetDry.nam"
+
+["testWetDry/mf5to6options.txt"]
+hash = "4c71e0887b911ba737db8c4dd18f92558cd2294d6cd5e94d2831394c83704537"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/mf5to6options.txt"
+
+["testWetDry/testWetDry.bas"]
+hash = "471b576309077c7b81c13984c31c2ed77a8836ff18feec6cfd14cebd71b254c1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.bas"
+
+["testWetDry/testWetDry.dis"]
+hash = "be67cbc16f086d47b00d93b5f57ca8ae067a57fbdf3e0f99a63bca123617a89b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.dis"
+
+["testWetDry/testWetDry.ghb"]
+hash = "f013477b8959c21348b7ae2254d47bfff4b9d9fe45a3f8bcdbe6a8b7048c56ad"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.ghb"
+
+["testWetDry/testWetDry.hob"]
+hash = "67d45bd6b09f4fdc523af209f4ba8265993f3df731ab79643bc5a151ee2b39d7"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.hob"
+
+["testWetDry/testWetDry.lpf"]
+hash = "11e79c1cbd016b5f9983945e76e08601190e8e38724f6435a6b097bf7f580fa7"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.lpf"
+
+["testWetDry/testWetDry.mlt"]
+hash = "5fffb32f1385c46fb19d8eeaca464cfec5fc36cb889af8051ab3de0ffd41d3ad"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.mlt"
+
+["testWetDry/testWetDry.nam"]
+hash = "0cc8ad8ce5ec90180019404bfbd4a1297663412a3cac37f6fbe8a5a2c2b24593"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.nam"
+
+["testWetDry/testWetDry.oc"]
+hash = "7598be9f5fdaccb68db800aca4327a8d1a90031846a565279511dff36cdf9355"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.oc"
+
+["testWetDry/testWetDry.pcg"]
+hash = "12e22a617e6b4042b24f851e60aa35502640a2b70e1127ce10c10510ca361d57"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.pcg"
+
+["testWetDry/testWetDry.pval"]
+hash = "1cf681bf249a6522e75f4973a933875c711302cbff1533664cd985379d5a1618"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.pval"
+
+["testWetDry/testWetDry.rch"]
+hash = "70810e9866a999e9faf30d81177d5ec89219e9f346cf168270c740b4d6cac2b4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.rch"
+
+["testWetDry/testWetDry.riv"]
+hash = "c49de5b426aface99d74c1565d06de0fd2d73aa197d0ae58088ad51bc37a5a7e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.riv"
+
+["testWetDry/testWetDry.rvob"]
+hash = "15d5828d03e79092b7c171e0b22984fc5b9f864341e14e1531589d49ae5aaae3"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.rvob"
+
+["testWetDry/testWetDry.wel"]
+hash = "59b6f47c5281d6abf525c7f489619865ce0cb1398b5f0f507f6ba4fac0ab918e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.wel"
+
+["testWetDry/testWetDry.zon"]
+hash = "e8b7547f44260ea5f2c46a71d32d241f84ced6f9625586d4ea242b4f9ff3721b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testWetDry/testWetDry.zon"
+
+["testevt/testevt.bas"]
+hash = "9e7835174e270992a2c54e6c2d9e9c3f3fd4155b77042a4b8cba4ba66d28559b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.bas"
+
+["testevt/testevt.dis"]
+hash = "da60cff6b18fce042eb087c58c174e8f8533118bf45dbce6fbeb0b16816acb05"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.dis"
+
+["testevt/testevt.evt"]
+hash = "6748fed4f21421838fbba97cc2c1f98b29a6ccc51b9b9a2b58c6c98da8a8e180"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.evt"
+
+["testevt/testevt.lpf"]
+hash = "9a5adddea352af61112e0159e0a736df399d37c69c5e24e5ac676c368998829f"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.lpf"
+
+["testevt/testevt.nam"]
+hash = "80bdf120a604c2896a98598cb235fce82caa65dc9abb129c3041fd292d592b50"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.nam"
+
+["testevt/testevt.oc"]
+hash = "c287619f6bb18a6a432a9fe17d9d9ffb1e4d970cffd1d46290b00941d74ffc15"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.oc"
+
+["testevt/testevt.pcg"]
+hash = "1e7cb4d91bdc3aae33a09099fecc9a60f0337e2c87cec5c2a4a5cb616715677a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testevt/testevt.pcg"
+
+["testfhb/testfhb.ba6"]
+hash = "d367d071005c2bd41b1bbfc2da24a986e5d7be465363cd0a14d61326aab37249"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.ba6"
+
+["testfhb/testfhb.bc6"]
+hash = "c714d4da12cc9467870f4077d93cc70f5146e86cab84c3b551c98b1888fff57d"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.bc6"
+
+["testfhb/testfhb.dis"]
+hash = "1153ba027cffa023b8bd1389c6385b1f6fa6178ffb53b9f89f776275a20d1966"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.dis"
+
+["testfhb/testfhb.fhb"]
+hash = "794f138779ea5847147dba92e911d53d0fe4ec70423700ee118aa2a597b384f9"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.fhb"
+
+["testfhb/testfhb.nam"]
+hash = "f233ac15d4ed53dd737daee502b808fa490e9760b47c39d8b356ee6c8261d2c4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.nam"
+
+["testfhb/testfhb.oc"]
+hash = "8a43c53f5a4cbbae483a3d095f11f26b8f0c64f076cc62b94522ccdc01582cd4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.oc"
+
+["testfhb/testfhb.sip"]
+hash = "8d82ab3c90b962ca9361bcbfc4c972708a29cea84cd7cea329de5b43c3deff92"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testfhb/testfhb.sip"
+
+["testlgrsfr/CHILD.OC"]
+hash = "6f160e9dc749dce800260dc0dd56e403b94c8f87ab9ee5bc60f0647a7213c42e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.OC"
+
+["testlgrsfr/CHILD.WEL"]
+hash = "a2da64da6f9ff7a26205f08314e4d51ea5130601fdd4b42658a6dacbf7842d75"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.WEL"
+
+["testlgrsfr/CHILD.ba6"]
+hash = "a36e806e56a4e301a6b6bcfa07977595e936f9f7b622f1147b2c55bbc0b933cb"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.ba6"
+
+["testlgrsfr/CHILD.dis"]
+hash = "99514d4eacaa5ac964008b90c5efdf9f446948f3880d28b6d780004a3357a9f0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.dis"
+
+["testlgrsfr/CHILD.lpf"]
+hash = "76e282ecedb27b58d9f56ad3410041d505604dba0971b745e9f780163c4ebdf5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.lpf"
+
+["testlgrsfr/CHILD.nam"]
+hash = "aa2050009020bfe4b0b0032a97f01e6ec659c5a7a519b21f005ade311834f229"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.nam"
+
+["testlgrsfr/CHILD.sfr"]
+hash = "9b26174bc7622e0c18b449d0b65a19e1d8ed8355406749ec4bf75d0e83043ba8"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.sfr"
+
+["testlgrsfr/CHILD.zon"]
+hash = "b38d01bc7bf677bf3b03a206b3a383174c32e8deb1e500727be9f8a25f3b11cc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/CHILD.zon"
+
+["testlgrsfr/PARENT.OC"]
+hash = "1ca2288f53da9c0f384c5eec15fabbb2127880749819f4e8766eee09ff0d0228"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.OC"
+
+["testlgrsfr/PARENT.WEL"]
+hash = "12053f74e76bba939418f716c0200d2fc17c72f94a6a3f1683b0609a07a41161"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.WEL"
+
+["testlgrsfr/PARENT.ba6"]
+hash = "07239abe86e682f10c5a7fe9f7ba5e7f625ce0d178251fa87cdca14ad59e40fc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.ba6"
+
+["testlgrsfr/PARENT.dis"]
+hash = "d1a98a7385900c158ebb4e2ed88824996174eaa9ec69338d03475dc09e274883"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.dis"
+
+["testlgrsfr/PARENT.lpf"]
+hash = "790d38b3961eb45769744458893738679c72c68466a139540f3ae26970599ae6"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.lpf"
+
+["testlgrsfr/PARENT.nam"]
+hash = "99fca61e0f7683a02005ff1f46fe1632c20440df37cbcf0ffb03b1a37a3a24d4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.nam"
+
+["testlgrsfr/PARENT.sfr"]
+hash = "aa22a0db6ceb2d377b61569d0e774b8cb27b7b3037e2801191eb8d377656a08b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.sfr"
+
+["testlgrsfr/PARENT.zon"]
+hash = "f657193f38f3916914d742950aac5a942866b1c96142a5da7b676761b5fe6b6e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/PARENT.zon"
+
+["testlgrsfr/child.ibd"]
+hash = "c9b7544c80ab3e604a993d51e929b035e10139e5b5606a0c06879ab8bba09951"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/child.ibd"
+
+["testlgrsfr/child.pcg"]
+hash = "38f1852d928b42260403ee854fc27c543992115eb208224c56812ade5ffdef27"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/child.pcg"
+
+["testlgrsfr/cz2"]
+hash = "ba20a48c794dc1dc1b226213a0b4c1e8405b282f4336e9ce9f0b7b3511b33446"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/cz2"
+
+["testlgrsfr/czone"]
+hash = "2f24cca99656e6e0c683c21a4809b2f360266db6b389771ab6d850c331959575"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/czone"
+
+["testlgrsfr/lgrex1.lgr"]
+hash = "e1271a42c41d4d253724a6e861999f86fae6b0c169f3149d6f087382315f6cd5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/lgrex1.lgr"
+
+["testlgrsfr/parent.ibd"]
+hash = "9d0eeebe99914a8b8cc72d5937b2a15a9fd2d708ff4c9661934178582bcbcd3a"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/parent.ibd"
+
+["testlgrsfr/parent.pcg"]
+hash = "45ea955e84d0744c146e041fe60c9592c258802acebc2b9b66a0549ee59826f2"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/parent.pcg"
+
+["testlgrsfr/parent.shd"]
+hash = "4b92c9a0218c15aa02cc894efdf153d0188370b1dd2eb4026e0016ae10f114fc"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/parent.shd"
+
+["testlgrsfr/readme"]
+hash = "d1636bfaad7d49bf1cf7fd519a7e3a507235dc70e14e3cccb347abb2012ee1f5"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/readme"
+
+["testlgrsfr/xgrid"]
+hash = "d8d5b4ea53074db6b30738e0cdb4af49022c768ab166937535fa27b639768d39"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/xgrid"
+
+["testlgrsfr/ygrid"]
+hash = "8ec6dbc16af4389a4fd18ef0db1262409b71876c8c5baa15d8c367ec93380844"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testlgrsfr/ygrid"
+
+["testmm1/testmm1.bas"]
+hash = "dd1eb3b1f56dc46167a62330945ee9ba4fcf3755ecfdf34c2eceac4e0c89ba6e"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.bas"
+
+["testmm1/testmm1.chd"]
+hash = "b805c65fbfcd9cd8debdb0561422abab5f576540862d7679011605e46196e93b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.chd"
+
+["testmm1/testmm1.dis"]
+hash = "c98045da4e8a1808271d524298a5fecfa78d48be6c70ed2299436c1389c28991"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.dis"
+
+["testmm1/testmm1.drn"]
+hash = "a49cda6cc7e317f23d36fa3e5ba541d25f9599cbb0c5a0cf310b9f1376a06827"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.drn"
+
+["testmm1/testmm1.ets"]
+hash = "e5b084a4d8d9b7a1504641043617da1f0dc92748d8aac2daea71ed007b9daf09"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.ets"
+
+["testmm1/testmm1.ghb"]
+hash = "ba838fa5a418273645afbe76c0bb3e921370bdd1e8d3e41515444e5c5110fc5b"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.ghb"
+
+["testmm1/testmm1.lpf"]
+hash = "5e9864fac8dc0f8c747ff8f00cdbce92f8d39166ffb4688f4873e70d2c507e29"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.lpf"
+
+["testmm1/testmm1.nam"]
+hash = "836de24a7e25ee19dbf56738c5bb22fa80ea4da6b169685ee82c84565d9c00d7"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.nam"
+
+["testmm1/testmm1.oc"]
+hash = "51e9c370f52780e110e71ce024b225e9bec182031bfd6602807506cee0967167"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.oc"
+
+["testmm1/testmm1.pcg"]
+hash = "334975f0d69e691ba489646679b3f835c4d32d5d6c92670820a5960fa695ecd1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.pcg"
+
+["testmm1/testmm1.rch"]
+hash = "926779a2cef7f761d7b69ef8ca3decf80a950477be040e0c193ae43609c2b032"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.rch"
+
+["testmm1/testmm1.riv"]
+hash = "90e270f567546d119566a1fe7db095db6497b2229fa1afd1a3f8466bc284afe1"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.riv"
+
+["testmm1/testmm1.wel"]
+hash = "f22b864c77e25319937972c1e97966bef8c346db02e6ea407680f35f4afc01fa"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmm1/testmm1.wel"
+
+["testmnw2/modflowtest.bas"]
+hash = "05a6cb4b74f436f29cd906f96ebcb94aa8ef8fca5015ff8db9ecf68eb32b6030"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.bas"
+
+["testmnw2/modflowtest.dis"]
+hash = "0b8bb4708b407afd171f25c437d6d3d99777da79b829839086b48adb76823d13"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.dis"
+
+["testmnw2/modflowtest.lpf"]
+hash = "a2f72bf834592715651f4ea268c4fa812618690e84452281eea1edfa6e5636e4"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.lpf"
+
+["testmnw2/modflowtest.mnw2"]
+hash = "e90e0d5f24185ae7f374e304139fba9e7a5f164c5955ce30d0044badd9eeb581"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.mnw2"
+
+["testmnw2/modflowtest.nam"]
+hash = "64bcca78f2f6f1e1364484cbbcdd62b4c698b9cefd55953a34629fd00f3b46ff"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.nam"
+
+["testmnw2/modflowtest.oc"]
+hash = "44666472ff1add915309b27940c5168d55bdf9db88b614ed35954474fe7377c0"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.oc"
+
+["testmnw2/modflowtest.pcg"]
+hash = "79451e41cde47edc5b4159b73cb34b4e527ec8e3bb79cf720cdf9a4dca38aa78"
+url = "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6/testmnw2/modflowtest.pcg"
