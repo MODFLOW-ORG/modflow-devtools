@@ -27,6 +27,7 @@ The leading prefix identifies where the model came from. Currently three prefixe
 
 - `example/...`: example models in https://github.com/MODFLOW-ORG/modflow6-examples
 - `test/...`: test models in https://github.com/MODFLOW-ORG/modflow6-testmodels
+- `mf2005/...`: mf2005 models in https://github.com/MODFLOW-ORG/modflow6-testmodels
 - `large/...`: large test models in https://github.com/MODFLOW-ORG/modflow6-largetestmodels
 
 The remaining path parts reflect the relative location of the model within the source repository.
