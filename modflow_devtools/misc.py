@@ -5,6 +5,7 @@ import traceback
 from _warnings import warn
 from ast import literal_eval
 from contextlib import contextmanager
+from enum import Enum
 from functools import wraps
 from importlib import metadata
 from os import PathLike, chdir, environ
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from shutil import which
 from subprocess import run
 from timeit import timeit
+from typing import Any
 from urllib import request
 from urllib.error import URLError
 
@@ -550,3 +552,11 @@ def set_env(*remove, **update):
     finally:
         env.update(update_after)
         [env.pop(k) for k in remove_after]
+
+
+def try_get_enum_value(v: Any) -> Any:
+    """
+    Get the enum's value if the object is an instance
+    of an enumeration, otherwise return it unaltered.
+    """
+    return v.value if isinstance(v, Enum) else v
