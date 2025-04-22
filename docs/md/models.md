@@ -14,23 +14,27 @@ pprint(list(models.get_models())[:5])
 ```
 
 ```
-['example/ex-gwe-ates',
- 'example/ex-gwe-barends/mf6gwe',
- 'example/ex-gwe-barends/mf6gwf',
- 'example/ex-gwe-danckwerts',
- 'example/ex-gwe-geotherm/mf6gwe']
+['mf6/example/ex-gwe-ates',
+ 'mf6/example/ex-gwe-barends/mf6gwe',
+ 'mf6/example/ex-gwe-barends/mf6gwf',
+ 'mf6/example/ex-gwe-danckwerts',
+ 'mf6/example/ex-gwe-geotherm/mf6gwe']
 ```
+
+### Model names
 
 Model names follow a hierarchical addressing scheme.
 
-The leading prefix identifies where the model came from. Currently three prefixes are in use:
+The leading part identifies the kind of model, e.g. `mf6`, `mf2005`, etc. Subsequent parts may be used to classify the model.
 
-- `example/...`: example models in https://github.com/MODFLOW-ORG/modflow6-examples
-- `test/...`: test models in https://github.com/MODFLOW-ORG/modflow6-testmodels
+Currently the following prefixes are in use:
+
+- `mf6/example/...`: mf6 example models in https://github.com/MODFLOW-ORG/modflow6-examples
+- `mf6/test/...`: mf6 test models in https://github.com/MODFLOW-ORG/modflow6-testmodels
+- `mf6/large/...`: large mf6 test models in https://github.com/MODFLOW-ORG/modflow6-largetestmodels
 - `mf2005/...`: mf2005 models in https://github.com/MODFLOW-ORG/modflow6-testmodels
-- `large/...`: large test models in https://github.com/MODFLOW-ORG/modflow6-largetestmodels
 
-The remaining path parts reflect the relative location of the model within the source repository.
+The remaining parts may reflect the relative location of the model within the source repository.
 
 **Note**: until this module stabilizes, model naming conventions may change without notice.
 
