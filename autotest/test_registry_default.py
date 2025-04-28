@@ -9,25 +9,25 @@ from modflow_devtools.misc import is_in_ci
 
 TAKE = 5 if is_in_ci() else None
 PROJ_ROOT = Path(__file__).parents[1]
-MODELMAP_PATH = PROJ_ROOT / "modflow_devtools" / "registry" / models.MODELMAP_FILE_NAME
-with MODELMAP_PATH.open("rb") as f:
-    MODELMAP = tomli.load(f)
+MODELS_PATH = PROJ_ROOT / "modflow_devtools" / "registry" / "models.toml"
+MODELS = tomli.load(MODELS_PATH.open("rb"))
+REGISTRY = models._DEFAULT_REGISTRY
 
 
-def test_registry():
-    registry = models.get_registry()
-    assert registry is not None, "Registry was not loaded"
-    assert registry is models.POOCH.registry
-    assert any(registry), "Registry is empty"
+def test_files():
+    files = models.get_files()
+    assert files is not None, "Files not loaded"
+    assert files is REGISTRY.files
+    assert any(files), "Registry is empty"
 
 
 @pytest.mark.parametrize(
-    "model_name, files", MODELMAP.items(), ids=list(MODELMAP.keys())
+    "model_name, files", MODELS.items(), ids=list(MODELS.keys())
 )
 def test_models(model_name, files):
     model_names = list(models.get_models().keys())
     assert model_name in model_names, f"Model {model_name} not found in model map"
-    assert files == models.MODELMAP[model_name], (
+    assert files == REGISTRY.models[model_name], (
         f"Files for model {model_name} do not match"
     )
     if "mf6" in model_name:
@@ -39,16 +39,16 @@ def test_models(model_name, files):
     models.get_examples().items(),
     ids=list(models.get_examples().keys()),
 )
-def test_get_examples(example_name, model_names):
-    assert example_name in models.EXAMPLES
+def test_examples(example_name, model_names):
+    assert example_name in models.get_examples()
     for model_name in model_names:
-        assert model_name in models.MODELMAP
+        assert model_name in REGISTRY.models
 
 
 @pytest.mark.parametrize(
     "model_name, files",
-    list(islice(MODELMAP.items(), TAKE)),
-    ids=list(MODELMAP.keys())[:TAKE],
+    list(islice(MODELS.items(), TAKE)),
+    ids=list(MODELS.keys())[:TAKE],
 )
 def test_copy_to(model_name, files, tmp_path):
     workspace = models.copy_to(tmp_path, model_name, verbose=True)

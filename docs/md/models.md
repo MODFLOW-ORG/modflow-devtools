@@ -1,6 +1,8 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html).
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via a `Models` registry class. There is one "official" registry, aimed at users and developers &mdash; developers may create additional instances e.g. to load models from the local filesystem.
+
+This module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), but it has strong opinions about how to train (configure) it.
 
 ## Listing models
 
@@ -51,7 +53,7 @@ with TemporaryDirectory() as td:
 
 If the target directory doesn't exist, it will be created.
 
-## Developers
+## Creating a registry
 
 The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models. This script should be run in the CI pipeline at release time before the package is built. The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
 
