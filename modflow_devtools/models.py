@@ -214,7 +214,7 @@ class PoochRegistry(ModelRegistry):
     anchor: ClassVar = f"{modflow_devtools.__name__}.registry"
     registry_file_name: ClassVar = "registry.toml"
     models_file_name: ClassVar = "models.toml"
-    groups_file_name: ClassVar = "groups.toml"
+    examples_file_name: ClassVar = "examples.toml"
 
     def __init__(
         self,
@@ -225,9 +225,13 @@ class PoochRegistry(ModelRegistry):
     ):
         self._registry_path = Path(__file__).parent / "registry"
         self._registry_path.mkdir(parents=True, exist_ok=True)
-        self._registry_file_path = self._registry_path / "registry.toml"
-        self._models_file_path = self._registry_path / "models.toml"
-        self._groups_file_path = self._registry_path / "groups.toml"
+        self._registry_file_path = (
+            self._registry_path / PoochRegistry.registry_file_name
+        )
+        self._models_file_path = self._registry_path / PoochRegistry.models_file_name
+        self._examples_file_path = (
+            self._registry_path / PoochRegistry.examples_file_name
+        )
         self._path = (
             Path(path).expanduser().absolute()
             if path
@@ -310,13 +314,13 @@ class PoochRegistry(ModelRegistry):
 
         try:
             with pkg_resources.open_binary(
-                PoochRegistry.anchor, PoochRegistry.groups_file_name
-            ) as groups_file:
-                self._examples = tomli.load(groups_file)
+                PoochRegistry.anchor, PoochRegistry.examples_file_name
+            ) as examples_file:
+                self._examples = tomli.load(examples_file)
         except:  # noqa: E722
             self._examples = {}
             warn(
-                f"No examples file '{PoochRegistry.groups_file_name}' "
+                f"No examples file '{PoochRegistry.examples_file_name}' "
                 f"in module '{PoochRegistry.anchor}' resources"
             )
 
@@ -368,7 +372,7 @@ class PoochRegistry(ModelRegistry):
 
         files: dict[str, dict[str, str | None]] = {}
         models: dict[str, list[str]] = {}
-        groups: dict[str, list[str]] = {}
+        examples: dict[str, list[str]] = {}
         exclude = [".DS_Store", "compare"]
         if url and (is_zip := url.endswith((".zip", ".tar"))):
             files[url.rpartition("/")[2]] = {"hash": None, "url": url}
@@ -382,9 +386,9 @@ class PoochRegistry(ModelRegistry):
             models[model_name] = []
             if is_zip:
                 name = rel_path.parts[0]
-                if name not in groups:
-                    groups[name] = []
-                groups[name].append(model_name)
+                if name not in examples:
+                    examples[name] = []
+                examples[name].append(model_name)
             for p in model_path.rglob("*"):
                 if not p.is_file() or any(e in p.name for e in exclude):
                     continue
@@ -410,8 +414,8 @@ class PoochRegistry(ModelRegistry):
         with self._models_file_path.open("ab+") as models_file:
             tomli_w.dump(dict(sorted(models.items())), models_file)
 
-        with self._groups_file_path.open("ab+") as groups_file:
-            tomli_w.dump(dict(sorted(groups.items())), groups_file)
+        with self._examples_file_path.open("ab+") as examples_file:
+            tomli_w.dump(dict(sorted(examples.items())), examples_file)
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False
