@@ -92,7 +92,7 @@ class LocalRegistry(ModelRegistry):
 
     *Not* persistent &mdash; lives only in memory, unlike `PoochRegistry`.
 
-    The registry is loaded lazily upon first access by recursively scanning
+    The registry is loaded eagerly on initialization by recursively scanning
     the given directory for models (located by the presence of a namefile)
     and corresponding input files.
 
