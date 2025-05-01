@@ -112,7 +112,7 @@ class LocalRegistry(ModelRegistry):
         are identified by the presence of a namefile
         matching `namefile_pattern`.
         """
-        self._path = Path(path).expanduser().absolute()
+        self._path = Path(path).expanduser().resolve().absolute()
         self._files: dict[str, dict[str, str | None]] = {}
         self._models: dict[str, list[str]] = {}
         self._examples: dict[str, list[str]] = {}
@@ -133,7 +133,7 @@ class LocalRegistry(ModelRegistry):
         self._examples = {}
         model_paths = get_model_paths(self._path, namefile=self.namefile_pattern)
         for model_path in model_paths:
-            model_path = model_path.expanduser().absolute()
+            model_path = model_path.expanduser().resolve().absolute()
             rel_path = model_path.relative_to(self._path)
             model_name = "/".join(rel_path.parts)
             self._models[model_name] = []
@@ -362,7 +362,7 @@ class PoochRegistry(ModelRegistry):
         namefile : str
             Namefile pattern to look for in the model directories.
         """
-        path = Path(path).expanduser().absolute()
+        path = Path(path).expanduser().resolve().absolute()
         if not path.is_dir():
             raise NotADirectoryError(f"Path {path} is not a directory.")
 
@@ -375,7 +375,7 @@ class PoochRegistry(ModelRegistry):
 
         model_paths = get_model_paths(path, namefile=namefile)
         for model_path in model_paths:
-            model_path = model_path.expanduser().absolute()
+            model_path = model_path.expanduser().resolve().absolute()
             rel_path = model_path.relative_to(path)
             parts = [prefix, *list(rel_path.parts)] if prefix else list(rel_path.parts)
             model_name = "/".join(parts)
@@ -389,12 +389,12 @@ class PoochRegistry(ModelRegistry):
                 if not p.is_file() or any(e in p.name for e in exclude):
                     continue
                 if is_zip:
-                    relpath = p.expanduser().absolute().relative_to(path)
+                    relpath = p.expanduser().resolve().absolute().relative_to(path)
                     name = "/".join(relpath.parts)
                     url_: str | None = url
                     hash = None
                 else:
-                    relpath = p.expanduser().absolute().relative_to(path)
+                    relpath = p.expanduser().resolve().absolute().relative_to(path)
                     name = "/".join(relpath.parts)
                     url_ = f"{url}/{relpath!s}" if url else None
                     hash = _sha256(p)
@@ -426,7 +426,7 @@ class PoochRegistry(ModelRegistry):
         if not any(files := fetch()):
             return None
         # create the workspace if needed
-        workspace = Path(workspace).expanduser().absolute()
+        workspace = Path(workspace).expanduser().resolve().absolute()
         if verbose:
             print(f"Creating workspace {workspace}")
         workspace.mkdir(parents=True, exist_ok=True)
