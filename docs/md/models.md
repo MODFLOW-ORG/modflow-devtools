@@ -1,10 +1,10 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via a `Registry`. There is one "official" `PoochRegistry`, aimed at users and developers &mdash; developers may create `LocalRegistry` instances to load models from the local filesystem.
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via a `ModelRegistry`. There is one "official" `PoochRegistry`, aimed at users and developers &mdash; developers may create `LocalRegistry` instances to load models from the local filesystem.
 
 This module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), but it is an independent layer on top with strong opinions about how to train (configure) the fetch-happy friend.
 
-## `Registry` basics
+## `ModelRegistry`
 
 Registries expose the following properties:
 
