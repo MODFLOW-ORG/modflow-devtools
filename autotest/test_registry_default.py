@@ -11,7 +11,7 @@ TAKE = 5 if is_in_ci() else None
 PROJ_ROOT = Path(__file__).parents[1]
 MODELS_PATH = PROJ_ROOT / "modflow_devtools" / "registry" / "models.toml"
 MODELS = tomli.load(MODELS_PATH.open("rb"))
-REGISTRY = models._DEFAULT_REGISTRY
+REGISTRY = models.DEFAULT_REGISTRY
 
 
 def test_files():

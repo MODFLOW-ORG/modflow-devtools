@@ -30,10 +30,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if not args.append:
-        models._DEFAULT_REGISTRY = models.PoochRegistry(
+        models.DEFAULT_REGISTRY = models.PoochRegistry(
             base_url=args.url, env=models._DEFAULT_ENV
         )
-    models._DEFAULT_REGISTRY.index(
+    models.DEFAULT_REGISTRY.index(
         path=args.path,
         url=args.url,
         prefix=args.prefix,

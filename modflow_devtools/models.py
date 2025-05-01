@@ -469,7 +469,7 @@ _DEFAULT_BASE_URL = (
     "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current"
 )
 _DEFAULT_ZIP_NAME = "mf6examples.zip"
-_DEFAULT_REGISTRY = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
+DEFAULT_REGISTRY = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
 """The default model registry."""
 
 
@@ -477,12 +477,12 @@ def get_examples() -> dict[str, list[str]]:
     """
     Get a map of example names to models in the example.
     """
-    return _DEFAULT_REGISTRY.examples
+    return DEFAULT_REGISTRY.examples
 
 
 def get_models() -> dict[str, str]:
     """Get a map of model names to input files."""
-    return _DEFAULT_REGISTRY.models
+    return DEFAULT_REGISTRY.models
 
 
 def get_files() -> dict[str, dict[str, str]]:
@@ -491,7 +491,7 @@ def get_files() -> dict[str, dict[str, str]]:
     contains no information on which files belong to which
     models. For that information, use `get_models()`.
     """
-    return _DEFAULT_REGISTRY.files
+    return DEFAULT_REGISTRY.files
 
 
 def copy_to(
@@ -501,4 +501,4 @@ def copy_to(
     Copy the model's input files to the given workspace.
     The workspace will be created if it does not exist.
     """
-    return _DEFAULT_REGISTRY.copy_to(workspace, model_name, verbose=verbose)
+    return DEFAULT_REGISTRY.copy_to(workspace, model_name, verbose=verbose)
