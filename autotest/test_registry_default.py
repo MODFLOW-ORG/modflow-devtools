@@ -21,9 +21,7 @@ def test_files():
     assert any(files), "Registry is empty"
 
 
-@pytest.mark.parametrize(
-    "model_name, files", MODELS.items(), ids=list(MODELS.keys())
-)
+@pytest.mark.parametrize("model_name, files", MODELS.items(), ids=list(MODELS.keys()))
 def test_models(model_name, files):
     model_names = list(models.get_models().keys())
     assert model_name in model_names, f"Model {model_name} not found in model map"

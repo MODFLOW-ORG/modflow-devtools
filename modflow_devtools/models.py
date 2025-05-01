@@ -77,7 +77,6 @@ class ModelRegistry(ABC):
         An *example* is an ordered set of models/simulations.
         """
         ...
-    
 
     @abstractmethod
     def copy_to(
