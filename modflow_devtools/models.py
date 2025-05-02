@@ -5,7 +5,7 @@
 import hashlib
 import importlib.resources as pkg_resources
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from functools import partial
 from os import PathLike
 from pathlib import Path
@@ -96,73 +96,56 @@ class LocalRegistry(ModelRegistry):
 
     exclude: ClassVar = [".DS_Store", "compare"]
 
-    def __init__(
+    def __init__(self) -> None:
+        self._paths: set[Path] = set()
+        self._files: dict[str, Path] = {}
+        self._models: dict[str, list[Path]] = {}
+        self._examples: dict[str, list[str]] = {}
+
+    def index(
         self,
-        path: str | PathLike | Iterable[str | PathLike],
-        namefile_pattern: str = "mfsim.nam",
+        path: str | PathLike,
+        prefix: str = "",
+        namefile: str = "mfsim.nam",
     ):
         """
-        Create a registry from models under the given
-        directory path.
+        Add models found under the given path to the registry.
+
+        Call this once or more to prepare a registry. If called on the same
+        `path` again, the models will be reloaded &mdash; thus this method
+        is idempotent and may be used to reload the registry e.g. if model
+        files have changed since the registry was created.
 
         The `path` may consist of model subdirectories
         at arbitrary depth. Model input subdirectories
         are identified by the presence of a namefile
         matching `namefile_pattern`.
         """
-        # check if path is iterable of str\pathlike
-        if isinstance(path, Iterable) and not isinstance(path, str):
-            path = [Path(p).expanduser().resolve().absolute() for p in path]  # type: ignore
-            missing = [p for p in path if not p.is_dir()]  # type: ignore
-            if any(missing):
-                missing = [str(p) for p in missing]  # type: ignore
-                raise NotADirectoryError(
-                    f"Directory paths not found: {', '.join(missing)}"  # type: ignore
-                )
-            self._path = path
-        else:
-            path = Path(path).expanduser().resolve().absolute()
-            if not path.is_dir():
-                raise NotADirectoryError(f"Directory path not found: {path}")
-            self._path = [path]
-        self._files: dict[str, dict[str, str | None]] = {}
-        self._models: dict[str, list[str]] = {}
-        self._examples: dict[str, list[str]] = {}
-        self.namefile_pattern = namefile_pattern
-        self.index()
 
-    def index(self):
-        """
-        Build the registry from models found under the configured path. This
-        method can be called to reload the registry e.g. if model files have
-        changed since the registry was created.
-        """
+        path = Path(path).expanduser().resolve().absolute()
+        if not path.is_dir():
+            raise NotADirectoryError(f"Directory path not found: {path}")
+        self._paths.add(path)
 
-        self._files = {}
-        self._models = {}
-        self._examples = {}
-        for path in self._path:
-            model_paths = get_model_paths(path, namefile=self.namefile_pattern)
-            for model_path in model_paths:
-                model_path = model_path.expanduser().resolve().absolute()
-                rel_path = model_path.relative_to(path)
-                model_name = "/".join(rel_path.parts)
-                self._models[model_name] = []
-                if len(rel_path.parts) > 1:
-                    name = rel_path.parts[0]
-                    if name not in self._examples:
-                        self._examples[name] = []
-                    self._examples[name].append(model_name)
-                for p in model_path.rglob("*"):
-                    if not p.is_file() or any(
-                        e in p.name for e in LocalRegistry.exclude
-                    ):
-                        continue
-                    relpath = p.expanduser().absolute().relative_to(path)
-                    name = "/".join(relpath.parts)
-                    hash = _sha256(p)
-                    self._files[name] = {"hash": hash, "path": p, "relpath": relpath}
-                    self._models[model_name].append(p)
+        model_paths = get_model_paths(path, namefile=namefile)
+        for model_path in model_paths:
+            model_path = model_path.expanduser().resolve().absolute()
+            rel_path = model_path.relative_to(path)
+            parts = [prefix, *list(rel_path.parts)] if prefix else list(rel_path.parts)
+            model_name = "/".join(parts)
+            self._models[model_name] = []
+            if len(rel_path.parts) > 1:
+                name = rel_path.parts[0]
+                if name not in self._examples:
+                    self._examples[name] = []
+                self._examples[name].append(model_name)
+            for p in model_path.rglob("*"):
+                if not p.is_file() or any(e in p.name for e in LocalRegistry.exclude):
+                    continue
+                relpath = p.expanduser().absolute().relative_to(path)
+                name = "/".join(relpath.parts)
+                self._files[name] = p
+                self._models[model_name].append(p)
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False
@@ -192,8 +175,8 @@ class LocalRegistry(ModelRegistry):
         return workspace
 
     @property
-    def path(self) -> list[Path]:
-        return self._path  # type: ignore
+    def paths(self) -> set[Path]:
+        return self._paths
 
     @property
     def files(self) -> dict:
