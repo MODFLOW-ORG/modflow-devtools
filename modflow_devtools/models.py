@@ -47,12 +47,6 @@ def _sha256(path: Path) -> str:
 class ModelRegistry(ABC):
     @property
     @abstractmethod
-    def path(self) -> Path:
-        """The path to the registry's data."""
-        ...
-
-    @property
-    @abstractmethod
     def files(self) -> dict:
         """
         A map of file name to file-scoped information. Note that
@@ -118,11 +112,11 @@ class LocalRegistry(ModelRegistry):
         """
         # check if path is iterable of str\pathlike
         if isinstance(path, Iterable) and not isinstance(path, str):
-            path = [Path(p).expanduser().resolve().absolute() for p in path]
-            missing = [p for p in path if not p.is_dir()]
+            path = [Path(p).expanduser().resolve().absolute() for p in path]  # type: ignore
+            missing = [p for p in path if not p.is_dir()]  # type: ignore
             if any(missing):
                 raise NotADirectoryError(
-                    f"Directory paths not found: {', '.join(missing)}"
+                    f"Directory paths not found: {', '.join(missing)}"  # type: ignore
                 )
             self._path = path
         else:
@@ -197,8 +191,8 @@ class LocalRegistry(ModelRegistry):
         return workspace
 
     @property
-    def path(self) -> Path:
-        return self._path
+    def path(self) -> list[Path]:
+        return self._path  # type: ignore
 
     @property
     def files(self) -> dict:
