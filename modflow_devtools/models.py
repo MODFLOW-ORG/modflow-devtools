@@ -115,6 +115,7 @@ class LocalRegistry(ModelRegistry):
             path = [Path(p).expanduser().resolve().absolute() for p in path]  # type: ignore
             missing = [p for p in path if not p.is_dir()]  # type: ignore
             if any(missing):
+                missing = [str(p) for p in missing]  # type: ignore
                 raise NotADirectoryError(
                     f"Directory paths not found: {', '.join(missing)}"  # type: ignore
                 )
