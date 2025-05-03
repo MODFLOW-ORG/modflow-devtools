@@ -105,8 +105,10 @@ class LocalRegistry(ModelRegistry):
     def index(
         self,
         path: str | PathLike,
-        prefix: str = "",
+        prefix: str | None = None,
         namefile: str = "mfsim.nam",
+        excluded: list[str] | None = None,
+        model_name_prefix: str = "",
     ):
         """
         Add models found under the given path to the registry.
@@ -116,10 +118,15 @@ class LocalRegistry(ModelRegistry):
         is idempotent and may be used to reload the registry e.g. if model
         files have changed since the registry was created.
 
-        The `path` may consist of model subdirectories
-        at arbitrary depth. Model input subdirectories
-        are identified by the presence of a namefile
-        matching `namefile_pattern`.
+        The `path` may consist of model subdirectories at arbitrary depth.
+        Model subdirectories are identified by the presence of a namefile
+        matching `namefile_pattern`. Model subdirectories may be filtered
+        inclusively by `prefix` or exclusively by `excluded`
+
+        A `model_name_prefix` may be specified to avoid collisions with
+        models indexed from other directories. This prefix will be added
+        to the model name, which is derived from the relative path of the
+        model subdirectory under `path`.
         """
 
         path = Path(path).expanduser().resolve().absolute()
@@ -127,11 +134,17 @@ class LocalRegistry(ModelRegistry):
             raise NotADirectoryError(f"Directory path not found: {path}")
         self._paths.add(path)
 
-        model_paths = get_model_paths(path, namefile=namefile)
+        model_paths = get_model_paths(
+            path, prefix=prefix, namefile=namefile, excluded=excluded
+        )
         for model_path in model_paths:
             model_path = model_path.expanduser().resolve().absolute()
             rel_path = model_path.relative_to(path)
-            parts = [prefix, *list(rel_path.parts)] if prefix else list(rel_path.parts)
+            parts = (
+                [model_name_prefix, *list(rel_path.parts)]
+                if model_name_prefix
+                else list(rel_path.parts)
+            )
             model_name = "/".join(parts)
             self._models[model_name] = []
             if len(rel_path.parts) > 1:
