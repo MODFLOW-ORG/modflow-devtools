@@ -20,7 +20,7 @@
 
 Python development tools for MODFLOW 6 and related projects.
 
-- [Use cases](#use-cases)
+- [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Documentation](#documentation)
