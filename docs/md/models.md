@@ -1,31 +1,42 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via a `ModelRegistry`. There is one "official" `PoochRegistry`, aimed at users and developers &mdash; developers may create `LocalRegistry` instances to load models from the local filesystem.
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 (and other) models.
 
-This module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), but it is an independent layer on top with strong opinions about how to train (configure) the fetch-happy friend.
+**Note**: While this module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), it is an independent layer with opinions about how to train (configure) it.
 
 ## `ModelRegistry`
 
-Registries expose the following properties:
+The `ModelRegistry` base class represents a set of models living in a GitHub repository or on the local filesystem. This package provides an "official" GitHub-backed registry. Local registries may be created as needed.
 
-- `path`: the data path
-- `files`: a map of files to file info
-- `models`: a map of models to files
+All `ModelRegistry` subclasses expose the following properties:
+
+- `files`: a map of model input files to file-scoped info
+- `models`: a map of model names to model input files
 - `examples`: a map of example scenarios to models
 
 An *example* is a set of models which run in a particular order.
 
-The default `PoochRegistry` is available at `modflow_devtools.models.DEFAULT_REGISTRY`. Its `path` is the pooch cache. Values in the `files` are dictionaries including a hash and url. Configuring the default registry is a developer task &mdash; see the instructions on [creating a registry](#creating-a-registry) below.
+Dictionary keys are consistently strings. Dictionary values may vary depending on the type of registry. For instance, values in `PoochRegistry.files` are dictionaries including a hash and url.
 
-## Listing models
+### Subclasses
 
-The `get_models()` function returns a mapping of model names to model input files.
+A registry backed by a remote repository is called a `PoochRegistry`. A `PoochRegistry` maintains a persistent index on disk. 
+
+A `LocalRegistry` lives in-memory only. Its purpose is simply to store some knowledge about where model files are on disk, and provide an identical API for accessing them as the official `PoochRegistry`.
+
+Most users will interact only with the default `PoochRegistry`, available at `modflow_devtools.models.DEFAULT_REGISTRY`. A `LocalRegistry` can be useful for developing and debugging MODFLOW and/or MODFLOW models alongside one another.
+
+### Listing models
+
+This module provides convenience functions to access the default registry.
+
+For instance, the `get_models()` function aliases `DEFAULT_REGISTRY.models`.
 
 ```python
 from pprint import pprint
-import modflow_devtools.models as models
+from modflow_devtools.models import DEFAULT_REGISTRY, get_models
 
-pprint(list(models.get_models())[:5])
+pprint(list(get_models())[:5])
 ```
 
 ```
@@ -36,7 +47,7 @@ pprint(list(models.get_models())[:5])
  'mf6/example/ex-gwe-geotherm/mf6gwe']
 ```
 
-### Model names
+#### Model names
 
 Model names follow a hierarchical addressing scheme.
 
@@ -51,17 +62,22 @@ Currently the following prefixes are in use:
 
 The remaining parts may reflect the relative location of the model within the source repository.
 
-**Note**: until this module stabilizes, model naming conventions may change without notice.
+**Note**: Until this module stabilizes, model naming conventions may change without notice.
 
-## Using models
+### Using models
 
-To copy model input files to a workspace of your choosing:
+To copy model input files to a workspace of your choosing, call `copy_to` on the registry.
 
 ```python
+
 from tempfile import TemporaryDirectory
 
 with TemporaryDirectory() as td:
-    workspace = models.copy_to(td, "example/ex-gwe-ates", verbose=True)
+    workspace = DEFAULT_REGISTRY.copy_to(td, "example/ex-gwe-ates", verbose=True)
+    # the module provides a shortcut for this too
+    # from modflow_devtools.models import copy_to
+    # workspace = copy_to(td, "example/ex-gwe-ates", verbose=True)
+    
 ```
 
 If the target directory doesn't exist, it will be created.
@@ -70,17 +86,22 @@ If the target directory doesn't exist, it will be created.
 
 ### Local registries
 
-A `LocalRegistry` accepts a `path` on initialization. This must be a directory containing model subdirectories at arbitrary depth. Model subdirectories are identified by the presence of a namefile matching `namefile_pattern`. By default `namefile_pattern="mfsim.nam"`, causing only MODFLOW 6 models to be returned.
+To prepare a local registry, just create it and call `index` once or more. The `path` to index must be a directory containing model subdirectories at arbitrary depth. Model subdirectories are identified by the presence of a namefile matching `namefile_pattern`. By default `namefile_pattern="mfsim.nam"`, causing only MODFLOW 6 models to be returned.
 
 For instance, to load all MODFLOW models (pre-MF6 as well):
 
 ```python
-registry = LocalRegistry("path/to/models", namefile_pattern="*.nam")
+registry = LocalRegistry()
+registry.index("path/to/models", namefile_pattern="*.nam")
 ```
+
+The registry may then be used
 
 ### Pooch registry
 
-The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models. This script should be run in the CI pipeline at release time before the package is built. The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
+The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models.
+
+The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
 
 The script can be executed with `python -m modflow_devtools.make_registry`. It accepts a single positional argument, specifying the base directory containing model directories. It accepts two named arguments:
 
