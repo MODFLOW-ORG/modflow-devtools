@@ -168,7 +168,6 @@ line-length = 88
 
 [tool.ruff.lint]
 select = [
-    # "ARG",  # flake8-unused-arguments
     "C4",   # flake8 comprehensions
     "D409", # pydocstyle - section-underline-matches-section-length
     "E", "W", # pycodestyle

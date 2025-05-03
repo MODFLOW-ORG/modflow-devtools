@@ -31,10 +31,10 @@ Python development tools for MODFLOW 6 and related projects.
 
 * a minimal GitHub API client for release info/assets
 * a `ZipFile` subclass that [preserves file permissions](https://stackoverflow.com/questions/39296101/python-zipfile-removes-execute-permissions-from-binaries) (workaround for [Python #15795](https://bugs.python.org/issue15795))
-* pytest fixtures including "keepable" tempdirs
+* pytest fixtures including "keepable" temporary directories and snapshot testing utilities
 * pytest markers to skip test cases conditional on operating system, installed packages, or available executables
 * a parser for MODFLOW 6 [definition files](https://modflow6.readthedocs.io/en/stable/_dev/dfn.html)
-* streamlined access to MODFLOW 6 models in
+* a models API for streamlined access to MODFLOW 6 (and other) models in
   - [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples)
   - [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels)
   - [`MODFLOW-ORG/modflow6-largetestmodels`](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
