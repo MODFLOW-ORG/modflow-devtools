@@ -12,7 +12,11 @@ if __name__ == "__main__":
         help="Append instead of overwriting.",
     )
     parser.add_argument(
-        "--prefix", "-p", type=str, help="Prefix for models.", default=""
+        "--model-name-prefix",
+        "-p",
+        type=str,
+        help="Prefix for model names.",
+        default="",
     )
     parser.add_argument(
         "--url",

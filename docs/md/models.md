@@ -14,7 +14,7 @@ All `ModelRegistry` subclasses expose the following properties:
 - `models`: a map of model names to model input files
 - `examples`: a map of example scenarios to models
 
-An *example* is a set of models which run in a particular order.
+An *example* is a set of related models which run in a particular order.
 
 Dictionary keys are consistently strings. Dictionary values may vary depending on the type of registry. For instance, values in `PoochRegistry.files` are dictionaries including a hash and url.
 
@@ -69,15 +69,13 @@ The remaining parts may reflect the relative location of the model within the so
 To copy model input files to a workspace of your choosing, call `copy_to` on the registry.
 
 ```python
-
 from tempfile import TemporaryDirectory
+from modflow_devtools.models import copy_to
 
 with TemporaryDirectory() as td:
     workspace = DEFAULT_REGISTRY.copy_to(td, "example/ex-gwe-ates", verbose=True)
-    # the module provides a shortcut for this too
-    # from modflow_devtools.models import copy_to
-    # workspace = copy_to(td, "example/ex-gwe-ates", verbose=True)
-    
+    # or, the module provides a shortcut for this too
+    workspace = copy_to(td, "example/ex-gwe-ates", verbose=True)
 ```
 
 If the target directory doesn't exist, it will be created.
@@ -95,8 +93,6 @@ registry = LocalRegistry()
 registry.index("path/to/models", namefile_pattern="*.nam")
 ```
 
-The registry may then be used
-
 ### Pooch registry
 
 The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models.
@@ -107,14 +103,16 @@ The script can be executed with `python -m modflow_devtools.make_registry`. It a
 
 - `--append` or `-a`: If specified, the script will append to the existing registry file instead of overwriting it.
 - `--url` or `-u`: Specifies the base URL for the registry file. If not provided, the default base URL is used.
+- `--model-name-prefix`: Optionally specify a string to prepend to model names. Useful for avoiding collisions.
+- `--namefile`: Optionally specify the glob pattern for namefiles. By default, only `mfsim.nam` (MF6) are found.
 
 For example, to create a registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
 
 ```shell
-python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --prefix mf6/example
-python -m modflow_devtools.make_registry ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --prefix mf6/test
-python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --prefix mf6/large
-python -m modflow_devtools.make_registry ../modflow6-testmodels/mf5to6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --prefix mf2005 --namefile "*.nam"
+python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
+python -m modflow_devtools.make_registry ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
+python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
+python -m modflow_devtools.make_registry ../modflow6-testmodels/mf5to6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
 ```
 
 Above we adopt a convention of prefixing model names with the model type (i.e. the program used to run it), e.g. "mf6/" or "mf2005/". Relative path parts below the initial prefix reflect the model's relative path within its repository.
