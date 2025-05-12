@@ -1,3 +1,49 @@
+### Version 1.7.0
+
+#### New features
+
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/910ab4f252a56718302e41a450b377351a30a387): Add dfn container, parser, toml conversion script (#167). Committed by wpbonelli on 2024-12-11.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/01b95b0745a4fc4767cf8074738e2968f1e206b1): Toml load support, switch to tomli, add tests (#173). Committed by wpbonelli on 2025-01-14.
+* [feat](https://github.com/MODFLOW-ORG/modflow-devtools/commit/1d787a42174a4d44e2ab908f84b6339286b8e47c): Models api (#191). Committed by wpbonelli on 2025-03-06.
+* [feat](https://github.com/MODFLOW-ORG/modflow-devtools/commit/e142df74c8a037f9c921e8a85a21ae28009f55c0): Model mapping (#192). Committed by wpbonelli on 2025-03-07.
+* [feat(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/aa45c48d3a4c3ea3e376c5c84ab0693732979316): Support example models (#197). Committed by wpbonelli on 2025-03-11.
+* [feat(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/0ea364bfea83b3351afef10190f01203daddb5c4): Add example scenario mapping (#198). Committed by wpbonelli on 2025-03-11.
+* [feat(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/910672795a5a87ad3ea78902626f04dd3d9c036c): Add mf2005 models from modflow6-testmodels repo (#206). Committed by wpbonelli on 2025-04-08.
+* [feat(misc)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/366df8a35e5ead88713312ca5ea18a3b5a504b4b): Add try_get_enum_value function (#208). Committed by wpbonelli on 2025-04-22.
+
+#### Bug fixes
+
+* [fix(fixtures)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/90316a1cca281ac36062da946374145bda421d52): Don't use square brackets in tempdir paths (#160). Committed by wpbonelli on 2024-06-10.
+* [fix(download.py)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/6f84edb6c58d22531b538fa9e8044f3aff9e6173): Accommodate missing gh api response item (#162). Committed by wpbonelli on 2024-10-02.
+* [fix(test_meson_build)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/acec996c1993840aa38abe8df83b03d31279e4f1): Use requires_exe instead of requires_pkg (#164). Committed by Mike Taves on 2024-12-09.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/d9a4212229c84c788ec791ee6dac704ef290e5d8): Include missing attributes (#176). Committed by wpbonelli on 2025-01-25.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/50cba8b0fd8426dd04e7c59df88ac24b70853a64): Mark transient blocks (#178). Committed by wpbonelli on 2025-01-26.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/e80929551dac3675d7bb288084347e9cf6190c09): Rename sub -> ref (#180). Committed by wpbonelli on 2025-01-31.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/b15a699981a74efae27250970c875326d9a3df5d): Remove some special handling for subpackages (#181). Committed by wpbonelli on 2025-01-31.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/c36f502f9cda15817684a11cbfa6d3cf6ded8a7c): Keep block attribute for now (#182). Committed by wpbonelli on 2025-02-03.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/d54312569dc6f59a6362f8a60dd2b54bed694d5a): Block attribute first (#183). Committed by wpbonelli on 2025-02-03.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/931c497e71b3b7a148f1655d5aff6af8fd410849): Rename transient -> transient_block (#184). Committed by wpbonelli on 2025-02-04.
+* [fix](https://github.com/MODFLOW-ORG/modflow-devtools/commit/642c2d1314d1e0d547d906d139da54c7733ded62): Filelock when fetching zips (#200). Committed by wpbonelli on 2025-03-18.
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/1ff3c0f70364f71a49738c26915f933b694df09d): Include files in nested folders (#201). Committed by wpbonelli on 2025-03-19.
+* [fix(models.py)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/6534389ba2c5f8ee8d06297be28375cd28ade207): Add retries for transient network errors (#205). Committed by wpbonelli on 2025-04-07.
+* [fix(LocalRegistry)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/aa62b34711e157935deb653dd2c44bad499894ee): Fix string joining in dir not found error case (#213). Committed by wpbonelli on 2025-05-02.
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-ORG/modflow-devtools/commit/438847cbb07ad01782a50fd01a1c907323fda31b): Use pathlib and subprocess; refactor other aspects (#166). Committed by Mike Taves on 2024-12-09.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/52e846b6f4099e6c80b1f6323670b237cbfc0fd6): Move to file (#170). Committed by wpbonelli on 2025-01-03.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5074b21cff9ccdf56e0783cbe5e0a7f9a42c65f5): Use explicit table names in toml format (#174). Committed by wpbonelli on 2025-01-17.
+* [refactor(download)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/6957554ebec45e89cda5188358aa448586d71105): Remove asset/artifact utilities (#175). Committed by wpbonelli on 2025-01-17.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/ba6fe08ea2da3ffe3c7164d52d8440229b822cd2): Minor toml format fixes/improvements. Committed by wpbonelli on 2025-01-26.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/362ecd560944725e0ca39749ea249e3f664ec9c3): Use boltons remap, better comments/naming (#179). Committed by wpbonelli on 2025-01-26.
+* [refactor(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/af441d1bcd0d940ef81944b0a2b7d445c33c9d98): Respect model names/relpaths (#199). Committed by wpbonelli on 2025-03-12.
+* [refactor(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/8887835c694d5f8c1042a0fed9ae781d2495c69f): Distinguish source repo via prefix (#202). Committed by wpbonelli on 2025-04-01.
+* [refactor(registry)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/016190defa046c00182421965fe8ea56b1cfd95e): Add mf6 prefix to mf6 model names (#207). Committed by wpbonelli on 2025-04-18.
+* [refactor(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/2370d59bf6ee5a1abef3e7b0249c220461d3a898): Introduce model registry classes (#210). Committed by wpbonelli on 2025-05-01.
+* [refactor(LocalRegistry)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/457ace256fa2a355bc9f81cb6ba706ffb167a06f): Support multiple model directory paths (#212). Committed by wpbonelli on 2025-05-02.
+* [refactor(LocalRegistry)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/087b063cb9b0c468412d9b4a70ce891155472d63): Back to the old indexing pattern (#214). Committed by wpbonelli on 2025-05-02.
+* [refactor(LocalRegistry)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/48cbf16236c71ff9ca1bab667d92e40ebf06442d): Rework index method prefix parameters (#215). Committed by wpbonelli on 2025-05-03.
+
 ### Version 1.6.0
 
 #### New features
