@@ -32,6 +32,10 @@ def set_dir(path: PathLike):
         print(f"Returned to previous directory: {origin}")
 
 
+# alias like https://github.com/Deltares/imod-python/blob/ab2af5e20fd9996b1821c3356166a834945eef5e/imod/util/context.py#L26
+cd = set_dir
+
+
 class add_sys_path:
     """
     Context manager to add temporarily to the system path.
