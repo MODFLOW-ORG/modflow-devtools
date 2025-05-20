@@ -14,7 +14,7 @@ from modflow_devtools.markers import (
     require_program,
     require_python,
     requires_exe,
-    requires_pkg,
+    requires_package,
     requires_platform,
     requires_program,
     requires_python,
@@ -40,7 +40,7 @@ def test_require_exe_multiple():
     assert all(which(exe) for exe in exes)
 
 
-@requires_pkg(pkg)
+@requires_package(pkg)
 def test_requires_pkg():
     import numpy
 
@@ -48,7 +48,7 @@ def test_requires_pkg():
     require_package(pkg)
 
 
-@requires_pkg(pkg, "pluggy")
+@requires_package(pkg, "pluggy")
 def test_requires_pkg_multiple():
     import pluggy
     import pytest
@@ -79,7 +79,7 @@ def test_requires_python(version):
 
 
 @no_parallel
-@requires_pkg("pytest-xdist", name_map={"pytest-xdist": "xdist"})
+@requires_package("pytest-xdist", name_map={"pytest-xdist": "xdist"})
 def test_no_parallel(worker_id):
     """
     Should only run with xdist disabled, in which case:

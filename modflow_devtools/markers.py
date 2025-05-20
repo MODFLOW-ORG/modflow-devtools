@@ -47,7 +47,7 @@ def requires_python(version, bound="lower"):
         )
 
 
-def requires_pkg(*pkgs, name_map: dict[str, str] | None = None):
+def requires_package(*pkgs, name_map: dict[str, str] | None = None):
     missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True, name_map=name_map)}
     return pytest.mark.skipif(
         missing,
@@ -104,9 +104,9 @@ require_exe = requires_exe
 require_program = requires_exe
 requires_program = requires_exe
 require_python = requires_python
-require_pkg = requires_pkg
-require_package = requires_pkg
-requires_package = requires_pkg
+require_pkg = requires_package
+requires_pkg = requires_package
+require_package = requires_package
 require_platform = requires_platform
 exclude_platform = excludes_platform
 require_branch = requires_branch
