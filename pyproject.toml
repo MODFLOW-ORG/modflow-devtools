@@ -81,6 +81,9 @@ models = [
     "tomli",
     "tomli-w"
 ]
+codec = [
+    "lark"
+]
 dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
 
 [dependency-groups]
@@ -126,6 +129,9 @@ models = [
     "tomli",
     "tomli-w"
 ]
+codec = [
+    "lark"
+]
 dev = [
     {include-group = "build"},
     {include-group = "lint"},
@@ -133,6 +139,7 @@ dev = [
     {include-group = "docs"},
     {include-group = "dfn"},
     {include-group = "models"},
+    {include-group = "codec"},
 ]
 
 [project.urls]
