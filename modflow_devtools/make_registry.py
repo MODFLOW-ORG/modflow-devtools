@@ -80,10 +80,10 @@ if __name__ == "__main__":
             print("No path provided, creating default registry.")
         for options in _DEFAULT_REGISTRY_OPTIONS:
             if args.verbose:
-                print(f"Adding {options.path} to the registry.")
+                print(f"Adding {options['path']} to the registry.")
             models.DEFAULT_REGISTRY.index(
-                path=options["path"],
-                url=options["url"],
-                prefix=options["model-name-prefix"],
-                namefile=options.get("namefile", "mfsim.nam"),
+                path=options["path"],  # type: ignore
+                url=options["url"],  # type: ignore
+                prefix=options["model-name-prefix"],  # type: ignore
+                namefile=options.get("namefile", "mfsim.nam"),  # type: ignore
             )
