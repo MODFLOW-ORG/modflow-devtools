@@ -40,6 +40,6 @@ if __name__ == "__main__":
     models.DEFAULT_REGISTRY.index(
         path=args.path,
         url=args.url,
-        prefix=args.prefix,
+        prefix=args.model_name_prefix,
         namefile=args.namefile,
     )

@@ -5,6 +5,10 @@ ex-gwe-barends = [
     "mf6/example/ex-gwe-barends/mf6gwf",
     "mf6/example/ex-gwe-barends/mf6gwe",
 ]
+ex-gwe-bhe = [
+    "mf6/example/ex-gwe-bhe/mf6gwf",
+    "mf6/example/ex-gwe-bhe/mf6gwe",
+]
 ex-gwe-danckwerts = [
     "mf6/example/ex-gwe-danckwerts",
 ]
@@ -55,20 +59,20 @@ ex-gwf-csub-p02b = [
     "mf6/example/ex-gwf-csub-p02b",
 ]
 ex-gwf-csub-p02c = [
-    "mf6/example/ex-gwf-csub-p02c/hb-005",
-    "mf6/example/ex-gwf-csub-p02c/es-010",
     "mf6/example/ex-gwf-csub-p02c/hb-010",
-    "mf6/example/ex-gwf-csub-p02c/hb-100",
-    "mf6/example/ex-gwf-csub-p02c/es-050",
-    "mf6/example/ex-gwf-csub-p02c/es-005",
-    "mf6/example/ex-gwf-csub-p02c/hb-050",
-    "mf6/example/ex-gwf-csub-p02c/es-001",
-    "mf6/example/ex-gwf-csub-p02c/hb-001",
-    "mf6/example/ex-gwf-csub-p02c/hb-020",
-    "mf6/example/ex-gwf-csub-p02c/hb-002",
-    "mf6/example/ex-gwf-csub-p02c/es-002",
-    "mf6/example/ex-gwf-csub-p02c/es-020",
     "mf6/example/ex-gwf-csub-p02c/es-100",
+    "mf6/example/ex-gwf-csub-p02c/hb-005",
+    "mf6/example/ex-gwf-csub-p02c/es-050",
+    "mf6/example/ex-gwf-csub-p02c/hb-002",
+    "mf6/example/ex-gwf-csub-p02c/es-010",
+    "mf6/example/ex-gwf-csub-p02c/es-020",
+    "mf6/example/ex-gwf-csub-p02c/hb-100",
+    "mf6/example/ex-gwf-csub-p02c/es-005",
+    "mf6/example/ex-gwf-csub-p02c/hb-001",
+    "mf6/example/ex-gwf-csub-p02c/es-001",
+    "mf6/example/ex-gwf-csub-p02c/hb-020",
+    "mf6/example/ex-gwf-csub-p02c/hb-050",
+    "mf6/example/ex-gwf-csub-p02c/es-002",
 ]
 ex-gwf-csub-p03a = [
     "mf6/example/ex-gwf-csub-p03a",
@@ -225,6 +229,7 @@ ex-gwt-henry-b = [
 ex-gwt-keating = [
     "mf6/example/ex-gwt-keating/mf6gwf",
     "mf6/example/ex-gwt-keating/mf6gwt",
+    "mf6/example/ex-gwt-keating/mf6prt",
 ]
 ex-gwt-moc3d-p01a = [
     "mf6/example/ex-gwt-moc3d-p01a/mf6gwf",

@@ -58,76 +58,145 @@ url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/curren
 ["ex-gwe-ates/mfsim.nam"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.adv"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.cnd"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.ctp"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.dis"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.est"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.fmi"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.ic"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
 ["ex-gwe-barends/mf6gwe/ex-gwe-barends.ims"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.nam"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.oc"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwe/ex-gwe-barends.ssm"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwe-barends/mf6gwe/ex-gwe-barends.tdis"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
+["ex-gwe-barends/mf6gwe/gwe-barends.adv"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.cnd"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.ctp"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.dis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.est"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.fmi"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.ic"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.oc"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwe/gwe-barends.ssm"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
 ["ex-gwe-barends/mf6gwe/mfsim.nam"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.dis"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.ic"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwe-barends/mf6gwf/ex-gwe-barends.ims"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.nam"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.npf"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.oc"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.sto"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-
 ["ex-gwe-barends/mf6gwf/ex-gwe-barends.tdis"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.wel-left"]
+["ex-gwe-barends/mf6gwf/gwf-barends.dis"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
-["ex-gwe-barends/mf6gwf/ex-gwe-barends.wel-right"]
+["ex-gwe-barends/mf6gwf/gwf-barends.ic"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.npf"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.oc"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.sto"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.wel-left"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-barends/mf6gwf/gwf-barends.wel-right"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwe-barends/mf6gwf/mfsim.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/ex-gwe-bhe.ims"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/ex-gwe-bhe.tdis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.adv"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.cnd"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.dis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.esl"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.est"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.fmi"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.ic"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.oc"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/gwe-bhe.ssm"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwe/mfsim.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/ex-gwe-bhe.ims"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/ex-gwe-bhe.tdis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.chd"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.dis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.ic"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.npf"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.oc"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/gwf-bhe.sto"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwe-bhe/mf6gwf/mfsim.nam"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwe-danckwerts/ex-gwe-danckwerts.tdis"]
@@ -3752,6 +3821,33 @@ url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/curren
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwt-keating/mf6gwt/trans.tdis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/mfsim.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.dis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.ems"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.fmi"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.mip"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.nam"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.oc"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track.tdis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+
+["ex-gwt-keating/mf6prt/track_1a.prp"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
 
 ["ex-gwt-moc3d-p01a/mf6gwf/flow.chd"]
