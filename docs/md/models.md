@@ -106,13 +106,13 @@ The script can be executed with `python -m modflow_devtools.make_registry`. It a
 - `--model-name-prefix`: Optionally specify a string to prepend to model names. Useful for avoiding collisions.
 - `--namefile`: Optionally specify the glob pattern for namefiles. By default, only `mfsim.nam` (MF6) are found.
 
-For example, to create a registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
+For example, to create the "default" registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
 
 ```shell
-python -m modflow_devtools.make_registry ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
-python -m modflow_devtools.make_registry ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
-python -m modflow_devtools.make_registry ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
-python -m modflow_devtools.make_registry ../modflow6-testmodels/mf5to6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
+python -m modflow_devtools.make_registry -p ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
+python -m modflow_devtools.make_registry -p ../modflow6-testmodels/mf6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
+python -m modflow_devtools.make_registry -p ../modflow6-largetestmodels --append --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
+python -m modflow_devtools.make_registry -p ../modflow6-testmodels/mf5to6 --append --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
 ```
 
-Above we adopt a convention of prefixing model names with the model type (i.e. the program used to run it), e.g. "mf6/" or "mf2005/". Relative path parts below the initial prefix reflect the model's relative path within its repository.
+As a shortcut to create the default registry, the script can be run with no arguments: `python -m modflow_devtools.make_registry`.

@@ -30,6 +30,12 @@ def _drop_none_or_empty(path, key, value):
     return True
 
 
+def _model_sort_key(k) -> int:
+    if "gwf" in k:
+        return 0
+    return 1
+
+
 def _sha256(path: Path) -> str:
     """
     Compute the SHA256 hash of the given file.
@@ -413,6 +419,9 @@ class PoochRegistry(ModelRegistry):
                     hash = _sha256(p)
                 files[name] = {"hash": hash, "url": url_}
                 models[model_name].append(name)
+
+        for example_name in examples.keys():
+            examples[example_name] = sorted(examples[example_name], key=_model_sort_key)
 
         with self._registry_file_path.open("ab+") as registry_file:
             tomli_w.dump(

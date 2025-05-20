@@ -1,19 +1,46 @@
 import argparse
+from pathlib import Path
 
 import modflow_devtools.models as models
 
+_REPOS_PATH = Path(__file__).parents[2]
+_DEFAULT_REGISTRY_OPTIONS = [
+    {
+        "path": _REPOS_PATH / "modflow6-examples" / "examples",
+        "url": "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip",
+        "model-name-prefix": "mf6/example",
+    },
+    {
+        "path": _REPOS_PATH / "modflow6-testmodels" / "mf6",
+        "url": "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6",
+        "model-name-prefix": "mf6/test",
+    },
+    {
+        "path": _REPOS_PATH / "modflow6-largetestmodels",
+        "url": "https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master",
+        "model-name-prefix": "mf6/large",
+    },
+    {
+        "path": _REPOS_PATH / "modflow6-testmodels" / "mf5to6",
+        "url": "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6",
+        "model-name-prefix": "mf2005",
+        "namefile": "*.nam",
+    },
+]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Make a registry of models.")
-    parser.add_argument("path")
     parser.add_argument(
-        "--append",
-        "-a",
-        action="store_true",
-        help="Append instead of overwriting.",
+        "--path",
+        "-p",
+        required=False,
+        default=None,
+        type=str,
+        help="Path to the model directory.",
     )
     parser.add_argument(
         "--model-name-prefix",
-        "-p",
         type=str,
         help="Prefix for model names.",
         default="",
@@ -32,14 +59,31 @@ if __name__ == "__main__":
         help="Namefile pattern to look for in the model directories.",
         default="mfsim.nam",
     )
-    args = parser.parse_args()
-    if not args.append:
-        models.DEFAULT_REGISTRY = models.PoochRegistry(
-            base_url=args.url, env=models._DEFAULT_ENV
-        )
-    models.DEFAULT_REGISTRY.index(
-        path=args.path,
-        url=args.url,
-        prefix=args.model_name_prefix,
-        namefile=args.namefile,
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Show verbose output.",
     )
+    args = parser.parse_args()
+    if args.path:
+        if args.verbose:
+            print(f"Adding {args.path} to the registry.")
+        models.DEFAULT_REGISTRY.index(
+            path=args.path,
+            url=args.url,
+            prefix=args.model_name_prefix,
+            namefile=args.namefile,
+        )
+    else:
+        if args.verbose:
+            print("No path provided, creating default registry.")
+        for options in _DEFAULT_REGISTRY_OPTIONS:
+            if args.verbose:
+                print(f"Adding {options.path} to the registry.")
+            models.DEFAULT_REGISTRY.index(
+                path=options["path"],
+                url=options["url"],
+                prefix=options["model-name-prefix"],
+                namefile=options.get("namefile", "mfsim.nam"),
+            )
