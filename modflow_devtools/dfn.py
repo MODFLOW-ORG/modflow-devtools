@@ -90,16 +90,22 @@ def _field_attr_sort_key(item) -> int:
     return 8
 
 
-_SCALAR_TYPES = {
+FormatVersion = Literal[1, 2]
+"""DFN format version number."""
+
+
+FieldType = Literal[
     "keyword",
     "integer",
     "double precision",
     "string",
-}
+    "record",
+    "recarray",
+    "keystring",
+]
 
 
-DfnFmtVersion = Literal[1, 2]
-"""DFN format version number."""
+_SCALAR_TYPES = FieldType.__args__[:4]
 
 
 Dfns = dict[str, "Dfn"]
@@ -110,7 +116,7 @@ class Field(TypedDict):
     """A field specification."""
 
     name: str
-    type: str
+    type: FieldType
     shape: Any | None = None
     block: str | None = None
     default: Any | None = None
@@ -301,7 +307,7 @@ class Dfn(TypedDict):
                     fkeys[_name] = ref
 
                 def _item() -> Field:
-                    """Load a list's item."""
+                    """Load list item."""
 
                     item_names = _type.split()[1:]
                     item_types = [
@@ -342,7 +348,9 @@ class Dfn(TypedDict):
                     first = next(iter(fields.values()))
                     single = len(fields) == 1
                     item_type = (
-                        "union" if single and "keystring" in first["type"] else "record"
+                        "keystring"
+                        if single and "keystring" in first["type"]
+                        else "record"
                     )
                     return Field(
                         name=first["name"] if single else _name,
@@ -356,7 +364,7 @@ class Dfn(TypedDict):
                     )
 
                 def _choices() -> Fields:
-                    """Load a union's choices."""
+                    """Load keystring (union) choices."""
                     names = _type.split()[1:]
                     return {
                         v["name"]: _convert_field(v)
@@ -365,7 +373,7 @@ class Dfn(TypedDict):
                     }
 
                 def _fields() -> Fields:
-                    """Load a record's fields."""
+                    """Load record fields."""
                     names = _type.split()[1:]
                     fields = {}
                     for name in names:
@@ -390,11 +398,11 @@ class Dfn(TypedDict):
 
                 if _type.startswith("recarray"):
                     var_["item"] = _item()
-                    var_["type"] = "list"
+                    var_["type"] = "recarray"
 
                 elif _type.startswith("keystring"):
                     var_["choices"] = _choices()
-                    var_["type"] = "union"
+                    var_["type"] = "keystring"
 
                 elif _type.startswith("record"):
                     var_["fields"] = _fields()
@@ -548,7 +556,7 @@ class Dfn(TypedDict):
         cls,
         f,
         name: str | None = None,
-        version: DfnFmtVersion = 1,
+        version: FormatVersion = 1,
         **kwargs,
     ) -> "Dfn":
         """
@@ -608,7 +616,7 @@ class Dfn(TypedDict):
         return dfns
 
     @staticmethod
-    def load_all(dfndir: PathLike, version: DfnFmtVersion = 1) -> Dfns:
+    def load_all(dfndir: PathLike, version: FormatVersion = 1) -> Dfns:
         """Load all component definitions from the given directory."""
         if version == 1:
             return Dfn._load_all_v1(dfndir)
