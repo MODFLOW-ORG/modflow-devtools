@@ -1,6 +1,8 @@
 """
-DFN tools. Includes a legacy parser as well as TOML,
-and a utility to fetch DFNs from the MF6 repository.
+MODFLOW 6 definition file tools. Includes types for field
+and component specification, a parser for the original
+DFN format as well as for TOML definition files, and
+a function to fetch DFNs from the MF6 repository.
 """
 
 import shutil
@@ -24,7 +26,7 @@ from boltons.iterutils import remap
 
 from modflow_devtools.download import download_and_unzip
 
-# TODO: use dataclasses instead of typed dicts, static
+# TODO: use dataclasses instead of typed dicts? static
 # methods on typed dicts are evidently not allowed
 # mypy: ignore-errors
 
@@ -52,9 +54,9 @@ def _try_parse_bool(value: Any) -> Any:
     return value
 
 
-def _var_attr_sort_key(item) -> int:
+def _field_attr_sort_key(item) -> int:
     """
-    Sort key for input variables. The order is:
+    Sort key for input field attributes. The order is:
     -1. block
     0. name
     1. type
@@ -88,7 +90,7 @@ def _var_attr_sort_key(item) -> int:
     return 8
 
 
-_MF6_SCALARS = {
+_SCALAR_TYPES = {
     "keyword",
     "integer",
     "double precision",
@@ -101,18 +103,18 @@ DfnFmtVersion = Literal[1, 2]
 
 
 Dfns = dict[str, "Dfn"]
-Vars = dict[str, "Var"]
+Fields = dict[str, "Field"]
 
 
-class Var(TypedDict):
-    """A variable specification."""
+class Field(TypedDict):
+    """A field specification."""
 
     name: str
     type: str
     shape: Any | None = None
     block: str | None = None
     default: Any | None = None
-    children: Optional["Vars"] = None
+    children: Optional["Fields"] = None
     description: str | None = None
 
 
@@ -156,7 +158,18 @@ class Dfn(TypedDict):
     """
     MODFLOW 6 input definition. An input definition
     specifies a component in an MF6 simulation, e.g.
-    a model or package, containing input variables.
+    a model or package. A component contains input
+    variables, and may contain other metadata such
+    as foreign key references to other components
+    (i.e. subpackages), package-specific metadata
+    (e.g. for solutions), advanced package status,
+    and whether the component is a multi-package.
+
+    An input definition must have a name. Other top-
+    level keys are blocks, which must be mappings of
+    `str` to `Field`, and metadata, of which only a
+    limited set of keys are allowed. Block names and
+    metadata keys may not overlap.
     """
 
     name: str
@@ -168,7 +181,7 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
-        var = {}
+        field = {}
         flat = []
         meta = []
         common = common or {}
@@ -198,9 +211,9 @@ class Dfn(TypedDict):
             # is nonempty, we've reached the end of its
             # block of attributes
             if not any(line):
-                if any(var):
-                    flat.append((var["name"], var))
-                    var = {}
+                if any(field):
+                    flat.append((field["name"], field))
+                    field = {}
                 continue
 
             # split the attribute's key and value and
@@ -208,34 +221,34 @@ class Dfn(TypedDict):
             key, _, value = line.partition(" ")
             if key == "default_value":
                 key = "default"
-            var[key] = value
+            field[key] = value
 
             # make substitutions from common variable definitions,
             # remove backslashes, TODO: generate/insert citations.
-            descr = var.get("description", None)
+            descr = field.get("description", None)
             if descr:
                 descr = descr.replace("\\", "").replace("``", "'").replace("''", "'")
                 _, replace, tail = descr.strip().partition("REPLACE")
                 if replace:
                     key, _, subs = tail.strip().partition(" ")
                     subs = literal_eval(subs)
-                    cvar = common.get(key, None)
-                    if cvar is None:
+                    cmmn = common.get(key, None)
+                    if cmmn is None:
                         warn(
                             "Can't substitute description text, "
                             f"common variable not found: {key}"
                         )
                     else:
-                        descr = cvar.get("description", "")
+                        descr = cmmn.get("description", "")
                         if any(subs):
                             descr = descr.replace("\\", "").replace(
                                 "{#1}", subs["{#1}"]
                             )
-                var["description"] = descr
+                field["description"] = descr
 
         # add the final parameter
-        if any(var):
-            flat.append((var["name"], var))
+        if any(field):
+            flat.append((field["name"], field))
 
         # the point of the OMD is to losslessly handle duplicate variable names
         return OMD(flat), meta
@@ -250,44 +263,44 @@ class Dfn(TypedDict):
         refs = kwargs.pop("refs", {})
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
-        def _load_variable(var: dict[str, Any]) -> Var:
+        def _convert_field(var: dict[str, Any]) -> Field:
             """
-            Convert an input variable from its representation in a
-            legacy definition file to a structured form.
+            Convert an input field specification from its representation
+            in a v1 format definition file to the v2 (structured) format.
 
             Notes
             -----
-            If a variable does not have a `default` attribute, it will
+            If the field does not have a `default` attribute, it will
             default to `False` if it is a keyword, otherwise to `None`.
 
-            A filepath variable whose name functions as a foreign key
+            A filepath field whose name functions as a foreign key
             for a separate context will be given a reference to it.
             """
 
-            def _load(var) -> Var:
-                var = var.copy()
+            def _load(field) -> Field:
+                field = field.copy()
 
                 # parse booleans from strings. everything else can
                 # stay a string except default values, which we'll
                 # try to parse as arbitrary literals below, and at
                 # some point types, once we introduce type hinting
-                var = {k: _try_parse_bool(v) for k, v in var.items()}
+                field = {k: _try_parse_bool(v) for k, v in field.items()}
 
-                _name = var.pop("name")
-                _type = var.pop("type", None)
-                shape = var.pop("shape", None)
+                _name = field.pop("name")
+                _type = field.pop("type", None)
+                shape = field.pop("shape", None)
                 shape = None if shape == "" else shape
-                block = var.pop("block", None)
-                default = var.pop("default", None)
+                block = field.pop("block", None)
+                default = field.pop("default", None)
                 default = _try_literal_eval(default) if _type != "string" else default
-                description = var.pop("description", "")
+                description = field.pop("description", "")
                 ref = refs.get(_name, None)
 
-                # if var is a foreign key, register it
+                # if the field is a foreign key, register it
                 if ref:
                     fkeys[_name] = ref
 
-                def _item() -> Var:
+                def _item() -> Field:
                     """Load a list's item."""
 
                     item_names = _type.split()[1:]
@@ -305,11 +318,11 @@ class Dfn(TypedDict):
                         item_types[0].startswith("record")
                         or item_types[0].startswith("keystring")
                     ):
-                        return _load_variable(next(iter(flat.getlist(item_names[0]))))
+                        return _convert_field(next(iter(flat.getlist(item_names[0]))))
 
                     # implicit simple record (no children)
-                    if all(t in _MF6_SCALARS for t in item_types):
-                        return Var(
+                    if all(t in _SCALAR_TYPES for t in item_types):
+                        return Field(
                             name=_name,
                             type="record",
                             block=block,
@@ -317,12 +330,12 @@ class Dfn(TypedDict):
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
-                            **var,
+                            **field,
                         )
 
                     # implicit complex record (has children)
                     fields = {
-                        v["name"]: _load_variable(v)
+                        v["name"]: _convert_field(v)
                         for v in flat.values(multi=True)
                         if v["name"] in item_names and v.get("in_record", False)
                     }
@@ -331,7 +344,7 @@ class Dfn(TypedDict):
                     item_type = (
                         "union" if single and "keystring" in first["type"] else "record"
                     )
-                    return Var(
+                    return Field(
                         name=first["name"] if single else _name,
                         type=item_type,
                         block=block,
@@ -339,19 +352,19 @@ class Dfn(TypedDict):
                         description=description.replace(
                             "is the list of", f"is the {item_type} of"
                         ),
-                        **var,
+                        **field,
                     )
 
-                def _choices() -> Vars:
+                def _choices() -> Fields:
                     """Load a union's choices."""
                     names = _type.split()[1:]
                     return {
-                        v["name"]: _load_variable(v)
+                        v["name"]: _convert_field(v)
                         for v in flat.values(multi=True)
                         if v["name"] in names and v.get("in_record", False)
                     }
 
-                def _fields() -> Vars:
+                def _fields() -> Fields:
                     """Load a record's fields."""
                     names = _type.split()[1:]
                     fields = {}
@@ -366,13 +379,13 @@ class Dfn(TypedDict):
                         fields[name] = v
                     return fields
 
-                var_ = Var(
+                var_ = Field(
                     name=_name,
                     shape=shape,
                     block=block,
                     description=description,
                     default=default,
-                    **var,
+                    **field,
                 )
 
                 if _type.startswith("recarray"):
@@ -390,7 +403,7 @@ class Dfn(TypedDict):
                 # for now, we can tell a var is an array if its type
                 # is scalar and it has a shape. once we have proper
                 # typing, this can be read off the type itself.
-                elif shape is not None and _type not in _MF6_SCALARS:
+                elif shape is not None and _type not in _SCALAR_TYPES:
                     raise TypeError(f"Unsupported array type: {_type}")
 
                 else:
@@ -398,7 +411,7 @@ class Dfn(TypedDict):
 
                 # if var is a foreign key, return subpkg var instead
                 if ref:
-                    return Var(
+                    return Field(
                         name=ref["val"],
                         type=_type,
                         shape=shape,
@@ -412,25 +425,25 @@ class Dfn(TypedDict):
                         ),
                         default=None,
                         ref=ref,
-                        **var,
+                        **field,
                     )
 
                 return var_
 
-            return dict(sorted(_load(var).items(), key=_var_attr_sort_key))
+            return dict(sorted(_load(var).items(), key=_field_attr_sort_key))
 
-        # load top-level variables. any nested
-        # variables will be loaded recursively
-        vars_ = {
-            var["name"]: _load_variable(var)
-            for var in flat.values(multi=True)
-            if not var.get("in_record", False)
+        # load top-level fields. any nested
+        # fields will be loaded recursively
+        fields = {
+            field["name"]: _convert_field(field)
+            for field in flat.values(multi=True)
+            if not field.get("in_record", False)
         }
 
         # group variables by block
         blocks = {
             block_name: {v["name"]: v for v in block}
-            for block_name, block in groupby(vars_.values(), lambda v: v["block"])
+            for block_name, block in groupby(fields.values(), lambda v: v["block"])
         }
 
         # mark transient blocks
@@ -490,7 +503,7 @@ class Dfn(TypedDict):
                 if not line:
                     return None
                 _, key, abbr, param, val = line.split()
-                matches = [v for v in vars_.values() if v["name"] == val]
+                matches = [v for v in fields.values() if v["name"] == val]
                 if not any(matches):
                     descr = None
                 else:
