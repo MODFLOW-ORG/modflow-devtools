@@ -105,6 +105,14 @@ FieldType = Literal[
 ]
 
 
+Reader = Literal[
+    "urword",
+    "u1ddbl",
+    "u2ddbl",
+    "readarray",
+]
+
+
 _SCALAR_TYPES = FieldType.__args__[:4]
 
 
@@ -122,6 +130,7 @@ class Field(TypedDict):
     default: Any | None = None
     children: Optional["Fields"] = None
     description: str | None = None
+    reader: Reader = "urword"
 
 
 class Ref(TypedDict):
@@ -300,6 +309,7 @@ class Dfn(TypedDict):
                 default = field.pop("default", None)
                 default = _try_literal_eval(default) if _type != "string" else default
                 description = field.pop("description", "")
+                reader = field.pop("reader", "urword")
                 ref = refs.get(_name, None)
 
                 # if the field is a foreign key, register it
@@ -336,6 +346,7 @@ class Dfn(TypedDict):
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
+                            reader=reader,
                             **field,
                         )
 
@@ -360,6 +371,7 @@ class Dfn(TypedDict):
                         description=description.replace(
                             "is the list of", f"is the {item_type} of"
                         ),
+                        reader=reader,
                         **field,
                     )
 
@@ -393,6 +405,7 @@ class Dfn(TypedDict):
                     block=block,
                     description=description,
                     default=default,
+                    reader=reader,
                     **field,
                 )
 
@@ -433,6 +446,7 @@ class Dfn(TypedDict):
                         ),
                         default=None,
                         ref=ref,
+                        reader=reader,
                         **field,
                     )
 
