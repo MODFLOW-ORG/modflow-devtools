@@ -1,4 +1,4 @@
-# - support mf2005 models in modflow6-testmodels repo
+# TODO
 # - switch modflow6-testmodels and -largetestmodels to
 #   fetch zip of the repo instead of individual files?
 
@@ -88,16 +88,12 @@ class ModelRegistry(ABC):
 
 class LocalRegistry(ModelRegistry):
     """
-    A registry of models in a local directory.
+    A registry of models in one or more local directories.
 
     *Not* persistent &mdash; lives only in memory, unlike `PoochRegistry`.
 
-    The registry is loaded eagerly on initialization by recursively scanning
-    the given directory for models (located by the presence of a namefile)
-    and corresponding input files.
-
-    If model input files change on disk, you can force a reload by calling
-    `load()`. The model folder may not be changed after registry creation.
+    Indexing a directory recursively scans it for models (located by the
+    presence of a namefile) and registers corresponding input files.
     """
 
     exclude: ClassVar = [".DS_Store", "compare"]
@@ -213,17 +209,17 @@ class LocalRegistry(ModelRegistry):
 class PoochRegistry(ModelRegistry):
     """
     A registry of models living in one or more GitHub repositories, accessible via
-    URLs. The registry uses Pooch to fetch models from the remote repos if needed.
+    URLs. The registry uses Pooch to fetch models from the remote(s) where needed.
 
-    On import, the registry is loaded from a database included as a module resource.
-    This consists of TOML files containing file information (as expected by Pooch),
+    On import, the registry is loaded from a database distributed with the package.
+    This database consists of TOML files containing file info as expected by Pooch,
     a map grouping files by model name, and a map grouping model names by example.
     Creating this database is a developer task. It should be checked into version
     control and updated whenever models are added to, removed from, or edited in
     the repositories referenced by the registry.
 
-    Since the registry must change whenever the remote branch does, it should be
-    aimed only at stable branches.
+    **Note**: since the registry must change whenever the remote branch does, it
+    should be aimed only at stable branches.
     """
 
     anchor: ClassVar = f"{modflow_devtools.__name__}.registry"
