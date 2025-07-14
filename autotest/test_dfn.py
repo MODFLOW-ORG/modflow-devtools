@@ -30,7 +30,7 @@ def pytest_generate_tests(metafunc):
         convert(DFN_DIR, TOML_DIR)
         dfn_paths = list(DFN_DIR.glob("*.dfn"))
         assert all(
-            (TOML_DIR / f"{dfn.stem}.toml").is_file()
+            (TOML_DIR / f"{dfn.stem.replace('-nam', '')}.toml").is_file()
             for dfn in dfn_paths
             if "common" not in dfn.stem
         )
