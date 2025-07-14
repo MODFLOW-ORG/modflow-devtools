@@ -190,6 +190,7 @@ class Dfn(TypedDict):
     name: str
     advanced: bool = False
     multi: bool = False
+    parent: str | None = None
     ref: Ref | None = None
     sln: Sln | None = None
     fkeys: Dfns | None = None
@@ -638,6 +639,41 @@ class Dfn(TypedDict):
             return Dfn._load_all_v2(dfndir)
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
+
+    @staticmethod
+    def load_tree(dfndir: PathLike, version: FormatVersion = 2) -> dict:
+        """Load all definitions and return as hierarchical tree."""
+        dfns = Dfn.load_all(dfndir, version)
+        return infer_tree(dfns)
+
+
+def infer_tree(dfns: dict[str, Dfn]) -> dict:
+    """Infer the component hierarchy from definitions.
+
+    Enforces single root requirement - must be exactly one component
+    with no parent, and it must be named 'sim'.
+    """
+    roots = [name for name, dfn in dfns.items() if not dfn.get("parent")]
+
+    if len(roots) != 1:
+        raise ValueError(
+            f"Expected exactly one root component, found {len(roots)}: {roots}"
+        )
+
+    root_name = roots[0]
+    if root_name != "sim":
+        raise ValueError(f"Root component must be named 'sim', found '{root_name}'")
+
+    def add_children(node_name: str) -> dict:
+        node = dfns[node_name].copy()
+        children = [
+            name for name, dfn in dfns.items() if dfn.get("parent") == node_name
+        ]
+        for child in children:
+            node[child] = add_children(child)
+        return node
+
+    return {root_name: add_children(root_name)}
 
 
 def get_dfns(
