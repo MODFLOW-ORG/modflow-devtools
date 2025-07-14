@@ -17,7 +17,47 @@ def convert(indir: PathLike, outdir: PathLike):
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
     for dfn in Dfn.load_all(indir).values():
-        with Path.open(outdir / f"{dfn['name']}.toml", "wb") as f:
+        dfn_name = dfn["name"]
+
+        # Determine new filename and parent relationship
+        if dfn_name == "sim-nam":
+            filename = "sim.toml"
+            dfn = dfn.copy()
+            dfn["name"] = "sim"
+            # No parent - this is root
+        elif dfn_name.endswith("-nam"):
+            # Model name files: gwf-nam -> gwf.toml, parent = "sim"
+            model_type = dfn_name[:-4]  # Remove "-nam"
+            filename = f"{model_type}.toml"
+            dfn = dfn.copy()
+            dfn["name"] = model_type
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("exg-"):
+            # Exchanges: parent = "sim"
+            filename = f"{dfn_name}.toml"
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("sln-"):
+            # Solutions: parent = "sim"
+            filename = f"{dfn_name}.toml"
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("utl-"):
+            # Utilities: parent = "sim"
+            filename = f"{dfn_name}.toml"
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif "-" in dfn_name:
+            # Packages: gwf-dis -> parent = "gwf"
+            model_type = dfn_name.split("-")[0]
+            filename = f"{dfn_name}.toml"
+            dfn = dfn.copy()
+            dfn["parent"] = model_type
+        else:
+            # Default case
+            filename = f"{dfn_name}.toml"
+
+        with Path.open(outdir / filename, "wb") as f:
 
             def drop_none_or_empty(path, key, value):
                 if value is None or value == "" or value == [] or value == {}:
