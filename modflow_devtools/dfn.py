@@ -76,7 +76,7 @@ def field_attr_sort_key(item) -> int:
     return 8
 
 
-def block_sort_key(item: tuple[str, dict]) -> int:
+def block_sort_key(item) -> int:
     k, _ = item
     if k == "options":
         return 0
@@ -115,7 +115,7 @@ Reader = Literal[
 ]
 
 
-_SCALAR_TYPES = FieldType.__args__[:4]
+_SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
 
 
 Dfns = dict[str, "Dfn"]
@@ -131,7 +131,7 @@ def get_blocks(dfn: "Dfn") -> Blocks:
     """
     return dict(
         sorted(
-            {k: v for k, v in dfn.items() if k not in Dfn.__annotations__}.items(),
+            {k: v for k, v in dfn.items() if k not in Dfn.__annotations__}.items(),  # type: ignore
             key=block_sort_key,
         )
     )
@@ -142,12 +142,12 @@ class Field(TypedDict):
 
     name: str
     type: FieldType
-    shape: Any | None = None
-    block: str | None = None
-    default: Any | None = None
-    children: Optional["Fields"] = None
-    description: str | None = None
-    reader: Reader = "urword"
+    shape: Any | None
+    block: str | None
+    default: Any | None
+    children: Optional["Fields"]
+    description: str | None
+    reader: Reader
 
 
 class Ref(TypedDict):
@@ -205,14 +205,14 @@ class Dfn(TypedDict):
     """
 
     name: str
-    advanced: bool = False
-    multi: bool = False
-    parent: str | None = None
-    ref: Ref | None = None
-    sln: Sln | None = None
-    fkeys: Dfns | None = None
+    advanced: bool
+    multi: bool
+    parent: str | None
+    ref: Ref | None
+    sln: Sln | None
+    fkeys: Dfns | None
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
         field = {}
         flat = []
@@ -286,7 +286,7 @@ class Dfn(TypedDict):
         # the point of the OMD is to losslessly handle duplicate variable names
         return OMD(flat), meta
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def _load_v1(cls, f, name, **kwargs) -> "Dfn":
         """
         Temporary load routine for the v1 DFN format.
@@ -618,14 +618,14 @@ class Dfn(TypedDict):
             **blocks,
         )
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def _load_v2(cls, f, name) -> "Dfn":
         data = tomli.load(f)
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
         return cls(**data)
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def load(
         cls,
         f,
@@ -644,7 +644,7 @@ class Dfn(TypedDict):
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def _load_all_v1(dfndir: PathLike) -> Dfns:
         paths: list[Path] = [
             p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
@@ -676,7 +676,7 @@ class Dfn(TypedDict):
 
         return dfns
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def _load_all_v2(dfndir: PathLike) -> Dfns:
         paths: list[Path] = [
             p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
@@ -689,7 +689,7 @@ class Dfn(TypedDict):
 
         return dfns
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def load_all(dfndir: PathLike, version: FormatVersion = 1) -> Dfns:
         """Load all component definitions from the given directory."""
         if version == 1:
@@ -699,7 +699,7 @@ class Dfn(TypedDict):
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def load_tree(dfndir: PathLike, version: FormatVersion = 2) -> dict:
         """Load all definitions and return as hierarchical tree."""
         dfns = Dfn.load_all(dfndir, version)
@@ -723,8 +723,8 @@ def infer_tree(dfns: dict[str, Dfn]) -> dict:
     if root_name != "sim":
         raise ValueError(f"Root component must be named 'sim', found '{root_name}'")
 
-    def add_children(node_name: str) -> dict:
-        node = dfns[node_name].copy()
+    def add_children(node_name: str) -> dict[str, Any]:
+        node = dict(dfns[node_name])
         children = [
             name for name, dfn in dfns.items() if dfn.get("parent") == node_name
         ]
@@ -743,7 +743,7 @@ def get_dfns(
     if verbose:
         print(f"Downloading MODFLOW 6 repository from {url}")
     with tempfile.TemporaryDirectory() as tmp:
-        dl_path = download_and_unzip(url, tmp, verbose=verbose)
+        dl_path = download_and_unzip(url, Path(tmp), verbose=verbose)
         contents = list(dl_path.glob("modflow6-*"))
         proj_path = next(iter(contents), None)
         if not proj_path:
