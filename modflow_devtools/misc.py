@@ -565,3 +565,19 @@ def try_get_enum_value(v: Any) -> Any:
     of an enumeration, otherwise return it unaltered.
     """
     return v.value if isinstance(v, Enum) else v
+
+
+# TODO: use dataclasses instead of typed dicts? static
+# methods on typed dicts are evidently not allowed
+# mypy: ignore-errors
+
+
+def try_literal_eval(value: str) -> Any:
+    """
+    Try to parse a string as a literal. If this fails,
+    return the value unaltered.
+    """
+    try:
+        return literal_eval(value)
+    except (SyntaxError, ValueError):
+        return value

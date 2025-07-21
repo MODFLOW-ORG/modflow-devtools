@@ -25,24 +25,10 @@ from boltons.dictutils import OMD
 from boltons.iterutils import remap
 
 from modflow_devtools.download import download_and_unzip
-
-# TODO: use dataclasses instead of typed dicts? static
-# methods on typed dicts are evidently not allowed
-# mypy: ignore-errors
+from modflow_devtools.misc import try_literal_eval
 
 
-def _try_literal_eval(value: str) -> Any:
-    """
-    Try to parse a string as a literal. If this fails,
-    return the value unaltered.
-    """
-    try:
-        return literal_eval(value)
-    except (SyntaxError, ValueError):
-        return value
-
-
-def _try_parse_bool(value: Any) -> Any:
+def try_parse_bool(value: Any) -> Any:
     """
     Try to parse a boolean from a string as represented
     in a DFN file, otherwise return the value unaltered.
@@ -54,7 +40,7 @@ def _try_parse_bool(value: Any) -> Any:
     return value
 
 
-def _field_attr_sort_key(item) -> int:
+def field_attr_sort_key(item) -> int:
     """
     Sort key for input field attributes. The order is:
     -1. block
@@ -90,6 +76,22 @@ def _field_attr_sort_key(item) -> int:
     return 8
 
 
+def block_sort_key(item: tuple[str, dict]) -> int:
+    k, _ = item
+    if k == "options":
+        return 0
+    elif k == "dimensions":
+        return 1
+    elif k == "griddata":
+        return 2
+    elif k == "packagedata":
+        return 3
+    elif "period" in k:
+        return 4
+    else:
+        return 5
+
+
 FormatVersion = Literal[1, 2]
 """DFN format version number."""
 
@@ -118,6 +120,21 @@ _SCALAR_TYPES = FieldType.__args__[:4]
 
 Dfns = dict[str, "Dfn"]
 Fields = dict[str, "Field"]
+Block = Fields
+Blocks = dict[str, Block]
+
+
+def get_blocks(dfn: "Dfn") -> Blocks:
+    """
+    Extract blocks from an input definition. Any entry whose key
+    is not explicitly defined in `Dfn` is a block.
+    """
+    return dict(
+        sorted(
+            {k: v for k, v in dfn.items() if k not in Dfn.__annotations__}.items(),
+            key=block_sort_key,
+        )
+    )
 
 
 class Field(TypedDict):
@@ -279,6 +296,49 @@ class Dfn(TypedDict):
         refs = kwargs.pop("refs", {})
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
+        def _convert_period_block(block: Block) -> Block:
+            """
+            Convert a period block recarray to individual arrays, one per column.
+
+            Extracts recarray fields and creates separate array variables. Gives
+            each an appropriate grid- or tdis-aligned shape as opposed to sparse
+            list shape in terms of maxbound (as previously), and sets the reader
+            field to "list" to indicate to MF6 that the arrays are to be loaded
+            together via list-based input. (This could just be inferred from the
+            block name "period" or the presence of an "iper" variable, but seems
+            better to be explicit than rely on implicit rules.)
+            """
+
+            fields = list(block.values())
+            if fields[0]["type"] == "recarray":
+                assert len(fields) == 1
+                recarray_name = fields[0]["name"]
+                item = fields[0]["item"]
+                columns = item.get("fields", None)
+                if not columns:
+                    assert item["type"] == "keystring"
+                    columns = item["choices"]
+            else:
+                recarray_name = None
+                columns = block
+            block.pop(recarray_name, None)
+            cellid = columns.pop("cellid", None)
+            for col_name, column in columns.items():
+                col_copy = column.copy()
+                old_dims = col_copy.get("shape")
+                if old_dims:
+                    old_dims = old_dims[1:-1].split(",")
+                new_dims = ["nper"]
+                if cellid:
+                    new_dims.append("nnodes")
+                if old_dims:
+                    new_dims.extend([dim for dim in old_dims if dim != "maxbound"])
+                col_copy["shape"] = f"({', '.join(new_dims)})"
+                col_copy["reader"] = "list"
+                block[col_name] = col_copy
+
+            return block
+
         def _convert_field(var: dict[str, Any]) -> Field:
             """
             Convert an input field specification from its representation
@@ -300,7 +360,7 @@ class Dfn(TypedDict):
                 # stay a string except default values, which we'll
                 # try to parse as arbitrary literals below, and at
                 # some point types, once we introduce type hinting
-                field = {k: _try_parse_bool(v) for k, v in field.items()}
+                field = {k: try_parse_bool(v) for k, v in field.items()}
 
                 _name = field.pop("name")
                 _type = field.pop("type", None)
@@ -308,7 +368,7 @@ class Dfn(TypedDict):
                 shape = None if shape == "" else shape
                 block = field.pop("block", None)
                 default = field.pop("default", None)
-                default = _try_literal_eval(default) if _type != "string" else default
+                default = try_literal_eval(default) if _type != "string" else default
                 description = field.pop("description", "")
                 reader = field.pop("reader", "urword")
                 ref = refs.get(_name, None)
@@ -453,7 +513,7 @@ class Dfn(TypedDict):
 
                 return var_
 
-            return dict(sorted(_load(var).items(), key=_field_attr_sort_key))
+            return dict(sorted(_load(var).items(), key=field_attr_sort_key))
 
         # load top-level fields. any nested
         # fields will be loaded recursively
@@ -469,11 +529,10 @@ class Dfn(TypedDict):
             for block_name, block in groupby(fields.values(), lambda v: v["block"])
         }
 
-        # mark transient blocks
-        transient_index_vars = flat.getlist("iper")
-        for transient_index in transient_index_vars:
-            transient_block = transient_index["block"]
-            blocks[transient_block]["transient_block"] = True
+        # if there's a period block, extract distinct arrays from
+        # the recarray-style definition
+        if (period_block := blocks.get("period", None)) is not None:
+            blocks["period"] = _convert_period_block(period_block)
 
         # remove unneeded variable attributes
         def remove_attrs(path, key, value):
