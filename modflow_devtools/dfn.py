@@ -313,11 +313,12 @@ class Dfn(TypedDict):
             if fields[0]["type"] == "recarray":
                 assert len(fields) == 1
                 recarray_name = fields[0]["name"]
-                item = fields[0]["item"]
-                columns = item.get("fields", None)
+                item = next(iter(fields[0]["children"].values()))
+                columns = item.get("children", None)
                 if not columns:
-                    assert item["type"] == "keystring"
-                    columns = item["choices"]
+                    import pdb
+
+                    pdb.set_trace()
             else:
                 recarray_name = None
                 columns = block
@@ -403,7 +404,7 @@ class Dfn(TypedDict):
                             name=_name,
                             type="record",
                             block=block,
-                            fields=_fields(),
+                            children=_fields(),
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
@@ -428,7 +429,7 @@ class Dfn(TypedDict):
                         name=first["name"] if single else _name,
                         type=item_type,
                         block=block,
-                        fields=first["fields"] if single else fields,
+                        children=first["children"] if single else fields,
                         description=description.replace(
                             "is the list of", f"is the {item_type} of"
                         ),
@@ -471,15 +472,16 @@ class Dfn(TypedDict):
                 )
 
                 if _type.startswith("recarray"):
-                    var_["item"] = _item()
+                    item = _item()
+                    var_["children"] = {item["name"]: item}
                     var_["type"] = "recarray"
 
                 elif _type.startswith("keystring"):
-                    var_["choices"] = _choices()
+                    var_["children"] = _choices()
                     var_["type"] = "keystring"
 
                 elif _type.startswith("record"):
-                    var_["fields"] = _fields()
+                    var_["children"] = _fields()
                     var_["type"] = "record"
 
                 # for now, we can tell a var is an array if its type
