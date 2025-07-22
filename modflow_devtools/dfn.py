@@ -302,11 +302,7 @@ class Dfn(TypedDict):
 
             Extracts recarray fields and creates separate array variables. Gives
             each an appropriate grid- or tdis-aligned shape as opposed to sparse
-            list shape in terms of maxbound (as previously), and sets the reader
-            field to "list" to indicate to MF6 that the arrays are to be loaded
-            together via list-based input. (This could just be inferred from the
-            block name "period" or the presence of an "iper" variable, but seems
-            better to be explicit than rely on implicit rules.)
+            list shape in terms of maxbound as previously.
             """
 
             fields = list(block.values())
@@ -314,11 +310,7 @@ class Dfn(TypedDict):
                 assert len(fields) == 1
                 recarray_name = fields[0]["name"]
                 item = next(iter(fields[0]["children"].values()))
-                columns = item.get("children", None)
-                if not columns:
-                    import pdb
-
-                    pdb.set_trace()
+                columns = item["children"]
             else:
                 recarray_name = None
                 columns = block
@@ -335,7 +327,6 @@ class Dfn(TypedDict):
                 if old_dims:
                     new_dims.extend([dim for dim in old_dims if dim != "maxbound"])
                 col_copy["shape"] = f"({', '.join(new_dims)})"
-                col_copy["reader"] = "list"
                 block[col_name] = col_copy
 
             return block
