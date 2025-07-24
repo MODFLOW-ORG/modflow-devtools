@@ -137,6 +137,21 @@ def get_blocks(dfn: "Dfn") -> Blocks:
     )
 
 
+def get_fields(dfn: "Dfn") -> Fields:
+    """
+    Extract a flat dictionary of fields from an input definition.
+    Only top-level fields are included, i.e. subfields of records
+    or recarrays are not included.
+    """
+    fields = {}
+    for block in get_blocks(dfn).values():
+        for field in block.values():
+            if field["name"] in fields:
+                warn(f"Duplicate field name {field['name']} in {dfn['name']}")
+            fields[field["name"]] = field
+    return fields
+
+
 class Field(TypedDict):
     """A field specification."""
 
