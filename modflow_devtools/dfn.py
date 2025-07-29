@@ -126,12 +126,16 @@ Blocks = dict[str, Block]
 
 def get_blocks(dfn: "Dfn") -> Blocks:
     """
-    Extract blocks from an input definition. Any entry whose key
-    is not explicitly defined in `Dfn` is a block.
+    Extract blocks from an input definition.
     """
+
+    def _is_block(item: tuple[str, Any]) -> bool:
+        k, v = item
+        return k not in Dfn.__annotations__
+
     return dict(
         sorted(
-            {k: v for k, v in dfn.items() if k not in Dfn.__annotations__}.items(),  # type: ignore
+            {k: v for k, v in dfn.items() if _is_block((k, v))}.items(),  # type: ignore
             key=block_sort_key,
         )
     )
@@ -225,7 +229,6 @@ class Dfn(TypedDict):
     parent: str | None
     ref: Ref | None
     sln: Sln | None
-    fkeys: Dfns | None
 
     @staticmethod  # type: ignore[misc]
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
@@ -307,8 +310,6 @@ class Dfn(TypedDict):
         Temporary load routine for the v1 DFN format.
         """
 
-        fkeys = {}
-        refs = kwargs.pop("refs", {})
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
         def _convert_period_block(block: Block) -> Block:
@@ -378,11 +379,6 @@ class Dfn(TypedDict):
                 default = try_literal_eval(default) if _type != "string" else default
                 description = field.pop("description", "")
                 reader = field.pop("reader", "urword")
-                ref = refs.get(_name, None)
-
-                # if the field is a foreign key, register it
-                if ref:
-                    fkeys[_name] = ref
 
                 def _item() -> Field:
                     """Load list item."""
@@ -499,26 +495,6 @@ class Dfn(TypedDict):
                 else:
                     var_["type"] = _type
 
-                # if var is a foreign key, return subpkg var instead
-                if ref:
-                    return Field(
-                        name=ref["val"],
-                        type=_type,
-                        shape=shape,
-                        block=block,
-                        description=(
-                            f"Contains data for the {ref['abbr']} package. Data can be "
-                            f"passed as a dictionary to the {ref['abbr']} package with "
-                            "variable names as keys and package data as values. Data "
-                            f"for the {ref['val']} variable is also acceptable. See "
-                            f"{ref['abbr']} package documentation for more information."
-                        ),
-                        default=None,
-                        ref=ref,
-                        reader=reader,
-                        **field,
-                    )
-
                 return var_
 
             return dict(sorted(_load(var).items(), key=field_attr_sort_key))
@@ -618,7 +594,6 @@ class Dfn(TypedDict):
 
         return cls(
             name=name,
-            fkeys=fkeys,
             advanced=_advanced(),
             multi=_multi(),
             sln=_sln(),
@@ -666,20 +641,11 @@ class Dfn(TypedDict):
             with common_path.open() as f:
                 common, _ = Dfn._load_v1_flat(f)
 
-        # load references (subpackages)
-        refs = {}
-        for path in paths:
-            with path.open() as f:
-                dfn = Dfn.load(f, name=path.stem, common=common)
-                ref = dfn.get("ref", None)
-                if ref:
-                    refs[ref["key"]] = ref
-
         # load definitions
         dfns: Dfns = {}
         for path in paths:
             with path.open() as f:
-                dfn = Dfn.load(f, name=path.stem, common=common, refs=refs)
+                dfn = Dfn.load(f, name=path.stem, common=common)
                 dfns[path.stem] = dfn
 
         return dfns
