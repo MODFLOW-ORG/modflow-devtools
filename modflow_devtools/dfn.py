@@ -446,7 +446,7 @@ class Dfn(TypedDict):
                         v = flat.get(name, None)
                         if not v or not v.get("in_record", False) or v["type"].startswith("record"):
                             continue
-                        fields[name] = v
+                        fields[name] = _convert_field(v)
                     return fields
 
                 var_ = Field(
