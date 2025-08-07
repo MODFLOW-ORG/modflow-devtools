@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.dfn import Dfn, get_dfns
+from modflow_devtools.dfn import Dfn
+from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
 
@@ -18,7 +19,7 @@ MF6_REF = "develop"
 def pytest_generate_tests(metafunc):
     if "dfn_name" in metafunc.fixturenames:
         if not any(DFN_DIR.glob("*.dfn")):
-            get_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
+            fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
         dfn_names = [
             dfn.stem
             for dfn in DFN_DIR.glob("*.dfn")
