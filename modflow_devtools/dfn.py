@@ -592,11 +592,19 @@ class Dfn(TypedDict):
                 return Ref(parent=parent, **rest)
             return None
 
+        sln = _sln()
+        multi = (
+            _multi()
+            or sln is not None
+            or ("nam" in name and "sim" not in name)
+            or name.startswith("exg-")
+        )
+
         return cls(
             name=name,
             advanced=_advanced(),
-            multi=_multi(),
-            sln=_sln(),
+            multi=multi,
+            sln=sln,
             ref=_sub(),
             **blocks,
         )
