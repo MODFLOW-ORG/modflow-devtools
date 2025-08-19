@@ -307,37 +307,91 @@ class Dfn(TypedDict):
 
         flat, meta = Dfn._load_v1_flat(f, **kwargs)
 
-        def _convert_period_block(block: Block) -> Block:
+        def _convert_recarray_block(block: Block, block_name: str) -> Block:
             """
-            Convert a period block recarray to individual arrays, one per column.
+            Convert a recarray block to individual arrays, one per column.
 
-            Extracts recarray fields and creates separate array variables. Gives
-            each an appropriate grid- or tdis-aligned shape as opposed to sparse
-            list shape in terms of maxbound as previously.
+            Extract recarray fields and create separate array variables. For period
+            blocks, give each an appropriate grid- or time-aligned shape (nper, nnodes).
+            For other blocks, uses the declared dimensions directly.
             """
 
             fields = list(block.values())
             if fields[0]["type"] == "recarray":
                 assert len(fields) == 1
-                recarray_name = fields[0]["name"]
-                item = next(iter(fields[0]["children"].values()))
+                recarray_field = fields[0]
+                recarray_name = recarray_field["name"]
+                item = next(iter(recarray_field["children"].values()))
                 columns = item["children"]
+
+                # Get the original recarray shape to determine base dimensions
+                recarray_shape = recarray_field.get("shape")
+                if recarray_shape:
+                    # Parse shape like "(nexg)" or "(maxbound)"
+                    base_dims = recarray_shape[1:-1].split(",")
+                    base_dims = [dim.strip() for dim in base_dims if dim.strip()]
+                else:
+                    base_dims = []
             else:
                 recarray_name = None
                 columns = block
+                base_dims = []
+
+            # Remove the original recarray field
             block.pop(recarray_name, None)
+
+            # Handle cellid specially - it indicates spatial indexing
             cellid = columns.pop("cellid", None)
+
             for col_name, column in columns.items():
                 col_copy = column.copy()
                 old_dims = col_copy.get("shape")
                 if old_dims:
                     old_dims = old_dims[1:-1].split(",")
-                new_dims = ["nper"]
-                if cellid:
-                    new_dims.append("nnodes")
-                if old_dims:
-                    new_dims.extend([dim for dim in old_dims if dim != "maxbound"])
-                col_copy["shape"] = f"({', '.join(new_dims)})"
+                    old_dims = [dim.strip() for dim in old_dims if dim.strip()]
+                else:
+                    old_dims = []
+
+                # Determine new dimensions based on block type
+                if block_name == "period":
+                    # Period blocks get time + spatial dimensions
+                    new_dims = ["nper"]
+                    if cellid:
+                        new_dims.append("nnodes")
+                    # Add any additional dimensions, excluding maxbound
+                    if old_dims:
+                        new_dims.extend([dim for dim in old_dims if dim != "maxbound"])
+                else:
+                    # Non-period blocks use declared dimensions
+                    new_dims = []
+                    if base_dims:
+                        # Use the dimensions from the recarray shape
+                        # Only drop maxbound if there are other meaningful dimensions
+                        filtered_base_dims = [
+                            dim for dim in base_dims if dim != "maxbound"
+                        ]
+                        if filtered_base_dims:
+                            new_dims.extend(filtered_base_dims)
+                        else:
+                            # Keep maxbound if no other dimensions are available
+                            new_dims.extend(base_dims)
+                    # Add any column-specific dimensions
+                    if old_dims:
+                        filtered_old_dims = [
+                            dim for dim in old_dims if dim != "maxbound"
+                        ]
+                        if filtered_old_dims:
+                            new_dims.extend(filtered_old_dims)
+                        else:
+                            # Keep maxbound if no other dimensions are available
+                            new_dims.extend(old_dims)
+
+                if new_dims:
+                    col_copy["shape"] = f"({', '.join(new_dims)})"
+                else:
+                    # Scalar field
+                    col_copy["shape"] = None
+
                 block[col_name] = col_copy
 
             return block
@@ -499,10 +553,12 @@ class Dfn(TypedDict):
             for block_name, block in groupby(fields.values(), lambda v: v["block"])
         }
 
-        # if there's a period block, extract distinct arrays from
-        # the recarray-style definition
-        if (period_block := blocks.get("period", None)) is not None:
-            blocks["period"] = _convert_period_block(period_block)
+        # extract distinct arrays from recarray-style definitions in all blocks
+        for block_name, block in blocks.items():
+            # Check if this block contains any recarray fields
+            has_recarray = any(field["type"] == "recarray" for field in block.values())
+            if has_recarray:
+                blocks[block_name] = _convert_recarray_block(block, block_name)
 
         # remove unneeded variable attributes
         def remove_attrs(path, key, value):
