@@ -115,7 +115,8 @@ Reader = Literal[
 ]
 
 
-_SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
+SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
+_SCALAR_TYPES = SCALAR_TYPES  # allow backwards compat; imported by flopy
 
 
 Dfns = dict[str, "Dfn"]
@@ -455,7 +456,7 @@ class Dfn(TypedDict):
                         return _convert_field(next(iter(flat.getlist(item_names[0]))))
 
                     # implicit simple record (no children)
-                    if all(t in _SCALAR_TYPES for t in item_types):
+                    if all(t in SCALAR_TYPES for t in item_types):
                         return Field(
                             name=_name,
                             type="record",
@@ -543,7 +544,7 @@ class Dfn(TypedDict):
                 # for now, we can tell a var is an array if its type
                 # is scalar and it has a shape. once we have proper
                 # typing, this can be read off the type itself.
-                elif shape is not None and _type not in _SCALAR_TYPES:
+                elif shape is not None and _type not in SCALAR_TYPES:
                     raise TypeError(f"Unsupported array type: {_type}")
 
                 else:
