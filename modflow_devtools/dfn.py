@@ -131,7 +131,7 @@ def get_blocks(dfn: "Dfn") -> Blocks:
     """
 
     def _is_block(item: tuple[str, Any]) -> bool:
-        k, v = item
+        k, _v = item
         return k not in Dfn.__annotations__
 
     return dict(
