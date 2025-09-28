@@ -62,7 +62,7 @@ test = [
     "pytest-dotenv",
     "pytest-xdist",
     "PyYaml",
-    "syrupy"
+    "syrupy <5.0.0"
 ]
 docs = [
     "sphinx",
@@ -107,7 +107,7 @@ test = [
     "pytest-dotenv",
     "pytest-xdist",
     "PyYaml",
-    "syrupy"
+    "syrupy <5.0.0"
 ]
 docs = [
     "sphinx",
