@@ -10,7 +10,7 @@ FieldType = Literal[
 
 @dataclass(kw_only=True)
 class FieldV2(Field):
-    type: FieldType
+    pass
 
     @classmethod
     def from_dict(cls, d: dict) -> "FieldV2":

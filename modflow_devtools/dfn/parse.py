@@ -172,7 +172,7 @@ def parse_dfn(
                 else:
                     descr = cmmn["description"]
                     if any(subs):
-                        descr = descr.replace("\\", "").replace("{#1}", subs["{#1}"])
+                        descr = descr.replace("\\", "").replace("{#1}", subs["{#1}"])  # type: ignore
             field["description"] = descr
 
     # Save the last field if needed.

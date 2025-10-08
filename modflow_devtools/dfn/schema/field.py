@@ -27,8 +27,8 @@ Reader = Literal[
 
 @dataclass(kw_only=True)
 class Field:
-    name: str | None = None
-    type: FieldType | None = None
+    name: str
+    type: str | None = None
     block: str | None = None
     default: Any | None = None
     description: str | None = None

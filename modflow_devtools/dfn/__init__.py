@@ -9,6 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import (
     Literal,
+    cast,
 )
 
 import tomli
@@ -16,7 +17,6 @@ from boltons.dictutils import OMD
 from boltons.iterutils import remap
 from packaging.version import Version
 
-import modflow_devtools.dfn.schema.v1 as v1_schema
 from modflow_devtools.dfn.parse import (
     is_advanced_package,
     is_multi_package,
@@ -30,6 +30,24 @@ from modflow_devtools.dfn.schema.ref import Ref
 from modflow_devtools.dfn.schema.v1 import FieldV1
 from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.misc import try_literal_eval
+
+__all__ = [
+    "SCALAR_TYPES",
+    "Block",
+    "Blocks",
+    "Dfn",
+    "Dfns",
+    "Field",
+    "FieldV1",
+    "Fields",
+    "Ref",
+    "infer_tree",
+    "load",
+    "load_all",
+    "load_tree",
+    "map",
+]
+
 
 Format = Literal["dfn", "toml"]
 """DFN serialization format."""
@@ -56,15 +74,18 @@ class Dfn:
     @property
     def fields(self) -> Fields:
         """
-        Top-level fields in all blocks as a single dictionary.
+        A combined map of fields from all blocks.
 
-        Only top-level fields are included, i.e. subfields of records
-        or recarrays are not included.
+        Only top-level fields are included, no subfields of composites
+        such as records or recarrays.
         """
         fields = []
         for block in (self.blocks or {}).values():
             for field in block.values():
                 fields.append((field.name, field))
+
+        # for now return a multidict to support duplicate field names.
+        # TODO: change to normal dict after deprecating v1 schema
         return OMD(fields)
 
 
@@ -125,23 +146,23 @@ class MapV1To2(SchemaMap):
         for a separate context will be given a reference to it.
         """
 
-        fields = dfn.fields
+        fields = cast(OMD, dfn.fields)
 
         def _map_field(_field) -> Field:
-            _field = asdict(_field)
+            field_dict = asdict(_field)
             # parse booleans from strings. everything else can
             # stay a string except default values, which we'll
             # try to parse as arbitrary literals below, and at
             # some point types, once we introduce type hinting
-            _field = {k: try_parse_bool(v) for k, v in _field.items()}
-            _name = _field.pop("name")
-            _type = _field.pop("type", None)
-            shape = _field.pop("shape", None)
+            field_dict = {k: try_parse_bool(v) for k, v in field_dict.items()}
+            _name = field_dict.pop("name")
+            _type = field_dict.pop("type", None)
+            shape = field_dict.pop("shape", None)
             shape = None if shape == "" else shape
-            block = _field.pop("block", None)
-            default = _field.pop("default", None)
+            block = field_dict.pop("block", None)
+            default = field_dict.pop("default", None)
             default = try_literal_eval(default) if _type != "string" else default
-            description = _field.pop("description", "")
+            description = field_dict.pop("description", "")
 
             def _row_field() -> Field:
                 """Parse a table's record (row) field"""
@@ -165,7 +186,7 @@ class MapV1To2(SchemaMap):
                     )
 
                 # implicit record with all scalar fields
-                if all(t in v1_schema._SCALAR_TYPES for t in item_types):
+                if all(t in SCALAR_TYPES for t in item_types):
                     return FieldV2.from_dict(
                         {
                             "name": _name,
@@ -175,7 +196,7 @@ class MapV1To2(SchemaMap):
                             "description": description.replace(
                                 "is the list of", "is the record of"
                             ),
-                            **_field,
+                            **field_dict,
                         }
                     )
 
@@ -186,6 +207,8 @@ class MapV1To2(SchemaMap):
                     if f.name in item_names and f.in_record
                 }
                 first = next(iter(children.values()))
+                if not first.type:
+                    raise ValueError(f"Missing type for field: {first.name}")
                 single = len(children) == 1
                 item_type = (
                     "keystring" if single and "keystring" in first.type else "record"
@@ -199,7 +222,7 @@ class MapV1To2(SchemaMap):
                         "description": description.replace(
                             "is the list of", f"is the {item_type} of"
                         ),
-                        **_field,
+                        **field_dict,
                     }
                 )
 
@@ -215,13 +238,13 @@ class MapV1To2(SchemaMap):
             def _record_fields() -> Fields:
                 """Parse a record's fields"""
                 names = _type.split()[1:]
-                children = {}
+                children: dict[str, Field] = {}
                 for name in names:
                     child = children.get(name, None)
                     if (
                         not child
-                        or not child.in_record
-                        or child.type.startswith("record")
+                        or not child.in_record  # type: ignore
+                        or child.type.startswith("record")  # type: ignore
                     ):
                         continue
                     children[name] = _map_field(child)
@@ -254,7 +277,7 @@ class MapV1To2(SchemaMap):
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
             # typing, this can be read off the type itself.
-            elif shape is not None and _type not in v1_schema._SCALAR_TYPES:
+            elif shape is not None and _type not in SCALAR_TYPES:
                 raise TypeError(f"Unsupported array type: {_type}")
 
             else:
@@ -268,14 +291,15 @@ class MapV1To2(SchemaMap):
     def map_blocks(dfn: Dfn) -> Blocks:
         fields = {
             field.name: MapV1To2.map_field(dfn, field)
-            for field in dfn.fields.values(multi=True)
-            if not field.in_record
+            for field in cast(OMD, dfn.fields).values(multi=True)
+            if not field.in_record  # type: ignore
         }
-        blocks = {
+        block_dicts = {
             block_name: {f.name: f for f in block}
             for block_name, block in groupby(fields.values(), lambda f: f.block)
         }
-        if (period_block := blocks.get("period", None)) is not None:
+        blocks = {}
+        if (period_block := block_dicts.get("period", None)) is not None:
             blocks["period"] = MapV1To2.map_period_block(dfn, period_block)
 
         def remove_attrs(path, key, value):
@@ -287,7 +311,7 @@ class MapV1To2(SchemaMap):
         return remap(blocks, visit=remove_attrs)
 
     def map(self, dfn: Dfn) -> Dfn:
-        if dfn.schema_version == Version("2"):
+        if dfn.schema_version == (v2 := Version("2")):
             return dfn
         return Dfn(
             name=dfn.name,
@@ -295,6 +319,7 @@ class MapV1To2(SchemaMap):
             multi=dfn.multi,
             ref=dfn.ref,
             blocks=MapV1To2.map_blocks(dfn),
+            schema_version=v2,
         )
 
 
@@ -305,10 +330,11 @@ def map(
     """Map a MODFLOW 6 specification to another schema version."""
     if dfn.schema_version == schema_version:
         return dfn
-    elif Version(schema_version) == Version("1"):
+    elif Version(str(schema_version)) == Version("1"):
         raise NotImplementedError("Mapping to schema version 1 is not implemented yet.")
-    elif Version(schema_version) == Version("2"):
+    elif Version(str(schema_version)) == Version("2"):
         return MapV1To2().map(dfn)
+    raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
 
 def load(f: str | PathLike, **kwargs) -> Dfn:
@@ -326,7 +352,7 @@ def load(f: str | PathLike, **kwargs) -> Dfn:
                 )
             }
         )
-        dfn = Dfn(
+        return Dfn(
             name=path.stem,
             schema_version=Version("1"),
             parent=try_parse_parent(meta),
@@ -336,8 +362,8 @@ def load(f: str | PathLike, **kwargs) -> Dfn:
         )
     elif path.suffix == ".toml":
         with path.open("rb") as file:
-            dfn = Dfn(**tomli.load(file))
-    return dfn
+            return Dfn(**tomli.load(file))
+    raise ValueError(f"Unsupported file type: {path.suffix}. Expected .dfn or .toml.")
 
 
 def _load_common(path: str | PathLike) -> Fields:
@@ -359,6 +385,7 @@ def load_all(dfndir: str | PathLike) -> Dfns:
         return {path.stem: load(path, common=common) for path in dfns.values()}
     if tomls:
         return {path.stem: load(path) for path in tomls.values()}
+    return {}  # TODO: raise instead?
 
 
 def infer_tree(dfns: Dfns) -> Dfn:
@@ -426,6 +453,7 @@ def infer_tree(dfns: Dfns) -> Dfn:
             name=(root_name := roots[0][0]),
             blocks=dfns[root_name].blocks,
             children=get_children(root_name),
+            schema_version=schema_version,
         )
     raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
@@ -438,22 +466,3 @@ def load_tree(dfndir: str | PathLike) -> Dfn:
     child (and grandchild) components for the relevant models and packages.
     """
     return infer_tree(load_all(dfndir))
-
-
-__all__ = [
-    "SCALAR_TYPES",
-    "Block",
-    "Blocks",
-    "Dfn",
-    "Dfns",
-    "Field",
-    "FieldV1",
-    "FieldV2",
-    "Fields",
-    "Ref",
-    "infer_tree",
-    "load",
-    "load_all",
-    "load_tree",
-    "map",
-]
