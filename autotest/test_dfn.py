@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.dfn import _load_common, load, load_all
+from modflow_devtools.dfn import _load_common, load, load_flat
 from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
@@ -59,7 +59,7 @@ def test_load_v2(toml_name):
 @requires_pkg("boltons")
 @pytest.mark.parametrize("schema_version", list(SPEC_DIRS.keys()))
 def test_load_all(schema_version):
-    dfns = load_all(path=SPEC_DIRS[schema_version])
+    dfns = load_flat(path=SPEC_DIRS[schema_version])
     for dfn in dfns.values():
         assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
 
@@ -85,7 +85,7 @@ def test_convert(function_tmpdir):
     assert gwf_data["parent"] == "sim-nam"
     assert gwf_data["schema_version"] == "2"
 
-    dfns = load_all(function_tmpdir)
+    dfns = load_flat(function_tmpdir)
     roots = []
     for dfn in dfns.values():
         if dfn.parent:

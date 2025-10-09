@@ -8,7 +8,7 @@ from pathlib import Path
 import tomli_w as tomli
 from boltons.iterutils import remap
 
-from modflow_devtools.dfn import flatten, map
+from modflow_devtools.dfn import load_flat, map, to_flat, to_tree
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
@@ -19,28 +19,21 @@ def convert(indir: PathLike, outdir: PathLike, schema_version: str = "2") -> Non
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
 
-    # Load all DFNs individually first, then map to target schema
-    from modflow_devtools.dfn import infer_tree, load_all
-
-    dfns_raw = load_all(indir)
-    dfns_mapped = {
-        name: map(dfn, schema_version=schema_version) for name, dfn in dfns_raw.items()
+    dfns = {
+        name: map(dfn, schema_version=schema_version)
+        for name, dfn in load_flat(indir).items()
     }
-
-    # Now infer tree structure with mapped DFNs and flatten
-    tree = infer_tree(dfns_mapped)
-    dfns = flatten(tree)
-    for dfn_name, dfn in dfns.items():
+    tree = to_tree(dfns)
+    flat = to_flat(tree)
+    for dfn_name, dfn in flat.items():
         with Path.open(outdir / f"{dfn_name}.toml", "wb") as f:
             # TODO if we start using c/attrs, swap out
             # all this for a custom unstructuring hook
             dfn_dict = asdict(dfn)
             dfn_dict["schema_version"] = str(dfn_dict["schema_version"])
-
             if dfn_dict.get("blocks"):
                 blocks = dfn_dict.pop("blocks")
                 for block_name, block_fields in blocks.items():
-                    # Create nested structure for each block
                     if block_name not in dfn_dict:
                         dfn_dict[block_name] = {}
                     for field_name, field_data in block_fields.items():

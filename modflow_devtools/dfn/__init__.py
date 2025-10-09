@@ -41,12 +41,12 @@ __all__ = [
     "FieldV1",
     "Fields",
     "Ref",
-    "flatten",
-    "infer_tree",
     "load",
-    "load_all",
+    "load_flat",
     "load_tree",
     "map",
+    "to_flat",
+    "to_tree",
 ]
 
 
@@ -408,7 +408,7 @@ def _load_common(f) -> Fields:
     return common
 
 
-def load_all(path: str | PathLike) -> Dfns:
+def load_flat(path: str | PathLike) -> Dfns:
     """Load a MODFLOW 6 specification from definition files in a directory."""
     exclude = ["common", "flopy"]
     path = Path(path).expanduser().resolve()
@@ -428,15 +428,17 @@ def load_all(path: str | PathLike) -> Dfns:
     return dfns
 
 
-def infer_tree(dfns: Dfns) -> Dfn:
+def to_tree(dfns: Dfns) -> Dfn:
     """
     Infer the MODFLOW 6 input component hierarchy from a flat spec:
     unlinked DFNs, i.e. without `children` populated, only `parent`.
 
-    Returns the root component with children filled.
-    There must be exactly one root, i.e. component with no `parent`.
+    Returns the root component. There must be exactly one root, i.e.
+    component with no `parent`. Composite components have `children`
+    populated.
 
-    Assumes all DFNs are of the same schema version.
+    Assumes DFNs are already in v2 schema, just lacking parent-child
+    links; before calling this function, map them first with `map()`.
     """
 
     def set_parent(dfn):
@@ -491,12 +493,12 @@ def infer_tree(dfns: Dfns) -> Dfn:
             )
 
 
-def flatten(dfn: Dfn) -> Dfns:
+def to_flat(dfn: Dfn) -> Dfns:
     """
     Flatten a MODFLOW 6 input component hierarchy to a flat spec:
     unlinked DFNs, i.e. without `children` populated, only `parent`.
 
-    Returns a dictionary of all components in the tree.
+    Returns a dictionary of all components in the specification.
     """
 
     def _flatten(dfn: Dfn) -> Dfns:
@@ -515,4 +517,4 @@ def load_tree(dfndir: str | PathLike) -> Dfn:
     A single root component definition (the simulation) is returned. This contains
     child (and grandchild) components for the relevant models and packages.
     """
-    return infer_tree(load_all(dfndir))
+    return to_tree(load_flat(dfndir))
