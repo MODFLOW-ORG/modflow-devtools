@@ -188,16 +188,17 @@ class MapV1To2(SchemaMap):
 
                 # implicit record with all scalar fields
                 if all(t in SCALAR_TYPES for t in item_types):
+                    children = _record_fields()
                     return FieldV2.from_dict(
                         {
+                            **field_dict,
                             "name": _name,
                             "type": "record",
                             "block": block,
-                            "children": _record_fields(),
+                            "children": children,
                             "description": description.replace(
                                 "is the list of", "is the record of"
                             ),
-                            **field_dict,
                         }
                     )
 
@@ -239,17 +240,13 @@ class MapV1To2(SchemaMap):
             def _record_fields() -> Fields:
                 """Parse a record's fields"""
                 names = _type.split()[1:]
-                children: dict[str, Field] = {}
-                for name in names:
-                    child = children.get(name, None)
-                    if (
-                        not child
-                        or not child.in_record  # type: ignore
-                        or child.type.startswith("record")  # type: ignore
-                    ):
-                        continue
-                    children[name] = _map_field(child)
-                return children
+                return {
+                    f.name: _map_field(f)
+                    for f in fields.values(multi=True)
+                    if f.name in names
+                    and f.in_record
+                    and not f.type.startswith("record")
+                }
 
             _field = FieldV2.from_dict(
                 {
@@ -305,9 +302,8 @@ class MapV1To2(SchemaMap):
         if (period_block := block_dicts.get("period", None)) is not None:
             blocks["period"] = MapV1To2.map_period_block(dfn, period_block)
 
-        # Include all other blocks
         for block_name, block_data in block_dicts.items():
-            if block_name != "period":  # Skip period since it's handled above
+            if block_name != "period":
                 blocks[block_name] = block_data
 
         def remove_attrs(path, key, value):
@@ -469,24 +465,25 @@ def to_tree(dfns: Dfns) -> Dfn:
         case "2":
             if (
                 nroots := len(
-                    roots := [
-                        (name, dfn) for name, dfn in dfns.items() if dfn.parent is None
-                    ]
+                    roots := {
+                        name: dfn for name, dfn in dfns.items() if dfn.parent is None
+                    }
                 )
             ) != 1:
                 raise ValueError(f"Expected one root component, found {nroots}")
 
-            def get_children(node_name: str) -> Dfns:
-                return {
+            def _build_tree(node_name: str) -> Dfn:
+                node = dfns[node_name]
+                children = {
                     name: dfn for name, dfn in dfns.items() if dfn.parent == node_name
                 }
+                if any(children):
+                    node.children = {
+                        name: _build_tree(name) for name in children.keys()
+                    }
+                return node
 
-            return Dfn(
-                name=(root_name := roots[0][0]),
-                blocks=dfns[root_name].blocks,
-                children=get_children(root_name),
-                schema_version=Version(schema_version),
-            )
+            return _build_tree(next(iter(roots.keys())))
         case _:
             raise ValueError(
                 f"Unsupported schema version: {schema_version}. Expected 1 or 2."

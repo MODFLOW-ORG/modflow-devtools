@@ -9,6 +9,7 @@ import tomli_w as tomli
 from boltons.iterutils import remap
 
 from modflow_devtools.dfn import load_flat, map, to_flat, to_tree
+from modflow_devtools.dfn.schema.block import block_sort_key
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
@@ -37,10 +38,17 @@ def convert(indir: PathLike, outdir: PathLike, schema_version: str = "2") -> Non
                     if block_name not in dfn_dict:
                         dfn_dict[block_name] = {}
                     for field_name, field_data in block_fields.items():
-                        field_data.pop("children", None)
                         dfn_dict[block_name][field_name] = field_data
 
-            tomli.dump(remap(dfn_dict, visit=drop_none_or_empty), f)
+            tomli.dump(
+                dict(
+                    sorted(
+                        remap(dfn_dict, visit=drop_none_or_empty).items(),
+                        key=block_sort_key,
+                    )
+                ),
+                f,
+            )
 
 
 if __name__ == "__main__":
