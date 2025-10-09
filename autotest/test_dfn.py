@@ -14,6 +14,7 @@ SPEC_DIRS = {1: DFN_DIR, 2: TOML_DIR}
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
 MF6_REF = "develop"
+EMPTY_DFNS = {"exg-gwfgwe", "exg-gwfgwt", "exg-gwfprt", "sln-ems"}
 
 
 def pytest_generate_tests(metafunc):
@@ -45,21 +46,22 @@ def test_load_v1(dfn_name):
     ):
         common = _load_common(common_file)
         dfn = load(dfn_file, name=dfn_name, format="dfn", common=common)
-        assert any(dfn.fields)
+        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
 
 
 @requires_pkg("boltons")
 def test_load_v2(toml_name):
     with (TOML_DIR / f"{toml_name}.toml").open(mode="rb") as toml_file:
         dfn = load(toml_file, name=toml_name, format="toml")
-        assert any(dfn.fields)
+        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
 
 
 @requires_pkg("boltons")
 @pytest.mark.parametrize("schema_version", list(SPEC_DIRS.keys()))
 def test_load_all(schema_version):
     dfns = load_all(path=SPEC_DIRS[schema_version])
-    assert all(any(dfn.fields) for dfn in dfns.values())
+    for dfn in dfns.values():
+        assert any(dfn.fields) == (dfn.name not in EMPTY_DFNS)
 
 
 @requires_pkg("boltons", "tomli")

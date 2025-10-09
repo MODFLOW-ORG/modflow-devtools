@@ -300,8 +300,15 @@ class MapV1To2(SchemaMap):
             for block_name, block in groupby(fields.values(), lambda f: f.block)
         }
         blocks = {}
+
+        # Handle period blocks specially
         if (period_block := block_dicts.get("period", None)) is not None:
             blocks["period"] = MapV1To2.map_period_block(dfn, period_block)
+
+        # Include all other blocks
+        for block_name, block_data in block_dicts.items():
+            if block_name != "period":  # Skip period since it's handled above
+                blocks[block_name] = block_data
 
         def remove_attrs(path, key, value):
             # remove unneeded variable attributes
@@ -359,12 +366,40 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
             multi=is_multi_package(meta),
             blocks=blocks,
         )
+
     elif format == "toml":
-        if (name := kwargs.pop("name", None)) is not None:
-            if name != (data := tomli.load(f)).pop("name", name):
-                raise ValueError(f"DFN name mismatch: {name} != {data.get('name')}")
-            return Dfn(name=name, **data)
-        return Dfn(**data)
+        data = tomli.load(f)
+
+        dfn_fields = {
+            "name": data.pop("name", kwargs.pop("name", None)),
+            "schema_version": Version(str(data.pop("schema_version", "2"))),
+            "parent": data.pop("parent", None),
+            "advanced": data.pop("advanced", False),
+            "multi": data.pop("multi", False),
+            "ref": data.pop("ref", None),
+        }
+
+        if (expected_name := kwargs.pop("name", None)) is not None:
+            if dfn_fields["name"] != expected_name:
+                raise ValueError(
+                    f"DFN name mismatch: {expected_name} != {dfn_fields['name']}"
+                )
+
+        blocks = {}
+        for section_name, section_data in data.items():
+            if isinstance(section_data, dict):
+                block_fields = {}
+                for field_name, field_data in section_data.items():
+                    if isinstance(field_data, dict):
+                        block_fields[field_name] = FieldV2.from_dict(field_data)
+                    else:
+                        block_fields[field_name] = field_data
+                blocks[section_name] = block_fields
+
+        dfn_fields["blocks"] = blocks if blocks else None
+
+        return Dfn(**dfn_fields)
+
     raise ValueError(f"Unsupported format: {format}. Expected 'dfn' or 'toml'.")
 
 

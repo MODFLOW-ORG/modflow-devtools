@@ -32,10 +32,21 @@ def convert(indir: PathLike, outdir: PathLike, schema_version: str = "2") -> Non
     dfns = flatten(tree)
     for dfn_name, dfn in dfns.items():
         with Path.open(outdir / f"{dfn_name}.toml", "wb") as f:
+            # TODO if we start using c/attrs, swap out
+            # all this for a custom unstructuring hook
             dfn_dict = asdict(dfn)
-            # TODO if we start using c/attrs, swap
-            # this for a custom unstructuring hook
             dfn_dict["schema_version"] = str(dfn_dict["schema_version"])
+
+            if dfn_dict.get("blocks"):
+                blocks = dfn_dict.pop("blocks")
+                for block_name, block_fields in blocks.items():
+                    # Create nested structure for each block
+                    if block_name not in dfn_dict:
+                        dfn_dict[block_name] = {}
+                    for field_name, field_data in block_fields.items():
+                        field_data.pop("children", None)
+                        dfn_dict[block_name][field_name] = field_data
+
             tomli.dump(remap(dfn_dict, visit=drop_none_or_empty), f)
 
 
