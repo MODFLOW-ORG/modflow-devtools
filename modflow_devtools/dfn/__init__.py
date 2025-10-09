@@ -394,7 +394,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
                         block_fields[field_name] = FieldV2.from_dict(field_data)
                     else:
                         block_fields[field_name] = field_data
-                blocks[section_name] = block_fields # type: ignore
+                blocks[section_name] = block_fields  # type: ignore
 
         dfn_fields["blocks"] = blocks if blocks else None
 
