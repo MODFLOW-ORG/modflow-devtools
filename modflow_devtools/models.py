@@ -21,13 +21,7 @@ from filelock import FileLock
 from pooch import Pooch
 
 import modflow_devtools
-from modflow_devtools.misc import get_model_paths
-
-
-def _drop_none_or_empty(path, key, value):
-    if value is None or value == "":
-        return False
-    return True
+from modflow_devtools.misc import drop_none_or_empty, get_model_paths
 
 
 def _model_sort_key(k) -> int:
@@ -421,7 +415,7 @@ class PoochRegistry(ModelRegistry):
 
         with self._registry_file_path.open("ab+") as registry_file:
             tomli_w.dump(
-                remap(dict(sorted(files.items())), visit=_drop_none_or_empty),
+                remap(dict(sorted(files.items())), visit=drop_none_or_empty),
                 registry_file,
             )
 

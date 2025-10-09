@@ -6,8 +6,10 @@ from os import PathLike
 from pathlib import Path
 
 import tomli_w as tomli
+from boltons.iterutils import remap
 
 from modflow_devtools.dfn import load_all, map
+from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
 
@@ -22,7 +24,11 @@ def convert(indir: PathLike, outdir: PathLike, schema_version: str = "2") -> Non
     }
     for dfn_name, dfn in dfns.items():
         with Path.open(outdir / f"{dfn_name}.toml", "wb") as f:
-            tomli.dump(asdict(dfn), f)
+            dfn_dict = asdict(dfn)
+            # TODO if we start using c/attrs, swap
+            # this for a custom unstructuring hook
+            dfn_dict["schema_version"] = str(dfn_dict["schema_version"])
+            tomli.dump(remap(dfn_dict, visit=drop_none_or_empty), f)
 
 
 if __name__ == "__main__":

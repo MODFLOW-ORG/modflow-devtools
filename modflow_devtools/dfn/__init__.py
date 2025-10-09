@@ -257,7 +257,7 @@ class MapV1To2(SchemaMap):
                     "block": block,
                     "description": description,
                     "default": default,
-                    **_field,
+                    **field_dict,
                 }
             )
 
@@ -337,55 +337,52 @@ def map(
     raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
 
-def load(f: str | PathLike, **kwargs) -> Dfn:
+def load(f, name: str, format: str = "dfn", **kwargs) -> Dfn:
     """Load a MODFLOW 6 definition file."""
-    path = Path(f).expanduser().resolve()
-    if path.suffix == ".dfn":
-        fields, meta = parse_dfn(path, **kwargs)
-        blocks = (
-            {}
-            if "common" in path.stem
-            else {
-                block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
-                for block_name, block in groupby(
-                    fields.values(), lambda field: field["block"]
-                )
-            }
-        )
+    if format == "dfn":
+        fields, meta = parse_dfn(f, **kwargs)
+        blocks = {
+            block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
+            for block_name, block in groupby(
+                fields.values(), lambda field: field["block"]
+            )
+        }
         return Dfn(
-            name=path.stem,
+            name=name,
             schema_version=Version("1"),
             parent=try_parse_parent(meta),
             advanced=is_advanced_package(meta),
             multi=is_multi_package(meta),
             blocks=blocks,
         )
-    elif path.suffix == ".toml":
-        with path.open("rb") as file:
-            return Dfn(**tomli.load(file))
-    raise ValueError(f"Unsupported file type: {path.suffix}. Expected .dfn or .toml.")
+    elif format == "toml":
+        return Dfn(name=name, **tomli.load(f))
+    raise ValueError(f"Unsupported format: {format}. Expected 'dfn' or 'toml'.")
 
 
-def _load_common(path: str | PathLike) -> Fields:
-    common_path = Path(path).expanduser().resolve()
-    if not common_path.is_file():
-        return {}
-    common, _ = parse_dfn(common_path)
+def _load_common(f) -> Fields:
+    common, _ = parse_dfn(f)
     return common
 
 
-def load_all(dfndir: str | PathLike) -> Dfns:
+def load_all(path: str | PathLike) -> Dfns:
     """Load a MODFLOW 6 specification from definition files in a directory."""
     exclude = ["common", "flopy"]
-    dfndir = Path(dfndir).expanduser().resolve()
-    dfns = {p.stem: p for p in dfndir.glob("*.dfn") if p.stem not in exclude}
-    tomls = {p.stem: p for p in dfndir.glob("*.toml") if p.stem not in exclude}
-    if dfns:
-        common = _load_common(dfndir / "common.dfn")
-        return {path.stem: load(path, common=common) for path in dfns.values()}
-    if tomls:
-        return {path.stem: load(path) for path in tomls.values()}
-    return {}  # TODO: raise instead?
+    path = Path(path).expanduser().resolve()
+    dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in exclude}
+    toml_paths = {p.stem: p for p in path.glob("*.toml") if p.stem not in exclude}
+    dfns = {}
+    if dfn_paths:
+        with (path / "common.dfn").open() as f:
+            common = _load_common(f)
+        for dfn_name, dfn_path in dfn_paths.items():
+            with dfn_path.open() as f:
+                dfns[dfn_name] = load(f, name=dfn_name, common=common, format="dfn")
+    if toml_paths:
+        for toml_name, toml_path in toml_paths.items():
+            with toml_path.open() as f:
+                dfns[toml_name] = load(f, name=toml_name, format="toml")
+    return dfns
 
 
 def infer_tree(dfns: Dfns) -> Dfn:

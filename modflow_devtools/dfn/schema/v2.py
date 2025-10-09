@@ -15,4 +15,5 @@ class FieldV2(Field):
     @classmethod
     def from_dict(cls, d: dict) -> "FieldV2":
         """Create a FieldV2 instance from a dictionary."""
-        return cls(**{k: v for k, v in d.items() if k in cls.__annotations__.keys()})
+        keys = list(cls.__annotations__.keys()) + list(Field.__annotations__.keys())
+        return cls(**{k: v for k, v in d.items() if k in keys})

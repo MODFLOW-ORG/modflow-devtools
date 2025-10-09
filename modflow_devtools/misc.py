@@ -581,3 +581,13 @@ def try_literal_eval(value: str) -> Any:
         return literal_eval(value)
     except (SyntaxError, ValueError):
         return value
+
+
+def drop_none_or_empty(path, key, value):
+    """
+    Drop dictionary items with None or empty string values.
+    For use with `boltons.iterutils.remap`.
+    """
+    if value is None or value == "":
+        return False
+    return True

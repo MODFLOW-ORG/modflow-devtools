@@ -1,6 +1,4 @@
 from ast import literal_eval
-from os import PathLike
-from pathlib import Path
 from typing import Any
 from warnings import warn
 
@@ -83,17 +81,14 @@ def is_multi_package(meta: list[str]) -> bool:
     return any("multi-package" in m for m in meta)
 
 
-def parse_dfn(
-    path: str | PathLike,
-    common: dict | None = None,
-) -> tuple[OMD, list[str]]:
+def parse_dfn(f, common: dict | None = None) -> tuple[OMD, list[str]]:
     """
     Parse a DFN file into an ordered dict of fields and a list of metadata.
 
     Parameters
     ----------
-    path : str | PathLike
-        Path to the DFN file to parse.
+    f : readable file-like
+        A file-like object to read the DFN file from.
     common : dict, optional
         A dictionary of common variable definitions to use for
         description substitutions, by default None.
@@ -123,7 +118,7 @@ def parse_dfn(
     fields: list = []
     metadata: list = []
 
-    for line in Path(path).expanduser().resolve().open():
+    for line in f:
         # parse metadata line
         if (line := line.strip()).startswith("#"):
             _, sep, tail = line.partition("flopy")
