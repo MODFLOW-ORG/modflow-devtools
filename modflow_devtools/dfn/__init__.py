@@ -39,6 +39,7 @@ __all__ = [
     "Dfns",
     "Field",
     "FieldV1",
+    "FieldV2",
     "Fields",
     "Ref",
     "load",
