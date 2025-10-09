@@ -43,7 +43,7 @@ def test_load_v1(dfn_name):
         (DFN_DIR / "common.dfn").open() as common_file,
         (DFN_DIR / f"{dfn_name}.dfn").open() as dfn_file,
     ):
-        common, _ = _load_common(common_file)
+        common = _load_common(common_file)
         dfn = load(dfn_file, name=dfn_name, format="dfn", common=common)
         assert any(dfn.fields)
 

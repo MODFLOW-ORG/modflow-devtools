@@ -340,9 +340,10 @@ def map(
     raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
 
-def load(f, name: str, format: str = "dfn", **kwargs) -> Dfn:
+def load(f, format: str = "dfn", **kwargs) -> Dfn:
     """Load a MODFLOW 6 definition file."""
     if format == "dfn":
+        name = kwargs.pop("name")
         fields, meta = parse_dfn(f, **kwargs)
         blocks = {
             block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
@@ -359,7 +360,11 @@ def load(f, name: str, format: str = "dfn", **kwargs) -> Dfn:
             blocks=blocks,
         )
     elif format == "toml":
-        return Dfn(name=name, **tomli.load(f))
+        if (name := kwargs.pop("name", None)) is not None:
+            if name != (data := tomli.load(f)).pop("name", name):
+                raise ValueError(f"DFN name mismatch: {name} != {data.get('name')}")
+            return Dfn(name=name, **data)
+        return Dfn(**data)
     raise ValueError(f"Unsupported format: {format}. Expected 'dfn' or 'toml'.")
 
 
@@ -383,7 +388,7 @@ def load_all(path: str | PathLike) -> Dfns:
                 dfns[dfn_name] = load(f, name=dfn_name, common=common, format="dfn")
     if toml_paths:
         for toml_name, toml_path in toml_paths.items():
-            with toml_path.open() as f:
+            with toml_path.open("rb") as f:
                 dfns[toml_name] = load(f, name=toml_name, format="toml")
     return dfns
 
