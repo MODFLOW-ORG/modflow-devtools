@@ -4,6 +4,7 @@ import sys
 import traceback
 from _warnings import warn
 from ast import literal_eval
+from collections.abc import Iterable
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
@@ -585,9 +586,9 @@ def try_literal_eval(value: str) -> Any:
 
 def drop_none_or_empty(path, key, value):
     """
-    Drop dictionary items with None or empty string values.
+    Drop dictionary items with None or empty values.
     For use with `boltons.iterutils.remap`.
     """
-    if value is None or value == "":
+    if value is None or (isinstance(value, Iterable) and not any(value)):
         return False
     return True

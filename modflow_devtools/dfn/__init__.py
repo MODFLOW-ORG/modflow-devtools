@@ -29,7 +29,7 @@ from modflow_devtools.dfn.schema.field import SCALAR_TYPES, Field, Fields
 from modflow_devtools.dfn.schema.ref import Ref
 from modflow_devtools.dfn.schema.v1 import FieldV1
 from modflow_devtools.dfn.schema.v2 import FieldV2
-from modflow_devtools.misc import try_literal_eval
+from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
     "SCALAR_TYPES",
@@ -41,6 +41,7 @@ __all__ = [
     "FieldV1",
     "Fields",
     "Ref",
+    "flatten",
     "infer_tree",
     "load",
     "load_all",
@@ -62,8 +63,8 @@ class Dfn:
     MODFLOW 6 input component definition.
     """
 
-    name: str
     schema_version: Version
+    name: str
     parent: str | None = None
     advanced: bool = False
     multi: bool = False
@@ -313,6 +314,7 @@ class MapV1To2(SchemaMap):
     def map(self, dfn: Dfn) -> Dfn:
         if dfn.schema_version == (v2 := Version("2")):
             return dfn
+
         return Dfn(
             name=dfn.name,
             advanced=dfn.advanced,
@@ -320,6 +322,7 @@ class MapV1To2(SchemaMap):
             ref=dfn.ref,
             blocks=MapV1To2.map_blocks(dfn),
             schema_version=v2,
+            parent=dfn.parent,
         )
 
 
@@ -396,63 +399,73 @@ def infer_tree(dfns: Dfns) -> Dfn:
     Assumes all DFNs are of the same schema version.
     """
 
-    def drop_none_or_empty(path, key, value):
-        if value is None or value == "" or value == [] or value == {}:
-            return False
-        return True
-
-    def add_parent(dfn):
-        dfn = dfn.copy()
-        dfn_name = dfn["name"]
-        if dfn_name == "sim-nam":
-            # simulation name file
-            dfn.name = "sim"
+    def set_parent(dfn):
+        dfn = asdict(dfn)
+        if (dfn_name := dfn["name"]) == "sim-nam":
+            pass
         elif dfn_name.endswith("-nam"):
-            # model name files
-            model_type = dfn_name[:-4]  # Remove "-nam"
-            dfn.name = model_type
-            dfn.parent = "sim"
+            dfn["parent"] = "sim-nam"
         elif (
             dfn_name.startswith("exg-")
             or dfn_name.startswith("sln-")
             or dfn_name.startswith("utl-")
         ):
-            # exchanges, solutions, standalone utilities
-            dfn.parent = "sim"
+            dfn["parent"] = "sim-nam"
         elif "-" in dfn_name:
-            # packages
-            model_type = dfn_name.split("-")[0]
-            dfn.parent = model_type
+            mdl = dfn_name.split("-")[0]
+            dfn["parent"] = f"{mdl}-nam"
 
-        return remap(dfn, visit=drop_none_or_empty)
+        return Dfn(**remap(dfn, visit=drop_none_or_empty))
 
-    dfns = {name: add_parent(dfn) for name, dfn in dfns.items()}
-    first = next(iter(dfns.values()), None)
-    schema_version = first.schema_version if first else Version("1")
+    dfns = {name: set_parent(dfn) for name, dfn in dfns.items()}
+    first_dfn = next(iter(dfns.values()), None)
+    match schema_version := str(
+        first_dfn.schema_version if first_dfn else Version("1")
+    ):
+        case "1":
+            raise NotImplementedError("Tree inference from v1 schema not implemented")
+        case "2":
+            if (
+                nroots := len(
+                    roots := [
+                        (name, dfn) for name, dfn in dfns.items() if dfn.parent is None
+                    ]
+                )
+            ) != 1:
+                raise ValueError(f"Expected one root component, found {nroots}")
 
-    if schema_version == Version("1"):
-        raise NotImplementedError("Structure inference from v1 schema not implemented")
-    elif schema_version == Version("2"):
-        if (
-            len(
-                roots := [
-                    (name, dfn) for name, dfn in dfns.items() if dfn.parent is None
-                ]
+            def get_children(node_name: str) -> Dfns:
+                return {
+                    name: dfn for name, dfn in dfns.items() if dfn.parent == node_name
+                }
+
+            return Dfn(
+                name=(root_name := roots[0][0]),
+                blocks=dfns[root_name].blocks,
+                children=get_children(root_name),
+                schema_version=Version(schema_version),
             )
-            != 1
-        ):
-            raise ValueError(f"Expected one root component, found {len(roots)}")
+        case _:
+            raise ValueError(
+                f"Unsupported schema version: {schema_version}. Expected 1 or 2."
+            )
 
-        def get_children(node_name: str) -> Dfns:
-            return {name: dfn for name, dfn in dfns.items() if dfn.parent == node_name}
 
-        return Dfn(
-            name=(root_name := roots[0][0]),
-            blocks=dfns[root_name].blocks,
-            children=get_children(root_name),
-            schema_version=schema_version,
-        )
-    raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
+def flatten(dfn: Dfn) -> Dfns:
+    """
+    Flatten a MODFLOW 6 input component hierarchy to a flat spec:
+    unlinked DFNs, i.e. without `children` populated, only `parent`.
+
+    Returns a dictionary of all components in the tree.
+    """
+
+    def _flatten(dfn: Dfn) -> Dfns:
+        dfns = {dfn.name: replace(dfn, children=None)}
+        for child in (dfn.children or {}).values():
+            dfns.update(_flatten(child))
+        return dfns
+
+    return _flatten(dfn)
 
 
 def load_tree(dfndir: str | PathLike) -> Dfn:

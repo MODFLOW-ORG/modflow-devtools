@@ -8,7 +8,7 @@ from pathlib import Path
 import tomli_w as tomli
 from boltons.iterutils import remap
 
-from modflow_devtools.dfn import load_all, map
+from modflow_devtools.dfn import flatten, load_tree, map
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
@@ -18,7 +18,7 @@ def convert(indir: PathLike, outdir: PathLike, schema_version: str = "2") -> Non
     indir = Path(indir).expanduser().absolute()
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
-    dfns_in = load_all(indir)
+    dfns_in = flatten(load_tree(indir))
     dfns = {
         name: map(dfn, schema_version=schema_version) for name, dfn in dfns_in.items()
     }

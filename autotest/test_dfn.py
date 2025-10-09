@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.dfn import _load_common, load, load_all, load_tree
+from modflow_devtools.dfn import _load_common, load, load_all
 from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
@@ -29,14 +29,11 @@ def pytest_generate_tests(metafunc):
 
     if "toml_name" in metafunc.fixturenames:
         convert(DFN_DIR, TOML_DIR)
-        dfn_paths = list(DFN_DIR.glob("*.dfn"))
         expected_toml_paths = [
-            TOML_DIR / f"{dfn.stem.replace('-nam', '')}.toml"
-            for dfn in dfn_paths
-            if "common" not in dfn.stem
+            dfn for dfn in DFN_DIR.glob("*.dfn") if "common" not in dfn.stem
         ]
-        toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         assert all(toml_path.exists() for toml_path in expected_toml_paths)
+        toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
 
 
@@ -47,7 +44,7 @@ def test_load_v1(dfn_name):
         (DFN_DIR / f"{dfn_name}.dfn").open() as dfn_file,
     ):
         common, _ = _load_common(common_file)
-        dfn = load(dfn_file, name=dfn_name, common=common)
+        dfn = load(dfn_file, name=dfn_name, format="dfn", common=common)
         assert any(dfn.fields)
 
 
@@ -61,65 +58,57 @@ def test_load_v2(toml_name):
 @requires_pkg("boltons")
 @pytest.mark.parametrize("schema_version", list(SPEC_DIRS.keys()))
 def test_load_all(schema_version):
-    path = SPEC_DIRS[schema_version]
-    dfns = load_all(path)
+    dfns = load_all(path=SPEC_DIRS[schema_version])
     assert all(any(dfn.fields) for dfn in dfns.values())
 
 
-@requires_pkg("boltons")
-def test_load_tree():
-    import tempfile
-
+@requires_pkg("boltons", "tomli")
+def test_convert(function_tmpdir):
     import tomli
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = Path(tmp_dir)
-        convert(DFN_DIR, tmp_path)
+    convert(DFN_DIR, function_tmpdir)
 
-        # Test file conversion and naming
-        assert (tmp_path / "sim.toml").exists()
-        assert (tmp_path / "gwf.toml").exists()
-        assert not (tmp_path / "sim-nam.toml").exists()
+    assert (function_tmpdir / "sim-nam.toml").exists()
+    assert (function_tmpdir / "gwf-nam.toml").exists()
 
-        # Test parent relationships in files
-        with (tmp_path / "sim.toml").open("rb") as f:
-            sim_data = tomli.load(f)
-        assert sim_data["name"] == "sim"
-        assert "parent" not in sim_data
+    with (function_tmpdir / "sim-nam.toml").open("rb") as f:
+        sim_data = tomli.load(f)
+    assert sim_data["name"] == "sim-nam"
+    assert sim_data["schema_version"] == "2"
+    assert "parent" not in sim_data
 
-        with (tmp_path / "gwf.toml").open("rb") as f:
-            gwf_data = tomli.load(f)
-        assert gwf_data["name"] == "gwf"
-        assert gwf_data["parent"] == "sim"
+    with (function_tmpdir / "gwf-nam.toml").open("rb") as f:
+        gwf_data = tomli.load(f)
+    assert gwf_data["name"] == "gwf-nam"
+    assert gwf_data["parent"] == "sim-nam"
+    assert gwf_data["schema_version"] == "2"
 
-        dfns = load_all(tmp_path)
-        root = load_tree(tmp_path)
-        roots = []
-        for dfn in dfns.values():
-            if dfn.parent:
-                assert dfn.parent in dfns
-            else:
-                roots.append(dfn.name)
-        assert len(roots) == 1
-        assert root.name == "sim"
-        assert root == roots[0]
+    dfns = load_all(function_tmpdir)
+    roots = []
+    for dfn in dfns.values():
+        if dfn.parent:
+            assert dfn.parent in dfns
+        else:
+            roots.append(dfn.name)
+    assert len(roots) == 1
+    root = dfns[roots[0]]
+    assert root.name == "sim-nam"
 
-        model_types = ["gwf", "gwt", "gwe"]
-        models = root.children or {}
-        for model_type in model_types:
-            if model_type in models:
-                assert models[model_type].name == model_type
-                assert models[model_type].parent == "sim"
+    models = root.children or {}
+    for mdl in models:
+        assert models[mdl].name == mdl
+        assert models[mdl].parent == "sim-nam"
 
-        if "gwf" in models:
-            pkgs = models["gwf"].children or {}
-            gwf_packages = [
-                k for k in pkgs if k.startswith("gwf-") and isinstance(pkgs[k], dict)
-            ]
-            assert len(gwf_packages) > 0
-
-            if dis := pkgs.get("gwf-dis", None):
-                assert dis.name == "gwf-dis"
-                assert dis.parent == "gwf"
-                assert "options" in (dis.blocks or {})
-                assert "dimensions" in (dis.blocks or {})
+    if gwf := models.get("gwf-nam", None):
+        pkgs = gwf.children or {}
+        pkgs = {
+            k: v
+            for k, v in pkgs.items()
+            if k.startswith("gwf-") and isinstance(v, dict)
+        }
+        assert len(pkgs) > 0
+        if dis := pkgs.get("gwf-dis", None):
+            assert dis.name == "gwf-dis"
+            assert dis.parent == "gwf"
+            assert "options" in (dis.blocks or {})
+            assert "dimensions" in (dis.blocks or {})
