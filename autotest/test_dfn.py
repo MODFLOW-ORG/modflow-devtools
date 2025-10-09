@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.dfn import Dfn
+from modflow_devtools.dfn import Dfn, load
 from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
@@ -45,8 +45,8 @@ def test_load_v1(dfn_name):
         (DFN_DIR / "common.dfn").open() as common_file,
         (DFN_DIR / f"{dfn_name}.dfn").open() as dfn_file,
     ):
-        common, _ = Dfn._load_v1_flat(common_file)
-        dfn = Dfn.load(dfn_file, name=dfn_name, common=common)
+        common, _ = load(common_file)
+        dfn = load(dfn_file, name=dfn_name, common=common)
         assert any(dfn)
 
 
