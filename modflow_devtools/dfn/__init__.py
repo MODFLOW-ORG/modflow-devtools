@@ -406,7 +406,12 @@ def _load_common(f) -> Fields:
 
 
 def load_flat(path: str | PathLike) -> Dfns:
-    """Load a MODFLOW 6 specification from definition files in a directory."""
+    """
+    Load a flat MODFLOW 6 specification from definition files in a directory.
+
+    Returns a dictionary of unlinked DFNs, i.e. without `children` populated.
+    Components will have `parent` populated if the schema is v2 but not if v1.
+    """
     exclude = ["common", "flopy"]
     path = Path(path).expanduser().resolve()
     dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.stem not in exclude}
@@ -423,6 +428,16 @@ def load_flat(path: str | PathLike) -> Dfns:
             with toml_path.open("rb") as f:
                 dfns[toml_name] = load(f, name=toml_name, format="toml")
     return dfns
+
+
+def load_tree(path: str | PathLike) -> Dfn:
+    """
+    Load a structured MODFLOW 6 specification from definition files in a directory.
+
+    A single root component definition (the simulation) is returned. This contains
+    child (and grandchild) components for the relevant models and packages.
+    """
+    return to_tree(load_flat(path))
 
 
 def to_tree(dfns: Dfns) -> Dfn:
@@ -506,13 +521,3 @@ def to_flat(dfn: Dfn) -> Dfns:
         return dfns
 
     return _flatten(dfn)
-
-
-def load_tree(dfndir: str | PathLike) -> Dfn:
-    """
-    Load a structured MODFLOW 6 specification from definition files in a directory.
-
-    A single root component definition (the simulation) is returned. This contains
-    child (and grandchild) components for the relevant models and packages.
-    """
-    return to_tree(load_flat(dfndir))
