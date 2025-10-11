@@ -79,7 +79,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, macos-13, windows-2022 ]
+        os: [ ubuntu-22.04, macos-14, windows-2022 ]
         python: [ "3.10", "3.11", "3.12", "3.13" ]
     env:
       GCC_V: 11
