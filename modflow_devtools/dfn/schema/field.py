@@ -31,9 +31,11 @@ class Field:
     type: str | None = None
     block: str | None = None
     default: Any | None = None
+    longname: str | None = None
     description: str | None = None
     children: Fields | None = None
     optional: bool | None = None
+    developmode: bool = False
     reader: Reader = "urword"
     shape: str | None = None
     valid: tuple[str, ...] | None = None
