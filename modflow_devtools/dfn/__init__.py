@@ -162,7 +162,7 @@ class MapV1To2(SchemaMap):
             shape = field_dict.pop("shape", None)
             shape = None if shape == "" else shape
             block = field_dict.pop("block", None)
-            default = field_dict.pop("default", None)
+            default = field_dict.pop("default_value", None)
             default = try_literal_eval(default) if _type != "string" else default
             description = field_dict.pop("description", "")
 
