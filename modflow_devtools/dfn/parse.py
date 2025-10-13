@@ -28,7 +28,7 @@ def field_attr_sort_key(item) -> int:
         return 1
     if k == "shape":
         return 2
-    if k == "default":
+    if k == "default_value":
         return 3
     if k == "reader":
         return 4
@@ -145,8 +145,6 @@ def parse_dfn(f, common: dict | None = None) -> tuple[OMD, list[str]]:
 
         # parse field attribute
         key, _, value = line.partition(" ")
-        if key == "default_value":
-            key = "default"
         field[key] = value
 
         # if this is the description attribute, substitute
