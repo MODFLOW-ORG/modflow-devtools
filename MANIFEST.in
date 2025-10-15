@@ -1,0 +1,2 @@
+include modflow_devtools/programs/*.csv
+include modflow_devtools/registry/*.toml
