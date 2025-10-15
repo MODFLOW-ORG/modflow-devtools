@@ -24,7 +24,7 @@ from modflow_devtools.dfn.parse import (
     try_parse_bool,
     try_parse_parent,
 )
-from modflow_devtools.dfn.schema.block import Block, Blocks
+from modflow_devtools.dfn.schema.block import Block, Blocks, block_sort_key
 from modflow_devtools.dfn.schema.field import SCALAR_TYPES, Field, Fields
 from modflow_devtools.dfn.schema.ref import Ref
 from modflow_devtools.dfn.schema.v1 import FieldV1
@@ -42,6 +42,7 @@ __all__ = [
     "FieldV2",
     "Fields",
     "Ref",
+    "block_sort_key",
     "load",
     "load_flat",
     "load_tree",
@@ -89,6 +90,52 @@ class Dfn:
         # for now return a multidict to support duplicate field names.
         # TODO: change to normal dict after deprecating v1 schema
         return OMD(fields)
+
+    @classmethod
+    def from_dict(cls, d: dict, strict: bool = False) -> "Dfn":
+        """
+        Create a Dfn instance from a dictionary.
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary containing DFN data
+        strict : bool, optional
+            If True, raise ValueError if dict contains unrecognized keys at the
+            top level or in nested field dicts. If False (default), ignore
+            unrecognized keys.
+        """
+        keys = list(cls.__annotations__.keys())
+        if strict:
+            extra_keys = set(d.keys()) - set(keys)
+            if extra_keys:
+                raise ValueError(f"Unrecognized keys in DFN data: {extra_keys}")
+        data = {k: v for k, v in d.items() if k in keys}
+        schema_version = data.get("schema_version", Version("2"))
+        field_cls = FieldV1 if schema_version == Version("1") else FieldV2
+
+        def _fields(block_name, block_data):
+            fields = {}
+            for field_name, field_data in block_data.items():
+                if isinstance(field_data, dict):
+                    fields[field_name] = field_cls.from_dict(field_data, strict=strict)
+                elif isinstance(field_data, field_cls):
+                    fields[field_name] = field_data
+                else:
+                    raise TypeError(
+                        f"Invalid field data for {field_name} in block {block_name}: "
+                        f"expected dict or Field, got {type(field_data)}"
+                    )
+            return fields
+
+        if blocks := data.get("blocks"):
+            data["schema_version"] = schema_version
+            data["blocks"] = {
+                block_name: _fields(block_name, block_data)
+                for block_name, block_data in blocks.items()
+            }
+
+        return cls(**data)
 
 
 class SchemaMap(ABC):
