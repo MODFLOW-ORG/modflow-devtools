@@ -1,9 +1,13 @@
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
-from modflow_devtools.dfn import _load_common, load, load_flat
+from modflow_devtools.dfn import Dfn, _load_common, load, load_flat
 from modflow_devtools.dfn.fetch import fetch_dfns
+from modflow_devtools.dfn.schema.v1 import FieldV1
+from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
 
@@ -114,3 +118,185 @@ def test_convert(function_tmpdir):
             assert dis.parent == "gwf"
             assert "options" in (dis.blocks or {})
             assert "dimensions" in (dis.blocks or {})
+
+
+def test_dfn_from_dict_ignores_extra_keys():
+    d = {
+        "schema_version": Version("2"),
+        "name": "test-dfn",
+        "extra_key": "should be allowed",
+        "another_extra": 123,
+    }
+    dfn = Dfn.from_dict(d)
+    assert dfn.name == "test-dfn"
+    assert dfn.schema_version == Version("2")
+
+
+def test_dfn_from_dict_roundtrip():
+    original = Dfn(
+        schema_version=Version("2"),
+        name="gwf-nam",
+        parent="sim-nam",
+        advanced=False,
+        multi=True,
+        blocks={"options": {}},
+    )
+    d = asdict(original)
+    reconstructed = Dfn.from_dict(d)
+    assert reconstructed.name == original.name
+    assert reconstructed.schema_version == original.schema_version
+    assert reconstructed.parent == original.parent
+    assert reconstructed.advanced == original.advanced
+    assert reconstructed.multi == original.multi
+    assert reconstructed.blocks == original.blocks
+
+
+def test_fieldv1_from_dict_ignores_extra_keys():
+    d = {
+        "name": "test_field",
+        "type": "keyword",
+        "extra_key": "should be allowed",
+        "another_extra": 123,
+    }
+    field = FieldV1.from_dict(d)
+    assert field.name == "test_field"
+    assert field.type == "keyword"
+
+
+def test_fieldv1_from_dict_roundtrip():
+    original = FieldV1(
+        name="maxbound",
+        type="integer",
+        block="dimensions",
+        description="maximum number of cells",
+        tagged=True,
+    )
+    d = asdict(original)
+    reconstructed = FieldV1.from_dict(d)
+    assert reconstructed.name == original.name
+    assert reconstructed.type == original.type
+    assert reconstructed.block == original.block
+    assert reconstructed.description == original.description
+    assert reconstructed.tagged == original.tagged
+
+
+def test_fieldv2_from_dict_ignores_extra_keys():
+    d = {
+        "name": "test_field",
+        "type": "keyword",
+        "extra_key": "should be allowed",
+        "another_extra": 123,
+    }
+    field = FieldV2.from_dict(d)
+    assert field.name == "test_field"
+    assert field.type == "keyword"
+
+
+def test_fieldv2_from_dict_roundtrip():
+    original = FieldV2(
+        name="nper",
+        type="integer",
+        block="dimensions",
+        description="number of stress periods",
+        optional=False,
+    )
+    d = asdict(original)
+    reconstructed = FieldV2.from_dict(d)
+    assert reconstructed.name == original.name
+    assert reconstructed.type == original.type
+    assert reconstructed.block == original.block
+    assert reconstructed.description == original.description
+    assert reconstructed.optional == original.optional
+
+
+def test_dfn_from_dict_with_v1_field_dicts():
+    d = {
+        "schema_version": Version("1"),
+        "name": "test-dfn",
+        "blocks": {
+            "options": {
+                "save_flows": {
+                    "name": "save_flows",
+                    "type": "keyword",
+                    "tagged": True,
+                    "in_record": False,
+                },
+            },
+        },
+    }
+    dfn = Dfn.from_dict(d)
+    assert dfn.schema_version == Version("1")
+    assert dfn.name == "test-dfn"
+    assert dfn.blocks is not None
+    assert "options" in dfn.blocks
+    assert "save_flows" in dfn.blocks["options"]
+
+    field = dfn.blocks["options"]["save_flows"]
+    assert isinstance(field, FieldV1)
+    assert field.name == "save_flows"
+    assert field.type == "keyword"
+    assert field.tagged is True
+    assert field.in_record is False
+
+
+def test_dfn_from_dict_with_v2_field_dicts():
+    d = {
+        "schema_version": Version("2"),
+        "name": "test-dfn",
+        "blocks": {
+            "dimensions": {
+                "nper": {
+                    "name": "nper",
+                    "type": "integer",
+                    "optional": False,
+                },
+            },
+        },
+    }
+    dfn = Dfn.from_dict(d)
+    assert dfn.schema_version == Version("2")
+    assert dfn.name == "test-dfn"
+    assert dfn.blocks is not None
+    assert "dimensions" in dfn.blocks
+    assert "nper" in dfn.blocks["dimensions"]
+
+    field = dfn.blocks["dimensions"]["nper"]
+    assert isinstance(field, FieldV2)
+    assert field.name == "nper"
+    assert field.type == "integer"
+    assert field.optional is False
+
+
+def test_dfn_from_dict_defaults_to_v2_fields():
+    d = {
+        "name": "test-dfn",
+        "blocks": {
+            "options": {
+                "some_field": {
+                    "name": "some_field",
+                    "type": "keyword",
+                },
+            },
+        },
+    }
+    dfn = Dfn.from_dict(d)
+    assert dfn.blocks is not None
+    field = dfn.blocks["options"]["some_field"]
+    assert isinstance(field, FieldV2)
+    assert dfn.schema_version == Version("2")
+
+
+def test_dfn_from_dict_with_already_deserialized_fields():
+    field = FieldV2(name="test", type="keyword")
+    d = {
+        "schema_version": Version("2"),
+        "name": "test-dfn",
+        "blocks": {
+            "options": {
+                "test": field,
+            },
+        },
+    }
+    dfn = Dfn.from_dict(d)
+    assert dfn.blocks is not None
+    assert dfn.blocks["options"]["test"] is field
