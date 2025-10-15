@@ -132,6 +132,34 @@ def test_dfn_from_dict_ignores_extra_keys():
     assert dfn.schema_version == Version("2")
 
 
+def test_dfn_from_dict_strict_mode():
+    d = {
+        "schema_version": Version("2"),
+        "name": "test-dfn",
+        "extra_key": "should cause error",
+    }
+    with pytest.raises(ValueError, match="Unrecognized keys in DFN data"):
+        Dfn.from_dict(d, strict=True)
+
+
+def test_dfn_from_dict_strict_mode_nested():
+    d = {
+        "schema_version": Version("2"),
+        "name": "test-dfn",
+        "blocks": {
+            "options": {
+                "test_field": {
+                    "name": "test_field",
+                    "type": "keyword",
+                    "extra_key": "should cause error",
+                },
+            },
+        },
+    }
+    with pytest.raises(ValueError, match="Unrecognized keys in field data"):
+        Dfn.from_dict(d, strict=True)
+
+
 def test_dfn_from_dict_roundtrip():
     original = Dfn(
         schema_version=Version("2"),
@@ -163,6 +191,16 @@ def test_fieldv1_from_dict_ignores_extra_keys():
     assert field.type == "keyword"
 
 
+def test_fieldv1_from_dict_strict_mode():
+    d = {
+        "name": "test_field",
+        "type": "keyword",
+        "extra_key": "should cause error",
+    }
+    with pytest.raises(ValueError, match="Unrecognized keys in field data"):
+        FieldV1.from_dict(d, strict=True)
+
+
 def test_fieldv1_from_dict_roundtrip():
     original = FieldV1(
         name="maxbound",
@@ -190,6 +228,16 @@ def test_fieldv2_from_dict_ignores_extra_keys():
     field = FieldV2.from_dict(d)
     assert field.name == "test_field"
     assert field.type == "keyword"
+
+
+def test_fieldv2_from_dict_strict_mode():
+    d = {
+        "name": "test_field",
+        "type": "keyword",
+        "extra_key": "should cause error",
+    }
+    with pytest.raises(ValueError, match="Unrecognized keys in field data"):
+        FieldV2.from_dict(d, strict=True)
 
 
 def test_fieldv2_from_dict_roundtrip():

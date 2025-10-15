@@ -92,11 +92,24 @@ class Dfn:
         return OMD(fields)
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Dfn":
+    def from_dict(cls, d: dict, strict: bool = False) -> "Dfn":
         """
-        Create a Dfn instance from a dictionary. Ignores keys not in the dataclass.
+        Create a Dfn instance from a dictionary.
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary containing DFN data
+        strict : bool, optional
+            If True, raise ValueError if dict contains unrecognized keys at the
+            top level or in nested field dicts. If False (default), ignore
+            unrecognized keys.
         """
         keys = list(cls.__annotations__.keys())
+        if strict:
+            extra_keys = set(d.keys()) - set(keys)
+            if extra_keys:
+                raise ValueError(f"Unrecognized keys in DFN data: {extra_keys}")
         data = {k: v for k, v in d.items() if k in keys}
         schema_version = data.get("schema_version", Version("2"))
         field_cls = FieldV1 if schema_version == Version("1") else FieldV2
@@ -105,7 +118,7 @@ class Dfn:
             fields = {}
             for field_name, field_data in block_data.items():
                 if isinstance(field_data, dict):
-                    fields[field_name] = field_cls.from_dict(field_data)
+                    fields[field_name] = field_cls.from_dict(field_data, strict=strict)
                 elif isinstance(field_data, field_cls):
                     fields[field_name] = field_data
                 else:
