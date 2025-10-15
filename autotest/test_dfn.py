@@ -8,7 +8,7 @@ from modflow_devtools.dfn import Dfn, _load_common, load, load_flat
 from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn.schema.v1 import FieldV1
 from modflow_devtools.dfn.schema.v2 import FieldV2
-from modflow_devtools.dfn2toml import convert
+from modflow_devtools.dfn2toml import convert, validate
 from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
@@ -348,3 +348,38 @@ def test_dfn_from_dict_with_already_deserialized_fields():
     dfn = Dfn.from_dict(d)
     assert dfn.blocks is not None
     assert dfn.blocks["options"]["test"] is field
+
+
+@requires_pkg("boltons")
+def test_validate_directory():
+    """Test validation on a directory of DFN files."""
+    assert validate(DFN_DIR) is True
+
+
+@requires_pkg("boltons")
+def test_validate_single_file(dfn_name):
+    """Test validation on a single DFN file."""
+    if dfn_name == "common":
+        pytest.skip("common.dfn is handled separately")
+    assert validate(DFN_DIR / f"{dfn_name}.dfn") is True
+
+
+@requires_pkg("boltons")
+def test_validate_common_file():
+    """Test validation on common.dfn."""
+    assert validate(DFN_DIR / "common.dfn") is True
+
+
+@requires_pkg("boltons")
+def test_validate_invalid_file(function_tmpdir):
+    """Test validation on an invalid DFN file."""
+    invalid_dfn = function_tmpdir / "invalid.dfn"
+    invalid_dfn.write_text("invalid content")
+    assert validate(invalid_dfn) is False
+
+
+@requires_pkg("boltons")
+def test_validate_nonexistent_file(function_tmpdir):
+    """Test validation on a nonexistent file."""
+    nonexistent = function_tmpdir / "nonexistent.dfn"
+    assert validate(nonexistent) is False

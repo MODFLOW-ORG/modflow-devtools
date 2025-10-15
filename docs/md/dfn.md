@@ -22,8 +22,12 @@ Where legacy DFNs are flat lists of variables, with comments demarcating blocks,
 
 The `dfn` dependency group is necessary to use the TOML conversion utility.
 
-To convert definition files to TOML, use:
+To convert legacy format definition files to TOML, use:
 
 ```shell
 python -m modflow_devtools.dfn.dfn2toml -i <dfn dir path> -o <output dir path>
 ```
+
+The tool may also be used on individual files.
+
+To validate legacy format definition files, use the `--validate` flag.
