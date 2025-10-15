@@ -25,9 +25,10 @@ class FieldV2(Field):
             If True, raise ValueError if dict contains unrecognized keys.
             If False (default), ignore unrecognized keys.
         """
-        keys = list(cls.__annotations__.keys()) + list(Field.__annotations__.keys())
+        keys = set(
+            list(cls.__annotations__.keys()) + list(Field.__annotations__.keys())
+        )
         if strict:
-            extra_keys = set(d.keys()) - set(keys)
-            if extra_keys:
+            if extra_keys := set(d.keys()) - keys:
                 raise ValueError(f"Unrecognized keys in field data: {extra_keys}")
         return cls(**{k: v for k, v in d.items() if k in keys})
