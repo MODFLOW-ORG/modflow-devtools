@@ -3,9 +3,7 @@ from typing import Literal
 
 from modflow_devtools.dfn.schema.field import Field
 
-FieldType = Literal[
-    "keyword", "integer", "double", "string", "array", "record", "union"
-]
+FieldType = Literal["keyword", "integer", "double", "string", "record", "array", "list"]
 
 
 @dataclass(kw_only=True)
