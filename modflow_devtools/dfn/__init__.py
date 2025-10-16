@@ -91,6 +91,12 @@ class Dfn:
         # TODO: change to normal dict after deprecating v1 schema
         return OMD(fields)
 
+    def __post_init__(self):
+        if not isinstance(self.schema_version, Version):
+            self.schema_version = Version(str(self.schema_version))
+        if self.blocks:
+            self.blocks = dict(sorted(self.blocks.items(), key=block_sort_key))
+
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "Dfn":
         """
