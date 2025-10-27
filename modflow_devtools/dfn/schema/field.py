@@ -2,8 +2,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
-
 Fields = Mapping[str, "Field"]
 
 

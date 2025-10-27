@@ -13,6 +13,8 @@ FieldType = Literal[
     "keystring",
 ]
 
+SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
+
 
 Reader = Literal[
     "urword",
