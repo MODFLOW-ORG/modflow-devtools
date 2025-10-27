@@ -29,7 +29,6 @@ class FieldV1(Field):
     tagged: bool = False
     in_record: bool = False
     layered: bool | None = None
-    longname: str | None = None
     preserve_case: bool = False
     numeric_index: bool = False
     deprecated: bool = False
