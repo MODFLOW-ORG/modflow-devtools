@@ -27,8 +27,9 @@ from modflow_devtools.dfn.parse import (
 from modflow_devtools.dfn.schema.block import Block, Blocks, block_sort_key
 from modflow_devtools.dfn.schema.field import Field, Fields
 from modflow_devtools.dfn.schema.ref import Ref
-from modflow_devtools.dfn.schema.v1 import FieldV1, SCALAR_TYPES as V1_SCALAR_TYPES
-from modflow_devtools.dfn.schema.v2 import FieldV2, SCALAR_TYPES as V2_SCALAR_TYPES
+from modflow_devtools.dfn.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
+from modflow_devtools.dfn.schema.v1 import FieldV1
+from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
