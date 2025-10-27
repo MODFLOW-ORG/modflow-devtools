@@ -25,14 +25,14 @@ from modflow_devtools.dfn.parse import (
     try_parse_parent,
 )
 from modflow_devtools.dfn.schema.block import Block, Blocks, block_sort_key
-from modflow_devtools.dfn.schema.field import SCALAR_TYPES, Field, Fields
+from modflow_devtools.dfn.schema.field import Field, Fields
 from modflow_devtools.dfn.schema.ref import Ref
+from modflow_devtools.dfn.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
 from modflow_devtools.dfn.schema.v1 import FieldV1
 from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
-    "SCALAR_TYPES",
     "Block",
     "Blocks",
     "Dfn",
@@ -241,7 +241,7 @@ class MapV1To2(SchemaMap):
                     )
 
                 # implicit record with all scalar fields
-                if all(t in SCALAR_TYPES for t in item_types):
+                if all(t in V1_SCALAR_TYPES for t in item_types):
                     children = _record_fields()
                     return FieldV2.from_dict(
                         {
@@ -329,7 +329,7 @@ class MapV1To2(SchemaMap):
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
             # typing, this can be read off the type itself.
-            elif shape is not None and _type not in SCALAR_TYPES:
+            elif shape is not None and _type not in V1_SCALAR_TYPES:
                 raise TypeError(f"Unsupported array type: {_type}")
 
             else:
