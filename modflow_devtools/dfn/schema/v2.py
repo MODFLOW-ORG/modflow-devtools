@@ -5,6 +5,8 @@ from modflow_devtools.dfn.schema.field import Field
 
 FieldType = Literal["keyword", "integer", "double", "string", "record", "array", "list"]
 
+SCALAR_TYPES = ("keyword", "integer", "double", "string")
+
 
 @dataclass(kw_only=True)
 class FieldV2(Field):
