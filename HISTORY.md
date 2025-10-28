@@ -1,3 +1,32 @@
+### Version 1.7.1
+
+#### New features
+
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/548e5e83ecb3eae2e5d7873d62ed77c4db4b1c38): Structure dfn component hierarchy (#228). Committed by wpbonelli on 2025-07-14.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/27834ffde3a2216caba597100ffd899b8b11569b): Add get_fields function (#230). Committed by wpbonelli on 2025-07-24.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/016c43e1c15d936f2d6a7b4c450d0fbe6a7d082a): Separate all recarray columns in tomls (#234). Committed by wpbonelli on 2025-08-19.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/a563977b57f56ce1581c754b4d4f35ef1a50d8b2): Mark models, exgs, slns multi-components in tomls (#235). Committed by wpbonelli on 2025-08-19.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5e79f720bef0fc1618633844640207c1b3d60fa3): Add longname and developmode to field (#238). Committed by wpbonelli on 2025-10-11.
+* [feat(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/997538c601e32ebd8058c1257f79eca2b9b07c80): Add from_dict method (#241). Committed by wpbonelli on 2025-10-15.
+* [feat(dfn2toml)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/fe5f12485f53f748a8d05390a9ba2fc7f102fe5d): Support single files, add validate mode (#242). Committed by wpbonelli on 2025-10-15.
+* [feat(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5347fbd52505874a8c8b4b91f2918caaf65e0129): Add programs module and database (#243). Committed by wpbonelli on 2025-10-15.
+
+#### Bug fixes
+
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/8e56e79cebf9c863f2022fc93c7d3cf5003e2962): Populate keystring children properly (#232). Committed by wpbonelli on 2025-08-05.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/526e538ec7a607e990b0b6e63bdf92d435ede8a4): Distinguish file format from schema version (#233). Committed by wpbonelli on 2025-10-09.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/cc9dff57283b92b3f2bc06034bce378e981e9282): Add missing field attributes, model type constant (#244). Committed by wpbonelli on 2025-10-15.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/000a6654c7f7cec2c270e559a2d5f0ebf1bbe964): Add list to v2 FieldType, drop union (#245). Committed by wpbonelli on 2025-10-16.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/2aa99d53133debb21fd681f56684f3183f6ed949): Sort blocks, coerce schema_version to Version (#246). Committed by wpbonelli on 2025-10-16.
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/bc36dd6b93b5ba40634b7054beb1c80caa431baa): Move SCALAR_TYPES to schema-version-specific modules (#250). Committed by wpbonelli on 2025-10-27.
+
+#### Refactoring
+
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/2e4060cd7e79b989b99e24a011dc5f47d11ad34e): Separate period block arrays in toml (#229). Committed by wpbonelli on 2025-07-22.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/18789cd940afb3cb46be10e50b100c6234f0e106): Drop fkeys from v2/toml (#231). Committed by wpbonelli on 2025-07-29.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/59afa51bf8bd206d21be029d2b7769e807f7bab3): Rename _SCALAR_TYPES to public SCALAR_TYPES (#236). Committed by Mike Taves on 2025-09-11.
+* [refactor(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/37d2f9a123736b19608232ac4f66af0d3466a95b): Rename default -> default_value in schema map (#240). Committed by wpbonelli on 2025-10-13.
+
 ### Version 1.7.0
 
 #### New features
