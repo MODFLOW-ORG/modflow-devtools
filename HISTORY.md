@@ -1,3 +1,13 @@
+### Version 1.8.0
+
+#### New features
+
+* [feat(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/7424efa236c67365889081f857127cb2ccfa19c3): Add programs module and database (#243). Committed by wpbonelli on 2025-10-15.
+
+#### Refactoring
+
+* [refactor](https://github.com/MODFLOW-ORG/modflow-devtools/commit/98215fd29a46cd63c964613dba14fbacfed26721): Move drop_none_or_empty to misc module. Committed by w-bonelli on 2025-10-29.
+
 ### Version 1.7.0
 
 #### New features
