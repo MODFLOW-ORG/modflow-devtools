@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import textwrap
 from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
@@ -17,6 +18,10 @@ from modflow_devtools.misc import drop_none_or_empty
 
 
 def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> None:
+    """
+    Convert DFN files in `inpath` to TOML files in `outdir`.
+    By default, convert the definitions to schema version 2.
+    """
     inpath = Path(inpath).expanduser().absolute()
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
@@ -38,7 +43,7 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
             dfn = load(f, name=inpath.stem, common=common, format="dfn")
 
         dfn = map(dfn, schema_version=schema_version)
-        _convert(outdir / f"{inpath.stem}.toml", dfn)
+        _convert(dfn, outdir / f"{inpath.stem}.toml")
     else:
         dfns = {
             name: map(dfn, schema_version=schema_version)
@@ -47,18 +52,16 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
         tree = to_tree(dfns)
         flat = to_flat(tree)
         for dfn_name, dfn in flat.items():
-            _convert(outdir / f"{dfn_name}.toml", dfn)
+            _convert(dfn, outdir / f"{dfn_name}.toml")
 
 
-def _convert(outpath: Path, dfn: Dfn) -> None:
-    """Write a DFN object to a TOML file."""
+def _convert(dfn: Dfn, outpath: Path) -> None:
     with Path.open(outpath, "wb") as f:
         # TODO if we start using c/attrs, swap out
         # all this for a custom unstructuring hook
         dfn_dict = asdict(dfn)
         dfn_dict["schema_version"] = str(dfn_dict["schema_version"])
-        if dfn_dict.get("blocks"):
-            blocks = dfn_dict.pop("blocks")
+        if blocks := dfn_dict.pop("blocks", None):
             for block_name, block_fields in blocks.items():
                 if block_name not in dfn_dict:
                     dfn_dict[block_name] = {}
@@ -78,11 +81,19 @@ def _convert(outpath: Path, dfn: Dfn) -> None:
 
 if __name__ == "__main__":
     """
-    Convert DFN files in the original format and schema version (1)
-    to TOML files with a new schema version.
+    Convert DFN files in the original format and schema version 1
+    to TOML files, by default also converting to schema version 2.
     """
 
-    parser = argparse.ArgumentParser(description="Convert DFN files to TOML.")
+    parser = argparse.ArgumentParser(
+        description="Convert DFN files to TOML.",
+        epilog=textwrap.dedent(
+            """\
+Convert DFN files in the original format and schema version 1
+to TOML files, by default also converting to schema version 2.
+"""
+        ),
+    )
     parser.add_argument(
         "--indir",
         "-i",

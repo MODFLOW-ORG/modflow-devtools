@@ -383,3 +383,102 @@ def test_validate_nonexistent_file(function_tmpdir):
     """Test validation on a nonexistent file."""
     nonexistent = function_tmpdir / "nonexistent.dfn"
     assert not is_valid(nonexistent)
+
+
+def test_fieldv1_to_fieldv2_conversion():
+    """Test that FieldV1 instances are properly converted to FieldV2."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "save_flows": FieldV1(
+                    name="save_flows",
+                    type="keyword",
+                    block="options",
+                    description="save calculated flows",
+                    tagged=True,
+                    in_record=False,
+                    reader="urword",
+                ),
+                "some_float": FieldV1(
+                    name="some_float",
+                    type="double precision",
+                    block="options",
+                    description="a floating point value",
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+    assert dfn_v2.schema_version == Version("2")
+    assert dfn_v2.blocks is not None
+    assert "options" in dfn_v2.blocks
+    assert "save_flows" in dfn_v2.blocks["options"]
+
+    save_flows = dfn_v2.blocks["options"]["save_flows"]
+    assert isinstance(save_flows, FieldV2)
+    assert save_flows.name == "save_flows"
+    assert save_flows.type == "keyword"
+    assert save_flows.block == "options"
+    assert save_flows.description == "save calculated flows"
+    assert not hasattr(save_flows, "tagged")
+    assert not hasattr(save_flows, "in_record")
+    assert not hasattr(save_flows, "reader")
+
+    some_float = dfn_v2.blocks["options"]["some_float"]
+    assert isinstance(some_float, FieldV2)
+    assert some_float.name == "some_float"
+    assert some_float.type == "double"
+    assert some_float.block == "options"
+    assert some_float.description == "a floating point value"
+
+
+def test_fieldv1_to_fieldv2_conversion_with_children():
+    """Test that FieldV1 with nested children are properly converted to FieldV2."""
+    from modflow_devtools.dfn import map
+
+    # Create nested fields for a record
+    child_field_v1 = FieldV1(
+        name="cellid",
+        type="integer",
+        block="period",
+        description="cell identifier",
+        in_record=True,
+        tagged=False,
+    )
+
+    parent_field_v1 = FieldV1(
+        name="stress_period_data",
+        type="recarray cellid",
+        block="period",
+        description="stress period data",
+        in_record=False,
+    )
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "period": {
+                "stress_period_data": parent_field_v1,
+                "cellid": child_field_v1,
+            }
+        },
+    )
+
+    # Convert to v2
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    # Check that all fields are FieldV2 instances
+    assert dfn_v2.blocks is not None
+    for block_name, block_fields in dfn_v2.blocks.items():
+        for field_name, field in block_fields.items():
+            assert isinstance(field, FieldV2)
+            # Check nested children too
+            if field.children:
+                for child_name, child_field in field.children.items():
+                    assert isinstance(child_field, FieldV2)

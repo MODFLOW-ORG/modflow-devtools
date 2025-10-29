@@ -334,7 +334,11 @@ class MapV1To2(SchemaMap):
                 raise TypeError(f"Unsupported array type: {_type}")
 
             else:
-                _field.type = _type
+                # Map v1 type names to v2 type names
+                type_map = {
+                    "double precision": "double",
+                }
+                _field.type = type_map.get(_type, _type)
 
             return _field
 
