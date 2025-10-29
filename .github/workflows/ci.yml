@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+      - dfn
     paths-ignore:
       - '**.md'
       - '.github/workflows/release.yml'
