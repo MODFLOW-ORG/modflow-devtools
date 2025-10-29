@@ -8,7 +8,7 @@ from modflow_devtools.dfn import Dfn, _load_common, load, load_flat
 from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn.schema.v1 import FieldV1
 from modflow_devtools.dfn.schema.v2 import FieldV2
-from modflow_devtools.dfn2toml import convert, validate
+from modflow_devtools.dfn2toml import convert, is_valid
 from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
@@ -354,7 +354,7 @@ def test_dfn_from_dict_with_already_deserialized_fields():
 @requires_pkg("boltons")
 def test_validate_directory():
     """Test validation on a directory of DFN files."""
-    assert validate(DFN_DIR) is True
+    assert is_valid(DFN_DIR)
 
 
 @requires_pkg("boltons")
@@ -362,13 +362,13 @@ def test_validate_single_file(dfn_name):
     """Test validation on a single DFN file."""
     if dfn_name == "common":
         pytest.skip("common.dfn is handled separately")
-    assert validate(DFN_DIR / f"{dfn_name}.dfn") is True
+    assert is_valid(DFN_DIR / f"{dfn_name}.dfn")
 
 
 @requires_pkg("boltons")
 def test_validate_common_file():
     """Test validation on common.dfn."""
-    assert validate(DFN_DIR / "common.dfn") is True
+    assert is_valid(DFN_DIR / "common.dfn")
 
 
 @requires_pkg("boltons")
@@ -376,11 +376,245 @@ def test_validate_invalid_file(function_tmpdir):
     """Test validation on an invalid DFN file."""
     invalid_dfn = function_tmpdir / "invalid.dfn"
     invalid_dfn.write_text("invalid content")
-    assert validate(invalid_dfn) is False
+    assert not is_valid(invalid_dfn)
 
 
 @requires_pkg("boltons")
 def test_validate_nonexistent_file(function_tmpdir):
     """Test validation on a nonexistent file."""
     nonexistent = function_tmpdir / "nonexistent.dfn"
-    assert validate(nonexistent) is False
+    assert not is_valid(nonexistent)
+
+
+def test_fieldv1_to_fieldv2_conversion():
+    """Test that FieldV1 instances are properly converted to FieldV2."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "save_flows": FieldV1(
+                    name="save_flows",
+                    type="keyword",
+                    block="options",
+                    description="save calculated flows",
+                    tagged=True,
+                    in_record=False,
+                    reader="urword",
+                ),
+                "some_float": FieldV1(
+                    name="some_float",
+                    type="double precision",
+                    block="options",
+                    description="a floating point value",
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+    assert dfn_v2.schema_version == Version("2")
+    assert dfn_v2.blocks is not None
+    assert "options" in dfn_v2.blocks
+    assert "save_flows" in dfn_v2.blocks["options"]
+
+    save_flows = dfn_v2.blocks["options"]["save_flows"]
+    assert isinstance(save_flows, FieldV2)
+    assert save_flows.name == "save_flows"
+    assert save_flows.type == "keyword"
+    assert save_flows.block == "options"
+    assert save_flows.description == "save calculated flows"
+    assert not hasattr(save_flows, "tagged")
+    assert not hasattr(save_flows, "in_record")
+    assert not hasattr(save_flows, "reader")
+
+    some_float = dfn_v2.blocks["options"]["some_float"]
+    assert isinstance(some_float, FieldV2)
+    assert some_float.name == "some_float"
+    assert some_float.type == "double"
+    assert some_float.block == "options"
+    assert some_float.description == "a floating point value"
+
+
+def test_fieldv1_to_fieldv2_conversion_with_children():
+    """Test that FieldV1 with nested children are properly converted to FieldV2."""
+    from modflow_devtools.dfn import map
+
+    # Create nested fields for a record
+    child_field_v1 = FieldV1(
+        name="cellid",
+        type="integer",
+        block="period",
+        description="cell identifier",
+        in_record=True,
+        tagged=False,
+    )
+
+    parent_field_v1 = FieldV1(
+        name="stress_period_data",
+        type="recarray cellid",
+        block="period",
+        description="stress period data",
+        in_record=False,
+    )
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "period": {
+                "stress_period_data": parent_field_v1,
+                "cellid": child_field_v1,
+            }
+        },
+    )
+
+    # Convert to v2
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    # Check that all fields are FieldV2 instances
+    assert dfn_v2.blocks is not None
+    for block_name, block_fields in dfn_v2.blocks.items():
+        for field_name, field in block_fields.items():
+            assert isinstance(field, FieldV2)
+            # Check nested children too
+            if field.children:
+                for child_name, child_field in field.children.items():
+                    assert isinstance(child_field, FieldV2)
+
+
+def test_period_block_conversion():
+    """Test period block recarray conversion to individual arrays."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-pkg",
+        blocks={
+            "period": {
+                "stress_period_data": FieldV1(
+                    name="stress_period_data",
+                    type="recarray cellid q",
+                    block="period",
+                    description="stress period data",
+                ),
+                "cellid": FieldV1(
+                    name="cellid",
+                    type="integer",
+                    block="period",
+                    shape="(ncelldim)",
+                    in_record=True,
+                ),
+                "q": FieldV1(
+                    name="q",
+                    type="double precision",
+                    block="period",
+                    shape="(maxbound)",
+                    in_record=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    period_block = dfn_v2.blocks["period"]
+    assert "cellid" not in period_block  # cellid removed
+    assert "q" in period_block
+    assert isinstance(period_block["q"], FieldV2)
+    # Shape should be transformed: maxbound removed, nper and nnodes added
+    assert "nper" in period_block["q"].shape
+    assert "nnodes" in period_block["q"].shape
+    assert "maxbound" not in period_block["q"].shape
+
+
+def test_record_type_conversion():
+    """Test record type with multiple scalar fields."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "auxrecord": FieldV1(
+                    name="auxrecord",
+                    type="record auxiliary auxname",
+                    block="options",
+                    in_record=False,
+                ),
+                "auxiliary": FieldV1(
+                    name="auxiliary",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "auxname": FieldV1(
+                    name="auxname",
+                    type="string",
+                    block="options",
+                    in_record=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    auxrecord = dfn_v2.blocks["options"]["auxrecord"]
+    assert isinstance(auxrecord, FieldV2)
+    assert auxrecord.type == "record"
+    assert auxrecord.children is not None
+    assert "auxiliary" in auxrecord.children
+    assert "auxname" in auxrecord.children
+    assert isinstance(auxrecord.children["auxiliary"], FieldV2)
+    assert isinstance(auxrecord.children["auxname"], FieldV2)
+
+
+def test_keystring_type_conversion():
+    """Test keystring type conversion."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "obs_filerecord": FieldV1(
+                    name="obs_filerecord",
+                    type="record obs6 filein obs6_filename",
+                    block="options",
+                    tagged=True,
+                ),
+                "obs6": FieldV1(
+                    name="obs6",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "filein": FieldV1(
+                    name="filein",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "obs6_filename": FieldV1(
+                    name="obs6_filename",
+                    type="string",
+                    block="options",
+                    in_record=True,
+                    preserve_case=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    obs_rec = dfn_v2.blocks["options"]["obs_filerecord"]
+    assert isinstance(obs_rec, FieldV2)
+    assert obs_rec.type == "record"
+    assert obs_rec.children is not None
+    assert all(isinstance(child, FieldV2) for child in obs_rec.children.values())

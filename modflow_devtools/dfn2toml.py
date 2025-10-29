@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import textwrap
 from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
@@ -9,42 +10,18 @@ from pathlib import Path
 import tomli_w as tomli
 from boltons.iterutils import remap
 
-from modflow_devtools.dfn import Dfn, load, load_flat, map, parse_dfn, to_flat, to_tree
+from modflow_devtools.dfn import Dfn, is_valid, load, load_flat, map, to_flat, to_tree
 from modflow_devtools.dfn.schema.block import block_sort_key
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
 
 
-def validate(path: str | PathLike) -> bool:
-    """Validate DFN file(s) by attempting to parse them."""
-    path = Path(path).expanduser().absolute()
-    try:
-        if not path.exists():
-            raise FileNotFoundError(f"Path does not exist: {path}")
-
-        if path.is_file():
-            if path.name == "common.dfn":
-                with path.open() as f:
-                    parse_dfn(f)
-            else:
-                common_path = path.parent / "common.dfn"
-                if common_path.exists():
-                    with common_path.open() as f:
-                        common, _ = parse_dfn(f)
-                else:
-                    common = {}
-                with path.open() as f:
-                    load(f, name=path.stem, common=common, format="dfn")
-        else:
-            load_flat(path)
-        return True
-    except Exception as e:
-        print(f"Validation failed: {e}")
-        return False
-
-
 def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> None:
+    """
+    Convert DFN files in `inpath` to TOML files in `outdir`.
+    By default, convert the definitions to schema version 2.
+    """
     inpath = Path(inpath).expanduser().absolute()
     outdir = Path(outdir).expanduser().absolute()
     outdir.mkdir(exist_ok=True, parents=True)
@@ -66,7 +43,7 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
             dfn = load(f, name=inpath.stem, common=common, format="dfn")
 
         dfn = map(dfn, schema_version=schema_version)
-        _convert(outdir / f"{inpath.stem}.toml", dfn)
+        _convert(dfn, outdir / f"{inpath.stem}.toml")
     else:
         dfns = {
             name: map(dfn, schema_version=schema_version)
@@ -75,18 +52,16 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
         tree = to_tree(dfns)
         flat = to_flat(tree)
         for dfn_name, dfn in flat.items():
-            _convert(outdir / f"{dfn_name}.toml", dfn)
+            _convert(dfn, outdir / f"{dfn_name}.toml")
 
 
-def _convert(outpath: Path, dfn: Dfn) -> None:
-    """Write a DFN object to a TOML file."""
+def _convert(dfn: Dfn, outpath: Path) -> None:
     with Path.open(outpath, "wb") as f:
         # TODO if we start using c/attrs, swap out
         # all this for a custom unstructuring hook
         dfn_dict = asdict(dfn)
         dfn_dict["schema_version"] = str(dfn_dict["schema_version"])
-        if dfn_dict.get("blocks"):
-            blocks = dfn_dict.pop("blocks")
+        if blocks := dfn_dict.pop("blocks", None):
             for block_name, block_fields in blocks.items():
                 if block_name not in dfn_dict:
                     dfn_dict[block_name] = {}
@@ -106,11 +81,19 @@ def _convert(outpath: Path, dfn: Dfn) -> None:
 
 if __name__ == "__main__":
     """
-    Convert DFN files in the original format and schema version (1)
-    to TOML files with a new schema version.
+    Convert DFN files in the original format and schema version 1
+    to TOML files, by default also converting to schema version 2.
     """
 
-    parser = argparse.ArgumentParser(description="Convert DFN files to TOML.")
+    parser = argparse.ArgumentParser(
+        description="Convert DFN files to TOML.",
+        epilog=textwrap.dedent(
+            """\
+Convert DFN files in the original format and schema version 1
+to TOML files, by default also converting to schema version 2.
+"""
+        ),
+    )
     parser.add_argument(
         "--indir",
         "-i",
@@ -138,7 +121,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.validate:
-        if not validate(args.indir):
+        if not is_valid(args.indir):
             sys.exit(1)
     else:
         convert(args.indir, args.outdir, args.schema_version)
