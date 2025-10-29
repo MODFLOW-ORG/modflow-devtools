@@ -482,3 +482,138 @@ def test_fieldv1_to_fieldv2_conversion_with_children():
             if field.children:
                 for child_name, child_field in field.children.items():
                     assert isinstance(child_field, FieldV2)
+
+
+def test_period_block_conversion():
+    """Test period block recarray conversion to individual arrays."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-pkg",
+        blocks={
+            "period": {
+                "stress_period_data": FieldV1(
+                    name="stress_period_data",
+                    type="recarray cellid q",
+                    block="period",
+                    description="stress period data",
+                ),
+                "cellid": FieldV1(
+                    name="cellid",
+                    type="integer",
+                    block="period",
+                    shape="(ncelldim)",
+                    in_record=True,
+                ),
+                "q": FieldV1(
+                    name="q",
+                    type="double precision",
+                    block="period",
+                    shape="(maxbound)",
+                    in_record=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    period_block = dfn_v2.blocks["period"]
+    assert "cellid" not in period_block  # cellid removed
+    assert "q" in period_block
+    assert isinstance(period_block["q"], FieldV2)
+    # Shape should be transformed: maxbound removed, nper and nnodes added
+    assert "nper" in period_block["q"].shape
+    assert "nnodes" in period_block["q"].shape
+    assert "maxbound" not in period_block["q"].shape
+
+
+def test_record_type_conversion():
+    """Test record type with multiple scalar fields."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "auxrecord": FieldV1(
+                    name="auxrecord",
+                    type="record auxiliary auxname",
+                    block="options",
+                    in_record=False,
+                ),
+                "auxiliary": FieldV1(
+                    name="auxiliary",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "auxname": FieldV1(
+                    name="auxname",
+                    type="string",
+                    block="options",
+                    in_record=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    auxrecord = dfn_v2.blocks["options"]["auxrecord"]
+    assert isinstance(auxrecord, FieldV2)
+    assert auxrecord.type == "record"
+    assert auxrecord.children is not None
+    assert "auxiliary" in auxrecord.children
+    assert "auxname" in auxrecord.children
+    assert isinstance(auxrecord.children["auxiliary"], FieldV2)
+    assert isinstance(auxrecord.children["auxname"], FieldV2)
+
+
+def test_keystring_type_conversion():
+    """Test keystring type conversion."""
+    from modflow_devtools.dfn import map
+
+    dfn_v1 = Dfn(
+        schema_version=Version("1"),
+        name="test-dfn",
+        blocks={
+            "options": {
+                "obs_filerecord": FieldV1(
+                    name="obs_filerecord",
+                    type="record obs6 filein obs6_filename",
+                    block="options",
+                    tagged=True,
+                ),
+                "obs6": FieldV1(
+                    name="obs6",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "filein": FieldV1(
+                    name="filein",
+                    type="keyword",
+                    block="options",
+                    in_record=True,
+                ),
+                "obs6_filename": FieldV1(
+                    name="obs6_filename",
+                    type="string",
+                    block="options",
+                    in_record=True,
+                    preserve_case=True,
+                ),
+            }
+        },
+    )
+
+    dfn_v2 = map(dfn_v1, schema_version="2")
+
+    obs_rec = dfn_v2.blocks["options"]["obs_filerecord"]
+    assert isinstance(obs_rec, FieldV2)
+    assert obs_rec.type == "record"
+    assert obs_rec.children is not None
+    assert all(isinstance(child, FieldV2) for child in obs_rec.children.values())
