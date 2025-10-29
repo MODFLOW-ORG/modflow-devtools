@@ -43,6 +43,7 @@ __all__ = [
     "Fields",
     "Ref",
     "block_sort_key",
+    "is_valid",
     "load",
     "load_flat",
     "load_tree",
@@ -574,3 +575,28 @@ def to_flat(dfn: Dfn) -> Dfns:
         return dfns
 
     return _flatten(dfn)
+
+
+def is_valid(path: str | PathLike, format: str = "dfn", verbose: bool = False) -> bool:
+    """Validate DFN file(s)."""
+    path = Path(path).expanduser().absolute()
+    try:
+        if not path.exists():
+            raise FileNotFoundError(f"Path does not exist: {path}")
+
+        if path.is_file():
+            common = {}  # type: ignore
+            if (common_path := path.parent / "common.dfn").exists():
+                with common_path.open() as f:
+                    common, _ = parse_dfn(f)
+                if path.name == "common.dfn":
+                    return True
+            with path.open() as f:
+                load(f, name=path.stem, common=common, format=format)
+        else:
+            load_flat(path)
+        return True
+    except Exception as e:
+        if verbose:
+            print(f"Validation failed: {e}")
+        return False

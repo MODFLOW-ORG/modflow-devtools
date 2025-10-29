@@ -9,39 +9,11 @@ from pathlib import Path
 import tomli_w as tomli
 from boltons.iterutils import remap
 
-from modflow_devtools.dfn import Dfn, load, load_flat, map, parse_dfn, to_flat, to_tree
+from modflow_devtools.dfn import Dfn, is_valid, load, load_flat, map, to_flat, to_tree
 from modflow_devtools.dfn.schema.block import block_sort_key
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors
-
-
-def validate(path: str | PathLike) -> bool:
-    """Validate DFN file(s) by attempting to parse them."""
-    path = Path(path).expanduser().absolute()
-    try:
-        if not path.exists():
-            raise FileNotFoundError(f"Path does not exist: {path}")
-
-        if path.is_file():
-            if path.name == "common.dfn":
-                with path.open() as f:
-                    parse_dfn(f)
-            else:
-                common_path = path.parent / "common.dfn"
-                if common_path.exists():
-                    with common_path.open() as f:
-                        common, _ = parse_dfn(f)
-                else:
-                    common = {}
-                with path.open() as f:
-                    load(f, name=path.stem, common=common, format="dfn")
-        else:
-            load_flat(path)
-        return True
-    except Exception as e:
-        print(f"Validation failed: {e}")
-        return False
 
 
 def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> None:
@@ -138,7 +110,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.validate:
-        if not validate(args.indir):
+        if not is_valid(args.indir):
             sys.exit(1)
     else:
         convert(args.indir, args.outdir, args.schema_version)
