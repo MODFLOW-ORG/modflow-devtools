@@ -295,13 +295,18 @@ class MapV1To2(SchemaMap):
             def _record_fields() -> Fields:
                 """Parse a record's fields"""
                 names = _type.split()[1:]
-                return {
-                    f.name: _map_field(f)
-                    for f in fields.values(multi=True)
-                    if f.name in names
-                    and f.in_record
-                    and not f.type.startswith("record")
-                }
+                result = {}
+                for name in names:
+                    matching = [
+                        f
+                        for f in fields.values(multi=True)
+                        if f.name == name
+                        and f.in_record
+                        and not f.type.startswith("record")
+                    ]
+                    if matching:
+                        result[name] = _map_field(matching[0])
+                return result
 
             _field = FieldV2.from_dict(
                 {
