@@ -163,7 +163,7 @@ class MapV1To2(SchemaMap):
 
         block = dict(block)
         fields = list(block.values())
-        if fields[0].type == "recarray":
+        if fields[0].type == "list":
             assert len(fields) == 1
             recarray_name = fields[0].name
             block.pop(recarray_name, None)
@@ -322,11 +322,11 @@ class MapV1To2(SchemaMap):
             if _type.startswith("recarray"):
                 child = _row_field()
                 _field.children = {child.name: child}
-                _field.type = "recarray"
+                _field.type = "list"
 
             elif _type.startswith("keystring"):
                 _field.children = _union_fields()
-                _field.type = "keystring"
+                _field.type = "union"
 
             elif _type.startswith("record"):
                 _field.children = _record_fields()
