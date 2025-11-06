@@ -20,17 +20,19 @@ from urllib.error import URLError
 
 
 @contextmanager
-def set_dir(path: PathLike):
+def set_dir(path: PathLike, verbose: bool = False):
     origin = Path.cwd()
     wrkdir = Path(path).expanduser().resolve()
 
     try:
         chdir(path)
-        print(f"Changed to working directory: {wrkdir} (previously: {origin})")
+        if verbose:
+            print(f"Changed to working directory: {wrkdir} (previously: {origin})")
         yield
     finally:
         chdir(origin)
-        print(f"Returned to previous directory: {origin}")
+        if verbose:
+            print(f"Returned to previous directory: {origin}")
 
 
 # alias like https://github.com/Deltares/imod-python/blob/ab2af5e20fd9996b1821c3356166a834945eef5e/imod/util/context.py#L26
