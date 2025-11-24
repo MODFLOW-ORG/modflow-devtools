@@ -15,9 +15,10 @@ from modflow_devtools.netcdf_schema import ModelNetCDFSpec, get_dfn, validate
 # "varname": "<welg_name>_q",
 # "numeric_type": "f8",
 
-## ?? also need
-# "package_name": "welg_0"
-# "grid_dims": [10, 2, 2]     #3d structured, 2d vertex, 1d unstructured? =>
+DNODATA = np.float64(3.0e30)  # MF6 DNODATA constant
+FILLNA_INT32 = np.int32(-2147483647)  # netcdf-fortran NF90_FILL_INT
+FILLNA_INT64 = np.int64(-2147483647)
+FILLNA_FLOAT64 = np.float64(9.96920996838687e36)  # netcdf-fortran NF90_FILL_DOUBLE
 
 
 @dataclass
@@ -28,12 +29,15 @@ class PkgNetCDFConfig:
     Attributes:
         name (str): package name, e.g. welg_0.
         type (str): package type, e.g. welg.
+        auxiliary (list[str]): ordered list of
+            auxiliary names to add to configuration.
         params (list[str]): list of param names
             to add to configuration.
     """
 
     name: str
     type: str
+    auxiliary: list[str] = field(default_factory=list)
     params: list[str] = field(default_factory=list)
 
 
@@ -140,7 +144,6 @@ class NetCDFInput:
 
         for p in self._meta["variables"]:
             varname = p["varname"]
-            print(varname)
             if p["numeric_type"] == "f8":
                 dtype = np.float64
             elif p["numeric_type"] == "i8":
@@ -151,11 +154,11 @@ class NetCDFInput:
                 p["encodings"]["_FillValue"],
                 dtype=dtype,
             )
-            print(p["shape"])
             var_d = {varname: (p["shape"], data)}
             ds = ds.assign(var_d)
             for a in p["attrs"]:
                 ds[varname].attrs[a] = p["attrs"][a]
+            ds[varname].encoding["_FillValue"] = p["encodings"]["_FillValue"]
 
         return ds
 
@@ -170,38 +173,54 @@ class NetCDFInput:
         numeric_type,
         layer: int | None = None,
     ):
-        varname = f"{pkg.name.lower()}_{param.lower()}"
-        if layer is not None:
-            varname = f"{varname}_l{layer + 1}"
+        _fill: np.float64 | np.int32
+        if "time" in shape:
+            _fill = DNODATA
+        else:
+            if numeric_type == "f8":
+                _fill = FILLNA_FLOAT64
+            elif numeric_type == "i8":
+                _fill = FILLNA_INT32
 
-        d = {
-            "param": (
-                f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
-            ),
-            "attrs": {
-                "modflow_input": (
+        def _add_param(name):
+            varname = (
+                f"{pkg.name.lower()}_{name.lower()}"
+                if layer is None
+                else f"{pkg.name.lower()}_{name.lower()}_l{layer + 1}"
+            )
+
+            d = {
+                "param": (
                     f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
-                )
-            },
-            "encodings": {"_FillValue": 3e30},
-            "shape": shape,
-            "varname": varname,
-            "numeric_type": numeric_type,
-        }
+                ),
+                "attrs": {
+                    "modflow_input": (
+                        f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
+                    )
+                },
+                "encodings": {"_FillValue": _fill},
+                "shape": shape,
+                "varname": varname,
+                "numeric_type": numeric_type,
+            }
 
-        if layer is not None:
-            d["attrs"]["layer"] = layer + 1
+            if layer is not None:
+                d["attrs"]["layer"] = layer + 1
 
-        self._meta["variables"].append(d)
+            self._meta["variables"].append(d)
+
+        if param.lower() == "aux":
+            for auxname in pkg.auxiliary:
+                _add_param(auxname)
+        else:
+            _add_param(param)
 
     def _check_params(self, dfn, pkg):
         if len(pkg.params) > 0:
             return
 
         def _add_params(blk):
-            print(dfn[blk])
             for p in dfn[blk]:
-                print(p)
                 if (
                     isinstance(dfn[blk][p], dict)
                     and "netcdf" in dfn[blk][p]
@@ -229,6 +248,7 @@ class NetCDFInput:
             if blk in dfn and param in dfn[blk]:
                 numeric_type = _check_type(blk)
 
+        assert numeric_type is not None, f"Invalid {dfn['name']} package param: {param}"
         return numeric_type
 
     def _param_shape(self, dfn, param):
@@ -256,4 +276,5 @@ class NetCDFInput:
             if blk in dfn and param in dfn[blk]:
                 shape = _check_shape(blk)
 
+        assert shape is not None, f"Invalid {dfn['name']} package param: {param}"
         return shape
