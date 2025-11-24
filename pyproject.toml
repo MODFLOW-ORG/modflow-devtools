@@ -54,6 +54,7 @@ test = [
     "flaky",
     "filelock",
     "meson!=0.63.0",
+    "netCDF4",
     "ninja",
     "numpy",
     "pandas",
