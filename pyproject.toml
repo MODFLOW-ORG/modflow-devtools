@@ -54,15 +54,18 @@ test = [
     "flaky",
     "filelock",
     "meson!=0.63.0",
+    "netCDF4",
     "ninja",
     "numpy",
     "pandas",
+    "pydantic",
     "pytest!=8.1.0",
     "pytest-cov",
     "pytest-dotenv",
     "pytest-xdist",
     "PyYaml",
-    "syrupy <5.0.0"
+    "syrupy <5.0.0",
+    "xarray"
 ]
 docs = [
     "sphinx",

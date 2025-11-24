@@ -18,3 +18,4 @@ class Field:
     developmode: bool = False
     shape: str | None = None
     valid: tuple[str, ...] | None = None
+    netcdf: bool = False
