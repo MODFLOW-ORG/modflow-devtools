@@ -1,9 +1,13 @@
 from os import PathLike
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from modflow_devtools.dfn import Dfn
+
+CONTEXT: dict[str, Any] = {}
+TOML_DIR: PathLike = Path()
 
 
 def get_dfn(toml_dir, toml_name):
@@ -20,8 +24,9 @@ class ParamAttrs(BaseModel):
 
     @field_validator("layer", mode="before")
     @classmethod
-    def validate_layer(cls, v: any) -> any:
+    def validate_layer(cls, v: Any) -> Any:
         global CONTEXT
+        assert "grid_dims" in CONTEXT
         if v > CONTEXT["grid_dims"][0]:
             raise ValueError(f"Param layer attr {v} exceeds grid k")
         return v
@@ -34,7 +39,7 @@ class ModelAttrs(BaseModel):
 
     @field_validator("modflow_model", mode="before")
     @classmethod
-    def validate_modeflow_model(cls, v: any) -> any:
+    def validate_modeflow_model(cls, v: Any) -> Any:
         global CONTEXT
         tokens = v.split(":")
         if len(tokens) != 2:
@@ -65,7 +70,7 @@ class ModelNetCDFParam(BaseModel):
 
     @field_validator("param", mode="before")
     @classmethod
-    def validate_param(cls, v: any) -> any:
+    def validate_param(cls, v: Any) -> Any:
         global TOML_DIR
         tokens = v.split("/")
         if len(tokens) != 3:
@@ -91,7 +96,7 @@ class ModelNetCDFParam(BaseModel):
 
     @field_validator("attrs", mode="before")
     @classmethod
-    def validate_attrs(cls, v: any) -> any:
+    def validate_attrs(cls, v: Any) -> Any:
         global CONTEXT
         v = {k.lower(): v for k, v in v.items()}
         if "mesh" in CONTEXT:
@@ -102,17 +107,18 @@ class ModelNetCDFParam(BaseModel):
 
 class ModelNetCDFSpec(BaseModel):
     attrs: ModelAttrs
-    variables: list[ModelNetCDFParam] = Field(default=None)
+    variables: list[ModelNetCDFParam] = Field(default_factory=list)
 
     @field_validator("attrs", mode="before")
     @classmethod
-    def validate_attrs(cls, v: any) -> any:
+    def validate_attrs(cls, v: Any) -> Any:
         global CONTEXT
         v = {k.lower(): v for k, v in v.items()}
         if "mesh" in v.keys():
             CONTEXT["mesh"] = v["mesh"]
         if "modflow_grid" in v.keys():
             CONTEXT["grid"] = v["modflow_grid"]
+            assert "grid_dims" in CONTEXT
             if "mesh" in v.keys() and v["mesh"].lower() == "layered":
                 if len(CONTEXT["grid_dims"]) != 2:
                     raise ValueError(
@@ -140,8 +146,6 @@ def validate(v, path: str | PathLike, grid_dims: list[int]):
         if discretization is DISV then grid_dims should be [nlay, ncpl]
     """
     global TOML_DIR, CONTEXT
-    CONTEXT = None
-    TOML_DIR = None
     CONTEXT = {}
     CONTEXT["grid_dims"] = grid_dims
     TOML_DIR = Path(path).expanduser().resolve().absolute()

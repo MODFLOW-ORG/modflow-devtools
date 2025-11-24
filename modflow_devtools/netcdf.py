@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from os import PathLike
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import xarray as xr
@@ -91,8 +92,8 @@ class NetCDFInput:
 
         self._config = config
         self._netcdf_blocks = ["griddata", "period"]
-        self._meta = {}
-        self._package = []
+        self._meta: dict[str, Any] = {}
+        self._package: list[dict] = []
 
         # model attrs
         self._meta["attrs"] = {}
