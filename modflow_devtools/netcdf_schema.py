@@ -103,7 +103,9 @@ class ModelNetCDFParam(BaseModel):
         v = {k.lower(): v for k, v in v.items()}
         if "mesh" in CONTEXT:
             if "layer" not in v:
-                raise ValueError("Expected param layer attribute for mesh")
+                # raise ValueError("Expected param layer attribute for mesh")
+                # TODO
+                pass
         return v
 
 

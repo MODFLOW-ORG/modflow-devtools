@@ -111,7 +111,6 @@ class NetCDFInput:
             nlay = config.dims[1]
         else:
             nlay = 0
-            # pass
         self._meta["variables"] = []
 
         for pkg in config.packages:
@@ -122,12 +121,15 @@ class NetCDFInput:
             for param in pkg.params:
                 numeric_type = self._np_type(dfn, param)
                 shape = self._param_shape(dfn, param)
+                layer = 0 if "z" not in shape else nlay
 
-                if nlay > 0:
-                    for layer in range(nlay):
-                        self._add_param_meta(pkg, param, shape, numeric_type, layer)
+                if layer > 0:
+                    for k in range(layer):
+                        self._add_param_meta(
+                            pkg, param, shape, numeric_type, dfn.multi, k
+                        )
                 else:
-                    self._add_param_meta(pkg, param, shape, numeric_type)
+                    self._add_param_meta(pkg, param, shape, numeric_type, dfn.multi)
         try:
             validate(self._meta, toml_dir, config.dims[1:])
         except:
@@ -137,6 +139,14 @@ class NetCDFInput:
         return ModelNetCDFSpec.model_json_schema()
 
     def to_xarray(self):
+        dimmap = {
+            "time": 0,
+            "z": 1,
+            "y": 2,
+            "nmesh_face": 2,
+            "x": 3,
+        }
+
         ds = xr.Dataset()
         ds.attrs["modflow_grid"] = self._meta["attrs"]["modflow_grid"]
         ds.attrs["modflow_model"] = self._meta["attrs"]["modflow_model"]
@@ -149,7 +159,7 @@ class NetCDFInput:
                 dtype = np.float64
             elif p["numeric_type"] == "i8":
                 dtype = np.int64
-            dims = self._config.dims if "time" in p["shape"] else self._config.dims[1:]
+            dims = [self._config.dims[dimmap[dim]] for dim in p["shape"]]
             data = np.full(
                 dims,
                 p["encodings"]["_FillValue"],
@@ -172,6 +182,7 @@ class NetCDFInput:
         param,
         shape,
         numeric_type,
+        is_multi,
         layer: int | None = None,
     ):
         _fill: np.float64 | np.int32
@@ -189,16 +200,17 @@ class NetCDFInput:
                 if layer is None
                 else f"{pkg.name.lower()}_{name.lower()}_l{layer + 1}"
             )
+            mf6_input = (
+                f"{self._config.name.lower()}/{pkg.name.lower()}/{param.lower()}"
+                if is_multi
+                else f"{self._config.name.lower()}/{pkg.type.lower()}/{param.lower()}"
+            )
 
             d = {
                 "param": (
                     f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
                 ),
-                "attrs": {
-                    "modflow_input": (
-                        f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
-                    )
-                },
+                "attrs": {"modflow_input": mf6_input},
                 "encodings": {"_FillValue": _fill},
                 "shape": shape,
                 "varname": varname,
@@ -259,6 +271,11 @@ class NetCDFInput:
                     s = [*s, "z", "y", "x"]
                 elif self._config.mesh_type.lower() == "layered":
                     s = [*s, "z", "nmesh_face"]
+            elif dfn.fields[param].shape == "(nper, ncol*nrow; ncpl)":
+                if self._config.mesh_type is None:
+                    s = [*s, "y", "x"]
+                elif self._config.mesh_type.lower() == "layered":
+                    s = [*s, "nmesh_face"]
             else:
                 dfn_shape = dfn.fields[param].shape
                 dfn_shape = dfn_shape.replace("(", "")

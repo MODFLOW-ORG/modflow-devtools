@@ -274,6 +274,7 @@ def test_xarray_disv_all_params():
 
     nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf"))
     nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg"))
+    nc_cfg.packages.append(PkgNetCDFConfig("rch0", "rcha"))
 
     nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
@@ -313,7 +314,7 @@ def test_xarray_disv_all_params():
     assert ds.dims["time"] == 2
     assert ds.dims["z"] == 4
     assert ds.dims["nmesh_face"] == 6
-    assert len(ds) == 36
+    assert len(ds) == 38
 
     nc_fpath = Path.cwd() / "disv_all.input.nc"
     ds.to_netcdf(
