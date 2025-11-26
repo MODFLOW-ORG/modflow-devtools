@@ -8,7 +8,7 @@ from modflow_devtools.netcdf import (
     DNODATA,
     FILLNA_FLOAT64,
     FILLNA_INT32,
-    NetCDFInput,
+    NetCDFModelInput,
     NetCDFPackageCfg,
 )
 from modflow_devtools.netcdf_schema import validate
@@ -104,6 +104,31 @@ def test_fail_invalid_param():
         assert "Not a netcdf param" in str(e)
 
 
+def test_fail_invalid_component():
+    variables = [
+        {
+            "param": "gwf/abcg/q",
+            "attrs": {"modflow_input": "<GWF_NAME>/<ABCG_NAME>/Q"},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "abcg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, grid_dims=[1, 1, 1])
+    except ValidationError as e:
+        assert "Not a valid mf6 component" in str(e)
+
+
 def test_fail_param_attr_layer():
     variables = [
         {
@@ -187,7 +212,7 @@ def test_fail_param_attr_input():
 
 
 def test_xarray_structured_mesh():
-    nc_input = NetCDFInput(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="structured",
@@ -228,7 +253,7 @@ def test_xarray_structured_mesh():
 
 
 def test_xarray_layered_mesh():
-    nc_input = NetCDFInput(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="structured",
@@ -271,7 +296,7 @@ def test_xarray_layered_mesh():
 
 
 def test_xarray_disv():
-    nc_input = NetCDFInput(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -314,7 +339,7 @@ def test_xarray_disv():
 
 
 def test_xarray_disv_aux():
-    nc_input = NetCDFInput(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf6",
         grid_type="vertex",
@@ -364,7 +389,7 @@ def test_xarray_disv_aux():
 
 
 def test_xarray_disv_all_params():
-    nc_input = NetCDFInput(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -374,7 +399,7 @@ def test_xarray_disv_all_params():
 
     nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
     nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
-    # TODO: rcha and evta needs netcdf annotation in dfns
+    # TODO: rcha and evta need netcdf annotation in dfns
     # nc_cfg.packages.append(NetCDFPackageCfg("rch0", "rcha"))
 
     ds = nc_input.to_xarray()

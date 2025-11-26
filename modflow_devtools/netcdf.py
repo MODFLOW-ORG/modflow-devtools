@@ -40,7 +40,7 @@ class NetCDFPackageCfg:
 
 
 @dataclass
-class NetCDFInput:
+class NetCDFModelInput:
     """
     MODFLOW 6 NetCDF input objects that provide
         metadata dictionaries, modflow 6 input
@@ -107,7 +107,8 @@ class NetCDFInput:
             ds = ds.assign(var_d)
             for a in p["attrs"]:
                 ds[varname].attrs[a] = p["attrs"][a]
-            ds[varname].encoding["_FillValue"] = p["encodings"]["_FillValue"]
+            for e in p["encodings"]:
+                ds[varname].encoding[e] = p["encodings"][e]
 
         return ds
 
@@ -193,11 +194,11 @@ class NetCDFInput:
             mf6_input = (
                 f"{self.name}/{pkg.name.lower()}/{param.lower()}"
                 if dfn.multi
-                else f"{self.name.lower()}/{pkg.type.lower()}/{param.lower()}"
+                else f"{self.name}/{pkg.type.lower()}/{param.lower()}"
             )
 
             d = {
-                "param": (f"{self.type.lower()}/{pkg.type.lower()}/{param.lower()}"),
+                "param": (f"{self.type}/{pkg.type.lower()}/{param.lower()}"),
                 "attrs": {
                     "modflow_input": mf6_input,
                     "longname": dfn.fields[param].longname,
@@ -224,8 +225,8 @@ class NetCDFInput:
             return
 
         def _add_params(blk):
-            for p in dfn.fields:
-                if dfn.fields[p].netcdf:
+            for p in dfn.blocks[blk]:
+                if dfn.blocks[blk][p].netcdf:
                     pkg.params.append(p)
 
         for blk in self._netcdf_blocks:
@@ -236,14 +237,14 @@ class NetCDFInput:
         numeric_type = None
 
         def _check_type(blk):
-            if dfn.fields[param].type == "double":
+            if dfn.blocks[blk][param].type == "double":
                 nt = "f8"
-            elif dfn.fields[param].type == "integer":
+            elif dfn.blocks[blk][param].type == "integer":
                 nt = "i8"
             return nt
 
         for blk in self._netcdf_blocks:
-            if blk in dfn.blocks and param in dfn.fields:
+            if blk in dfn.blocks and param in dfn.blocks[blk]:
                 numeric_type = _check_type(blk)
 
         assert numeric_type is not None, f"Invalid {dfn['name']} package param: {param}"
@@ -255,20 +256,20 @@ class NetCDFInput:
         def _check_shape(blk):
             s = ["time"] if blk == "period" else []
             if (
-                dfn.fields[param].shape == "(nodes)"
-                or dfn.fields[param].shape == "(nper, nodes)"
+                dfn.blocks[blk][param].shape == "(nodes)"
+                or dfn.blocks[blk][param].shape == "(nper, nodes)"
             ):
                 if self.mesh_type is None:
                     s = [*s, "z", "y", "x"]
                 elif self.mesh_type == "layered":
                     s = [*s, "z", "nmesh_face"]
-            elif dfn.fields[param].shape == "(nper, ncol*nrow; ncpl)":
+            elif dfn.blocks[blk][param].shape == "(nper, ncol*nrow; ncpl)":
                 if self.mesh_type is None:
                     s = [*s, "y", "x"]
                 elif self.mesh_type == "layered":
                     s = [*s, "nmesh_face"]
             else:
-                dfn_shape = dfn.fields[param].shape
+                dfn_shape = dfn.blocks[blk][param].shape
                 dfn_shape = dfn_shape.replace("(", "")
                 dfn_shape = dfn_shape.replace(")", "")
                 dfn_shape = dfn_shape.replace(",", "")
@@ -277,7 +278,7 @@ class NetCDFInput:
             return s
 
         for blk in self._netcdf_blocks:
-            if blk in dfn.blocks and param in dfn.fields:
+            if blk in dfn.blocks and param in dfn.blocks[blk]:
                 shape = _check_shape(blk)
 
         assert shape is not None, f"Invalid {dfn['name']} package param: {param}"

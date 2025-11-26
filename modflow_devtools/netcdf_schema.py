@@ -21,7 +21,8 @@ def get_dfn(toml_name):
         fetch.fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
         convert(DFN_DIR, TOML_DIR)
     path = Path(TOML_DIR / f"{toml_name}.toml")
-    assert path.is_file()
+    if not path.is_file():
+        raise AssertionError(f"Not a valid mf6 component: {toml_name}")
     with path.open(mode="rb") as toml_file:
         return load(toml_file, format="toml", name=toml_name)
 
@@ -91,13 +92,13 @@ class NetCDFPackageParam(BaseModel):
                 f"griddata/period blocks not found in package type {package}"
             )
         if not any(
-            param in dfn.fields if blk in dfn.blocks else False for blk in blocks
+            param in dfn.blocks[blk] if blk in dfn.blocks else False for blk in blocks
         ):
             raise ValueError(f"Param {param} not found in package {package}")
 
         for b in blocks:
-            if b in dfn.blocks and param in dfn.fields:
-                if not dfn.fields[param].netcdf:
+            if b in dfn.blocks and param in dfn.blocks[b]:
+                if not dfn.blocks[b][param].netcdf:
                     raise ValueError(f"Not a netcdf param: '{param}'")
         return v
 
