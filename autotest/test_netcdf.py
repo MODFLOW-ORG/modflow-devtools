@@ -6,7 +6,6 @@ from modflow_devtools.netcdf import (
     DNODATA,
     FILLNA_FLOAT64,
     FILLNA_INT32,
-    ModelNetCDFConfig,
     NetCDFInput,
     PkgNetCDFConfig,
 )
@@ -83,21 +82,21 @@ def test_validate_model_mesh():
 
 
 def test_xarray_structured_mesh():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFInput(
+        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="structured",
         dims=[2, 4, 3, 2],  # ["time", "z", "y", "x"]
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "structured"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert "mesh" not in ds.attrs
     assert "npf_k" in ds
     assert "npf_k22" in ds
@@ -125,7 +124,8 @@ def test_xarray_structured_mesh():
 
 
 def test_xarray_layered_mesh():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFInput(
+        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="structured",
@@ -133,14 +133,13 @@ def test_xarray_layered_mesh():
         dims=[2, 4, 6],  # ["time", "z", "nmesh_face"]
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "structured"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -169,7 +168,8 @@ def test_xarray_layered_mesh():
 
 
 def test_xarray_disv():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFInput(
+        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -177,14 +177,13 @@ def test_xarray_disv():
         dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -213,16 +212,17 @@ def test_xarray_disv():
 
 
 def test_xarray_disv_aux():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFInput(
+        TOML_DIR,
         name="twri",
-        type="gwf",
+        type="gwf6",
         grid_type="vertex",
         mesh_type="layered",
         dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(
+    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(
         PkgNetCDFConfig(
             "welg_0",
             "welg",
@@ -231,11 +231,10 @@ def test_xarray_disv_aux():
         )
     )
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -264,7 +263,8 @@ def test_xarray_disv_aux():
 
 
 def test_xarray_disv_all_params():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFInput(
+        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -272,15 +272,15 @@ def test_xarray_disv_all_params():
         dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf"))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg"))
-    nc_cfg.packages.append(PkgNetCDFConfig("rch0", "rcha"))
+    nc_input.packages.append(PkgNetCDFConfig("npf", "npf"))
+    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg"))
+    # TODO: rcha and evta needs netcdf annotation in dfns
+    # nc_cfg.packages.append(PkgNetCDFConfig("rch0", "rcha"))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -314,8 +314,7 @@ def test_xarray_disv_all_params():
     assert ds.dims["time"] == 2
     assert ds.dims["z"] == 4
     assert ds.dims["nmesh_face"] == 6
-    # TODO RCHA and EVTA netcdf params need to be marked in dfn
-    # assert len(ds) == 38
+    assert len(ds) == 36
 
     nc_fpath = Path.cwd() / "disv_all.input.nc"
     ds.to_netcdf(

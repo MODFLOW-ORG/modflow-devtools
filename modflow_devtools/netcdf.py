@@ -42,11 +42,17 @@ class PkgNetCDFConfig:
 
 
 @dataclass
-class ModelNetCDFConfig:
+class NetCDFInput:
     """
-    NetCDF related configuration for a model.
+    MODFLOW 6 NetCDF input objects that provide
+        metadata dictionaries, modflow 6 input
+        json schemas used to validate these dictionaries,
+        and xarray objects as basic initialized
+        variables that meet modflow 6 input requirements.
 
     Attributes:
+        path (str): path to toml package specification
+            directory.
         name (str): model name, e.g. twri.
         type (str): model type, e.g. gwf.
         grid_type (str): grid type, "structured"
@@ -61,79 +67,14 @@ class ModelNetCDFConfig:
             objects to add to configuration.
     """
 
+    path: str | PathLike
     name: str
     type: str
     grid_type: str
     mesh_type: str | None = None
     dims: list[int] = field(default_factory=list)
     packages: list[PkgNetCDFConfig] = field(default_factory=list)
-
-
-class NetCDFInput:
-    """
-    MODFLOW 6 NetCDF input objects that provide
-        metadata dictionaries, modflow 6 input
-        json schemas used to validate these dictionaries,
-        and xarray objects as basic initialized
-        variables that meet modflow 6 input requirements.
-
-    Attributes:
-        path (str): path to toml package specification
-            directory.
-        config (ModelNetCDFConfig): configuration for
-            instance.
-        params (list[str]): list of param names to add
-            to configuration.
-    """
-
-    def __init__(
-        self,
-        path: str | PathLike,
-        config: ModelNetCDFConfig,
-    ):
-        toml_dir = Path(path).expanduser().resolve().absolute()
-        if not toml_dir.is_dir():
-            raise NotADirectoryError(f"Path {path} is not a directory.")
-
-        self._config = config
-        self._netcdf_blocks = ["griddata", "period"]
-        self._meta: dict[str, Any] = {}
-        self._package: list[dict] = []
-
-        # model attrs
-        self._meta["attrs"] = {}
-        self._meta["attrs"]["modflow_model"] = (
-            f"{config.type.lower()}: {config.name.lower()}"
-        )
-        self._meta["attrs"]["modflow_grid"] = f"{config.grid_type.lower()}"
-        if config.mesh_type is not None:
-            self._meta["attrs"]["mesh"] = config.mesh_type
-            nlay = config.dims[1]
-        else:
-            nlay = 0
-        self._meta["variables"] = []
-
-        for pkg in config.packages:
-            dfn = get_dfn(toml_dir, f"{config.type.lower()}-{pkg.type.lower()}")
-
-            self._check_params(dfn, pkg)
-
-            for param in pkg.params:
-                numeric_type = self._np_type(dfn, param)
-                shape = self._param_shape(dfn, param)
-                layer = 0 if "z" not in shape else nlay
-
-                if layer > 0:
-                    for k in range(layer):
-                        self._add_param_meta(
-                            pkg, param, shape, numeric_type, dfn.multi, k
-                        )
-                else:
-                    self._add_param_meta(pkg, param, shape, numeric_type, dfn.multi)
-        try:
-            validate(self._meta, toml_dir, config.dims[1:])
-        except:
-            raise
+    _meta = None
 
     def to_jsonschema(self):
         return ModelNetCDFSpec.model_json_schema()
@@ -147,11 +88,13 @@ class NetCDFInput:
             "x": 3,
         }
 
+        self._setmeta()
+
         ds = xr.Dataset()
         ds.attrs["modflow_grid"] = self._meta["attrs"]["modflow_grid"]
         ds.attrs["modflow_model"] = self._meta["attrs"]["modflow_model"]
-        if self._config.mesh_type is not None:
-            ds.attrs["mesh"] = self._config.mesh_type.lower()
+        if self.mesh_type is not None:
+            ds.attrs["mesh"] = self.mesh_type
 
         for p in self._meta["variables"]:
             varname = p["varname"]
@@ -159,7 +102,7 @@ class NetCDFInput:
                 dtype = np.float64
             elif p["numeric_type"] == "i8":
                 dtype = np.int64
-            dims = [self._config.dims[dimmap[dim]] for dim in p["shape"]]
+            dims = [self.dims[dimmap[dim]] for dim in p["shape"]]
             data = np.full(
                 dims,
                 p["encodings"]["_FillValue"],
@@ -174,15 +117,71 @@ class NetCDFInput:
         return ds
 
     def to_meta(self):
+        self._setmeta()
         return self._meta
+
+    def _setmeta(
+        self,
+    ):
+        toml_dir = Path(self.path).expanduser().resolve().absolute()
+        if not toml_dir.is_dir():
+            raise NotADirectoryError(f"Path {self.path} is not a directory.")
+
+        self._netcdf_blocks = ["griddata", "period"]
+        self._meta: dict[str, Any] = {}
+
+        self.name = self.name.lower()
+        self.type = self.type.lower()
+        self.grid_type = self.grid_type.lower()
+        if self.mesh_type is not None:
+            self.mesh_type = self.mesh_type.lower()
+        if self.type[-1] == "6":
+            self.type = self.type[:-1]
+
+        # model attrs
+        self._meta["attrs"] = {}
+        self._meta["attrs"]["modflow_model"] = f"{self.type}6: {self.name}"
+        self._meta["attrs"]["modflow_grid"] = f"{self.grid_type}"
+        if self.mesh_type is not None:
+            assert len(self.dims) == 3, (
+                f"Configured dims should be [NSTP, NLAY, NCPL], found={self.dims}"
+            )
+            self._meta["attrs"]["mesh"] = self.mesh_type
+            nlay = self.dims[1]
+        else:
+            assert len(self.dims) == 4, (
+                f"Configured dims should be [NSTP, NLAY, NROW, NCOL], found={self.dims}"
+            )
+            nlay = 0
+        self._meta["variables"] = []
+
+        for pkg in self.packages:
+            dfn = get_dfn(toml_dir, f"{self.type}-{pkg.type}")
+
+            self._check_params(dfn, pkg)
+
+            for param in pkg.params:
+                numeric_type = self._np_type(dfn, param)
+                shape = self._param_shape(dfn, param)
+                layer = 0 if "z" not in shape else nlay
+
+                if layer > 0:
+                    for k in range(layer):
+                        self._add_param_meta(dfn, pkg, param, shape, numeric_type, k)
+                else:
+                    self._add_param_meta(dfn, pkg, param, shape, numeric_type)
+        try:
+            validate(self._meta, toml_dir, self.dims[1:])
+        except:
+            raise
 
     def _add_param_meta(
         self,
+        dfn,
         pkg,
         param,
         shape,
         numeric_type,
-        is_multi,
         layer: int | None = None,
     ):
         _fill: np.float64 | np.int32
@@ -196,21 +195,22 @@ class NetCDFInput:
 
         def _add_param(name):
             varname = (
-                f"{pkg.name.lower()}_{name.lower()}"
+                f"{pkg.name}_{name}"
                 if layer is None
-                else f"{pkg.name.lower()}_{name.lower()}_l{layer + 1}"
+                else f"{pkg.name}_{name}_l{layer + 1}"
             )
             mf6_input = (
-                f"{self._config.name.lower()}/{pkg.name.lower()}/{param.lower()}"
-                if is_multi
-                else f"{self._config.name.lower()}/{pkg.type.lower()}/{param.lower()}"
+                f"{self.name}/{pkg.name.lower()}/{param.lower()}"
+                if dfn.multi
+                else f"{self.name.lower()}/{pkg.type.lower()}/{param.lower()}"
             )
 
             d = {
-                "param": (
-                    f"{self._config.type.lower()}/{pkg.type.lower()}/{param.lower()}"
-                ),
-                "attrs": {"modflow_input": mf6_input},
+                "param": (f"{self.type.lower()}/{pkg.type.lower()}/{param.lower()}"),
+                "attrs": {
+                    "modflow_input": mf6_input,
+                    "longname": dfn.fields[param].longname,
+                },
                 "encodings": {"_FillValue": _fill},
                 "shape": shape,
                 "varname": varname,
@@ -267,14 +267,14 @@ class NetCDFInput:
                 dfn.fields[param].shape == "(nodes)"
                 or dfn.fields[param].shape == "(nper, nodes)"
             ):
-                if self._config.mesh_type is None:
+                if self.mesh_type is None:
                     s = [*s, "z", "y", "x"]
-                elif self._config.mesh_type.lower() == "layered":
+                elif self.mesh_type == "layered":
                     s = [*s, "z", "nmesh_face"]
             elif dfn.fields[param].shape == "(nper, ncol*nrow; ncpl)":
-                if self._config.mesh_type is None:
+                if self.mesh_type is None:
                     s = [*s, "y", "x"]
-                elif self._config.mesh_type.lower() == "layered":
+                elif self.mesh_type == "layered":
                     s = [*s, "nmesh_face"]
             else:
                 dfn_shape = dfn.fields[param].shape
