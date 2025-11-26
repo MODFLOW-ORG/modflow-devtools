@@ -1,19 +1,17 @@
+import sys
 from pathlib import Path
 
 import numpy as np
+from pydantic import ValidationError
 
 from modflow_devtools.netcdf import (
     DNODATA,
     FILLNA_FLOAT64,
     FILLNA_INT32,
     NetCDFInput,
-    PkgNetCDFConfig,
+    NetCDFPackageCfg,
 )
 from modflow_devtools.netcdf_schema import validate
-
-PROJ_ROOT = Path(__file__).parents[1]
-DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
-TOML_DIR = DFN_DIR / "toml"
 
 
 def test_validate_model():
@@ -43,7 +41,7 @@ def test_validate_model():
         "variables": variables,
     }
 
-    validate(nc_meta, TOML_DIR, grid_dims=[1, 1, 1])
+    validate(nc_meta, grid_dims=[1, 1, 1])
 
 
 def test_validate_model_mesh():
@@ -78,20 +76,126 @@ def test_validate_model_mesh():
         "variables": variables,
     }
 
-    validate(nc_meta, TOML_DIR, grid_dims=[1, 1])
+    validate(nc_meta, grid_dims=[1, 1])
+
+
+def test_fail_invalid_param():
+    variables = [
+        {
+            "param": "gwf/wel/q",
+            "attrs": {"modflow_input": "<GWF_NAME>/<WEL_NAME>/Q"},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "wel_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, grid_dims=[1, 1, 1])
+    except ValidationError as e:
+        assert "Not a netcdf param" in str(e)
+
+
+def test_fail_param_attr_layer():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "layered",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, grid_dims=[1, 1])
+    except ValidationError as e:
+        assert "Expected layer attribute for mesh param" in str(e)
+
+
+def test_fail_param_attr_layer_val():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q", "layer": 2},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "layered",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, grid_dims=[1, 1])
+    except ValidationError as e:
+        assert "Param layer attr value 2 exceeds grid k" in str(e)
+
+
+def test_fail_param_attr_input():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"layer": 1},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "layered",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, grid_dims=[1, 1])
+    except ValidationError as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print(f"Exception Type: {exc_type.__name__}")
+        print(f"Exception Value: {exc_value}")
+        print(f"Traceback Object: {exc_traceback}")
+        assert "modflow_input" in str(e)
 
 
 def test_xarray_structured_mesh():
     nc_input = NetCDFInput(
-        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="structured",
         dims=[2, 4, 3, 2],  # ["time", "z", "y", "x"]
     )
 
-    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
     ds = nc_input.to_xarray()
 
@@ -125,7 +229,6 @@ def test_xarray_structured_mesh():
 
 def test_xarray_layered_mesh():
     nc_input = NetCDFInput(
-        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="structured",
@@ -133,8 +236,8 @@ def test_xarray_layered_mesh():
         dims=[2, 4, 6],  # ["time", "z", "nmesh_face"]
     )
 
-    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
     ds = nc_input.to_xarray()
 
@@ -169,7 +272,6 @@ def test_xarray_layered_mesh():
 
 def test_xarray_disv():
     nc_input = NetCDFInput(
-        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -177,8 +279,8 @@ def test_xarray_disv():
         dims=[2, 4, 6],
     )
 
-    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
     ds = nc_input.to_xarray()
 
@@ -213,7 +315,6 @@ def test_xarray_disv():
 
 def test_xarray_disv_aux():
     nc_input = NetCDFInput(
-        TOML_DIR,
         name="twri",
         type="gwf6",
         grid_type="vertex",
@@ -221,9 +322,9 @@ def test_xarray_disv_aux():
         dims=[2, 4, 6],
     )
 
-    nc_input.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
     nc_input.packages.append(
-        PkgNetCDFConfig(
+        NetCDFPackageCfg(
             "welg_0",
             "welg",
             auxiliary=["concentration", "temperature"],
@@ -264,7 +365,6 @@ def test_xarray_disv_aux():
 
 def test_xarray_disv_all_params():
     nc_input = NetCDFInput(
-        TOML_DIR,
         name="twri",
         type="gwf",
         grid_type="vertex",
@@ -272,10 +372,10 @@ def test_xarray_disv_all_params():
         dims=[2, 4, 6],
     )
 
-    nc_input.packages.append(PkgNetCDFConfig("npf", "npf"))
-    nc_input.packages.append(PkgNetCDFConfig("welg_0", "welg"))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
     # TODO: rcha and evta needs netcdf annotation in dfns
-    # nc_cfg.packages.append(PkgNetCDFConfig("rch0", "rcha"))
+    # nc_cfg.packages.append(NetCDFPackageCfg("rch0", "rcha"))
 
     ds = nc_input.to_xarray()
 

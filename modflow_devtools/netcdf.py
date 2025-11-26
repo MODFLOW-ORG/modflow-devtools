@@ -1,12 +1,10 @@
 from dataclasses import dataclass, field
-from os import PathLike
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 import xarray as xr
 
-from modflow_devtools.netcdf_schema import ModelNetCDFSpec, get_dfn, validate
+from modflow_devtools.netcdf_schema import NetCDFModel, get_dfn, validate
 
 # "param": "gwf/welg/q",
 # "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
@@ -22,7 +20,7 @@ FILLNA_FLOAT64 = np.float64(9.96920996838687e36)  # netcdf-fortran NF90_FILL_DOU
 
 
 @dataclass
-class PkgNetCDFConfig:
+class NetCDFPackageCfg:
     """
     NetCDF related configuration for a model package.
 
@@ -51,8 +49,6 @@ class NetCDFInput:
         variables that meet modflow 6 input requirements.
 
     Attributes:
-        path (str): path to toml package specification
-            directory.
         name (str): model name, e.g. twri.
         type (str): model type, e.g. gwf.
         grid_type (str): grid type, "structured"
@@ -63,21 +59,20 @@ class NetCDFInput:
             [time, z, y, x] if structured grid type
             [time, z, nmesh_face (ncpl)] if vertex grid type
             Note: time should be number of steps in the simulation
-        params (list[str]): List of PkgNetCDFConfig
+        params (list[str]): List of NetCDFPackageCfg
             objects to add to configuration.
     """
 
-    path: str | PathLike
     name: str
     type: str
     grid_type: str
     mesh_type: str | None = None
     dims: list[int] = field(default_factory=list)
-    packages: list[PkgNetCDFConfig] = field(default_factory=list)
+    packages: list[NetCDFPackageCfg] = field(default_factory=list)
     _meta = None
 
     def to_jsonschema(self):
-        return ModelNetCDFSpec.model_json_schema()
+        return NetCDFModel.model_json_schema()
 
     def to_xarray(self):
         dimmap = {
@@ -123,10 +118,6 @@ class NetCDFInput:
     def _setmeta(
         self,
     ):
-        toml_dir = Path(self.path).expanduser().resolve().absolute()
-        if not toml_dir.is_dir():
-            raise NotADirectoryError(f"Path {self.path} is not a directory.")
-
         self._netcdf_blocks = ["griddata", "period"]
         self._meta: dict[str, Any] = {}
 
@@ -156,7 +147,7 @@ class NetCDFInput:
         self._meta["variables"] = []
 
         for pkg in self.packages:
-            dfn = get_dfn(toml_dir, f"{self.type}-{pkg.type}")
+            dfn = get_dfn(f"{self.type}-{pkg.type}")
 
             self._check_params(dfn, pkg)
 
@@ -171,7 +162,7 @@ class NetCDFInput:
                 else:
                     self._add_param_meta(dfn, pkg, param, shape, numeric_type)
         try:
-            validate(self._meta, toml_dir, self.dims[1:])
+            validate(self._meta, self.dims[1:])
         except:
             raise
 
