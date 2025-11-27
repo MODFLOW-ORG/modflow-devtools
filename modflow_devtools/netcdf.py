@@ -6,13 +6,6 @@ import xarray as xr
 
 from modflow_devtools.netcdf_schema import NetCDFModel, get_dfn, validate
 
-# "param": "gwf/welg/q",
-# "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
-# "encodings": {"_FillValue": 3e30},
-# "shape": ["time", "z", "y", "x"],
-# "varname": "<welg_name>_q",
-# "numeric_type": "f8",
-
 DNODATA = np.float64(3.0e30)  # MF6 DNODATA constant
 FILLNA_INT32 = np.int32(-2147483647)  # netcdf-fortran NF90_FILL_INT
 FILLNA_INT64 = np.int64(-2147483647)
@@ -24,13 +17,16 @@ class NetCDFPackageCfg:
     """
     NetCDF related configuration for a model package.
 
-    Attributes:
-        name (str): package name, e.g. welg_0.
-        type (str): package type, e.g. welg.
-        auxiliary (list[str]): ordered list of
-            auxiliary names to add to configuration.
-        params (list[str]): list of param names
-            to add to configuration.
+    paramaters
+    ----------
+    name : str
+        package name, e.g. welg_0.
+    type : str
+        package type, e.g. welg.
+    auxiliary : list[str]
+        ordered list of auxiliary names.
+    params : list[str]
+        list of param names.
     """
 
     name: str
@@ -42,25 +38,24 @@ class NetCDFPackageCfg:
 @dataclass
 class NetCDFModelInput:
     """
-    MODFLOW 6 NetCDF input objects that provide
-        metadata dictionaries, modflow 6 input
-        json schemas used to validate these dictionaries,
-        and xarray objects as basic initialized
-        variables that meet modflow 6 input requirements.
+    MODFLOW 6 NetCDF model input description and utilities.
 
-    Attributes:
-        name (str): model name, e.g. twri.
-        type (str): model type, e.g. gwf.
-        grid_type (str): grid type, "structured"
-            if mf6 DIS and "vertex" if mf6 DISV
-        mesh_type (str): mesh topology, "layered"
-            if UGRID 2D, else none.
-        dims (list[int]): list of netcdf dimensions
-            [time, z, y, x] if structured grid type
-            [time, z, nmesh_face (ncpl)] if vertex grid type
-            Note: time should be number of steps in the simulation
-        params (list[str]): List of NetCDFPackageCfg
-            objects to add to configuration.
+    paramaters
+    ----------
+    name : str
+        model name.
+    type : str
+        model type, e.g. gwf.
+    grid_type : str
+        grid type: "structured" or "vertex"
+    mesh_type : str
+        mesh topology: "layered" or None
+    dims : list[int]
+        NetCDF dimensions
+        structured grid type: [time, z, y, x]
+        vertex grid type: [time, z, nmesh_face (ncpl)]
+    packages : list[NetCDFPackageCfg]
+        package configuration object list.
     """
 
     name: str
@@ -69,9 +64,9 @@ class NetCDFModelInput:
     mesh_type: str | None = None
     dims: list[int] = field(default_factory=list)
     packages: list[NetCDFPackageCfg] = field(default_factory=list)
-    _meta = None
 
-    def to_jsonschema(self):
+    @property
+    def jsonschema(self):
         return NetCDFModel.model_json_schema()
 
     def to_xarray(self):
@@ -83,15 +78,15 @@ class NetCDFModelInput:
             "x": 3,
         }
 
-        self._setmeta()
+        meta = self.meta
 
         ds = xr.Dataset()
-        ds.attrs["modflow_grid"] = self._meta["attrs"]["modflow_grid"]
-        ds.attrs["modflow_model"] = self._meta["attrs"]["modflow_model"]
+        ds.attrs["modflow_grid"] = meta["attrs"]["modflow_grid"]
+        ds.attrs["modflow_model"] = meta["attrs"]["modflow_model"]
         if self.mesh_type is not None:
             ds.attrs["mesh"] = self.mesh_type
 
-        for p in self._meta["variables"]:
+        for p in meta["variables"]:
             varname = p["varname"]
             if p["numeric_type"] == "f8":
                 dtype = np.float64
@@ -112,13 +107,8 @@ class NetCDFModelInput:
 
         return ds
 
-    def to_meta(self):
-        self._setmeta()
-        return self._meta
-
-    def _setmeta(
-        self,
-    ):
+    @property
+    def meta(self):
         self._netcdf_blocks = ["griddata", "period"]
         self._meta: dict[str, Any] = {}
 
@@ -130,7 +120,6 @@ class NetCDFModelInput:
         if self.type[-1] == "6":
             self.type = self.type[:-1]
 
-        # model attrs
         self._meta["attrs"] = {}
         self._meta["attrs"]["modflow_model"] = f"{self.type}6: {self.name}"
         self._meta["attrs"]["modflow_grid"] = f"{self.grid_type}"
@@ -164,6 +153,7 @@ class NetCDFModelInput:
                     self._add_param_meta(dfn, pkg, param, shape, numeric_type)
         try:
             validate(self._meta, self.dims[1:])
+            return self._meta
         except:
             raise
 

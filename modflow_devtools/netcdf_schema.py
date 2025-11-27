@@ -6,9 +6,10 @@ from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_va
 from modflow_devtools.dfn import fetch, load
 from modflow_devtools.dfn2toml import convert
 
-PROJ_ROOT = Path(__file__).parents[1]
-DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
-TOML_DIR = DFN_DIR / "toml"
+# TODO: standard install location, move to modflow_devtools.dfn
+SPEC_ROOT = Path(__file__).parents[1] / "specification"
+DFN_DIR = SPEC_ROOT / "dfn"
+TOML_DIR = SPEC_ROOT / "toml"
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
 MF6_REF = "develop"
