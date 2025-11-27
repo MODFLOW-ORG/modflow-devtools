@@ -17,7 +17,7 @@ class NetCDFPackageCfg:
     """
     NetCDF related configuration for a model package.
 
-    paramaters
+    parameters
     ----------
     name : str
         package name, e.g. welg_0.
@@ -40,7 +40,7 @@ class NetCDFModelInput:
     """
     MODFLOW 6 NetCDF model input description and utilities.
 
-    paramaters
+    parameters
     ----------
     name : str
         model name.
@@ -65,9 +65,60 @@ class NetCDFModelInput:
     dims: list[int] = field(default_factory=list)
     packages: list[NetCDFPackageCfg] = field(default_factory=list)
 
+    def __post_init__(self):
+        self._netcdf_blocks = ["griddata", "period"]
+
+        self.name = self.name.lower()
+        self.type = self.type.lower()
+        self.grid_type = self.grid_type.lower()
+        if self.mesh_type is not None:
+            self.mesh_type = self.mesh_type.lower()
+        if self.type[-1] == "6":
+            self.type = self.type[:-1]
+
     @property
     def jsonschema(self):
         return NetCDFModel.model_json_schema()
+
+    @property
+    def meta(self):
+        self._meta: dict[str, Any] = {}
+        self._meta["attrs"] = {}
+        self._meta["attrs"]["modflow_model"] = f"{self.type}6: {self.name}"
+        self._meta["attrs"]["modflow_grid"] = f"{self.grid_type}"
+        if self.mesh_type is not None:
+            assert len(self.dims) == 3, (
+                f"Configured dims should be [NSTP, NLAY, NCPL], found={self.dims}"
+            )
+            self._meta["attrs"]["mesh"] = self.mesh_type
+            nlay = self.dims[1]
+        else:
+            assert len(self.dims) == 4, (
+                f"Configured dims should be [NSTP, NLAY, NROW, NCOL], found={self.dims}"
+            )
+            nlay = 0
+        self._meta["variables"] = []
+
+        for pkg in self.packages:
+            dfn = get_dfn(f"{self.type}-{pkg.type}")
+
+            self._check_params(dfn, pkg)
+
+            for param in pkg.params:
+                numeric_type = self._np_type(dfn, param)
+                shape = self._param_shape(dfn, param)
+                layer = 0 if "z" not in shape else nlay
+
+                if layer > 0:
+                    for k in range(layer):
+                        self._add_param_meta(dfn, pkg, param, shape, numeric_type, k)
+                else:
+                    self._add_param_meta(dfn, pkg, param, shape, numeric_type)
+        try:
+            validate(self._meta, self.dims[1:])
+            return self._meta
+        except:
+            raise
 
     def to_xarray(self):
         dimmap = {
@@ -106,56 +157,6 @@ class NetCDFModelInput:
                 ds[varname].encoding[e] = p["encodings"][e]
 
         return ds
-
-    @property
-    def meta(self):
-        self._netcdf_blocks = ["griddata", "period"]
-        self._meta: dict[str, Any] = {}
-
-        self.name = self.name.lower()
-        self.type = self.type.lower()
-        self.grid_type = self.grid_type.lower()
-        if self.mesh_type is not None:
-            self.mesh_type = self.mesh_type.lower()
-        if self.type[-1] == "6":
-            self.type = self.type[:-1]
-
-        self._meta["attrs"] = {}
-        self._meta["attrs"]["modflow_model"] = f"{self.type}6: {self.name}"
-        self._meta["attrs"]["modflow_grid"] = f"{self.grid_type}"
-        if self.mesh_type is not None:
-            assert len(self.dims) == 3, (
-                f"Configured dims should be [NSTP, NLAY, NCPL], found={self.dims}"
-            )
-            self._meta["attrs"]["mesh"] = self.mesh_type
-            nlay = self.dims[1]
-        else:
-            assert len(self.dims) == 4, (
-                f"Configured dims should be [NSTP, NLAY, NROW, NCOL], found={self.dims}"
-            )
-            nlay = 0
-        self._meta["variables"] = []
-
-        for pkg in self.packages:
-            dfn = get_dfn(f"{self.type}-{pkg.type}")
-
-            self._check_params(dfn, pkg)
-
-            for param in pkg.params:
-                numeric_type = self._np_type(dfn, param)
-                shape = self._param_shape(dfn, param)
-                layer = 0 if "z" not in shape else nlay
-
-                if layer > 0:
-                    for k in range(layer):
-                        self._add_param_meta(dfn, pkg, param, shape, numeric_type, k)
-                else:
-                    self._add_param_meta(dfn, pkg, param, shape, numeric_type)
-        try:
-            validate(self._meta, self.dims[1:])
-            return self._meta
-        except:
-            raise
 
     def _add_param_meta(
         self,
