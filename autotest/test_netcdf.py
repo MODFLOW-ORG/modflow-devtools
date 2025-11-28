@@ -41,7 +41,7 @@ def test_validate_model():
         "variables": variables,
     }
 
-    validate(nc_meta, grid_dims=[1, 1, 1])
+    validate(nc_meta, dims=[1, 1, 1])
 
 
 def test_validate_model_mesh():
@@ -76,7 +76,7 @@ def test_validate_model_mesh():
         "variables": variables,
     }
 
-    validate(nc_meta, grid_dims=[1, 1])
+    validate(nc_meta, dims=[1, 1])
 
 
 def test_fail_invalid_param():
@@ -99,7 +99,7 @@ def test_fail_invalid_param():
     }
 
     try:
-        validate(nc_meta, grid_dims=[1, 1, 1])
+        validate(nc_meta, dims=[1, 1, 1])
     except ValidationError as e:
         assert "Not a netcdf param" in str(e)
 
@@ -124,7 +124,7 @@ def test_fail_invalid_component():
     }
 
     try:
-        validate(nc_meta, grid_dims=[1, 1, 1])
+        validate(nc_meta, dims=[1, 1, 1])
     except ValidationError as e:
         assert "Not a valid mf6 component" in str(e)
 
@@ -150,7 +150,7 @@ def test_fail_param_attr_layer():
     }
 
     try:
-        validate(nc_meta, grid_dims=[1, 1])
+        validate(nc_meta, dims=[1, 1])
     except ValidationError as e:
         assert "Expected layer attribute for mesh param" in str(e)
 
@@ -176,7 +176,7 @@ def test_fail_param_attr_layer_val():
     }
 
     try:
-        validate(nc_meta, grid_dims=[1, 1])
+        validate(nc_meta, dims=[1, 1])
     except ValidationError as e:
         assert "Param layer attr value 2 exceeds grid k" in str(e)
 
@@ -202,7 +202,7 @@ def test_fail_param_attr_input():
     }
 
     try:
-        validate(nc_meta, grid_dims=[1, 1])
+        validate(nc_meta, dims=[1, 1])
     except ValidationError as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(f"Exception Type: {exc_type.__name__}")
@@ -367,12 +367,20 @@ def test_xarray_disv_aux():
         assert f"npf_k_l{layer}" in ds
         assert f"npf_k22_l{layer}" in ds
         assert f"welg_0_q_l{layer}" in ds
+        assert f"welg_0_concentration_l{layer}" in ds
+        assert f"welg_0_temperature_l{layer}" in ds
         assert np.allclose(ds[f"npf_k_l{layer}"].values, FILLNA_FLOAT64)
         assert np.allclose(ds[f"npf_k22_l{layer}"].values, FILLNA_FLOAT64)
         assert np.allclose(ds[f"welg_0_q_l{layer}"].values, DNODATA)
+        assert np.allclose(ds[f"welg_0_concentration_l{layer}"].values, DNODATA)
+        assert np.allclose(ds[f"welg_0_temperature_l{layer}"].values, DNODATA)
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
+        assert ds[f"welg_0_concentration_l{layer}"].dims == ("time", "z", "nmesh_face")
+        assert ds[f"welg_0_temperature_l{layer}"].dims == ("time", "z", "nmesh_face")
+        assert ds[f"welg_0_concentration_l{layer}"].attrs["modflow_iaux"] == 1
+        assert ds[f"welg_0_temperature_l{layer}"].attrs["modflow_iaux"] == 2
     assert ds.dims["time"] == 2
     assert ds.dims["z"] == 4
     assert ds.dims["nmesh_face"] == 6
@@ -449,3 +457,24 @@ def test_xarray_disv_all_params():
     )
 
     assert nc_fpath.is_file()
+
+
+def test_jsonschema():
+    from jsonschema import Draft7Validator
+
+    nc_input = NetCDFModelInput(
+        name="twri",
+        type="gwf",
+        grid_type="vertex",
+        mesh_type="layered",
+        dims=[2, 4, 6],
+    )
+
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
+
+    schema = nc_input.jsonschema
+    assert isinstance(schema, dict)
+    Draft7Validator.check_schema(schema)  # raises if not valid
+    validator = Draft7Validator(schema)
+    assert validator.is_valid(nc_input.meta)

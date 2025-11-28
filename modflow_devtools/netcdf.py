@@ -34,6 +34,10 @@ class NetCDFPackageCfg:
     auxiliary: list[str] = field(default_factory=list)
     params: list[str] = field(default_factory=list)
 
+    def __post_init__(self):
+        self.name = self.name.lower()
+        self.type = self.type.lower()
+
 
 @dataclass
 class NetCDFModelInput:
@@ -64,17 +68,6 @@ class NetCDFModelInput:
     mesh_type: str | None = None
     dims: list[int] = field(default_factory=list)
     packages: list[NetCDFPackageCfg] = field(default_factory=list)
-
-    def __post_init__(self):
-        self._netcdf_blocks = ["griddata", "period"]
-
-        self.name = self.name.lower()
-        self.type = self.type.lower()
-        self.grid_type = self.grid_type.lower()
-        if self.mesh_type is not None:
-            self.mesh_type = self.mesh_type.lower()
-        if self.type[-1] == "6":
-            self.type = self.type[:-1]
 
     @property
     def jsonschema(self):
@@ -114,11 +107,9 @@ class NetCDFModelInput:
                         self._add_param_meta(dfn, pkg, param, shape, numeric_type, k)
                 else:
                     self._add_param_meta(dfn, pkg, param, shape, numeric_type)
-        try:
-            validate(self._meta, self.dims[1:])
-            return self._meta
-        except:
-            raise
+
+        validate(self._meta, self.dims[1:])
+        return self._meta
 
     def to_xarray(self):
         dimmap = {
@@ -132,10 +123,8 @@ class NetCDFModelInput:
         meta = self.meta
 
         ds = xr.Dataset()
-        ds.attrs["modflow_grid"] = meta["attrs"]["modflow_grid"]
-        ds.attrs["modflow_model"] = meta["attrs"]["modflow_model"]
-        if self.mesh_type is not None:
-            ds.attrs["mesh"] = self.mesh_type
+        for a in meta["attrs"]:
+            ds.attrs[a] = meta["attrs"][a]
 
         for p in meta["variables"]:
             varname = p["varname"]
@@ -158,6 +147,17 @@ class NetCDFModelInput:
 
         return ds
 
+    def __post_init__(self):
+        self._netcdf_blocks = ["griddata", "period"]
+
+        self.name = self.name.lower()
+        self.type = self.type.lower()
+        self.grid_type = self.grid_type.lower()
+        if self.mesh_type is not None:
+            self.mesh_type = self.mesh_type.lower()
+        if self.type[-1] == "6":
+            self.type = self.type[:-1]
+
     def _add_param_meta(
         self,
         dfn,
@@ -167,6 +167,7 @@ class NetCDFModelInput:
         numeric_type,
         layer: int | None = None,
     ):
+        param = param.lower()
         _fill: np.float64 | np.int32
         if "time" in shape:
             _fill = DNODATA
@@ -176,20 +177,20 @@ class NetCDFModelInput:
             elif numeric_type == "i8":
                 _fill = FILLNA_INT32
 
-        def _add_param(name):
+        def _add_param(name, iaux=None):
             varname = (
                 f"{pkg.name}_{name}"
                 if layer is None
                 else f"{pkg.name}_{name}_l{layer + 1}"
             )
             mf6_input = (
-                f"{self.name}/{pkg.name.lower()}/{param.lower()}"
+                f"{self.name}/{pkg.name}/{param}"
                 if dfn.multi
-                else f"{self.name}/{pkg.type.lower()}/{param.lower()}"
+                else f"{self.name}/{pkg.type}/{param}"
             )
 
             d = {
-                "param": (f"{self.type}/{pkg.type.lower()}/{param.lower()}"),
+                "param": (f"{self.type}/{pkg.type}/{param}"),
                 "attrs": {
                     "modflow_input": mf6_input,
                     "longname": dfn.fields[param].longname,
@@ -203,11 +204,14 @@ class NetCDFModelInput:
             if layer is not None:
                 d["attrs"]["layer"] = layer + 1
 
+            if iaux is not None:
+                d["attrs"]["modflow_iaux"] = iaux + 1
+
             self._meta["variables"].append(d)
 
-        if param.lower() == "aux":
-            for auxname in pkg.auxiliary:
-                _add_param(auxname)
+        if param == "aux":
+            for i, auxname in enumerate(pkg.auxiliary):
+                _add_param(auxname.lower(), i)
         else:
             _add_param(param)
 
