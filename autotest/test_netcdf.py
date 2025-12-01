@@ -1,27 +1,24 @@
+import sys
 from pathlib import Path
 
 import numpy as np
+from pydantic import ValidationError
 
 from modflow_devtools.netcdf import (
     DNODATA,
     FILLNA_FLOAT64,
     FILLNA_INT32,
-    ModelNetCDFConfig,
-    NetCDFInput,
-    PkgNetCDFConfig,
+    NetCDFModelInput,
+    NetCDFPackageCfg,
 )
 from modflow_devtools.netcdf_schema import validate
-
-PROJ_ROOT = Path(__file__).parents[1]
-DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
-TOML_DIR = DFN_DIR / "toml"
 
 
 def test_validate_model():
     variables = [
         {
             "param": "gwf/welg/aux",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/AUX", "modflow_iaux": 1},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/AUX", "modflow_iaux": 1},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_aux",
@@ -29,7 +26,7 @@ def test_validate_model():
         },
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
@@ -44,7 +41,7 @@ def test_validate_model():
         "variables": variables,
     }
 
-    validate(nc_meta, TOML_DIR, grid_dims=[1, 1, 1])
+    validate(nc_meta, dims=[1, 1, 1])
 
 
 def test_validate_model_mesh():
@@ -52,7 +49,7 @@ def test_validate_model_mesh():
         {
             "param": "gwf/welg/aux",
             "attrs": {
-                "modflow_input": "<GWF_NAME>/<WELG_NAME>/AUX",
+                "modflow_input": "GWFMODEL/WELG0/AUX",
                 "modflow_iaux": 1,
                 "layer": 1,
             },
@@ -63,7 +60,80 @@ def test_validate_model_mesh():
         },
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q", "layer": 1},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q", "layer": 1},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "LAYERED",
+        },
+        "variables": variables,
+    }
+
+    validate(nc_meta, dims=[1, 1])
+
+
+def test_fail_invalid_param():
+    variables = [
+        {
+            "param": "gwf/wel/q",
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "wel_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, dims=[1, 1, 1])
+    except ValidationError as e:
+        assert "Not a netcdf param" in str(e)
+
+
+def test_fail_invalid_component():
+    variables = [
+        {
+            "param": "gwf/abcg/q",
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "abcg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, dims=[1, 1, 1])
+    except ValidationError as e:
+        assert "Not a valid mf6 component" in str(e)
+
+
+def test_fail_param_attr_layer():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
@@ -79,25 +149,83 @@ def test_validate_model_mesh():
         "variables": variables,
     }
 
-    validate(nc_meta, TOML_DIR, grid_dims=[1, 1])
+    try:
+        validate(nc_meta, dims=[1, 1])
+    except ValidationError as e:
+        assert "Expected layer attribute for mesh param" in str(e)
+
+
+def test_fail_param_attr_layer_val():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q", "layer": 2},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "layered",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, dims=[1, 1])
+    except ValidationError as e:
+        assert "Param layer attr value 2 exceeds grid k" in str(e)
+
+
+def test_fail_param_attr_input():
+    variables = [
+        {
+            "param": "gwf/welg/q",
+            "attrs": {"layer": 1},
+            "encodings": {"_FillValue": 3e30},
+            "shape": ["time", "z", "y", "x"],
+            "varname": "welg_0_q",
+            "numeric_type": "f8",
+        },
+    ]
+    nc_meta = {
+        "attrs": {
+            "modflow_grid": "structured",
+            "modflow_model": "gwf6: gwfmodel",
+            "mesh": "layered",
+        },
+        "variables": variables,
+    }
+
+    try:
+        validate(nc_meta, dims=[1, 1])
+    except ValidationError as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print(f"Exception Type: {exc_type.__name__}")
+        print(f"Exception Value: {exc_value}")
+        print(f"Traceback Object: {exc_traceback}")
+        assert "modflow_input" in str(e)
 
 
 def test_xarray_structured_mesh():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="structured",
         dims=[2, 4, 3, 2],  # ["time", "z", "y", "x"]
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "structured"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert "mesh" not in ds.attrs
     assert "npf_k" in ds
     assert "npf_k22" in ds
@@ -108,10 +236,10 @@ def test_xarray_structured_mesh():
     assert ds["npf_k"].dims == ("z", "y", "x")
     assert ds["npf_k22"].dims == ("z", "y", "x")
     assert ds["welg_0_q"].dims == ("time", "z", "y", "x")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["y"] == 3
-    assert ds.dims["x"] == 2
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["y"] == 3
+    assert ds.sizes["x"] == 2
     assert len(ds) == 3
 
     nc_fpath = Path.cwd() / "twri.input.nc"
@@ -125,22 +253,21 @@ def test_xarray_structured_mesh():
 
 
 def test_xarray_layered_mesh():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="structured",
         mesh_type="layered",
-        dims=[2, 4, 3],  # ["time", "z", "nmesh_face"]
+        dims=[2, 4, 6],  # ["time", "z", "nmesh_face"]
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "structured"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -153,9 +280,9 @@ def test_xarray_layered_mesh():
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 3
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 12
 
     nc_fpath = Path.cwd() / "twri.input.nc"
@@ -169,22 +296,21 @@ def test_xarray_layered_mesh():
 
 
 def test_xarray_disv():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="vertex",
         mesh_type="layered",
-        dims=[2, 4, 3],
+        dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg", params=["q"]))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg", params=["q"]))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -197,9 +323,9 @@ def test_xarray_disv():
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 3
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 12
 
     nc_fpath = Path.cwd() / "disv.input.nc"
@@ -213,17 +339,17 @@ def test_xarray_disv():
 
 
 def test_xarray_disv_aux():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFModelInput(
         name="twri",
-        type="gwf",
+        type="gwf6",
         grid_type="vertex",
         mesh_type="layered",
-        dims=[2, 4, 3],
+        dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf", params=["k", "k22"]))
-    nc_cfg.packages.append(
-        PkgNetCDFConfig(
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf", params=["k", "k22"]))
+    nc_input.packages.append(
+        NetCDFPackageCfg(
             "welg_0",
             "welg",
             auxiliary=["concentration", "temperature"],
@@ -231,26 +357,33 @@ def test_xarray_disv_aux():
         )
     )
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
         assert f"npf_k_l{layer}" in ds
         assert f"npf_k22_l{layer}" in ds
         assert f"welg_0_q_l{layer}" in ds
+        assert f"welg_0_concentration_l{layer}" in ds
+        assert f"welg_0_temperature_l{layer}" in ds
         assert np.allclose(ds[f"npf_k_l{layer}"].values, FILLNA_FLOAT64)
         assert np.allclose(ds[f"npf_k22_l{layer}"].values, FILLNA_FLOAT64)
         assert np.allclose(ds[f"welg_0_q_l{layer}"].values, DNODATA)
+        assert np.allclose(ds[f"welg_0_concentration_l{layer}"].values, DNODATA)
+        assert np.allclose(ds[f"welg_0_temperature_l{layer}"].values, DNODATA)
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 3
+        assert ds[f"welg_0_concentration_l{layer}"].dims == ("time", "z", "nmesh_face")
+        assert ds[f"welg_0_temperature_l{layer}"].dims == ("time", "z", "nmesh_face")
+        assert ds[f"welg_0_concentration_l{layer}"].attrs["modflow_iaux"] == 1
+        assert ds[f"welg_0_temperature_l{layer}"].attrs["modflow_iaux"] == 2
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 20
 
     nc_fpath = Path.cwd() / "disv_aux.input.nc"
@@ -264,22 +397,23 @@ def test_xarray_disv_aux():
 
 
 def test_xarray_disv_all_params():
-    nc_cfg = ModelNetCDFConfig(
+    nc_input = NetCDFModelInput(
         name="twri",
         type="gwf",
         grid_type="vertex",
         mesh_type="layered",
-        dims=[2, 4, 3],
+        dims=[2, 4, 6],
     )
 
-    nc_cfg.packages.append(PkgNetCDFConfig("npf", "npf"))
-    nc_cfg.packages.append(PkgNetCDFConfig("welg_0", "welg"))
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
+    # TODO: rcha and evta need netcdf annotation in dfns
+    # nc_cfg.packages.append(NetCDFPackageCfg("rch0", "rcha"))
 
-    nc_input = NetCDFInput(TOML_DIR, nc_cfg)
     ds = nc_input.to_xarray()
 
     assert ds.attrs["modflow_grid"] == "vertex"
-    assert ds.attrs["modflow_model"] == "gwf: twri"
+    assert ds.attrs["modflow_model"] == "gwf6: twri"
     assert ds.attrs["mesh"] == "layered"
     for k in range(4):
         layer = k + 1
@@ -310,9 +444,9 @@ def test_xarray_disv_all_params():
         assert ds[f"npf_angle3_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_wetdry_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 3
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 36
 
     nc_fpath = Path.cwd() / "disv_all.input.nc"
@@ -323,3 +457,24 @@ def test_xarray_disv_all_params():
     )
 
     assert nc_fpath.is_file()
+
+
+def test_jsonschema():
+    from jsonschema import Draft7Validator
+
+    nc_input = NetCDFModelInput(
+        name="twri",
+        type="gwf",
+        grid_type="vertex",
+        mesh_type="layered",
+        dims=[2, 4, 6],
+    )
+
+    nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
+    nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
+
+    schema = nc_input.jsonschema
+    assert isinstance(schema, dict)
+    Draft7Validator.check_schema(schema)  # raises if not valid
+    validator = Draft7Validator(schema)
+    assert validator.is_valid(nc_input.meta)

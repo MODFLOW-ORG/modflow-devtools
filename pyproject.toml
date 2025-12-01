@@ -53,6 +53,7 @@ test = [
     "coverage",
     "flaky",
     "filelock",
+    "jsonschema",
     "meson!=0.63.0",
     "netCDF4",
     "ninja",

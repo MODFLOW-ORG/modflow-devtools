@@ -1,84 +1,130 @@
-from os import PathLike
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_validator
 
-from modflow_devtools.dfn import Dfn
-
-CONTEXT: dict[str, Any] = {}
-TOML_DIR: PathLike = Path()
+from modflow_devtools.dfn import Dfn, get_dfns
+from modflow_devtools.dfn2toml import convert
 
 
-def get_dfn(toml_dir, toml_name):
-    path = Path(toml_dir / f"{toml_name}.toml")
-    assert path.is_file()
+def get_dfn(toml_name):
+    import tempfile
+
+    SYSTEMP = tempfile.gettempdir()
+    MF6_DIR = Path(SYSTEMP) / "modflow6"
+    DFN_DIR = MF6_DIR / "dfn"
+    TOML_DIR = MF6_DIR / "toml"
+    MF6_OWNER = "MODFLOW-ORG"
+    MF6_REPO = "modflow6"
+    MF6_REF = "develop"
+
+    if not any(TOML_DIR.glob("*.toml")):
+        get_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
+        convert(DFN_DIR, TOML_DIR)
+
+    path = Path(TOML_DIR / f"{toml_name}.toml")
+    if not path.is_file():
+        raise AssertionError(f"Not a valid mf6 component: {toml_name}")
     with path.open(mode="rb") as toml_file:
         return Dfn.load(toml_file, name=toml_name, version=2)
 
 
-class ParamAttrs(BaseModel):
-    modflow_input: str
-    modflow_iaux: int | None = None
-    layer: int | None = None
+def validate(v, dims: list[int]):
+    """
+    Validate model NetCDF specification against schema.
 
-    @field_validator("layer", mode="before")
+    Parameters
+    ----------
+    dims: list
+        modeflow 6 model grid dimensions
+        [nlay, nrow, ncol] or [nlay, ncpl]
+    """
+    try:
+        NetCDFModel.model_validate(v, context={"dims": dims})
+    except ValidationError:
+        raise
+
+
+class NetCDFModel(BaseModel):
+    attrs: "NetCDFModelAttrs"
+    variables: list["NetCDFPackageParam"] = Field(default_factory=list)
+
+    @field_validator("attrs", mode="before")
     @classmethod
-    def validate_layer(cls, v: Any) -> Any:
-        global CONTEXT
-        assert "grid_dims" in CONTEXT
-        if v > CONTEXT["grid_dims"][0]:
-            raise ValueError(f"Param layer attr {v} exceeds grid k")
+    def validate_attrs(cls, v: Any) -> Any:
+        """
+        validate model (dataset) scoped attributes dictionary
+        """
+        v = {k.lower(): v.lower() if isinstance(v, str) else v for k, v in v.items()}
         return v
 
 
-class ModelAttrs(BaseModel):
-    modflow_grid: str
-    modflow_model: str
-    mesh: str | None = None
+class NetCDFModelAttrs(BaseModel):
+    # order of params dictates when data added to info dict
+    mesh: str | None = Field(default=None)
+    modflow_grid: str = Field()
+    modflow_model: str = Field()
+
+    @field_validator("mesh", mode="before")
+    @classmethod
+    def validate_mesh(cls, v: Any, info: ValidationInfo) -> Any:
+        if v is not None:
+            assert v == "layered"
+            info.context["mesh"] = v  # type: ignore
+        return v
+
+    @field_validator("modflow_grid", mode="before")
+    @classmethod
+    def validate_modflow_grid(cls, v: Any, info: ValidationInfo) -> Any:
+        mesh = info.data.get("mesh")
+        dims = info.context.get("dims")  # type: ignore
+        if mesh is None:
+            assert v == "structured"
+            if len(dims) != 3:
+                raise AssertionError(f"Expected 3 grid dimensions: {dims}")
+        else:
+            if len(dims) != 2:
+                raise AssertionError(
+                    f"Expected 2 grid dimensions for layered mesh: {dims}"
+                )
+        info.context["grid"] = v  # type: ignore
+        return v
 
     @field_validator("modflow_model", mode="before")
     @classmethod
-    def validate_modeflow_model(cls, v: Any) -> Any:
-        global CONTEXT
+    def validate_modflow_model(cls, v: Any, info: ValidationInfo) -> Any:
         tokens = v.split(":")
         if len(tokens) != 2:
             raise ValueError(f"Invalid modflow_model attribute: {v}")
-        modeltype = tokens[0].lower().strip()
+        modeltype = tokens[0].strip()
         if modeltype[-1].isdigit():
             modeltype = modeltype[:-1]
-        CONTEXT["modeltype"] = modeltype
-        CONTEXT["modelname"] = tokens[1].lower().strip()
+        info.context["modeltype"] = modeltype  # type: ignore
+        info.context["modelname"] = tokens[1].strip()  # type: ignore
         return v
 
 
-class ParamEncodings(BaseModel):
-    _FillValue: float
-
-
-class ModelNetCDFParam(BaseModel):
-    param: str = Field(
-        # default=None,
-    )
-    attrs: ParamAttrs
-    encodings: ParamEncodings
-    shape: list
-    varname: str
-    numeric_type: str = Field(
-        # default=None,
-    )
+class NetCDFPackageParam(BaseModel):
+    param: str = Field()
+    shape: list[str] = Field(default_factory=list)
+    attrs: "NetCDFParamAttrs"
+    encodings: "NetCDFParamEncodings"
+    varname: str = Field()
+    numeric_type: str = Field()
 
     @field_validator("param", mode="before")
     @classmethod
     def validate_param(cls, v: Any) -> Any:
-        global TOML_DIR
+        """
+        validate package parameter
+        """
         tokens = v.split("/")
         if len(tokens) != 3:
             raise ValueError(f"Invalid param format: {v}")
         model = tokens[0]
         package = tokens[1]
         param = tokens[2]
-        dfn = get_dfn(TOML_DIR, f"{model}-{package}")
+        dfn = get_dfn(f"{model}-{package}")
 
         blocks = ["griddata", "period"]
         if not any(blk in dfn for blk in blocks):
@@ -86,72 +132,75 @@ class ModelNetCDFParam(BaseModel):
                 f"griddata/period blocks not found in package type {package}"
             )
         if not any(param in dfn[blk] if blk in dfn else False for blk in blocks):
-            raise ValueError(f"Param {param} not found in package {package}")
+            if (
+                "stress_period_data" not in dfn["period"]
+                or param not in dfn["period"]["stress_period_data"]["item"]["fields"]
+            ):
+                raise ValueError(f"Param {param} not found in package {package}")
 
         for b in blocks:
             if b in dfn and param in dfn[b]:
-                if "netcdf" not in dfn[b][param] or not dfn[b][param]["netcdf"]:
-                    raise ValueError(f"not a netcdf param: {param}")
+                if not dfn[b][param]["netcdf"]:
+                    raise ValueError(f"Not a netcdf param: '{param}'")
         return v
 
     @field_validator("attrs", mode="before")
     @classmethod
-    def validate_attrs(cls, v: Any) -> Any:
-        global CONTEXT
-        v = {k.lower(): v for k, v in v.items()}
-        if "mesh" in CONTEXT:
-            if "layer" not in v:
-                raise ValueError("Expected param layer attribute for mesh")
+    def validate_attrs(cls, v: Any, info: ValidationInfo) -> Any:
+        """
+        validate parameter attributes dictionary
+        """
+        v = {k.lower(): v.lower() if isinstance(v, str) else v for k, v in v.items()}
+        param = info.data.get("param")
+        shape = info.data.get("shape")
+        mesh = info.context.get("mesh")  # type: ignore
+        if mesh is not None and "z" in shape and "layer" not in v:  # type: ignore
+            raise AssertionError(f"Expected layer attribute for mesh param '{param}'")
+        if (
+            param is not None
+            and param.split("/")[2] == "aux"
+            and "modflow_iaux" not in v
+        ):
+            raise AssertionError(
+                f"Expected modflow_iaux attribute for aux param '{param}'"
+            )
         return v
 
 
-class ModelNetCDFSpec(BaseModel):
-    attrs: ModelAttrs
-    variables: list[ModelNetCDFParam] = Field(default_factory=list)
+class NetCDFParamAttrs(BaseModel):
+    modflow_input: str = Field()
+    modflow_iaux: int | None = Field(default=None)
+    layer: int | None = Field(default=None)
 
-    @field_validator("attrs", mode="before")
+    @field_validator("modflow_input", mode="before")
     @classmethod
-    def validate_attrs(cls, v: Any) -> Any:
-        global CONTEXT
-        v = {k.lower(): v for k, v in v.items()}
-        if "mesh" in v.keys():
-            CONTEXT["mesh"] = v["mesh"]
-        if "modflow_grid" in v.keys():
-            CONTEXT["grid"] = v["modflow_grid"]
-            assert "grid_dims" in CONTEXT
-            if "mesh" in v.keys() and v["mesh"].lower() == "layered":
-                if len(CONTEXT["grid_dims"]) != 2:
-                    raise ValueError(
-                        f"Expected 2 grid dimensions {CONTEXT['grid_dims']}"
-                    )
-            else:
-                if len(CONTEXT["grid_dims"]) != 3:
-                    raise ValueError(
-                        f"Expected 3 grid dimensions {CONTEXT['grid_dims']}"
-                    )
+    def validate_modflow_input(cls, v: Any, info: ValidationInfo) -> Any:
+        modelname = info.context.get("modelname")  # type: ignore
+        if v.split("/")[0] != modelname:
+            raise ValueError(
+                f'modflow_input attribute "{v}" does not '
+                f'match dataset modelname "{modelname}")'
+            )
+        return v
+
+    @field_validator("modflow_iaux", mode="before")
+    @classmethod
+    def validate_modflow_iaux(cls, v: Any, info: ValidationInfo) -> Any:
+        return v
+
+    @field_validator("layer", mode="before")
+    @classmethod
+    def validate_layer(cls, v: Any, info: ValidationInfo) -> Any:
+        dims = info.context.get("dims")  # type: ignore
+        if v > dims[0]:
+            raise ValueError(f"Param layer attr value {v} exceeds grid k")
         return v
 
 
-def validate(v, path: str | PathLike, grid_dims: list[int]):
-    """
-    Validate model NetCDF specification.
+class NetCDFParamEncodings(BaseModel):
+    fill: float = Field(alias="_FillValue")
 
-    Parameters
-    ----------
-    path : str | PathLike
-        Path to the directory containing TOML dfn specification.
-    grid_dims: list
-        modeflow 6 discretization dependent model grid dimensions
-        if discretization is DIS then grid_dims should be [nlay, nrow, ncol]
-        if discretization is DISV then grid_dims should be [nlay, ncpl]
-    """
-    global TOML_DIR, CONTEXT
-    CONTEXT = {}
-    CONTEXT["grid_dims"] = grid_dims
-    TOML_DIR = Path(path).expanduser().resolve().absolute()
-    if not TOML_DIR.is_dir():
-        raise NotADirectoryError(f"Path {path} is not a directory.")
-    try:
-        ModelNetCDFSpec.model_validate(v)
-    except ValidationError:
-        raise
+    @field_validator("fill", mode="before")
+    @classmethod
+    def validate_fill(cls, v: Any, info: ValidationInfo) -> Any:
+        return v
