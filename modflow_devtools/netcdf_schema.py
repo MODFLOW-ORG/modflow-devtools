@@ -11,7 +11,7 @@ SPEC_PATH = None
 def get_dfn(toml_name):
     global SPEC_PATH
     if SPEC_PATH is None:
-        SPEC_PATH = fetch.fetch_toml()
+        SPEC_PATH = fetch.fetch_versioned_path()
     path = Path(SPEC_PATH / "toml" / f"{toml_name}.toml")
     if not path.is_file():
         raise AssertionError(f"Not a valid mf6 component: {toml_name}")

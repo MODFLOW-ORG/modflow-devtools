@@ -236,10 +236,10 @@ def test_xarray_structured_mesh():
     assert ds["npf_k"].dims == ("z", "y", "x")
     assert ds["npf_k22"].dims == ("z", "y", "x")
     assert ds["welg_0_q"].dims == ("time", "z", "y", "x")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["y"] == 3
-    assert ds.dims["x"] == 2
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["y"] == 3
+    assert ds.sizes["x"] == 2
     assert len(ds) == 3
 
     nc_fpath = Path.cwd() / "twri.input.nc"
@@ -280,9 +280,9 @@ def test_xarray_layered_mesh():
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 6
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 12
 
     nc_fpath = Path.cwd() / "twri.input.nc"
@@ -323,9 +323,9 @@ def test_xarray_disv():
         assert ds[f"npf_k_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_k22_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 6
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 12
 
     nc_fpath = Path.cwd() / "disv.input.nc"
@@ -381,9 +381,9 @@ def test_xarray_disv_aux():
         assert ds[f"welg_0_temperature_l{layer}"].dims == ("time", "z", "nmesh_face")
         assert ds[f"welg_0_concentration_l{layer}"].attrs["modflow_iaux"] == 1
         assert ds[f"welg_0_temperature_l{layer}"].attrs["modflow_iaux"] == 2
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 6
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 20
 
     nc_fpath = Path.cwd() / "disv_aux.input.nc"
@@ -444,9 +444,9 @@ def test_xarray_disv_all_params():
         assert ds[f"npf_angle3_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"npf_wetdry_l{layer}"].dims == ("z", "nmesh_face")
         assert ds[f"welg_0_q_l{layer}"].dims == ("time", "z", "nmesh_face")
-    assert ds.dims["time"] == 2
-    assert ds.dims["z"] == 4
-    assert ds.dims["nmesh_face"] == 6
+    assert ds.sizes["time"] == 2
+    assert ds.sizes["z"] == 4
+    assert ds.sizes["nmesh_face"] == 6
     assert len(ds) == 36
 
     nc_fpath = Path.cwd() / "disv_all.input.nc"

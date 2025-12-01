@@ -29,7 +29,7 @@ def fetch_dfns(
 get_dfns = fetch_dfns  # alias for backward compatibility
 
 
-def fetch_toml(verbose: bool = True):
+def fetch_versioned_path(verbose: bool = True):
     import tempfile
 
     from modflow_devtools.dfn2toml import convert
