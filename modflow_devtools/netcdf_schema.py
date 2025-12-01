@@ -4,24 +4,15 @@ from typing import Any
 from pydantic import BaseModel, Field, ValidationError, ValidationInfo, field_validator
 
 from modflow_devtools.dfn import fetch, load
-from modflow_devtools.dfn2toml import convert
 
-# TODO: standard install location, move to modflow_devtools.dfn
-SPEC_ROOT = Path(__file__).parents[1] / "specification"
-DFN_DIR = SPEC_ROOT / "dfn"
-TOML_DIR = SPEC_ROOT / "toml"
-MF6_OWNER = "MODFLOW-ORG"
-MF6_REPO = "modflow6"
-MF6_REF = "develop"
+SPEC_PATH = None
 
 
 def get_dfn(toml_name):
-    # TODO: always regenerate?
-    if not any(DFN_DIR.glob("*.dfn")):
-        fetch.fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
-    if not any(TOML_DIR.glob("*.toml")):
-        convert(DFN_DIR, TOML_DIR)
-    path = Path(TOML_DIR / f"{toml_name}.toml")
+    global SPEC_PATH
+    if SPEC_PATH is None:
+        SPEC_PATH = fetch.fetch_toml()
+    path = Path(SPEC_PATH / "toml" / f"{toml_name}.toml")
     if not path.is_file():
         raise AssertionError(f"Not a valid mf6 component: {toml_name}")
     with path.open(mode="rb") as toml_file:
@@ -54,21 +45,20 @@ class NetCDFModel(BaseModel):
         """
         validate model (dataset) scoped attributes dictionary
         """
-        v = {k.lower(): v for k, v in v.items()}
+        v = {k.lower(): v.lower() if isinstance(v, str) else v for k, v in v.items()}
         return v
 
 
 class NetCDFModelAttrs(BaseModel):
     # order of params dictates when data added to info dict
-    mesh: str | None = None
-    modflow_grid: str
-    modflow_model: str
+    mesh: str | None = Field(default=None)
+    modflow_grid: str = Field()
+    modflow_model: str = Field()
 
     @field_validator("mesh", mode="before")
     @classmethod
     def validate_mesh(cls, v: Any, info: ValidationInfo) -> Any:
         if v is not None:
-            v = v.lower()
             assert v == "layered"
             info.context["mesh"] = v  # type: ignore
         return v
@@ -76,14 +66,17 @@ class NetCDFModelAttrs(BaseModel):
     @field_validator("modflow_grid", mode="before")
     @classmethod
     def validate_modflow_grid(cls, v: Any, info: ValidationInfo) -> Any:
-        v = v.lower()
         mesh = info.data.get("mesh")
         dims = info.context.get("dims")  # type: ignore
         if mesh is None:
             assert v == "structured"
-            assert len(dims) == 3, "Expected 3 grid dimensions: {dims}"
+            if len(dims) != 3:
+                raise AssertionError(f"Expected 3 grid dimensions: {dims}")
         else:
-            assert len(dims) == 2, "Expected 2 grid dimensions for layered mesh: {dims}"
+            if len(dims) != 2:
+                raise AssertionError(
+                    f"Expected 2 grid dimensions for layered mesh: {dims}"
+                )
         info.context["grid"] = v  # type: ignore
         return v
 
@@ -93,11 +86,11 @@ class NetCDFModelAttrs(BaseModel):
         tokens = v.split(":")
         if len(tokens) != 2:
             raise ValueError(f"Invalid modflow_model attribute: {v}")
-        modeltype = tokens[0].lower().strip()
+        modeltype = tokens[0].strip()
         if modeltype[-1].isdigit():
             modeltype = modeltype[:-1]
         info.context["modeltype"] = modeltype  # type: ignore
-        info.context["modelname"] = tokens[1].lower().strip()  # type: ignore
+        info.context["modelname"] = tokens[1].strip()  # type: ignore
         return v
 
 
@@ -106,7 +99,7 @@ class NetCDFPackageParam(BaseModel):
     shape: list[str] = Field(default_factory=list)
     attrs: "NetCDFParamAttrs"
     encodings: "NetCDFParamEncodings"
-    varname: str
+    varname: str = Field()
     numeric_type: str = Field()
 
     @field_validator("param", mode="before")
@@ -145,7 +138,7 @@ class NetCDFPackageParam(BaseModel):
         """
         validate parameter attributes dictionary
         """
-        v = {k.lower(): v for k, v in v.items()}
+        v = {k.lower(): v.lower() if isinstance(v, str) else v for k, v in v.items()}
         param = info.data.get("param")
         shape = info.data.get("shape")
         mesh = info.context.get("mesh")  # type: ignore
@@ -163,13 +156,19 @@ class NetCDFPackageParam(BaseModel):
 
 
 class NetCDFParamAttrs(BaseModel):
-    modflow_input: str
-    modflow_iaux: int | None = None
-    layer: int | None = None
+    modflow_input: str = Field()
+    modflow_iaux: int | None = Field(default=None)
+    layer: int | None = Field(default=None)
 
     @field_validator("modflow_input", mode="before")
     @classmethod
     def validate_modflow_input(cls, v: Any, info: ValidationInfo) -> Any:
+        modelname = info.context.get("modelname")  # type: ignore
+        if v.split("/")[0] != modelname:
+            raise ValueError(
+                f'modflow_input attribute "{v}" does not '
+                f'match dataset modelname "{modelname}")'
+            )
         return v
 
     @field_validator("modflow_iaux", mode="before")
@@ -187,4 +186,9 @@ class NetCDFParamAttrs(BaseModel):
 
 
 class NetCDFParamEncodings(BaseModel):
-    _FillValue: float
+    fill: float = Field(alias="_FillValue")
+
+    @field_validator("fill", mode="before")
+    @classmethod
+    def validate_fill(cls, v: Any, info: ValidationInfo) -> Any:
+        return v

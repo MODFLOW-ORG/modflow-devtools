@@ -18,7 +18,7 @@ def test_validate_model():
     variables = [
         {
             "param": "gwf/welg/aux",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/AUX", "modflow_iaux": 1},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/AUX", "modflow_iaux": 1},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_aux",
@@ -26,7 +26,7 @@ def test_validate_model():
         },
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
@@ -49,7 +49,7 @@ def test_validate_model_mesh():
         {
             "param": "gwf/welg/aux",
             "attrs": {
-                "modflow_input": "<GWF_NAME>/<WELG_NAME>/AUX",
+                "modflow_input": "GWFMODEL/WELG0/AUX",
                 "modflow_iaux": 1,
                 "layer": 1,
             },
@@ -60,7 +60,7 @@ def test_validate_model_mesh():
         },
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q", "layer": 1},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q", "layer": 1},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
@@ -71,7 +71,7 @@ def test_validate_model_mesh():
         "attrs": {
             "modflow_grid": "structured",
             "modflow_model": "gwf6: gwfmodel",
-            "mesh": "layered",
+            "mesh": "LAYERED",
         },
         "variables": variables,
     }
@@ -83,7 +83,7 @@ def test_fail_invalid_param():
     variables = [
         {
             "param": "gwf/wel/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WEL_NAME>/Q"},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "wel_0_q",
@@ -108,7 +108,7 @@ def test_fail_invalid_component():
     variables = [
         {
             "param": "gwf/abcg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<ABCG_NAME>/Q"},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "abcg_0_q",
@@ -133,7 +133,7 @@ def test_fail_param_attr_layer():
     variables = [
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q"},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q"},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
@@ -159,7 +159,7 @@ def test_fail_param_attr_layer_val():
     variables = [
         {
             "param": "gwf/welg/q",
-            "attrs": {"modflow_input": "<GWF_NAME>/<WELG_NAME>/Q", "layer": 2},
+            "attrs": {"modflow_input": "GWFMODEL/WELG0/Q", "layer": 2},
             "encodings": {"_FillValue": 3e30},
             "shape": ["time", "z", "y", "x"],
             "varname": "welg_0_q",
