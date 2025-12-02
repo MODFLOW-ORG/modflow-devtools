@@ -473,7 +473,7 @@ def test_jsonschema():
     nc_input.packages.append(NetCDFPackageCfg("npf", "npf"))
     nc_input.packages.append(NetCDFPackageCfg("welg_0", "welg"))
 
-    schema = nc_input.jsonschema
+    schema = nc_input.jsonschema()
     assert isinstance(schema, dict)
     Draft7Validator.check_schema(schema)  # raises if not valid
     validator = Draft7Validator(schema)

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+import jsonschema
 import numpy as np
 import xarray as xr
 
@@ -69,12 +70,12 @@ class NetCDFModelInput:
     dims: list[int] = field(default_factory=list)
     packages: list[NetCDFPackageCfg] = field(default_factory=list)
 
-    @property
-    def jsonschema(self):
+    @staticmethod
+    def jsonschema() -> jsonschema:
         return NetCDFModel.model_json_schema()
 
     @property
-    def meta(self):
+    def meta(self) -> dict[Any, Any]:
         self._meta: dict[str, Any] = {}
         self._meta["attrs"] = {}
         self._meta["attrs"]["modflow_model"] = f"{self.type}6: {self.name}"
@@ -111,7 +112,7 @@ class NetCDFModelInput:
         validate(self._meta, self.dims[1:])
         return self._meta
 
-    def to_xarray(self):
+    def to_xarray(self) -> xr.Dataset:
         dimmap = {
             "time": 0,
             "z": 1,
@@ -127,11 +128,12 @@ class NetCDFModelInput:
             ds.attrs[a] = meta["attrs"][a]
 
         for p in meta["variables"]:
+            dtype: np.dtype[np.float64] | np.dtype[np.int64] | np.dtype[np.int32]
             varname = p["varname"]
             if p["numeric_type"] == "f8":
-                dtype = np.float64
+                dtype = np.dtype(np.float64)
             elif p["numeric_type"] == "i8":
-                dtype = np.int64
+                dtype = np.dtype(np.int32)
             dims = [self.dims[dimmap[dim]] for dim in p["shape"]]
             data = np.full(
                 dims,
