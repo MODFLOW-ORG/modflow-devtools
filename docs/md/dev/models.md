@@ -30,45 +30,163 @@ Transition from a baked-in static registry to a dynamic, branch-aware registry s
 
 ## Components
 
-### 1. Bootstrap Metadata
+### Registry bootstrap file
 
-**Location**: `modflow_devtools/registry/bootstrap.toml`
+In this project, registry bootstrap metadata can live in `modflow_devtools/models/bootstrap.toml`.
 
-**Format**:
+#### File contents
+
+A `repo` attribute identifies the repository owner and name. 
+
+The name of the section (under `sources.`) will become part of a prefix by which models can be hierarchically addressed. To override the name (thus the prefix as well) a `name` attribute can be provided.
+
+A `registry_path` attribute points to the directory containing the registry database files. This can default to `.registry/` and therefore be optional, only required if overridden.
+
+The `registry_path` **must** contain at least two (2) files:
+
+- `registry.toml`
+- `models.toml`
+
+The `registry_path` **may** also contain a file called `examples.toml`.
+
+#### Sample file
+
 ```toml
 [sources.modflow6-examples]
 repo = "MODFLOW-ORG/modflow6-examples"
-path = ".registry/registry.toml"
+name = "mf6/example"
+dirs = [""]
 
 [sources.modflow6-testmodels]
 repo = "MODFLOW-ORG/modflow6-testmodels"
-path = ".registry/registry.toml"
+name = "mf6/test"
+dirs = [
+    "mf6",
+    "mf5to6"
+]
 
 [sources.modflow6-largetestmodels]
 repo = "MODFLOW-ORG/modflow6-largetestmodels"
-path = ".registry/registry.toml"
+name = "mf6/large"
 ```
 
-**Notes**:
-- Simple, fixed path to registry in each repo
-- No ref name in path (ref selection handled by API/Git ref)
+### Registry Modes
+
+Model repositories operate in one of two distinct modes, depending on how model files are stored and distributed. The mode is **self-describing** - it's determined by attributes in the registry metadata, not by hints in the bootstrap file.
+
+#### Mode 1: In-Repo Models
+
+**Characteristics**:
+- Model input files are checked into the repository
+- Registry files live in `.registry/` directory on each branch/tag
+- Supports both branches and release tags as refs
+- Model files fetched individually via GitHub raw content URLs
+
+**Registry metadata** (no asset attributes):
+```toml
+[_meta]
+schema_version = "1.0"
+source_repo = "MODFLOW-ORG/modflow6-testmodels"
+source_ref = "master"
+generated_at = "2025-12-04T14:30:00Z"
+devtools_version = "1.9.0"
+# No release_asset/registry_asset/models_asset = in-repo mode
+```
+
+**Examples**: `modflow6-testmodels`, `modflow6-largetestmodels`
+
+**Registry discovery**: `https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/registry.toml`
+
+**Model file URLs**: Individual files via raw content URLs (specified in registry)
+
+#### Mode 2: Release-Only Models
+
+**Characteristics**:
+- Model input files are built during release (not in repository)
+- Registry files attached to release as assets
+- Supports release tags only (branches don't have built models)
+- Model files packaged in release zip asset
+
+**Registry metadata** (with asset attributes):
+
+**Option A: Single zip containing both registry and models**
+```toml
+[_meta]
+schema_version = "1.0"
+source_repo = "MODFLOW-ORG/modflow6-examples"
+source_ref = "v1.2.3"
+release_asset = "mf6examples.zip"  # Both registry and models in this zip
+generated_at = "2025-12-04T14:30:00Z"
+devtools_version = "1.9.0"
+```
+
+**Option B: Separate registry and model assets**
+```toml
+[_meta]
+schema_version = "1.0"
+source_repo = "MODFLOW-ORG/modflow6-examples"
+source_ref = "v1.2.3"
+registry_asset = "registry.zip"    # Registry files in this asset
+models_asset = "models.zip"        # Model files in this asset
+generated_at = "2025-12-04T14:30:00Z"
+devtools_version = "1.9.0"
+```
+
+**Examples**: `modflow6-examples`
+
+**Registry discovery**: GitHub release assets for the given tag
+
+**Model file URLs**: All point to the release zip asset
+
+#### Mode Detection & Discovery
+
+`PoochRegistry` automatically discovers the mode when syncing:
+
+1. **If ref is a tag**: Try downloading registry from release assets first
+2. **Fallback**: Try downloading registry from `.registry/` directory in repository
+3. **After loading registry**: Inspect metadata to determine fetch strategy
+   - If `release_asset`, `registry_asset`, or `models_asset` present → Release mode
+   - Otherwise → In-repo mode
+
+**Error handling**:
+```python
+# Generic error when registry not found
+FileNotFoundError(
+    f"Registry for '{source}@{ref}' not found. "
+    f"Tried: release assets (if tag) and repository .registry/ directory."
+)
+
+# When attempting branch ref on release-only source
+# (Will fail at discovery step - no registry in .registry/ dir)
+FileNotFoundError(
+    f"Registry for '{source}@{ref}' not found at "
+    f"https://github.com/{org}/{repo}/blob/{ref}/.registry/registry.toml. "
+    f"This source may only support release tags."
+)
+```
 
 ### 2. Registry Schema
 
 **Files per source**:
 - `registry.toml` - file hashes and URLs (Pooch format)
 - `models.toml` - model name → file list mapping
-- `examples.toml` - example name → model list mapping
+- `examples.toml` - example name → model list mapping (optional)
 
-**Metadata section** (add to each registry file):
-```toml
-[_meta]
-schema_version = "1.0"
-source_repo = "MODFLOW-ORG/modflow6-examples"
-source_ref = "master"  # branch name or tag
-generated_at = "2025-12-04T14:30:00Z"
-devtools_version = "1.9.0"
-```
+**Metadata section**:
+
+All registry files must include a `[_meta]` section with:
+- `schema_version`: Registry schema version (currently "1.0")
+- `source_repo`: Source repository identifier (e.g., "MODFLOW-ORG/modflow6-examples")
+- `source_ref`: Git ref (branch or tag) this registry was built from
+- `generated_at`: Timestamp when registry was generated
+- `devtools_version`: Version of modflow-devtools used to generate registry
+
+**Mode-specific attributes** (optional, determine fetch strategy):
+- `release_asset`: Name of single zip file containing both registry and models (Mode 2, Option A)
+- `registry_asset`: Name of zip file containing registry files (Mode 2, Option B)
+- `models_asset`: Name of zip file containing model files (Mode 2, Option B)
+
+See **Registry Modes** section above for complete examples of metadata for each mode.
 
 **Validation**: Use `pydantic` for schema validation and versioning
 
@@ -318,10 +436,54 @@ class PoochRegistry(ModelRegistry):
     def sync(self, force: bool = False) -> None:
         """Sync this registry from upstream
 
+        Automatically discovers registry location and mode:
+        1. If ref is a tag: Try release assets first
+        2. Fallback: Try .registry/ directory in repository
+        3. After loading: Inspect metadata to determine fetch strategy
+
         Args:
             force: Re-download even if cached
+
+        Raises:
+            FileNotFoundError: If registry not found in either location
         """
-        ...
+        # Try release assets if ref is a tag
+        if self._is_tag(self._ref):
+            try:
+                self._sync_from_release_assets()
+                self._setup_pooch()  # Configure based on metadata
+                return
+            except ReleaseNotFound:
+                pass  # Fall through to repository
+
+        # Try .registry/ directory in repository
+        try:
+            self._sync_from_repository()
+            self._setup_pooch()  # Configure based on metadata
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Registry for '{self._source}@{self._ref}' not found. "
+                f"Tried: release assets (if tag) and repository .registry/ directory."
+            )
+
+    def _setup_pooch(self) -> None:
+        """Configure Pooch based on registry metadata (mode detection)"""
+        meta = self._meta
+
+        if "release_asset" in meta:
+            # Mode 2, Option A: Single zip with registry + models
+            self._fetch_mode = "single_zip"
+            self._asset_name = meta["release_asset"]
+
+        elif "models_asset" in meta:
+            # Mode 2, Option B: Separate registry and model assets
+            self._fetch_mode = "models_zip"
+            self._asset_name = meta["models_asset"]
+
+        else:
+            # Mode 1: In-repo individual files
+            self._fetch_mode = "individual_files"
+            # URLs already in registry from make_registry.py
 
     def is_synced(self) -> bool:
         """Check if registry is cached for this source/ref"""
@@ -562,22 +724,26 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 
 1. **Install-time sync**: Best-effort, warn on failure, allow install to proceed
 2. **Registry location**: `.registry/` directory on each branch in model repos; also as release assets for tagged releases
-3. **Bootstrap format**: Simple TOML with repo and path, no ref substitution
-4. **Multi-ref caching**: Support simultaneous caching of multiple refs (tags and branches)
-5. **Schema versioning**: Use Pydantic, include `_meta` section in registries
-6. **Ref priority**: Latest release tag → master branch → develop branch (when user doesn't specify)
-7. **Ref support**: Branch names and release tags supported; commit SHAs not supported (with clear error message)
-8. **CLI parameter**: Use `--ref` (not `--branch`) to clarify support for both tags and branches
-9. **Transition**: Optional in v1.x with deprecation warning, required in v2.x
-10. **Registry architecture**: Clear separation of concerns
+3. **Bootstrap format**: Minimal TOML with just repo identifiers - no hints about location or fetch strategy
+4. **Registry modes**: Self-describing via metadata attributes
+   - Mode 1 (in-repo): No asset attributes → individual file fetching
+   - Mode 2 (release-only): `release_asset`, `registry_asset`, or `models_asset` → zip fetching
+   - Mode discovered automatically during sync
+5. **Multi-ref caching**: Support simultaneous caching of multiple refs (tags and branches)
+6. **Schema versioning**: Use Pydantic, include `_meta` section in registries
+7. **Ref priority**: Latest release tag → master branch → develop branch (when user doesn't specify)
+8. **Ref support**: Branch names and release tags supported; commit SHAs not supported (with clear error message)
+9. **CLI parameter**: Use `--ref` (not `--branch`) to clarify support for both tags and branches
+10. **Transition**: Optional in v1.x with deprecation warning, required in v2.x
+11. **Registry architecture**: Clear separation of concerns
     - `PoochRegistry`: Single source, single ref - no knowledge of other sources
     - `MergedRegistry`: Pure compositor - takes pre-built registries, no construction logic
     - Module functions: Handle sync, construction, convenience APIs
-11. **Model naming**: `{source}@{ref}/{subpath}` format guarantees collision-free names and explicit provenance
-12. **Registry merging**: Keep separate on disk and in separate `PoochRegistry` instances, merge via `MergedRegistry`
-13. **No factory methods**: `MergedRegistry` construction is trivial, users create new instances directly
-14. **Mixed refs**: Supported naturally via naming scheme - can mix multiple refs of same source
-15. **LocalRegistry**: Remains independent, serves different purpose (local development)
+12. **Model naming**: `{source}@{ref}/{subpath}` format guarantees collision-free names and explicit provenance
+13. **Registry merging**: Keep separate on disk and in separate `PoochRegistry` instances, merge via `MergedRegistry`
+14. **No factory methods**: `MergedRegistry` construction is trivial, users create new instances directly
+15. **Mixed refs**: Supported naturally via naming scheme - can mix multiple refs of same source
+16. **LocalRegistry**: Remains independent, serves different purpose (local development)
 
 ## Design Considerations & Risk Mitigation
 
