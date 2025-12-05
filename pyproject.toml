@@ -53,9 +53,7 @@ test = [
     "coverage",
     "flaky",
     "filelock",
-    "jsonschema",
     "meson!=0.63.0",
-    "netCDF4",
     "ninja",
     "numpy",
     "pandas",
@@ -65,8 +63,7 @@ test = [
     "pytest-dotenv",
     "pytest-xdist",
     "PyYaml",
-    "syrupy <5.0.0",
-    "xarray"
+    "syrupy <5.0.0"
 ]
 docs = [
     "sphinx",
