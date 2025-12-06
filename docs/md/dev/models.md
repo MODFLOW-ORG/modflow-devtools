@@ -1,66 +1,62 @@
-# Model Registry Rework
+# Models API Design
 
-## Overview
+This document describes the (re)design of the Models API ([GitHub issue #134](https://github.com/MODFLOW-ORG/modflow-devtools/issues/134)). It is intended to be developer-facing, not user-facing, though users may also find it informative.
 
-Transition from a static model registry baked into the package to a dynamic, explicitly versioned registry system where model repositories maintain their own catalogs and `modflow-devtools` syncs to them on-demand.
-
-## Motivation
-
-- Allow access to updated models without package updates (uncouple `modflow-devtools` releases from model repositories)
-- Make model versioning explicit, with support for multiple refs (branches, release tags)
-- Smaller package size (ship no large TOML files: only registry bootstrap info, not registries themselves)
-- Lower developer maintenance burden (no manual registry regeneration)
+This is a living document which will be updated as development proceeds. As the reimplementation nears completion, the scope here will shrink from charting a detailed transition path to simply describing the new design.
 
 ## Background
 
-Currently each release of this package is fixed to a specific state of each model repository. It is incumbent on this package's developers to monitor the status of model repositories and, when models are updated, regenerate the registry and release a new version of this package.
+Currently each release of `modflow-devtools` is fixed to a specific state of each model repository. It is incumbent on this package's developers to monitor the status of model repositories and, when models are updated, regenerate the registry and release a new version of this package.
 
-This tight coupling is a burden on developers, and prevents model repositories and `modflow-devtools` from moving independently.
+This tight coupling is inconvenient for consumers. It is not currently clear which version of `modflow-devtools` provides access to which versions of each model repository, and users must wait until developers manually re-release `modflow-devtools` for access to updated models. Also, 1.7MB+ in TOML registry files are currently shipped with package, bloating the install time network payload.
 
-It is also inconvenient for users as it is not currently clear which version of this package provides access to which versions of each model repository, and users must wait until developers manually re-release `modflow-devtools` for access to updated models.
+The coupling is also burdensome to developers, preventing model repositories and `modflow-devtools` from moving independently.
 
-Also, 1.7MB+ in TOML registry files are currently shipped with package, making up the install time network payload.
+## Objective
 
-## Proposal
+Transition from a static model registry baked into `modflow-devtools` releases to a dynamic, explicitly versioned registry system where model repositories publish catalogs which `modflow-devtools` discovers and synchronizes to on-demand.
 
-Make model repositories reponsible for their own registries. Make `modflow-devtools` responsible only for
+## Motivation
 
-- defining the registry contract,
-- providing registry-creation machinery, and
-- storing bootstrap metadata necessary to locate remote model repositories, for...
-- fetching registry information at install time or on demand, to synchronize the user-facing API, and
-- locally caching registry data (as well as models, via Pooch, as is currently done).
+-  Uncouple `modflow-devtools` releases from model repositories, allowing access to updated models without package updates
+- Make model repository versioning explicit, with generic support for `git` refs (branches, commit hashes, tags, and tagged releases)
+- Shrink the package size: ship no large TOML files, only minimal bootstrap information rather than full registries
+- Reduce the `modflow-devtools` developer maintenance burden by eliminating the responsibility for (re)generating registries
 
-Model repositories can consume registry-creation machinery to generate their own registry metadata in CI, either for versioning with the relevant branch (for model repositories which don't have releases, e.g. the test models repositories) or as a release asset (for repositories which do have releases, e.g. the examples repository).
+## Overview
 
-For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x.
+Make model repositories reponsible for publishing their own registries.
 
-Then metadata shipped with `modflow-devtools` should be a few KB at most.
+Make `modflow-devtools` responsible only for
 
-## Design
+- defining the registry publication contract;
+- providing registry-creation machinery;
+- storing bootstrap information locating model repositories;
+- discovering remote registries at install time or on demand;
+- caching registry data and models input files; and
+- exposing a synchronized view of available registries.
 
-### Bootstrap metadata file
+Model repository developers can use the `modflow-devtools` registry-creation facilities to generate registry metadata, either manually or in CI.
 
-Bootstrap metadata simply tells `modflow-devtools` where to look for remote model repositories, plus some minimal supporting information. This can live in a single file e.g. `modflow_devtools/models/bootstrap.toml`.
+## Architecture
 
-#### File contents
+This will involve a few new components (e.g., bootstrap file, `MergedRegistry` class) as well as modifications to some existing components (e.g., existing registry files, `PoochRegistry`). It should be possible for the `ModelRegistry` contract to remain unchanged.
 
-At the top level, the file can consist of a table of `sources`, each describing a model repository.
+### Bootstrap file
 
-The name of each source can by default be inferred from the name of the subsection, i.e. `sources.name`. The name will become part of a prefix by which models can be hierarchically addressed. To override the name (thus the prefix as well) a `name` attribute can be provided explicitly.
+The **bootstrap** file will tell `modflow-devtools` where to look for remote model repositories. This file will be checked into the repository at `modflow_devtools/models/bootstrap.toml` and distributed with the package.
 
-A `repo` attribute identifies the repository owner and name, separated by a forward slash.
+#### Bootstrap file contents
 
-A `registry_path` attribute points to the directory containing the registry database files. This can default to `.registry/` and can therefore be optional.
+At the top level, the bootstrap file consists of a table of `sources`, each describing a model repository.
 
-The `registry_path` **must** contain at least two (2) files:
+The name of each source is by default inferred from the name of the subsection, i.e. `sources.name`. The name will become part of a prefix by which models can be hierarchically addressed (described below). To override the name (and thus the prefix) a `name` attribute may be provided.
 
-- `registry.toml`
-- `models.toml`
+The source repository is identified by a `repo` attribute consisting of the repository owner and name separated by a forward slash.
 
-The `registry_path` **may** also contain a file called `examples.toml`.
+A `registry_path` attribute identifies the directory in the repository which contains the registry metadata file. This attribute is optional and defaults to `.registry/`.
 
-#### Sample file
+#### Sample bootstrap file
 
 ```toml
 [sources.modflow6-examples]
@@ -75,10 +71,6 @@ refs = [
     "develop",
     "master",
 ]
-dirs = [
-    "mf6",
-    "mf5to6"
-]
 
 [sources.modflow6-largetestmodels]
 repo = "MODFLOW-ORG/modflow6-largetestmodels"
@@ -89,17 +81,31 @@ refs = [
 ]
 ```
 
-### Registry Modes
+### Registry files
 
-Remote model repositories (i.e. instances of `PoochRegistry`) can operate in one of several modes, depending how model files are stored and distributed:
+There are currently three separate registry files:
 
-- checkin mode
-- release mode
-- combined mode
+- `registry.toml`: enumerates invidual files known to the registry. Each file is a section consisting of at minimum a `url` attribute, as well as an optional `hash` attribute. These attributes deliberately provide the information Pooch expects for each file and no more, so that a `pooch.Pooch` instance's `.registry` property may be set directly from the contents of `registry.toml`.
+- `models.toml`: groups files appearing in `registry.toml` according to the model they belong to. From the perspective of the Models API, a model consists of an unordered set of input files.
+- `examples.toml`: groups models appearing in `models.toml` according to the example scenario they belong to. From the perspective of the Models API, an example scenario consists of an *ordered* set of models &mdash; order is relevant because a flow model, for instance, must run before a transport model. This allows API consumers to run models in the order received.
 
- The mode is determined by attributes in the registry metadata in the relevant repository &mdash; `modflow-devtools` discovers on demand which mode(s) a model repository supports, and will adapt upon next sync if a repository adds or drops support for a mode.
+It seems simplest to consolidate these into a single `registry.toml` file defining sections `files`, `models`, and `examples` corresponding to the contents of each of the current registry files. It remains convenient, I think, for the contents of the `files` section to continue conforming to the expectations of `Pooch.registry`.
 
-#### Checkin mode
+Registry files can begin to define a few new items of metadata:
+
+```toml
+generated_at = "2025-12-04T14:30:00Z"
+devtools_version = "1.9.0"
+schema_version = "1.1"
+```
+
+Versioning the registry file schema will smooth migration from the existing state of the API to the proposed design, as well as any further migrations pending future development.
+
+### Registry discovery
+
+Model repositories can publish models to `modflow-devtools` in two ways, depending how model files are stored and distributed.
+
+#### Model files under version control
 
 In **checkin** mode, model input files and registry metadata files are versioned in the repository. By default, registry files must live in a `.registry/` directory on each branch/tag/ref from which one wants to make models available. Registry metadata files are discovered for each of the `refs` specified in the registry bootstrap metadata file, according to the GitHub raw content URL:
 
@@ -114,17 +120,7 @@ This mode is intended to support model repositories for which no releases are ma
 - `MODFLOW-ORG/modflow6-testmodels`
 - `MODFLOW-ORG/modflow6-largetestmodels`
 
-A registry metadata file in **checkin** mode will look something like:
-
-```toml
-generated_at = "2025-12-04T14:30:00Z"
-devtools_version = "1.9.0"
-schema_version = "1.0"
-```
-
-Alternative modes are enabled by the presence of additional attributes in the registry metadata file &mdash; if no such attributes are present, the repository defaults to **checkin** mode.
-
-#### Release mode
+#### Model files as release assets
 
 In **release** mode, model input files and the registry metadata file are posted/discovered as release assets rather than as version-controlled files in the repository. As in **checkin** mode, registry metadata files are discovered for each of the `refs` specified in the registry bootstrap metadata file, but unlike **checkin** mode, the registry metadata file is expected under an asset download URL (see below).
 
@@ -132,49 +128,34 @@ Note that **release** mode supports only release tags, not other ref types (e.g.
 
 This mode is meant to support repositories which distribute models at release time. In this mode a repository need not version-control model input files &mdash; for instance, in the case `MODFLOW-ORG/modflow6-examples`, only FloPy scripts are under version control, and model input files are built by the release automation.
 
-**Release** mode is enabled in a registry metadata file by the presence of either
+For models distributed this way, file entries' `url` attribute should point to the release asset URL for a zipfile containing model input files, according to the pattern (given the source entry in the bootstrap file has `repo` and `ref` attributes):
 
-- a single `release_asset` attribute, indicating the name of a zip file containing both models and registry metadata file, or
-- an attribute `models_asset` *and* an attribute `registry_asset`, indicating the names of the corresponding assets, if separate.
+```
+https://github.com/{repo}/releases/download/{ref}/some.zip
+```
+
+For instance, for the `MODFLOW-ORG/modflow6-examples` repo:
 
 ```toml
-generated_at = "2025-12-04T14:30:00Z"
-devtools_version = "1.9.0"
-schema_version = "1.0"
-# registry and models in 1 asset
-release_asset = "mf6examples.zip"  
-# ...or in separate assets
-models_asset = "models.zip"
-registry_asset = "registry.toml"
+["ex-gwe-ates/ex-gwe-ates.tdis"]
+url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+...
 ```
 
-If `release_asset` is present, it will take precedence over `models_asset` and `registry_asset`.
+On model access, the release asset containing models is fetched from its asset download URL, unzipped, and all models are cached at once (all by Pooch). This means that model input files published in this way will be slower upon first model access (while the zip file is fetched and unzipped) than with the version-controlled model input file approach.
 
-The registry metadata file is expected under a release asset URL:
+#### Combining publication schemes
 
-```
-https://github.com/{repo}/releases/download/{ref}/{registry_asset}
-```
+A repository may make registry metadata and model input files available in both ways, as version-controlled files *and* as release assets. In this case, the discovery order described below becomes particularly relevant.
 
-On model access, the release asset containing models is fetched from its asset download URL:
+#### Registry discovery procedure
 
-```
-https://github.com/{repo}/releases/download/{ref}/{models_asset}
-```
+At sync time, `modflow-devtools` attempts to discover remote registries according to the following algorithm for each of the `refs` specified in the bootstrap metadata file:
 
-The asset is then unzipped and all models are cached at once (again all handled by Pooch). This means **release** mode may entail more wait time upon first model access, while the zip file is fetched and unzipped, after which model access will generally be faster than **checkin** mode.
+1. Look for a matching release tag. If one exists, the registry discovery mechanism continues in **release asset** mode, looking for a release asset named `registry.toml`. If no matching release tag can be found, go to step 2. If the matching release contains no asset named `registry.toml`, raise an error indicating that the given release lacks the required registry metadata file asset.
+2. Look for a branch, tag, or commit hash matching the ref. If one exists, the registry load mechanism continues in **version-controlled** mode, looking for a registry metadata file in the location specified in the bootstrap file (or in the default location `.registry/`). If no matching branch or commit is found, raise an error indicating registry discovery has failed for the given ref. If no registry metadata file can be found, raise an error indicating that the given branch or commit lacks a registry metadata file in the expected location.
 
-#### Combined mode
-
-TODO
-
-#### Mode Detection & Discovery
-
-The registry will attempt to discover the mode of the target repository at sync time, according to the following algorithm for each of the `refs` specified in the bootstrap metadata file:
-
-1. Look for a release tag matching the ref. If one exists, look for an asset called `registry.toml`. If found, download and inspect it to determine the name of the asset containing models. If not found, go to step 2. If no release tag matches the ref, go to step 2.
-2. Look for a branch or commit hash matching the ref. If one exists, look for a registry metadata file in the default (or specified) location. If found, download and inspect it to determine the subdirectories containing models. If not found, go to step 3. If no matching branch or commit exists, go to step 3.
-3. Raise an error indicating failure to discover/load a registry for the given ref.
+If registry metadata file discovery is successful, it is fetched and parsed to determine the location(s) of model input files.
 
 **Error handling**:
 ```python
@@ -192,13 +173,6 @@ FileNotFoundError(
     f"This source may only support release tags."
 )
 ```
-
-### 2. Registry Schema
-
-**Files per source**:
-- `registry.toml` - file hashes and URLs (Pooch format)
-- `models.toml` - model name → file list mapping
-- `examples.toml` - example name → model list mapping (optional)
 
 **Metadata section**:
 
@@ -835,11 +809,8 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 5. **Registry analytics**: Track which models are most frequently accessed?
 6. **Naming scheme refinement**: Keep current verbose prefixes (`mf6/example/`, `mf6/test/`) or simplify to `{repo-name}/{subpath}`?
 
-## Success Criteria
+## Rollout
 
-1. Package size reduced by ~2MB
-2. Users can access latest models without package update
-3. Zero manual developer registry updates needed
-4. Install always succeeds (even with network failures)
-5. Existing v1.x code continues to work with deprecation warnings
-6. Clear migration path to v2.x
+For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x.
+
+Then metadata shipped with `modflow-devtools` should be a few KB at most.
