@@ -54,7 +54,7 @@ The name of each source is by default inferred from the name of the subsection, 
 
 The source repository is identified by a `repo` attribute consisting of the repository owner and name separated by a forward slash.
 
-A `registry_path` attribute identifies the directory in the repository which contains the registry metadata file. This attribute is optional and defaults to `.registry/`.
+A `registry_path` attribute identifies the directory in the repository which contains the registry metadata file. This attribute is optional and defaults to `.registry/`. This attribute is only relevant if the repository versions the registry file and model input files, as described below.
 
 #### Sample bootstrap file
 
@@ -99,15 +99,15 @@ devtools_version = "1.9.0"
 schema_version = "1.1"
 ```
 
-Versioning the registry file schema will smooth migration from the existing state of the API to the proposed design, as well as any further migrations pending future development.
+Versioning the registry file schema will smooth the migration from the existing state of the API to the proposed design, as well as any further migrations pending future development.
 
 ### Registry discovery
 
-Model repositories can publish models to `modflow-devtools` in two ways, depending how model files are stored and distributed.
+Model repositories can publish models to `modflow-devtools` in two ways.
 
 #### Model files under version control
 
-In **checkin** mode, model input files and registry metadata files are versioned in the repository. By default, registry files must live in a `.registry/` directory on each branch/tag/ref from which one wants to make models available. Registry metadata files are discovered for each of the `refs` specified in the registry bootstrap metadata file, according to the GitHub raw content URL:
+Model input files and registry metadata files may be versioned in the model repository. Under this scheme, registry files are expected by default in a `.registry/` directory &mdash; this location can be overridden by the `registry_path` attribute in the bootstrap file (see above). Registry files are discovered for each of the `refs` specified in the registry bootstrap metadata file, according to the GitHub raw content URL:
 
 ```
 https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/registry.toml
@@ -115,88 +115,77 @@ https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/registry.toml
 
 On model access, model input files are fetched and cached (by Pooch) individually, also via GitHub raw content URLs.
 
-This mode is intended to support model repositories for which no releases are made, currently:
+This mode supports repositories for which model input files live directly in the repository and does not require the repository to publish releases, e.g.
 
 - `MODFLOW-ORG/modflow6-testmodels`
 - `MODFLOW-ORG/modflow6-largetestmodels`
 
 #### Model files as release assets
 
-In **release** mode, model input files and the registry metadata file are posted/discovered as release assets rather than as version-controlled files in the repository. As in **checkin** mode, registry metadata files are discovered for each of the `refs` specified in the registry bootstrap metadata file, but unlike **checkin** mode, the registry metadata file is expected under an asset download URL (see below).
-
-Note that **release** mode supports only release tags, not other ref types (e.g. commit hashes or branch names).
-
-This mode is meant to support repositories which distribute models at release time. In this mode a repository need not version-control model input files &mdash; for instance, in the case `MODFLOW-ORG/modflow6-examples`, only FloPy scripts are under version control, and model input files are built by the release automation.
-
-For models distributed this way, file entries' `url` attribute should point to the release asset URL for a zipfile containing model input files, according to the pattern (given the source entry in the bootstrap file has `repo` and `ref` attributes):
+Model input files and the registry metadata file may also be published as release assets. Registry metadata files are again discovered for each of the `refs` specified in the registry bootstrap metadata file. In this scheme, the registry file need not be checked into the repository, and may instead be generated on demand by release automation. Registry files are sought instead under a release asset download URLs:
 
 ```
-https://github.com/{repo}/releases/download/{ref}/some.zip
+https://github.com/{repo}/releases/download/{ref}/registry.toml
 ```
 
-For instance, for the `MODFLOW-ORG/modflow6-examples` repo:
+Note that only release tags, not other ref types (e.g. commit hashes or branch names), are supported.
+
+This scheme is meant to support repositories which distribute model input files as GitHub releases, and may not version them &mdash; for instance, in the case of `MODFLOW-ORG/modflow6-examples`, only FloPy scripts are under version control, and model input files are built by the release automation.
+
+For models distributed this way, file entries' `url` attribute in the registry file should point to a release asset download URL for a zipfile containing model input files, e.g. for the `MODFLOW-ORG/modflow6-examples` repo:
 
 ```toml
 ["ex-gwe-ates/ex-gwe-ates.tdis"]
 url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
-...
 ```
 
 On model access, the release asset containing models is fetched from its asset download URL, unzipped, and all models are cached at once (all by Pooch). This means that model input files published in this way will be slower upon first model access (while the zip file is fetched and unzipped) than with the version-controlled model input file approach.
 
 #### Combining publication schemes
 
-A repository may make registry metadata and model input files available in both ways, as version-controlled files *and* as release assets. In this case, the discovery order described below becomes particularly relevant.
+A repository may make registry files and model input files available in both ways, as version-controlled files *and* as release assets. In this case, discovery order becomes relevant: **model/registry releases take precedence over models/registries under version-control**. The discovery procedure is described in detail below.
 
 #### Registry discovery procedure
 
 At sync time, `modflow-devtools` attempts to discover remote registries according to the following algorithm for each of the `refs` specified in the bootstrap metadata file:
 
-1. Look for a matching release tag. If one exists, the registry discovery mechanism continues in **release asset** mode, looking for a release asset named `registry.toml`. If no matching release tag can be found, go to step 2. If the matching release contains no asset named `registry.toml`, raise an error indicating that the given release lacks the required registry metadata file asset.
-2. Look for a branch, tag, or commit hash matching the ref. If one exists, the registry load mechanism continues in **version-controlled** mode, looking for a registry metadata file in the location specified in the bootstrap file (or in the default location `.registry/`). If no matching branch or commit is found, raise an error indicating registry discovery has failed for the given ref. If no registry metadata file can be found, raise an error indicating that the given branch or commit lacks a registry metadata file in the expected location.
+1. Look for a matching release tag. If one exists, the registry discovery mechanism continues in **release asset** mode, looking for a release asset named `registry.toml`. If no matching release tag can be found, go to step 2. If the matching release contains no asset named `registry.toml`, raise an error indicating that the given release lacks the required registry metadata file asset:
 
-If registry metadata file discovery is successful, it is fetched and parsed to determine the location(s) of model input files.
-
-**Error handling**:
 ```python
-# Generic error when registry not found
-FileNotFoundError(
-    f"Registry for '{source}@{ref}' not found. "
-    f"Tried: release assets (if tag) and repository .registry/ directory."
-)
-
-# When attempting branch ref on release-only source
-# (Will fail at discovery step - no registry in .registry/ dir)
-FileNotFoundError(
-    f"Registry for '{source}@{ref}' not found at "
-    f"https://github.com/{org}/{repo}/blob/{ref}/.registry/registry.toml. "
-    f"This source may only support release tags."
+RegistryDiscoveryError(
+    f"Registry file 'registry.toml' not found "
+    f"as release asset for '{source}@{ref}'"
 )
 ```
 
-**Metadata section**:
+2. Look for a commit hash, tag, or branch matching the ref (in that order, matching `git`'s lookup order). If a match exists, registry discovery continues in **version-controlled** mode, looking for a registry metadata file in the location specified in the bootstrap file (or in the default location `.registry/`). If no matching ref is found, raise an error indicating registry discovery has failed:
 
-All registry files must include a `[_meta]` section with:
-- `schema_version`: Registry schema version (currently "1.0")
-- `source_repo`: Source repository identifier (e.g., "MODFLOW-ORG/modflow6-examples")
-- `source_ref`: Git ref (branch or tag) this registry was built from
-- `generated_at`: Timestamp when registry was generated
-- `devtools_version`: Version of modflow-devtools used to generate registry
+```python
+RegistryDiscoveryError(
+    f"Registry discovery failed, "
+    f"ref '{source}@{ref}' does not exist"
+)
+```
 
-**Mode-specific attributes** (optional, determine fetch strategy):
-- `release_asset`: Name of single zip file containing both registry and models (Mode 2, Option A)
-- `registry_asset`: Name of zip file containing registry files (Mode 2, Option B)
-- `models_asset`: Name of zip file containing model files (Mode 2, Option B)
+If no registry metadata file can be found, raise an error indicating that the given branch or commit lacks a registry metadata file in the expected location:
 
-See **Registry Modes** section above for complete examples of metadata for each mode.
+```python
+RegistryDiscoveryError(
+    f"Registry file 'registry.toml' not found "
+    f"in {registry_path} for '{source}@{ref}'"
+)
+```
 
-**Validation**: Use `pydantic` for schema validation and versioning
+If registry metadata file discovery is successful, it is fetched and parsed to determine the location(s) of model input files.
 
-### 3. Cache Structure
+**Note**: for repositories combining the version-control and release publication schemes, `modflow-devtools` will discover tagged releases *before* tags as mere refs, therefore the Models API will reflect registry files and model input files published as release assets, not files under version control.
 
-**Location**: `~/.cache/modflow-devtools/registries/` (or platform equivalent via Pooch)
+### Registry/model caching
 
-**Directory layout**:
+A caching approach should support registries for multiple refs simultaneously, enabling fast switching between refs. TBD whether to delegate registry file fetching/caching to Pooch. Model input file fetching/caching can be managed by Pooch as it is already.
+
+Something like the following directory structure should work.
+
 ```
 ~/.cache/modflow-devtools/
 ├── registries/
@@ -224,32 +213,12 @@ See **Registry Modes** section above for complete examples of metadata for each 
     └── ...
 ```
 
-**Notes**:
-- Keep registries for multiple refs cached simultaneously (tags and branches)
-- Cache directory named by ref (tag or branch name)
-- Enables fast switching between refs
-- Model files themselves cached separately by Pooch
 
-### 4. Ref Selection Priority
 
-**Default behavior** (when user doesn't specify a ref):
-1. **Latest release tag** (if repo publishes releases - e.g., `1.2.3`)
-2. **master branch** (fallback for repos without releases)
-3. **develop branch** (fallback for repos without master)
+TODO clean up robot slop below
 
-**Rationale**: Prefer stable/official tagged releases, gracefully degrade to branches
 
-**Implementation**:
-- Check GitHub API for latest release tag
-- If no releases found, fall back to `master` branch
-- If `master` doesn't exist, fall back to `develop` branch
-
-**Git Ref Support**:
-- **Supported**: Release tags (e.g., `v1.2.3`, `1.2.3`), branch names (e.g., `master`, `develop`, `feature/xyz`)
-- **Not supported**: Commit SHAs (registries only generated on branch pushes/releases, not per-commit)
-- **Error handling**: If user specifies a commit SHA, emit clear error message explaining limitation
-
-### 5. Sync Mechanism
+### Registry synchronization
 
 #### Install-Time Behavior
 - **Best-effort sync** on package install (via `setup.py` or similar)
@@ -330,7 +299,7 @@ except ValueError as e:
 - Merge multiple sources at API level (keep files separate on disk)
 - **Ref detection**: Use GitHub API to determine if ref is a tag or branch
 
-### 6. Upstream Model Repository Changes
+### Registry generation
 
 **Required changes in each model repo** (modflow6-examples, modflow6-testmodels, modflow6-largetestmodels):
 
@@ -370,7 +339,7 @@ modflow6-examples/
         └── registry.yml
 ```
 
-### 7. Registry Architecture & API
+### Registry classes
 
 #### Core Principle: Separation of Concerns
 
@@ -592,7 +561,7 @@ examples_dev = PoochRegistry("modflow6-examples", "develop")
 merged = MergedRegistry([examples_stable, examples_dev, testmodels])
 ```
 
-#### Module-Level API (Convenience Layer)
+### Module-Level API
 
 **Purpose**: Provide convenient access for common use cases
 
@@ -666,12 +635,13 @@ def sync_registry(source: str | None = None, ref: str | None = None, force: bool
 DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 ```
 
-### 8. Backward Compatibility (v1.x)
+## Migration path
 
-**Goals**:
-- Don't break existing code
-- Gentle migration path for users
-- Clear deprecation warnings
+Ideally, we can avoid breaking existing code, and provide a gentle migration path for users with clear deprecation warnings and/or error messages where necessary.
+
+For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x.
+
+Then metadata shipped with `modflow-devtools` should be a few KB at most.
 
 **Approach**:
 1. Continue shipping full registry in v1.x
@@ -688,9 +658,9 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 - Require sync for remote registry access (LocalRegistry unaffected)
 - Document migration clearly in CHANGELOG
 
-## Implementation Plan
+### Implementation Plan
 
-### Phase 1: Foundation (v1.x)
+#### Phase 1: Foundation (v1.x)
 1. Add bootstrap metadata file
 2. Implement registry schema with Pydantic validation
 3. Create cache directory structure utilities
@@ -698,25 +668,25 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 5. Implement branch priority resolution
 6. Add CLI subcommands (sync, list, status)
 
-### Phase 2: PoochRegistry Adaptation (v1.x)
+#### Phase 2: PoochRegistry Adaptation (v1.x)
 1. Modify `PoochRegistry.__init__()` to check cache first
 2. Add fallback to bundled registry
 3. Implement best-effort sync on import
 4. Add deprecation warnings for bundled registry
 
-### Phase 3: Upstream CI (concurrent with Phase 1-2)
+#### Phase 3: Upstream CI (concurrent with Phase 1-2)
 1. Add `.github/workflows/registry.yml` to each model repo
 2. Test registry generation in CI
 3. Commit registry files to `.registry/` directories
 4. For repos with releases, add registry as release asset
 
-### Phase 4: Testing & Documentation (v1.x)
+#### Phase 4: Testing & Documentation (v1.x)
 1. Add comprehensive tests for sync mechanism
 2. Test network failure scenarios
 3. Document new workflow in `models.md`
 4. Add migration guide for v2.x
 
-### Phase 5: v2.x Release
+#### Phase 5: v2.x Release
 1. Remove bundled registry files (keep bootstrap.toml)
 2. Make sync required for PoochRegistry
 3. Update documentation
@@ -746,8 +716,6 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 14. **No factory methods**: `MergedRegistry` construction is trivial, users create new instances directly
 15. **Mixed refs**: Supported naturally via naming scheme - can mix multiple refs of same source
 16. **LocalRegistry**: Remains independent, serves different purpose (local development)
-
-## Design Considerations & Risk Mitigation
 
 ### Name Collisions
 **Risk**: Models from different sources could have identical names.
@@ -808,9 +776,3 @@ DEFAULT_REGISTRY = get_registry()  # All sources, default refs
 4. **Offline mode**: Should we provide an explicit "offline mode" that never tries to sync?
 5. **Registry analytics**: Track which models are most frequently accessed?
 6. **Naming scheme refinement**: Keep current verbose prefixes (`mf6/example/`, `mf6/test/`) or simplify to `{repo-name}/{subpath}`?
-
-## Rollout
-
-For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x.
-
-Then metadata shipped with `modflow-devtools` should be a few KB at most.
