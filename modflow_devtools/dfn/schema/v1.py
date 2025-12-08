@@ -36,7 +36,7 @@ class FieldV1(Field):
     deprecated: bool = False
     removed: bool = False
     mf6internal: str | None = None
-    netcdf: str | None = None
+    netcdf: bool = False
     block_variable: bool = False
     just_data: bool = False
 
