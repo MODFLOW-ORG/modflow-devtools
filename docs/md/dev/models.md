@@ -119,6 +119,8 @@ refs = [
 ]
 ```
 
+Note: The bootstrap refs list indicates default refs to sync at install time. Users can request synchronization to any valid git ref (branch, tag, or commit hash) via the CLI or API.
+
 ### Registry files
 
 There are currently three separate registry files:
