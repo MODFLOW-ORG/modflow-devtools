@@ -1,0 +1,25 @@
+# Bootstrap metadata for MODFLOW model repositories
+#
+# This file tells modflow-devtools where to find remote model repositories
+# and which refs to sync by default.
+#
+# The `refs` list indicates default refs to sync at install time. Users can
+# request synchronization to any valid git ref (branch, tag, or commit hash)
+# via the CLI or API.
+
+[sources.modflow6-testmodels]
+repo = "MODFLOW-ORG/modflow6-testmodels"
+name = "mf6/test"
+refs = ["develop", "master"]
+
+# Uncomment when ready to test with additional sources
+#
+# [sources.modflow6-examples]
+# repo = "MODFLOW-ORG/modflow6-examples"
+# name = "mf6/example"
+# refs = ["current"]
+#
+# [sources.modflow6-largetestmodels]
+# repo = "MODFLOW-ORG/modflow6-largetestmodels"
+# name = "mf6/large"
+# refs = ["develop", "master"]

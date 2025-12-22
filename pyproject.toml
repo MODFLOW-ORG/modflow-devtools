@@ -78,6 +78,7 @@ models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
@@ -123,6 +124,7 @@ models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]

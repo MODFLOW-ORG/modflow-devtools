@@ -228,7 +228,7 @@ class PoochRegistry(ModelRegistry):
         env: str | None = None,
         retries: int = 3,
     ):
-        self._registry_path = Path(__file__).parent / "registry"
+        self._registry_path = Path(__file__).parent.parent / "registry"
         self._registry_path.mkdir(parents=True, exist_ok=True)
         self._registry_file_path = (
             self._registry_path / PoochRegistry.registry_file_name
