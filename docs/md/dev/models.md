@@ -4,6 +4,44 @@ This document describes the (re)design of the Models API ([GitHub issue #134](ht
 
 This is a living document which will be updated as development proceeds. As the reimplementation nears completion, the scope here will shrink from charting a detailed transition path to simply describing the new design.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Background](#background)
+- [Objective](#objective)
+- [Motivation](#motivation)
+- [Overview](#overview)
+- [Architecture](#architecture)
+  - [Bootstrap file](#bootstrap-file)
+    - [Bootstrap file contents](#bootstrap-file-contents)
+    - [Sample bootstrap file](#sample-bootstrap-file)
+  - [Registry files](#registry-files)
+  - [Registry discovery](#registry-discovery)
+    - [Model files under version control](#model-files-under-version-control)
+    - [Model files as release assets](#model-files-as-release-assets)
+    - [Combining publication schemes](#combining-publication-schemes)
+    - [Registry discovery procedure](#registry-discovery-procedure)
+  - [Registry/model caching](#registrymodel-caching)
+  - [Registry synchronization](#registry-synchronization)
+    - [Manual sync](#manual-sync)
+    - [Automatic sync](#automatic-sync)
+  - [Source model integration](#source-model-integration)
+  - [Model Addressing](#model-addressing)
+  - [Registry classes](#registry-classes)
+  - [Module-Level API](#module-level-api)
+- [Migration path](#migration-path)
+  - [Implementation plan](#implementation-plan)
+    - [Phase 1: Foundation (v1.x)](#phase-1-foundation-v1x)
+    - [Phase 2: PoochRegistry Adaptation (v1.x)](#phase-2-poochregistry-adaptation-v1x)
+    - [Phase 3: Upstream CI (concurrent with Phase 1-2)](#phase-3-upstream-ci-concurrent-with-phase-1-2)
+    - [Phase 4: Testing & Documentation (v1.x)](#phase-4-testing--documentation-v1x)
+    - [Phase 5: v2.x Release](#phase-5-v2x-release)
+- [Open Questions / Future Enhancements](#open-questions--future-enhancements)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+
+
 ## Background
 
 Currently each release of `modflow-devtools` is fixed to a specific state of each model repository. It is incumbent on this package's developers to monitor the status of model repositories and, when models are updated, regenerate the registry and release a new version of this package.
@@ -213,336 +251,115 @@ Something like the following directory structure should work.
     └── ...
 ```
 
-
-
-TODO clean up robot slop below
-
-
 ### Registry synchronization
 
-#### Install-Time Behavior
-- **Best-effort sync** on package install (via `setup.py` or similar)
-- **Warn if unsuccessful** but allow install to succeed
-- **Retry on first import** if sync failed during install
-- **Clear user messaging**: "Registry sync failed, remote models unavailable. Run `python -m modflow_devtools.models sync` to retry."
+Delegating registry responsibilities to model repositories entails deferring the loading of registries &mdash; `modflow-devtools` will no longer ship with information about exactly which models are available, only where to find model repositories and how they make model input files available.
 
-#### Manual Sync Command
+The user should be able to manually trigger synchronization. For a smooth experience it should probably happen automatically at opportune times, though.
 
-**CLI**: `python -m modflow_devtools.models`
+#### Manual sync
 
-**Subcommands**:
+Synchronization can be exposed as an [executable module](https://peps.python.org/pep-0338/) and as a [command](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#creating-executable-scripts).
+
+The simplest approach would be a single such script/command, e.g. `python -m modflow_devtools.models.sync` aliased to `sync-models`. It seems ideal to support introspection as well. A full models CLI might include:
+
+- `sync`: synchronize registries for all configured source model repositories, or a specific repo
+- `info`: show configured registries and their sync status, or a particular registry's sync status
+- `list`: list available models for all registries, or for a particular registry
+
 ```bash
-# Sync all sources to default refs (latest release tag → master → develop)
+# Show configured registries and status
+python -m modflow_devtools.models info
+
+# Sync all sources to configured refs
 python -m modflow_devtools.models sync
-
-# Sync all sources to specific ref (branch or tag)
-python -m modflow_devtools.models sync --ref develop
-python -m modflow_devtools.models sync --ref v1.2.3
-
-# Sync specific source
-python -m modflow_devtools.models sync --source modflow6-examples
-
-# Sync specific source to specific ref
-python -m modflow_devtools.models sync --source modflow6-examples --ref develop
-python -m modflow_devtools.models sync --source modflow6-examples --ref v1.2.3
 
 # Force re-download even if cached
 python -m modflow_devtools.models sync --force
 
-# List available registries and their status
-python -m modflow_devtools.models list
+# For a repo publishing models via releases
+python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-examples --ref current
 
-# Show sync status
-python -m modflow_devtools.models status
+# For a repo with models under version control
+python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-testmodels --ref develop 
+python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-testmodels --ref f3df630  # commit hash works too
 ```
 
-**Error handling for unsupported refs**:
+Or via CLI commands:
+
 ```bash
-# Commit SHA not supported - clear error message
-python -m modflow_devtools.models sync --ref abc123def
-# Error: Commit SHAs are not supported. Registries are only generated for branches and release tags.
-#        Please use a branch name (e.g., 'master', 'develop') or release tag (e.g., 'v1.2.3').
+models info
+models sync
 ```
 
-**Programmatic API**:
-```python
-from modflow_devtools.models import sync_registry, get_registry
+Perhaps leading with a `models` command namespace is too generic, and we need e.g. a leading `mf` namespace on all commands exposed by `modflow-devtools`:
 
-# Sync and use default (latest release tag → master → develop)
-sync_registry()
-registry = get_registry()
-
-# Sync to specific ref (branch or tag)
-sync_registry(ref="develop")
-sync_registry(ref="v1.2.3")
-
-# Use specific ref without syncing
-registry = get_registry(ref="develop")  # uses cached, syncs if missing
-registry = get_registry(ref="v1.2.3")   # uses cached release tag
-
-# Use specific source and ref
-registry = get_registry(source="modflow6-examples", ref="develop")
-registry = get_registry(source="modflow6-examples", ref="v1.2.3")
-
-# Error on commit SHA
-try:
-    registry = get_registry(ref="abc123def")
-except ValueError as e:
-    print(e)  # "Commit SHAs are not supported..."
+```bash
+mf models info
+mf models sync
 ```
 
-#### Sync Implementation
-- **For release tags**: Download registry files from GitHub release assets
-- **For branches**: Download registry files from GitHub raw URLs (e.g., `https://raw.githubusercontent.com/MODFLOW-ORG/modflow6-examples/{branch}/.registry/registry.toml`)
-- Validate schema version and structure
-- Cache to local directory (named by ref - tag or branch)
-- Merge multiple sources at API level (keep files separate on disk)
-- **Ref detection**: Use GitHub API to determine if ref is a tag or branch
+#### Automatic sync
 
-### Registry generation
+At install time, `modflow-devtools` can load the bootstrap file and attempt to sync to all configured repositories/registries. The install should not fail if registry sync fails (due either to network errors or misconfiguration), however &mdash; an informative warning can be shown, and sync retried on subsequent imports and/or manually (see below).
 
-**Required changes in each model repo** (modflow6-examples, modflow6-testmodels, modflow6-largetestmodels):
+Synchronization involves:
 
-#### CI Workflow
-**File**: `.github/workflows/registry.yml`
+- Loading the bootstrap file
+- Discovering/validating remote registries
+- Caching registries locally
 
-**Trigger**: Push to master/develop branches, or release tag creation
+### Source model integration
 
-**Steps**:
-1. Install `modflow-devtools` (provides registry generation machinery)
-2. Run registry generation:
+Required steps in source model repositories include:
+
+- Install `modflow-devtools` (provides registry generation machinery)
+- Generate registries
    ```bash
    python -m modflow_devtools.make_registry \
      --path . \
      --output .registry \
      --url <appropriate-base-url>
    ```
-3. Commit registry files to `.registry/` directory (for branches)
-4. For release tags: Attach registry files as release assets
+- Commit registry files to `.registry/` directory (for version-controlled model repositories) or post them as release assets (for repositories publishing releases)
 
-**Notes**:
-- Registry generation machinery remains in `modflow-devtools`
-- Model repos consume it as a dependency
-- Keeps single source of truth for registry format
 
-#### Directory Structure
-```
-modflow6-examples/
-├── .registry/
-│   ├── registry.toml
-│   ├── models.toml
-│   └── examples.toml
-├── examples/
-│   └── ...
-└── .github/
-    └── workflows/
-        └── registry.yml
-```
-
-### Registry classes
-
-#### Core Principle: Separation of Concerns
-
-- **`PoochRegistry`**: Single source, single ref - knows nothing about other sources
-- **`MergedRegistry`**: Pure compositor - just merges existing registries, no construction logic
-- **Module-level functions**: Handle sync, construction, and convenience APIs
-
-#### Model Naming Convention
+### Model Addressing
 
 **Format**: `{source}@{ref}/{subpath}`
 
-**Components**:
+Components include:
+
 - `source`: Repository identifier (e.g., `modflow6-examples`, `modflow6-testmodels`)
 - `ref`: Git ref (branch or tag, e.g., `v1.2.3`, `master`, `develop`)
 - `subpath`: Relative path within repo to model directory
 
-**Examples**:
+The model directory name, i.e. the rightmost element in the `subpath`, is presumed to be the model name.
+
+For example:
+
 - `modflow6-examples@v1.2.3/ex-gwf-twri`
 - `modflow6-testmodels@develop/mf6/test001a_Tharmonic`
 - `modflow6-largetestmodels@master/prudic2004t2`
 
-**Benefits**:
-- Guarantees no name collisions (unique per source + ref + path)
-- Makes model provenance explicit to users
-- Allows mixing multiple refs of same source
-- Simplifies cache key generation
+Benefits of this approach:
 
-#### PoochRegistry (Single Source)
+- Guarantees no name/cache collisions (unique per source + ref + path)
+- Model provenance is explicit to users
+- Allows multiple refs from same source
 
-**Purpose**: Represent a single source repository at a specific ref
+### Registry classes
 
-**Constructor**: Takes `source` (repo name) and `ref` (branch/tag)
+`PoochRegistry` is currently associated with a single state of a single repository. This can continue. Introduce a few properties to (e.g. `source` and `ref`) to make the model source and version explicit.
 
-```python
-class PoochRegistry(ModelRegistry):
-    def __init__(self, source: str, ref: str | None = None, cache_path: PathLike | None = None):
-        """Create registry for a single source repository
+`PoochRegistry` should be immutable &mdash; to synchronize to a new model source state, create a new one.
 
-        Args:
-            source: Source repository name (e.g., "modflow6-examples")
-            ref: Git ref - branch name or release tag
-                 (default: latest release tag → master → develop)
-                 Commit SHAs not supported.
-            cache_path: Override default cache location
+Introduce a `MergedRegistry` compositor to merge multiple `PoochRegistry` instances under the same `ModelRegistry` API. The initializer can simply accept a list of pre-constructed `PoochRegistry` instances, and expose a list or dictionary of the registries of which it consists. Properties inherited from `ModelRegistry` (`files`, `models`, `examples`) can return merged views.
 
-        Raises:
-            ValueError: If ref is a commit SHA
-            FileNotFoundError: If registry not cached and sync fails
-        """
-        self._source = source
-        self._ref = self._resolve_ref(ref)  # Applies default priority
-        self._cache_path = cache_path or self._default_cache_path()
-        self._load()  # Load from cache, auto-sync if missing
+Handle synchronization, `MergedRegistry` construction, and similar concerns at the module (i.e. higher) level. Registries don't need to concern themselves with this sort of thing.
 
-    @property
-    def source(self) -> str:
-        """Source repository name"""
-        return self._source
+Some tentative usage examples:
 
-    @property
-    def ref(self) -> str:
-        """Git ref (branch or tag)"""
-        return self._ref
-
-    def sync(self, force: bool = False) -> None:
-        """Sync this registry from upstream
-
-        Automatically discovers registry location and mode:
-        1. If ref is a tag: Try release assets first
-        2. Fallback: Try .registry/ directory in repository
-        3. After loading: Inspect metadata to determine fetch strategy
-
-        Args:
-            force: Re-download even if cached
-
-        Raises:
-            FileNotFoundError: If registry not found in either location
-        """
-        # Try release assets if ref is a tag
-        if self._is_tag(self._ref):
-            try:
-                self._sync_from_release_assets()
-                self._setup_pooch()  # Configure based on metadata
-                return
-            except ReleaseNotFound:
-                pass  # Fall through to repository
-
-        # Try .registry/ directory in repository
-        try:
-            self._sync_from_repository()
-            self._setup_pooch()  # Configure based on metadata
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Registry for '{self._source}@{self._ref}' not found. "
-                f"Tried: release assets (if tag) and repository .registry/ directory."
-            )
-
-    def _setup_pooch(self) -> None:
-        """Configure Pooch based on registry metadata (mode detection)"""
-        meta = self._meta
-
-        if "release_asset" in meta:
-            # Mode 2, Option A: Single zip with registry + models
-            self._fetch_mode = "single_zip"
-            self._asset_name = meta["release_asset"]
-
-        elif "models_asset" in meta:
-            # Mode 2, Option B: Separate registry and model assets
-            self._fetch_mode = "models_zip"
-            self._asset_name = meta["models_asset"]
-
-        else:
-            # Mode 1: In-repo individual files
-            self._fetch_mode = "individual_files"
-            # URLs already in registry from make_registry.py
-
-    def is_synced(self) -> bool:
-        """Check if registry is cached for this source/ref"""
-        ...
-
-    # Inherited from ModelRegistry abstract class
-    @property
-    def files(self) -> dict:
-        """Map of file names to file info (with source@ref prefix)"""
-        ...
-
-    @property
-    def models(self) -> dict:
-        """Map of model names to file lists (with source@ref prefix)"""
-        ...
-
-    @property
-    def examples(self) -> dict:
-        """Map of example names to model lists (with source@ref prefix)"""
-        ...
-```
-
-**Key changes from current**:
-- Loads from cache by default (not package resources)
-- Auto-syncs if cache missing (best-effort on first access)
-- All keys prefixed with `{source}@{ref}/` in returned dicts
-
-#### MergedRegistry (Compositor)
-
-**Purpose**: Merge multiple `ModelRegistry` instances into unified API
-
-**Constructor**: Takes list of pre-constructed registry instances
-
-```python
-class MergedRegistry(ModelRegistry):
-    def __init__(self, registries: list[ModelRegistry]):
-        """Merge multiple registries into unified API
-
-        Args:
-            registries: List of ModelRegistry instances (typically PoochRegistry)
-                        Caller is responsible for constructing these with desired
-                        sources and refs.
-
-        Note:
-            This class is a pure compositor - it knows nothing about sources,
-            refs, syncing, or construction. All that logic happens before
-            MergedRegistry is created.
-        """
-        self._registries = list(registries)
-
-    @property
-    def registries(self) -> list[ModelRegistry]:
-        """The underlying registries being merged"""
-        return list(self._registries)  # Return copy
-
-    # Inherited from ModelRegistry - merge results from all registries
-    @property
-    def files(self) -> dict:
-        """Merged files from all registries"""
-        merged = {}
-        for registry in self._registries:
-            merged.update(registry.files)
-        return merged
-
-    @property
-    def models(self) -> dict:
-        """Merged models from all registries"""
-        merged = {}
-        for registry in self._registries:
-            merged.update(registry.models)
-        return merged
-
-    @property
-    def examples(self) -> dict:
-        """Merged examples from all registries"""
-        merged = {}
-        for registry in self._registries:
-            merged.update(registry.examples)
-        return merged
-```
-
-**Why no factory methods?**
-- Construction is trivial: `MergedRegistry([reg1, reg2])`
-- Users can easily create new instances when refs change
-- Keeps the class focused and simple
-- Avoids coupling MergedRegistry to PoochRegistry
-
-**Usage examples**:
 ```python
 # Create individual registries
 examples_v1 = PoochRegistry("modflow6-examples", "v1.2.3")
@@ -561,106 +378,33 @@ examples_dev = PoochRegistry("modflow6-examples", "develop")
 merged = MergedRegistry([examples_stable, examples_dev, testmodels])
 ```
 
+`LocalRegistry` is unaffected by all this, as it suits a different use case largely aimed at developers. Consider renaming it e.g. to `DeveloperRegistry`.
+
 ### Module-Level API
 
-**Purpose**: Provide convenient access for common use cases
+Provide convenient APIs for common use cases, like synchronizing to a particular source or to all known sources, introspecting sync status, etc.
 
-```python
-# Module: modflow_devtools.models
+Expose as `DEFAULT_REGISTRY` a `MergedRegistry` with all sources configured in the bootstrap file.
 
-def get_registry(
-    source: str | None = None,
-    ref: str | None = None,
-    sources: dict[str, str] | None = None
-) -> ModelRegistry:
-    """Get a registry (single source or merged)
-
-    Args:
-        source: Single source name (returns PoochRegistry)
-        ref: Git ref to use (applies to single source or all sources)
-        sources: Dict mapping source names to refs for mixed-ref merged registry
-                 e.g., {"modflow6-examples": "v1.2.3", "modflow6-testmodels": "develop"}
-
-    Returns:
-        PoochRegistry if source specified, otherwise MergedRegistry
-
-    Examples:
-        # Single source
-        reg = get_registry(source="modflow6-examples", ref="v1.2.3")
-
-        # All sources, same ref
-        reg = get_registry(ref="develop")
-
-        # All sources, default refs (latest release → master → develop)
-        reg = get_registry()
-
-        # All sources, mixed refs
-        reg = get_registry(sources={
-            "modflow6-examples": "v1.2.3",
-            "modflow6-testmodels": "develop"
-        })
-    """
-    if source:
-        return PoochRegistry(source, ref)
-
-    if sources:
-        registries = [PoochRegistry(src, r) for src, r in sources.items()]
-    else:
-        # Load all from bootstrap, apply same ref to all
-        bootstrap = load_bootstrap()
-        registries = [PoochRegistry(src, ref) for src in bootstrap.sources.keys()]
-
-    return MergedRegistry(registries)
-
-
-def sync_registry(source: str | None = None, ref: str | None = None, force: bool = False) -> None:
-    """Sync registry from upstream
-
-    Args:
-        source: Specific source to sync (default: all sources from bootstrap)
-        ref: Git ref to sync (default: latest release → master → develop)
-        force: Force re-download even if cached
-    """
-    if source:
-        registry = PoochRegistry(source, ref)
-        registry.sync(force=force)
-    else:
-        bootstrap = load_bootstrap()
-        for src in bootstrap.sources.keys():
-            registry = PoochRegistry(src, ref)
-            registry.sync(force=force)
-
-
-# DEFAULT_REGISTRY is now a MergedRegistry
-DEFAULT_REGISTRY = get_registry()  # All sources, default refs
-```
+This will break any code checking `isinstance(DEFAULT_REGISTRY, PoochRegistry)`, but it's unlikely anyone is doing that.
 
 ## Migration path
 
 Ideally, we can avoid breaking existing code, and provide a gentle migration path for users with clear deprecation warnings and/or error messages where necessary.
 
-For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x.
+For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x, at which point metadata shipped with `modflow-devtools` should be a few KB at most.
 
-Then metadata shipped with `modflow-devtools` should be a few KB at most.
+For 1.x, show a deprecation warning on import:
 
-**Approach**:
-1. Continue shipping full registry in v1.x
-2. Add sync functionality as optional enhancement
-3. Emit deprecation warning on import:
-   ```
-   DeprecationWarning: Bundled registry is deprecated and will be removed in v2.0.
-   Use `python -m modflow_devtools.models sync` to download the latest registry.
-   ```
-4. Provide migration guide in docs
+```
+DeprecationWarning: Bundled registry is deprecated and will be removed in v2.0.
+Use `python -m modflow_devtools.models sync` to download the latest registry.
+```
 
-**Breaking changes in v2.x**:
-- Remove bundled registry files (except bootstrap.toml)
-- Require sync for remote registry access (LocalRegistry unaffected)
-- Document migration clearly in CHANGELOG
-
-### Implementation Plan
+### Implementation plan
 
 #### Phase 1: Foundation (v1.x)
+
 1. Add bootstrap metadata file
 2. Implement registry schema with Pydantic validation
 3. Create cache directory structure utilities
@@ -669,110 +413,37 @@ Then metadata shipped with `modflow-devtools` should be a few KB at most.
 6. Add CLI subcommands (sync, list, status)
 
 #### Phase 2: PoochRegistry Adaptation (v1.x)
-1. Modify `PoochRegistry.__init__()` to check cache first
+
+1. Modify `PoochRegistry` to check cache first
 2. Add fallback to bundled registry
 3. Implement best-effort sync on import
 4. Add deprecation warnings for bundled registry
 
 #### Phase 3: Upstream CI (concurrent with Phase 1-2)
+
 1. Add `.github/workflows/registry.yml` to each model repo
 2. Test registry generation in CI
 3. Commit registry files to `.registry/` directories
 4. For repos with releases, add registry as release asset
 
 #### Phase 4: Testing & Documentation (v1.x)
+
 1. Add comprehensive tests for sync mechanism
 2. Test network failure scenarios
 3. Document new workflow in `models.md`
 4. Add migration guide for v2.x
 
 #### Phase 5: v2.x Release
+
 1. Remove bundled registry files (keep bootstrap.toml)
 2. Make sync required for PoochRegistry
 3. Update documentation
 4. Release notes with clear migration instructions
 
-## Key Design Decisions
-
-1. **Install-time sync**: Best-effort, warn on failure, allow install to proceed
-2. **Registry location**: `.registry/` directory on each branch in model repos; also as release assets for tagged releases
-3. **Bootstrap format**: Minimal TOML with just repo identifiers - no hints about location or fetch strategy
-4. **Registry modes**: Self-describing via metadata attributes
-   - Mode 1 (in-repo): No asset attributes → individual file fetching
-   - Mode 2 (release-only): `release_asset`, `registry_asset`, or `models_asset` → zip fetching
-   - Mode discovered automatically during sync
-5. **Multi-ref caching**: Support simultaneous caching of multiple refs (tags and branches)
-6. **Schema versioning**: Use Pydantic, include `_meta` section in registries
-7. **Ref priority**: Latest release tag → master branch → develop branch (when user doesn't specify)
-8. **Ref support**: Branch names and release tags supported; commit SHAs not supported (with clear error message)
-9. **CLI parameter**: Use `--ref` (not `--branch`) to clarify support for both tags and branches
-10. **Transition**: Optional in v1.x with deprecation warning, required in v2.x
-11. **Registry architecture**: Clear separation of concerns
-    - `PoochRegistry`: Single source, single ref - no knowledge of other sources
-    - `MergedRegistry`: Pure compositor - takes pre-built registries, no construction logic
-    - Module functions: Handle sync, construction, convenience APIs
-12. **Model naming**: `{source}@{ref}/{subpath}` format guarantees collision-free names and explicit provenance
-13. **Registry merging**: Keep separate on disk and in separate `PoochRegistry` instances, merge via `MergedRegistry`
-14. **No factory methods**: `MergedRegistry` construction is trivial, users create new instances directly
-15. **Mixed refs**: Supported naturally via naming scheme - can mix multiple refs of same source
-16. **LocalRegistry**: Remains independent, serves different purpose (local development)
-
-### Name Collisions
-**Risk**: Models from different sources could have identical names.
-
-**Mitigation**: Systematic naming scheme `{source}@{ref}/{subpath}` guarantees uniqueness:
-- Each source has distinct identifier
-- Refs are included in name
-- Subpaths are unique within a source
-
-**Example**: `modflow6-examples@v1.2.3/ex-gwf-twri` cannot collide with `modflow6-testmodels@develop/ex-gwf-twri`
-
-### Partial Sync State
-**Risk**: User syncs some sources but not others, leading to incomplete `MergedRegistry`.
-
-**Mitigation**:
-- `MergedRegistry` is transparent - only merges what it's given
-- Module-level `get_registry()` handles ensuring sources are synced
-- `PoochRegistry` auto-syncs on first access (best-effort)
-- Clear error messages if sync fails
-
-### Performance
-**Risk**: Loading multiple registry files could be slow.
-
-**Analysis**: Not a concern - TOML files load instantly (even 1.7MB registry is trivial). Model files download lazily via Pooch only when accessed.
-
-**Decision**: No lazy loading needed for registries themselves.
-
-### Error Propagation
-**Risk**: One source failing to sync could break entire `MergedRegistry`.
-
-**Mitigation**:
-- `PoochRegistry` constructor fails fast if sync fails
-- Caller (module functions) can handle errors before constructing `MergedRegistry`
-- `MergedRegistry` itself is simple - no error handling needed (operates on valid registries)
-
-### Backward Compatibility
-**Risk**: Changing `DEFAULT_REGISTRY` from `PoochRegistry` to `MergedRegistry` breaks code checking `isinstance(DEFAULT_REGISTRY, PoochRegistry)`.
-
-**Mitigation**:
-- Both implement `ModelRegistry` abstract class
-- API is identical for common operations
-- Breaking change acceptable for v2.x with clear migration guide
-- v1.x maintains current behavior with deprecation warnings
-
-### Cache Invalidation
-**Risk**: Registry instance doesn't reflect newly synced data.
-
-**Mitigation**:
-- Document that registries are immutable per ref
-- To use new data, create new instance: `get_registry(ref="new-ref")`
-- Construction is cheap (just loading TOML), so recreating is fine
-
 ## Open Questions / Future Enhancements
 
-1. **Registry compression**: Should we gzip registry files for faster downloads?
-2. **Partial registry updates**: Could we diff registries and download only changes?
-3. **Registry CDN**: Should we consider hosting registries on a CDN for faster access?
-4. **Offline mode**: Should we provide an explicit "offline mode" that never tries to sync?
-5. **Registry analytics**: Track which models are most frequently accessed?
-6. **Naming scheme refinement**: Keep current verbose prefixes (`mf6/example/`, `mf6/test/`) or simplify to `{repo-name}/{subpath}`?
+1. **Registry compression**: Zip registry files for faster downloads?
+2. **Partial registry updates**: Diff registries and download only changes?
+3. **Registry CDN**: Consider hosting registries somewhere for faster access?
+4. **Offline mode**: Provide an explicit "offline mode" that never tries to sync?
+5. **Registry analytics**: Track which models/examples are most frequently accessed?
