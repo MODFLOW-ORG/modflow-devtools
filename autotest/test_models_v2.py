@@ -263,8 +263,9 @@ class TestCLI:
 
     def test_cli_info(self, capsys):
         """Test 'info' command."""
-        from modflow_devtools.models.__main__ import cmd_info
         import argparse
+
+        from modflow_devtools.models.__main__ import cmd_info
 
         args = argparse.Namespace()
         cmd_info(args)
@@ -276,8 +277,9 @@ class TestCLI:
         """Test 'list' command with no cached registries."""
         cache.clear_registry_cache()
 
-        from modflow_devtools.models.__main__ import cmd_list
         import argparse
+
+        from modflow_devtools.models.__main__ import cmd_list
 
         args = argparse.Namespace(verbose=False)
         cmd_list(args)
@@ -290,8 +292,9 @@ class TestCLI:
         cache.clear_registry_cache()
         sync.sync_registry(source="modflow6-testmodels", ref="develop")
 
-        from modflow_devtools.models.__main__ import cmd_list
         import argparse
+
+        from modflow_devtools.models.__main__ import cmd_list
 
         args = argparse.Namespace(verbose=True)
         cmd_list(args)

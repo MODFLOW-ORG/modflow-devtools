@@ -113,10 +113,8 @@ def sync_registry(
                 )
 
                 if verbose:
-                    print(
-                        f"  Found via {discovered.mode} at {discovered.url}"
-                    )
-                    print(f"  Caching...")
+                    print(f"  Found via {discovered.mode} at {discovered.url}")
+                    print("  Caching...")
 
                 cache_registry(discovered.registry, source_name, ref_name)
 

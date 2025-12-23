@@ -36,7 +36,8 @@ def get_registry_cache_dir(source: str, ref: str) -> Path:
     Parameters
     ----------
     source : str
-        Source name (e.g., 'modflow6-testmodels')
+        Source name (e.g., 'modflow6-testmodels' or 'mf6/test').
+        May contain slashes which will create nested directories.
     ref : str
         Git ref (branch, tag, or commit hash)
 
@@ -86,7 +87,7 @@ def cache_registry(registry: Registry, source: str, ref: str) -> Path:
     # Convert registry to dict for TOML serialization
     registry_dict = registry.model_dump(by_alias=True, exclude_none=True)
 
-    with open(registry_file, "wb") as f:
+    with registry_file.open("wb") as f:
         tomli_w.dump(registry_dict, f)
 
     return registry_file
@@ -113,7 +114,7 @@ def load_cached_registry(source: str, ref: str) -> Registry | None:
     if not registry_file.exists():
         return None
 
-    with open(registry_file, "rb") as f:
+    with registry_file.open("rb") as f:
         import tomli
 
         data = tomli.load(f)
@@ -197,15 +198,15 @@ def list_cached_registries() -> list[tuple[str, str]]:
         return []
 
     cached = []
-    for source_dir in registries_dir.iterdir():
-        if not source_dir.is_dir():
-            continue
-        source = source_dir.name
-        for ref_dir in source_dir.iterdir():
-            if not ref_dir.is_dir():
-                continue
-            ref = ref_dir.name
-            if (ref_dir / "registry.toml").exists():
-                cached.append((source, ref))
+    # Find all registry.toml files recursively to support nested source names
+    for registry_file in registries_dir.rglob("registry.toml"):
+        # Extract source and ref from path
+        # e.g., registries/mf6/test/registry/registry.toml
+        # → parts = ['mf6', 'test', 'registry', 'registry.toml']
+        parts = registry_file.relative_to(registries_dir).parts
+        if len(parts) >= 2:
+            ref = parts[-2]  # 'registry' (second-to-last)
+            source = "/".join(parts[:-2])  # 'mf6/test' (everything before ref)
+            cached.append((source, ref))
 
     return cached

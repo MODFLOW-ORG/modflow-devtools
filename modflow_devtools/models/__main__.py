@@ -23,7 +23,7 @@ def cmd_sync(args):
         verbose=True,
     )
 
-    print(f"\nSync complete:")
+    print("\nSync complete:")
     print(f"  Synced: {len(result.synced)}")
     print(f"  Skipped: {len(result.skipped)}")
     print(f"  Failed: {len(result.failed)}")
@@ -42,10 +42,13 @@ def cmd_info(args):
     print("Registry sync status:\n")
     for source_name, source_status in status.items():
         print(f"{source_name} ({source_status['repo']})")
-        print(f"  Configured refs: {', '.join(source_status['configured_refs']) or 'none'}")
-        print(f"  Cached refs: {', '.join(source_status['cached_refs']) or 'none'}")
-        if source_status['missing_refs']:
-            print(f"  Missing refs: {', '.join(source_status['missing_refs'])}")
+        configured_refs = ", ".join(source_status["configured_refs"]) or "none"
+        print(f"  Configured refs: {configured_refs}")
+        cached_refs = ", ".join(source_status["cached_refs"]) or "none"
+        print(f"  Cached refs: {cached_refs}")
+        if source_status["missing_refs"]:
+            missing_refs = ", ".join(source_status["missing_refs"])
+            print(f"  Missing refs: {missing_refs}")
         print()
 
 
@@ -112,7 +115,7 @@ def main():
     )
 
     # Info command
-    info_parser = subparsers.add_parser("info", help="Show registry sync status")
+    info_parser = subparsers.add_parser("info", help="Show registry sync status")  # noqa: F841
 
     # List command
     list_parser = subparsers.add_parser("list", help="List available models")

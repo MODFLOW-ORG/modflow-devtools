@@ -60,24 +60,54 @@ if __name__ == "__main__":
         default="mfsim.nam",
     )
     parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        help=(
+            "Output directory for registry file(s). "
+            "Defaults to modflow_devtools/registry."
+        ),
+        default=None,
+    )
+    parser.add_argument(
+        "--separate",
+        action="store_true",
+        help=(
+            "Generate separate files (registry.toml, models.toml, examples.toml) "
+            "for 1.x compatibility. Default is consolidated.",
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Show verbose output.",
     )
     args = parser.parse_args()
+
+    # Determine if using consolidated format (default) or separate files
+    consolidated = not args.separate
+
     if args.path:
         if args.verbose:
             print(f"Adding {args.path} to the registry.")
+            if args.output:
+                print(f"Output directory: {args.output}")
+            print(f"Format: {'consolidated' if consolidated else 'separate files'}")
         models.DEFAULT_REGISTRY.index(
             path=args.path,
             url=args.url,
             prefix=args.model_name_prefix,
             namefile=args.namefile,
+            output_path=args.output,
+            consolidated=consolidated,
         )
     else:
         if args.verbose:
             print("No path provided, creating default registry.")
+            if args.output:
+                print(f"Output directory: {args.output}")
+            print(f"Format: {'consolidated' if consolidated else 'separate files'}")
         for options in _DEFAULT_REGISTRY_OPTIONS:
             if args.verbose:
                 print(f"Adding {options['path']} to the registry.")
@@ -86,4 +116,6 @@ if __name__ == "__main__":
                 url=options["url"],  # type: ignore
                 prefix=options["model-name-prefix"],  # type: ignore
                 namefile=options.get("namefile", "mfsim.nam"),  # type: ignore
+                output_path=args.output,
+                consolidated=consolidated,
             )

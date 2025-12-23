@@ -1,7 +1,7 @@
 """
 Registry discovery logic.
 
-This module implements the registry discovery procedure described in the design document:
+This module implements the following registry discovery procedure:
 1. Look for a matching release tag (registry as release asset)
 2. Fall back to version-controlled registry (in .registry/ directory)
 """
@@ -42,7 +42,10 @@ class DiscoveredRegistry:
         self.url = url
 
     def __repr__(self) -> str:
-        return f"DiscoveredRegistry(source={self.source}, ref={self.ref}, mode={self.mode})"
+        return (
+            f"DiscoveredRegistry(source={self.source}, "
+            f"ref={self.ref}, mode={self.mode})"
+        )
 
 
 def discover_registry(
@@ -99,7 +102,8 @@ def discover_registry(
         if e.code != 404:
             # Some other error - re-raise
             raise RegistryDiscoveryError(
-                f"Error fetching registry from release assets for '{source_name}@{ref}': {e}"
+                f"Error fetching registry from release "
+                f"assets for '{source_name}@{ref}': {e}"
             )
         # 404 means no release with this tag, fall through to version-controlled
 
@@ -123,7 +127,8 @@ def discover_registry(
             )
         else:
             raise RegistryDiscoveryError(
-                f"Error fetching registry from repository for '{source_name}@{ref}': {e}"
+                "Error fetching registry from repository "
+                f"for '{source_name}@{ref}': {e}"
             )
     except Exception as e:
         raise RegistryDiscoveryError(
@@ -184,7 +189,7 @@ def load_bootstrap(bootstrap_path: Path | str | None = None) -> Bootstrap:
     if not bootstrap_path.exists():
         raise FileNotFoundError(f"Bootstrap file not found: {bootstrap_path}")
 
-    with open(bootstrap_path, "rb") as f:
+    with bootstrap_path.open("rb") as f:
         data = tomli.load(f)
 
     return Bootstrap(**data)

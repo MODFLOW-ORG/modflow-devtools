@@ -335,6 +335,8 @@ class PoochRegistry(ModelRegistry):
         url: str,
         prefix: str = "",
         namefile: str = "mfsim.nam",
+        output_path: str | PathLike | None = None,
+        consolidated: bool = True,
     ):
         """
         Add models in the given path to the registry.
@@ -366,14 +368,25 @@ class PoochRegistry(ModelRegistry):
             Base URL for the models.
         prefix : str
             Prefix to add to model names.
-        append : bool
-            Append to the registry files instead of overwriting them.
         namefile : str
             Namefile pattern to look for in the model directories.
+        output_path : str | PathLike | None
+            Path to output directory. If None, uses default registry path.
+        consolidated : bool
+            If True, generates single consolidated registry.toml.
+            If False, generates separate registry.toml, models.toml,
+            examples.toml (for 1.x compatibility).
         """
         path = Path(path).expanduser().resolve().absolute()
         if not path.is_dir():
             raise NotADirectoryError(f"Path {path} is not a directory.")
+
+        # Determine output directory
+        if output_path is not None:
+            output_dir = Path(output_path).expanduser().resolve().absolute()
+            output_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            output_dir = self._registry_path
 
         files: dict[str, dict[str, str | None]] = {}
         models: dict[str, list[str]] = {}
@@ -413,17 +426,60 @@ class PoochRegistry(ModelRegistry):
         for example_name in examples.keys():
             examples[example_name] = sorted(examples[example_name], key=_model_sort_key)
 
-        with self._registry_file_path.open("ab+") as registry_file:
-            tomli_w.dump(
-                remap(dict(sorted(files.items())), visit=drop_none_or_empty),
-                registry_file,
-            )
+        if consolidated:
+            # Write single consolidated registry.toml
+            from datetime import datetime, timezone
 
-        with self._models_file_path.open("ab+") as models_file:
-            tomli_w.dump(dict(sorted(models.items())), models_file)
+            registry_file = output_dir / "registry.toml"
 
-        with self._examples_file_path.open("ab+") as examples_file:
-            tomli_w.dump(dict(sorted(examples.items())), examples_file)
+            # Read existing registry if it exists (to support multiple index() calls)
+            existing_files = {}
+            existing_models = {}
+            existing_examples = {}
+            if registry_file.exists():
+                with registry_file.open("rb") as f:
+                    existing_data = tomli.load(f)
+                    existing_files = existing_data.get("files", {})
+                    existing_models = existing_data.get("models", {})
+                    existing_examples = existing_data.get("examples", {})
+
+            # Merge with new data
+            existing_files.update(files)
+            existing_models.update(models)
+            existing_examples.update(examples)
+
+            registry_data = {
+                "_meta": {
+                    "schema_version": "1.0",
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "devtools_version": modflow_devtools.__version__,
+                },
+                "files": remap(
+                    dict(sorted(existing_files.items())), visit=drop_none_or_empty
+                ),
+                "models": dict(sorted(existing_models.items())),
+                "examples": dict(sorted(existing_examples.items())),
+            }
+
+            with registry_file.open("wb") as f:
+                tomli_w.dump(registry_data, f)
+        else:
+            # Write separate files (for 1.x compatibility)
+            registry_file_path = output_dir / PoochRegistry.registry_file_name
+            models_file_path = output_dir / PoochRegistry.models_file_name
+            examples_file_path = output_dir / PoochRegistry.examples_file_name
+
+            with registry_file_path.open("ab+") as registry_file:
+                tomli_w.dump(
+                    remap(dict(sorted(files.items())), visit=drop_none_or_empty),
+                    registry_file,
+                )
+
+            with models_file_path.open("ab+") as models_file:
+                tomli_w.dump(dict(sorted(models.items())), models_file)
+
+            with examples_file_path.open("ab+") as examples_file:
+                tomli_w.dump(dict(sorted(examples.items())), examples_file)
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False

@@ -3,7 +3,7 @@ Pydantic models for registry schema validation.
 """
 
 from datetime import datetime
-from pathlib import Path
+from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -56,12 +56,16 @@ class RegistryMetadata(BaseModel):
     """Metadata section of a registry file."""
 
     schema_version: str = Field(..., description="Registry schema version")
-    generated_at: datetime = Field(..., description="Timestamp when registry was generated")
-    devtools_version: str = Field(..., description="Version of modflow-devtools used to generate")
+    generated_at: datetime = Field(
+        ..., description="Timestamp when registry was generated"
+    )
+    devtools_version: str = Field(
+        ..., description="Version of modflow-devtools used to generate"
+    )
 
     class Config:
         # Allow datetime parsing from ISO format strings
-        json_encoders = {datetime: lambda v: v.isoformat()}
+        json_encoders: ClassVar = {datetime: lambda v: v.isoformat()}
 
 
 class FileEntry(BaseModel):
@@ -95,5 +99,7 @@ class Registry(BaseModel):
     def to_pooch_urls(self) -> dict[str, str]:
         """Convert to format expected by Pooch.urls (filename -> url)."""
         return {
-            name: entry.url for name, entry in self.files.items() if entry.url is not None
+            name: entry.url
+            for name, entry in self.files.items()
+            if entry.url is not None
         }
