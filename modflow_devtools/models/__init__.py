@@ -23,6 +23,9 @@ from pooch import Pooch
 import modflow_devtools
 from modflow_devtools.misc import drop_none_or_empty, get_model_paths
 
+# Best-effort sync flag (to avoid multiple sync attempts)
+_SYNC_ATTEMPTED = False
+
 
 def _model_sort_key(k) -> int:
     if "gwf" in k:
@@ -277,6 +280,97 @@ class PoochRegistry(ModelRegistry):
         return fetch
 
     def _load(self):
+        """
+        Load registry data.
+
+        Tries to load from cached registries first (if synced),
+        falls back to bundled registry with deprecation warning.
+        """
+        # Try to load from cache first
+        loaded_from_cache = self._try_load_from_cache()
+
+        if not loaded_from_cache:
+            # Fall back to bundled registry
+            self._load_from_bundled()
+
+    def _try_load_from_cache(self) -> bool:
+        """
+        Try to load registry from cache.
+
+        Returns True if successful, False otherwise.
+        """
+        try:
+            # Import here to avoid circular dependency
+            from .cache import list_cached_registries, load_cached_registry
+
+            cached = list_cached_registries()
+            if not cached:
+                return False
+
+            # Merge all cached registries
+            all_files = {}
+            all_models = {}
+            all_examples = {}
+
+            for source, ref in cached:
+                registry = load_cached_registry(source, ref)
+                if registry:
+                    # Merge files
+                    for fname, file_entry in registry.files.items():
+                        all_files[fname] = {
+                            "path": self.pooch.path / fname,
+                            "hash": file_entry.hash,
+                            "url": file_entry.url,
+                        }
+
+                    # Merge models
+                    all_models.update(registry.models)
+
+                    # Merge examples
+                    all_examples.update(registry.examples)
+
+            if not all_files:
+                return False
+
+            # Set registry data
+            self._files = all_files
+            self._models = all_models
+            self._examples = all_examples
+
+            # Configure Pooch
+            self.urls = {
+                k: v["url"] for k, v in all_files.items() if v.get("url")
+            }
+            self.pooch.registry = {
+                k: v.get("hash") for k, v in all_files.items()
+            }
+            self.pooch.urls = self.urls
+
+            # Set up fetchers
+            self._fetchers = {}
+            for model_name, file_list in self._models.items():
+                self._fetchers[model_name] = self._fetcher(model_name, file_list)
+
+            return True
+
+        except Exception:
+            return False
+
+    def _load_from_bundled(self):
+        """
+        Load registry from bundled package resources.
+
+        Shows deprecation warning.
+        """
+        import warnings
+
+        warnings.warn(
+            "Loading bundled registry. This is deprecated and will be removed in v2.0. "
+            "Use 'python -m modflow_devtools.models sync' to download the latest registry.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
         try:
             with pkg_resources.open_binary(
                 PoochRegistry.anchor, PoochRegistry.registry_file_name
@@ -336,7 +430,7 @@ class PoochRegistry(ModelRegistry):
         prefix: str = "",
         namefile: str = "mfsim.nam",
         output_path: str | PathLike | None = None,
-        consolidated: bool = True,
+        separate: bool = False,
     ):
         """
         Add models in the given path to the registry.
@@ -372,10 +466,9 @@ class PoochRegistry(ModelRegistry):
             Namefile pattern to look for in the model directories.
         output_path : str | PathLike | None
             Path to output directory. If None, uses default registry path.
-        consolidated : bool
-            If True, generates single consolidated registry.toml.
-            If False, generates separate registry.toml, models.toml,
-            examples.toml (for 1.x compatibility).
+        separate : bool
+            If True, generates separate registry.toml, models.toml, examples.toml (for 1.x compatibility).
+            If False (default), generates single consolidated registry.toml.
         """
         path = Path(path).expanduser().resolve().absolute()
         if not path.is_dir():
@@ -426,8 +519,8 @@ class PoochRegistry(ModelRegistry):
         for example_name in examples.keys():
             examples[example_name] = sorted(examples[example_name], key=_model_sort_key)
 
-        if consolidated:
-            # Write single consolidated registry.toml
+        if not separate:
+            # Write single consolidated registry.toml (default)
             from datetime import datetime, timezone
 
             registry_file = output_dir / "registry.toml"
@@ -537,6 +630,37 @@ _DEFAULT_BASE_URL = (
     "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current"
 )
 _DEFAULT_ZIP_NAME = "mf6examples.zip"
+
+
+def _try_best_effort_sync():
+    """
+    Attempt to sync registries on first import.
+
+    This is a best-effort operation - if it fails (network issues,
+    misconfiguration, etc.), we silently continue and fall back to
+    the bundled registry.
+    """
+    global _SYNC_ATTEMPTED
+
+    if _SYNC_ATTEMPTED:
+        return
+
+    _SYNC_ATTEMPTED = True
+
+    try:
+        # Import here to avoid circular dependency
+        from .sync import sync_registry
+
+        # Try to sync default refs (don't be verbose, don't fail on errors)
+        sync_registry(verbose=False)
+    except Exception:
+        # Silently fail - we'll fall back to bundled registry
+        pass
+
+
+# Try to sync on first import
+_try_best_effort_sync()
+
 DEFAULT_REGISTRY = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
 """The default model registry."""
 

@@ -405,42 +405,54 @@ Use `python -m modflow_devtools.models sync` to download the latest registry.
 
 ### Implementation plan
 
-#### Phase 1: Foundation (v1.x)
+#### Phase 1: Foundation (v1.x) - ✅ COMPLETE
 
-1. Add bootstrap metadata file
-2. Implement registry schema with Pydantic validation
-3. Create cache directory structure utilities
-4. Add `sync_registry()` function with download logic
-5. Implement branch priority resolution
-6. Add CLI subcommands (sync, list, status)
+1. ✅ Add bootstrap metadata file (`modflow_devtools/models/bootstrap.toml`)
+2. ✅ Implement registry schema with Pydantic validation (`modflow_devtools/models/schema.py`)
+3. ✅ Create cache directory structure utilities (`modflow_devtools/models/cache.py`)
+4. ✅ Add `sync_registry()` function with download logic (`modflow_devtools/models/sync.py`)
+5. ✅ Implement branch priority resolution (`modflow_devtools/models/discovery.py`)
+6. ✅ Add CLI subcommands (`modflow_devtools/models/__main__.py` - sync, info, list)
 
-#### Phase 2: PoochRegistry Adaptation (v1.x)
+**Bonus features:**
+- ✅ Updated registry generation machinery (`make_registry.py`) with `--output` and `--separate` flags
+- ✅ Added `repo` parameter to `sync_registry()` for testing forks
+- ✅ Implemented nested directory cache structure for source names with slashes
+- ✅ Comprehensive test suite (`autotest/test_models_v2.py`)
 
-1. Modify `PoochRegistry` to check cache first
-2. Add fallback to bundled registry
-3. Implement best-effort sync on import
-4. Add deprecation warnings for bundled registry
+#### Phase 2: PoochRegistry Adaptation (v1.x) - ✅ COMPLETE
 
-#### Phase 3: Upstream CI (concurrent with Phase 1-2)
+1. ✅ Modify `PoochRegistry` to check cache first (`_try_load_from_cache()`)
+2. ✅ Add fallback to bundled registry (`_load_from_bundled()`)
+3. ✅ Implement best-effort sync on import (`_try_best_effort_sync()`)
+4. ✅ Add deprecation warnings for bundled registry
 
-1. Add `.github/workflows/registry.yml` to each model repo
-2. Test registry generation in CI
-3. Commit registry files to `.registry/` directories
-4. For repos with releases, add registry as release asset
+**Implementation details:**
+- Modified `PoochRegistry._load()` to try cache first, fall back to bundled
+- Added `_try_best_effort_sync()` called on module import (silent failure on network issues)
+- Deprecation warning shown when loading bundled registry
+- Cache-aware registry merges all synced sources/refs automatically
 
-#### Phase 4: Testing & Documentation (v1.x)
+#### Phase 3: Upstream CI (concurrent with Phase 1-2) - ⚠️ PARTIALLY COMPLETE
 
-1. Add comprehensive tests for sync mechanism
-2. Test network failure scenarios
-3. Document new workflow in `models.md`
-4. Add migration guide for v2.x
+1. ⬜ Add `.github/workflows/registry.yml` to each model repo
+2. ⬜ Test registry generation in CI
+3. ✅ Commit registry files to `.registry/` directories (done in test fork)
+4. ⬜ For repos with releases, add registry as release asset
 
-#### Phase 5: v2.x Release
+#### Phase 4: Testing & Documentation (v1.x) - ⚠️ PARTIALLY COMPLETE
 
-1. Remove bundled registry files (keep bootstrap.toml)
-2. Make sync required for PoochRegistry
-3. Update documentation
-4. Release notes with clear migration instructions
+1. ✅ Add comprehensive tests for sync mechanism
+2. ⚠️ Test network failure scenarios (partial - nonexistent ref covered)
+3. ⬜ Document new workflow in `models.md`
+4. ⬜ Add migration guide for v2.x
+
+#### Phase 5: v2.x Release - ⬜ NOT STARTED
+
+1. ⬜ Remove bundled registry files (keep bootstrap.toml)
+2. ⬜ Make sync required for PoochRegistry
+3. ⬜ Update documentation
+4. ⬜ Release notes with clear migration instructions
 
 ## Open Questions / Future Enhancements
 

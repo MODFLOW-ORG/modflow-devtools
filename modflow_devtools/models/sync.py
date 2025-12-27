@@ -27,6 +27,7 @@ class SyncResult:
 def sync_registry(
     source: str | None = None,
     ref: str | None = None,
+    repo: str | None = None,
     force: bool = False,
     verbose: bool = False,
     bootstrap_path: Path | str | None = None,
@@ -40,6 +41,9 @@ def sync_registry(
         Specific source to sync. If None, syncs all sources from bootstrap.
     ref : str | None
         Specific ref to sync. If None, syncs all refs from bootstrap for the source(s).
+    repo : str | None
+        Repository in "owner/name" format to override the bootstrap's repo.
+        Useful for testing forks. Requires 'source' to be specified.
     force : bool
         Force re-download even if cached
     verbose : bool
@@ -65,7 +69,18 @@ def sync_registry(
 
     Force re-sync:
         sync_registry(force=True)
+
+    Test against a fork:
+        sync_registry(
+            source="modflow6-testmodels",
+            ref="registry",
+            repo="wpbonelli/modflow6-testmodels"
+        )
     """
+    # Validate: repo override requires source to be specified
+    if repo and not source:
+        raise ValueError("Cannot specify 'repo' without specifying 'source'")
+
     result = SyncResult()
     bootstrap = load_bootstrap(bootstrap_path)
 
@@ -73,7 +88,13 @@ def sync_registry(
     if source:
         if source not in bootstrap.sources:
             raise ValueError(f"Source '{source}' not found in bootstrap")
-        sources_to_sync = {source: bootstrap.sources[source]}
+        source_meta = bootstrap.sources[source]
+
+        # Override repo if provided
+        if repo:
+            source_meta = source_meta.model_copy(update={"repo": repo})
+
+        sources_to_sync = {source: source_meta}
     else:
         sources_to_sync = bootstrap.sources
 

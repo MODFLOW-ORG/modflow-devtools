@@ -1,14 +1,20 @@
 """
 Tests for the new models API (dynamic registry).
 
-These tests use modflow6-testmodels/develop as the test source.
-They assume a registry file has been added to that repository.
+These tests use wpbonelli/modflow6-testmodels@registry as the test source.
+Once the registry is merged upstream, these can be updated to use MODFLOW-ORG.
 """
 
 import pytest
 
 from modflow_devtools.models import cache, discovery, sync
-from modflow_devtools.models.schema import Bootstrap, Registry
+from modflow_devtools.models.schema import Bootstrap, BootstrapSource, Registry
+
+# Test configuration - using fork until registry is merged upstream
+TEST_REPO = "wpbonelli/modflow6-testmodels"
+TEST_REF = "registry"
+TEST_SOURCE = "modflow6-testmodels"
+TEST_SOURCE_NAME = "mf6/test"
 
 
 class TestBootstrap:
@@ -60,50 +66,39 @@ class TestCache:
 class TestDiscovery:
     """Test registry discovery."""
 
-    def test_discover_registry_develop(self):
-        """Test discovering registry for modflow6-testmodels/develop."""
-        bootstrap = discovery.load_bootstrap()
-        source = bootstrap.sources["modflow6-testmodels"]
-        source_name = bootstrap.get_source_name("modflow6-testmodels")
+    def test_discover_registry(self):
+        """Test discovering registry for test fork."""
+        # Use test fork with registry
+        source = BootstrapSource(
+            repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
+        )
 
-        # This will fail until registry is added to the repo
         discovered = discovery.discover_registry(
             source=source,
-            source_name=source_name,
-            ref="develop",
+            source_name=TEST_SOURCE_NAME,
+            ref=TEST_REF,
         )
 
         assert isinstance(discovered, discovery.DiscoveredRegistry)
-        assert discovered.source == source_name
-        assert discovered.ref == "develop"
+        assert discovered.source == TEST_SOURCE_NAME
+        assert discovered.ref == TEST_REF
         assert discovered.mode == "version_controlled"
         assert isinstance(discovered.registry, Registry)
 
-    def test_discover_registry_master(self):
-        """Test discovering registry for modflow6-testmodels/master."""
-        bootstrap = discovery.load_bootstrap()
-        source = bootstrap.sources["modflow6-testmodels"]
-        source_name = bootstrap.get_source_name("modflow6-testmodels")
-
-        discovered = discovery.discover_registry(
-            source=source,
-            source_name=source_name,
-            ref="master",
-        )
-
-        assert isinstance(discovered, discovery.DiscoveredRegistry)
-        assert discovered.ref == "master"
-
     def test_discover_registry_nonexistent_ref(self):
         """Test that discovery fails gracefully for nonexistent ref."""
-        bootstrap = discovery.load_bootstrap()
-        source = bootstrap.sources["modflow6-testmodels"]
-        source_name = bootstrap.get_source_name("modflow6-testmodels")
+        source = BootstrapSource(
+            repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=["nonexistent-branch-12345"],
+        )
 
         with pytest.raises(discovery.RegistryDiscoveryError):
             discovery.discover_registry(
                 source=source,
-                source_name=source_name,
+                source_name=TEST_SOURCE_NAME,
                 ref="nonexistent-branch-12345",
             )
 
@@ -122,57 +117,43 @@ class TestSync:
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
         result = sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
             verbose=True,
         )
 
         assert len(result.synced) == 1
         assert len(result.failed) == 0
-        assert ("mf6/test", "develop") in result.synced
-
-    def test_sync_single_source_all_refs(self):
-        """Test syncing all refs for a single source."""
-        result = sync.sync_registry(
-            source="modflow6-testmodels",
-            verbose=True,
-        )
-
-        assert len(result.synced) >= 2  # develop and master at minimum
-        assert len(result.failed) == 0
-
-    def test_sync_all_sources(self):
-        """Test syncing all configured sources."""
-        result = sync.sync_registry(verbose=True)
-
-        # Should sync all configured refs for all sources
-        assert len(result.synced) >= 2  # At least testmodels develop + master
-        # May have failures if other sources aren't ready yet
+        assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
 
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
-        assert not cache.is_registry_cached("mf6/test", "develop")
+        assert not cache.is_registry_cached(TEST_SOURCE_NAME, TEST_REF)
 
         sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
 
-        assert cache.is_registry_cached("mf6/test", "develop")
+        assert cache.is_registry_cached(TEST_SOURCE_NAME, TEST_REF)
 
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
         # First sync
         result1 = sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
         assert len(result1.synced) == 1
 
         # Second sync should skip
         result2 = sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
         assert len(result2.synced) == 0
         assert len(result2.skipped) == 1
@@ -181,35 +162,20 @@ class TestSync:
         """Test that force flag re-syncs cached registries."""
         # First sync
         sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
 
         # Force sync
         result = sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
             force=True,
         )
         assert len(result.synced) == 1
         assert len(result.skipped) == 0
-
-    def test_get_sync_status(self):
-        """Test getting sync status."""
-        # Initially nothing cached
-        status = sync.get_sync_status()
-        assert "mf6/test" in status
-        assert len(status["mf6/test"]["cached_refs"]) == 0
-
-        # Sync one ref
-        sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
-        )
-
-        # Check status again
-        status = sync.get_sync_status()
-        assert "develop" in status["mf6/test"]["cached_refs"]
 
 
 class TestRegistry:
@@ -220,10 +186,11 @@ class TestRegistry:
         """Fixture that syncs and loads a registry."""
         cache.clear_registry_cache()
         sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
-        registry = cache.load_cached_registry("mf6/test", "develop")
+        registry = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
         return registry
 
     def test_registry_has_metadata(self, synced_registry):
@@ -290,7 +257,11 @@ class TestCLI:
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
         cache.clear_registry_cache()
-        sync.sync_registry(source="modflow6-testmodels", ref="develop")
+        sync.sync_registry(
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
+        )
 
         import argparse
 
@@ -300,7 +271,7 @@ class TestCLI:
         cmd_list(args)
 
         captured = capsys.readouterr()
-        assert "mf6/test@develop" in captured.out
+        assert f"{TEST_SOURCE_NAME}@{TEST_REF}" in captured.out
         assert "Models:" in captured.out
 
 
@@ -308,30 +279,33 @@ class TestIntegration:
     """Integration tests for full workflows."""
 
     def test_full_workflow(self):
-        """Test complete workflow: load bootstrap -> discover -> cache -> load."""
+        """Test complete workflow: discover -> cache -> load."""
         # Clear cache
         cache.clear_registry_cache()
 
-        # Load bootstrap
-        bootstrap = discovery.load_bootstrap()
-        assert "modflow6-testmodels" in bootstrap.sources
+        # Create test source
+        source = BootstrapSource(
+            repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
+        )
 
         # Discover registry
-        source = bootstrap.sources["modflow6-testmodels"]
-        source_name = bootstrap.get_source_name("modflow6-testmodels")
         discovered = discovery.discover_registry(
             source=source,
-            source_name=source_name,
-            ref="develop",
+            source_name=TEST_SOURCE_NAME,
+            ref=TEST_REF,
         )
         assert isinstance(discovered.registry, Registry)
 
         # Cache registry
-        cache_path = cache.cache_registry(discovered.registry, source_name, "develop")
+        cache_path = cache.cache_registry(
+            discovered.registry, TEST_SOURCE_NAME, TEST_REF
+        )
         assert cache_path.exists()
 
         # Load from cache
-        loaded = cache.load_cached_registry(source_name, "develop")
+        loaded = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
         assert loaded is not None
         assert len(loaded.models) == len(discovered.registry.models)
 
@@ -341,16 +315,17 @@ class TestIntegration:
 
         # Sync
         result = sync.sync_registry(
-            source="modflow6-testmodels",
-            ref="develop",
+            source=TEST_SOURCE,
+            ref=TEST_REF,
+            repo=TEST_REPO,
         )
         assert len(result.synced) == 1
 
         # List cached registries
         cached = cache.list_cached_registries()
         assert len(cached) >= 1
-        assert ("mf6/test", "develop") in cached
+        assert (TEST_SOURCE_NAME, TEST_REF) in cached
 
         # Load and check models
-        registry = cache.load_cached_registry("mf6/test", "develop")
+        registry = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
         assert len(registry.models) > 0

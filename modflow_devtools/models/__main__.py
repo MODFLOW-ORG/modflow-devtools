@@ -19,6 +19,7 @@ def cmd_sync(args):
     result = sync_registry(
         source=args.source,
         ref=args.ref,
+        repo=getattr(args, "repo", None),
         force=args.force,
         verbose=True,
     )
@@ -106,6 +107,10 @@ def main():
         "--ref",
         "-r",
         help="Specific ref to sync (default: all configured refs)",
+    )
+    sync_parser.add_argument(
+        "--repo",
+        help='Override repository in "owner/name" format (e.g., "wpbonelli/modflow6-testmodels"). Requires --source.',
     )
     sync_parser.add_argument(
         "--force",
