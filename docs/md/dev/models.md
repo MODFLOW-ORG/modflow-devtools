@@ -78,7 +78,7 @@ Model repository developers can use the `modflow-devtools` registry-creation fac
 
 ## Architecture
 
-This will involve a few new components (e.g., bootstrap file, `MergedRegistry` class) as well as modifications to some existing components (e.g., existing registry files, `PoochRegistry`). It should be possible for the `ModelRegistry` contract to remain unchanged.
+This involves several new components (bootstrap file, user config overlay) and a consolidated registry class hierarchy. The previous `ModelRegistry` ABC has been replaced with a Pydantic-based `Registry` base class that both `LocalRegistry` and `PoochRegistry` inherit from.
 
 ### Bootstrap file
 
@@ -120,6 +120,24 @@ refs = [
 ```
 
 Note: The bootstrap refs list indicates default refs to sync at install time. Users can request synchronization to any valid git ref (branch, tag, or commit hash) via the CLI or API.
+
+#### User config overlay
+
+Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
+- Linux/macOS: `~/.config/modflow-devtools/bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/bootstrap.toml`
+
+The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config:
+- Sources with the same key will be completely replaced by the user version
+- New sources will be added to the available sources
+
+This allows users to:
+- Add private or custom model repositories
+- Point to forks of existing repositories
+- Override default refs for existing sources
+- Temporarily disable sources (by overriding with empty refs list)
+
+The user config is automatically loaded and merged when using the default bootstrap location. For testing, a custom user config path can be specified via the `user_config_path` parameter to `load_bootstrap()`.
 
 ### Registry files
 
@@ -352,35 +370,34 @@ Benefits of this approach:
 
 ### Registry classes
 
-`PoochRegistry` is currently associated with a single state of a single repository. This can continue. Introduce a few properties to (e.g. `source` and `ref`) to make the model source and version explicit.
+The registry class hierarchy has been consolidated onto a Pydantic-based `Registry` base class (defined in `schema.py`):
 
-`PoochRegistry` should be immutable &mdash; to synchronize to a new model source state, create a new one.
+**`Registry` (base class)**:
+- Pydantic model with `files`, `models`, `examples` fields
+- Optional `meta` field for registry metadata (present when loaded from TOML, None for local registries)
+- `FileEntry` model supports both local (`path`) and remote (`url`) files
+- Base `copy_to()` raises `NotImplementedError` - subclasses override
+- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
 
-Introduce a `MergedRegistry` compositor to merge multiple `PoochRegistry` instances under the same `ModelRegistry` API. The initializer can simply accept a list of pre-constructed `PoochRegistry` instances, and expose a list or dictionary of the registries of which it consists. Properties inherited from `ModelRegistry` (`files`, `models`, `examples`) can return merged views.
+**`LocalRegistry`**:
+- Inherits from `Registry`
+- Scans local filesystem directories for models
+- Creates `FileEntry` objects with `path` field
+- Implements `copy_to()` for local file copying
+- No `meta` field (remains None)
 
-Handle synchronization, `MergedRegistry` construction, and similar concerns at the module (i.e. higher) level. Registries don't need to concern themselves with this sort of thing.
+**`PoochRegistry`**:
+- Inherits from `Registry`
+- Loads from cached or bundled registry files
+- Creates `FileEntry` objects with both `url` (source) and `path` (cache location)
+- Implements `copy_to()` for remote fetching + copying
+- Populates `meta` from registry file if available
 
-Some tentative usage examples:
-
-```python
-# Create individual registries
-examples_v1 = PoochRegistry("modflow6-examples", "v1.2.3")
-testmodels = PoochRegistry("modflow6-testmodels", "develop")
-
-# Merge them
-merged = MergedRegistry([examples_v1, testmodels])
-
-# Later: update to new ref
-examples_v2 = PoochRegistry("modflow6-examples", "v2.0.0")
-merged = MergedRegistry([examples_v2, testmodels])
-
-# Mix multiple refs of same source
-examples_stable = PoochRegistry("modflow6-examples", "v1.2.3")
-examples_dev = PoochRegistry("modflow6-examples", "develop")
-merged = MergedRegistry([examples_stable, examples_dev, testmodels])
-```
-
-`LocalRegistry` is unaffected by all this, as it suits a different use case largely aimed at developers. Consider renaming it e.g. to `DeveloperRegistry`.
+**Key changes from original design**:
+- Removed `ModelRegistry` ABC - consolidated onto Pydantic `Registry`
+- `FileEntry` supports both local and remote files via optional `url`/`path` fields
+- `MergedRegistry` not yet implemented - registries are merged during cache loading in `PoochRegistry`
+- `LocalRegistry` kept its name (not renamed to `DeveloperRegistry`)
 
 ### Module-Level API
 
@@ -446,6 +463,22 @@ Use `python -m modflow_devtools.models sync` to download the latest registry.
 2. ⚠️ Test network failure scenarios (partial - nonexistent ref covered)
 3. ⬜ Document new workflow in `models.md`
 4. ⬜ Add migration guide for v2.x
+
+#### Phase 4.5: Architecture Improvements (v1.x) - ✅ COMPLETE
+
+1. ✅ User config overlay support
+   - Added `get_user_config_path()` for platform-appropriate config location
+   - Added `merge_bootstrap()` to merge user + bundled configs
+   - Updated `load_bootstrap()` with optional `user_config_path` parameter
+   - User config automatically loaded and merged when using default bootstrap
+   - Comprehensive tests in `test_models_v2.py::TestBootstrap`
+
+2. ✅ Registry class consolidation
+   - Removed `ModelRegistry` ABC
+   - Made `Registry` (Pydantic) the base class for all registries
+   - Updated `FileEntry` to support both local (`path`) and remote (`url`) files
+   - Updated `LocalRegistry` and `PoochRegistry` to inherit from `Registry`
+   - All 26 tests passing in `test_models_v2.py`
 
 #### Phase 5: v2.x Release - ⬜ NOT STARTED
 
