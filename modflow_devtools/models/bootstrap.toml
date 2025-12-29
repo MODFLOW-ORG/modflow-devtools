@@ -6,6 +6,17 @@
 # The `refs` list indicates default refs to sync at install time. Users can
 # request synchronization to any valid git ref (branch, tag, or commit hash)
 # via the CLI or API.
+#
+# USER CONFIGURATION:
+# To add custom sources or override these defaults, create a user config at:
+#   Linux/macOS: ~/.config/modflow-devtools/bootstrap.toml
+#   Windows: %APPDATA%/modflow-devtools/bootstrap.toml
+#
+# User config sources will override/extend the bundled sources below.
+# Example user config:
+#   [sources.my-custom-models]
+#   repo = "username/my-models"
+#   refs = ["main"]
 
 [sources.modflow6-testmodels]
 repo = "MODFLOW-ORG/modflow6-testmodels"

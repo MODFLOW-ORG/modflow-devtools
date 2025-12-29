@@ -5,6 +5,8 @@ These tests use wpbonelli/modflow6-testmodels@registry as the test source.
 Once the registry is merged upstream, these can be updated to use MODFLOW-ORG.
 """
 
+from pathlib import Path
+
 import pytest
 
 from modflow_devtools.models import cache, discovery, sync
@@ -38,6 +40,142 @@ class TestBootstrap:
         assert testmodels.repo == "MODFLOW-ORG/modflow6-testmodels"
         assert "develop" in testmodels.refs
         assert "master" in testmodels.refs
+
+    def test_get_user_config_path(self):
+        """Test that user config path is platform-appropriate."""
+        user_config_path = discovery.get_user_config_path()
+        assert isinstance(user_config_path, Path)
+        assert user_config_path.name == "bootstrap.toml"
+        assert "modflow-devtools" in str(user_config_path)
+        # Should be in .config or AppData depending on platform
+        assert ".config" in str(user_config_path) or "AppData" in str(user_config_path)
+
+    def test_merge_bootstrap(self):
+        """Test merging bundled and user bootstrap configs."""
+        # Create bundled config
+        bundled = Bootstrap(
+            sources={
+                "source1": BootstrapSource(repo="org/repo1", refs=["main"]),
+                "source2": BootstrapSource(repo="org/repo2", refs=["develop"]),
+            }
+        )
+
+        # Create user config that overrides source1 and adds source3
+        user = Bootstrap(
+            sources={
+                "source1": BootstrapSource(
+                    repo="user/custom-repo1", refs=["feature"]
+                ),
+                "source3": BootstrapSource(repo="user/repo3", refs=["master"]),
+            }
+        )
+
+        # Merge
+        merged = discovery.merge_bootstrap(bundled, user)
+
+        # Check that user source1 overrode bundled source1
+        assert merged.sources["source1"].repo == "user/custom-repo1"
+        assert merged.sources["source1"].refs == ["feature"]
+
+        # Check that bundled source2 is preserved
+        assert merged.sources["source2"].repo == "org/repo2"
+        assert merged.sources["source2"].refs == ["develop"]
+
+        # Check that user source3 was added
+        assert merged.sources["source3"].repo == "user/repo3"
+        assert merged.sources["source3"].refs == ["master"]
+
+    def test_load_bootstrap_with_user_config(self, tmp_path):
+        """Test loading bootstrap with user config overlay."""
+        # Create a user config file
+        user_config = tmp_path / "bootstrap.toml"
+        user_config.write_text(
+            """
+[sources.custom-models]
+repo = "user/custom-models"
+refs = ["main"]
+
+[sources.modflow6-testmodels]
+repo = "user/modflow6-testmodels-fork"
+refs = ["custom-branch"]
+"""
+        )
+
+        # Load bootstrap with user config path specified
+        bootstrap = discovery.load_bootstrap(user_config_path=user_config)
+
+        # Check that user config was merged
+        assert "custom-models" in bootstrap.sources
+        assert bootstrap.sources["custom-models"].repo == "user/custom-models"
+
+        # Check that user config overrode bundled config for testmodels
+        if "modflow6-testmodels" in bootstrap.sources:
+            assert (
+                bootstrap.sources["modflow6-testmodels"].repo
+                == "user/modflow6-testmodels-fork"
+            )
+
+    def test_load_bootstrap_explicit_path_no_overlay(self, tmp_path):
+        """Test that explicit bootstrap path doesn't use user config overlay by default."""
+        # Create an explicit bootstrap file
+        explicit_config = tmp_path / "explicit-bootstrap.toml"
+        explicit_config.write_text(
+            """
+[sources.explicit-source]
+repo = "org/explicit-repo"
+refs = ["main"]
+"""
+        )
+
+        # Create a user config that shouldn't be used
+        user_config = tmp_path / "user-bootstrap.toml"
+        user_config.write_text(
+            """
+[sources.user-source]
+repo = "user/user-repo"
+refs = ["develop"]
+"""
+        )
+
+        # Load with explicit path only (no user_config_path)
+        bootstrap = discovery.load_bootstrap(explicit_config)
+
+        # Should only have explicit source, not user source
+        assert "explicit-source" in bootstrap.sources
+        assert "user-source" not in bootstrap.sources
+
+    def test_load_bootstrap_explicit_path_with_overlay(self, tmp_path):
+        """Test that explicit bootstrap path can use user config overlay when specified."""
+        # Create an explicit bootstrap file
+        explicit_config = tmp_path / "explicit-bootstrap.toml"
+        explicit_config.write_text(
+            """
+[sources.explicit-source]
+repo = "org/explicit-repo"
+refs = ["main"]
+"""
+        )
+
+        # Create a user config
+        user_config = tmp_path / "user-bootstrap.toml"
+        user_config.write_text(
+            """
+[sources.user-source]
+repo = "user/user-repo"
+refs = ["develop"]
+"""
+        )
+
+        # Load with both explicit paths
+        bootstrap = discovery.load_bootstrap(
+            bootstrap_path=explicit_config, user_config_path=user_config
+        )
+
+        # Should have both sources
+        assert "explicit-source" in bootstrap.sources
+        assert "user-source" in bootstrap.sources
+        assert bootstrap.sources["explicit-source"].repo == "org/explicit-repo"
+        assert bootstrap.sources["user-source"].repo == "user/user-repo"
 
 
 class TestCache:

@@ -6,6 +6,7 @@ This module implements the following registry discovery procedure:
 2. Fall back to version-controlled registry (in .registry/ directory)
 """
 
+import os
 import urllib.request
 from pathlib import Path
 from typing import Literal
@@ -161,27 +162,100 @@ def _fetch_url(url: str, timeout: int = 30) -> str:
         return response.read().decode("utf-8")
 
 
-def load_bootstrap(bootstrap_path: Path | str | None = None) -> Bootstrap:
+def get_user_config_path() -> Path:
     """
-    Load the bootstrap file.
+    Get the path to the user bootstrap configuration file.
+
+    Returns the platform-appropriate user config location:
+    - Linux/macOS: $XDG_CONFIG_HOME/modflow-devtools/bootstrap.toml
+                   (defaults to ~/.config/modflow-devtools/bootstrap.toml)
+    - Windows: %APPDATA%/modflow-devtools/bootstrap.toml
+
+    Returns
+    -------
+    Path
+        Path to user bootstrap config file
+    """
+    if os.name == "nt":  # Windows
+        config_dir = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming"))
+    else:  # Unix-like (Linux, macOS, etc.)
+        config_dir = Path(
+            os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+        )
+
+    return config_dir / "modflow-devtools" / "bootstrap.toml"
+
+
+def merge_bootstrap(bundled: Bootstrap, user: Bootstrap) -> Bootstrap:
+    """
+    Merge user bootstrap config with bundled config.
+
+    User sources override/extend bundled sources. If a source exists in both
+    configs, the user version takes precedence completely (no field-level merging).
 
     Parameters
     ----------
-    bootstrap_path : Path | str | None
-        Path to bootstrap file. If None, uses default location.
+    bundled : Bootstrap
+        The bundled bootstrap config
+    user : Bootstrap
+        The user bootstrap config
 
     Returns
     -------
     Bootstrap
-        Parsed bootstrap metadata
+        Merged bootstrap config with user sources taking precedence
+    """
+    # Start with bundled sources
+    merged_sources = bundled.sources.copy()
+
+    # Override/extend with user sources
+    merged_sources.update(user.sources)
+
+    return Bootstrap(sources=merged_sources)
+
+
+def load_bootstrap(
+    bootstrap_path: Path | str | None = None,
+    user_config_path: Path | str | None = None,
+) -> Bootstrap:
+    """
+    Load the bootstrap file, with optional user config overlay.
+
+    When bootstrap_path is None (default), loads the bundled bootstrap file
+    and merges it with user config if present. User config is loaded from:
+    - Linux/macOS: ~/.config/modflow-devtools/bootstrap.toml
+    - Windows: %APPDATA%/modflow-devtools/bootstrap.toml
+
+    When an explicit bootstrap_path is provided, only that file is loaded
+    (no user config overlay unless user_config_path is also provided).
+
+    Parameters
+    ----------
+    bootstrap_path : Path | str | None
+        Path to bootstrap file. If None, uses default bundled location
+        and applies user config overlay if present.
+    user_config_path : Path | str | None
+        Path to user config file for overlay. If None and bootstrap_path is None,
+        uses default user config location. If provided, uses this specific path
+        for user config overlay.
+
+    Returns
+    -------
+    Bootstrap
+        Parsed bootstrap metadata (merged with user config if applicable)
 
     Raises
     ------
     FileNotFoundError
         If bootstrap file doesn't exist
     """
+    # Determine if we should apply user config overlay
+    # Apply if: (1) using default bootstrap and user config exists, OR
+    #           (2) explicit user_config_path provided
+    apply_user_config = bootstrap_path is None or user_config_path is not None
+
     if bootstrap_path is None:
-        # Default location
+        # Default location - bundled bootstrap
         bootstrap_path = Path(__file__).parent / "bootstrap.toml"
     else:
         bootstrap_path = Path(bootstrap_path)
@@ -189,7 +263,24 @@ def load_bootstrap(bootstrap_path: Path | str | None = None) -> Bootstrap:
     if not bootstrap_path.exists():
         raise FileNotFoundError(f"Bootstrap file not found: {bootstrap_path}")
 
+    # Load the primary bootstrap file
     with bootstrap_path.open("rb") as f:
         data = tomli.load(f)
+    bundled = Bootstrap(**data)
 
-    return Bootstrap(**data)
+    # If applying user config overlay, load and merge
+    if apply_user_config:
+        # Determine user config path
+        if user_config_path is None:
+            user_config_path = get_user_config_path()
+        else:
+            user_config_path = Path(user_config_path)
+
+        # Load and merge if exists
+        if user_config_path.exists():
+            with user_config_path.open("rb") as f:
+                user_data = tomli.load(f)
+            user = Bootstrap(**user_data)
+            return merge_bootstrap(bundled, user)
+
+    return bundled
