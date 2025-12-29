@@ -3,9 +3,11 @@ Pydantic models for registry schema validation.
 """
 
 from datetime import datetime
+from os import PathLike
+from pathlib import Path
 from typing import ClassVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class BootstrapSource(BaseModel):
@@ -69,16 +71,30 @@ class RegistryMetadata(BaseModel):
 
 
 class FileEntry(BaseModel):
-    """A single file entry in the registry."""
+    """A single file entry in the registry - supports both local and remote files."""
 
-    url: str | None = Field(None, description="URL to fetch the file")
+    url: str | None = Field(None, description="URL to fetch the file (for remote)")
+    path: Path | None = Field(None, description="Local file path (original or cached)")
     hash: str | None = Field(None, description="SHA256 hash of the file")
+
+    @model_validator(mode='after')
+    def check_location(self):
+        """Ensure at least one of url or path is provided."""
+        if not self.url and not self.path:
+            raise ValueError("FileEntry must have either url or path")
+        return self
 
 
 class Registry(BaseModel):
-    """Consolidated registry file structure."""
+    """
+    Base class for model registries.
 
-    meta: RegistryMetadata = Field(..., alias="_meta", description="Registry metadata")
+    Defines the common structure for both local and remote registries.
+    Can be instantiated directly for data-only registries (e.g., loaded from TOML).
+    Subclasses (LocalRegistry, PoochRegistry) override copy_to() for active use.
+    """
+
+    meta: RegistryMetadata | None = Field(None, alias="_meta", description="Registry metadata (optional)")
     files: dict[str, FileEntry] = Field(
         default_factory=dict, description="Map of file names to file entries"
     )
@@ -89,8 +105,39 @@ class Registry(BaseModel):
         default_factory=dict, description="Map of example names to model lists"
     )
 
-    class Config:
-        populate_by_name = True  # Allow both 'meta' and '_meta'
+    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+
+    def copy_to(
+        self, workspace: str | PathLike, model_name: str, verbose: bool = False
+    ) -> Path | None:
+        """
+        Copy a model's input files to the given workspace.
+
+        Subclasses must override this method to provide actual implementation.
+
+        Parameters
+        ----------
+        workspace : str | PathLike
+            Destination workspace directory
+        model_name : str
+            Name of the model to copy
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        Path | None
+            Path to the workspace, or None if model not found
+
+        Raises
+        ------
+        NotImplementedError
+            If called on base Registry class (must use subclass)
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement copy_to(). "
+            "Use LocalRegistry or PoochRegistry instead."
+        )
 
     def to_pooch_registry(self) -> dict[str, str | None]:
         """Convert to format expected by Pooch.registry (filename -> hash)."""

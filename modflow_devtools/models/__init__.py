@@ -4,7 +4,6 @@
 
 import hashlib
 import importlib.resources as pkg_resources
-from abc import ABC, abstractmethod
 from collections.abc import Callable
 from functools import partial
 from os import PathLike
@@ -19,9 +18,11 @@ import tomli_w
 from boltons.iterutils import remap
 from filelock import FileLock
 from pooch import Pooch
+from pydantic import Field
 
 import modflow_devtools
 from modflow_devtools.misc import drop_none_or_empty, get_model_paths
+from modflow_devtools.models.schema import FileEntry, Registry, RegistryMetadata
 
 # Best-effort sync flag (to avoid multiple sync attempts)
 _SYNC_ATTEMPTED = False
@@ -47,43 +48,7 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-class ModelRegistry(ABC):
-    @property
-    @abstractmethod
-    def files(self) -> dict:
-        """
-        A map of file name to file-scoped information. Note that
-        this map contains no information on which files belong to
-        which model; that info is in the `models` dictionary.
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def models(self) -> dict:
-        """
-        A map of model name to the model's input files.
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def examples(self) -> dict:
-        """
-        A map of example name to model names in the example.
-        An *example* is an ordered set of models/simulations.
-        """
-        ...
-
-    @abstractmethod
-    def copy_to(
-        self, workspace: str | PathLike, model_name: str, verbose: bool = False
-    ) -> Path | None:
-        """Copy a model's input files to the given workspace."""
-        ...
-
-
-class LocalRegistry(ModelRegistry):
+class LocalRegistry(Registry):
     """
     A registry of models in one or more local directories.
 
@@ -95,11 +60,14 @@ class LocalRegistry(ModelRegistry):
 
     exclude: ClassVar = [".DS_Store", "compare"]
 
+    #Non-Pydantic instance variable for tracking indexed paths
+    _paths: set[Path]
+
     def __init__(self) -> None:
-        self._paths: set[Path] = set()
-        self._files: dict[str, Path] = {}
-        self._models: dict[str, list[Path]] = {}
-        self._examples: dict[str, list[str]] = {}
+        # Initialize Pydantic parent with empty data (no meta for local registries)
+        super().__init__(meta=None, files={}, models={}, examples={})
+        # Initialize non-Pydantic tracking variable
+        self._paths = set()
 
     def index(
         self,
@@ -145,19 +113,20 @@ class LocalRegistry(ModelRegistry):
                 else list(rel_path.parts)
             )
             model_name = "/".join(parts)
-            self._models[model_name] = []
+            self.models[model_name] = []
             if len(rel_path.parts) > 1:
                 name = rel_path.parts[0]
-                if name not in self._examples:
-                    self._examples[name] = []
-                self._examples[name].append(model_name)
+                if name not in self.examples:
+                    self.examples[name] = []
+                self.examples[name].append(model_name)
             for p in model_path.rglob("*"):
                 if not p.is_file() or any(e in p.name for e in LocalRegistry.exclude):
                     continue
                 relpath = p.expanduser().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
-                self._files[name] = p
-                self._models[model_name].append(p)
+                # Create FileEntry with local path
+                self.files[name] = FileEntry(path=p, url=None, hash=None)
+                self.models[model_name].append(name)
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False
@@ -167,8 +136,12 @@ class LocalRegistry(ModelRegistry):
         The workspace will be created if it does not exist.
         """
 
-        if not any(file_paths := self.models.get(model_name, [])):
+        if not any(file_names := self.models.get(model_name, [])):
             return None
+
+        # Get actual file paths from FileEntry objects
+        file_paths = [self.files[name].path for name in file_names]
+
         # create the workspace if needed
         workspace = Path(workspace).expanduser().absolute()
         if verbose:
@@ -177,7 +150,7 @@ class LocalRegistry(ModelRegistry):
         # copy the files. some might be in nested folders,
         # but the first is guaranteed not to be, so use it
         # to determine relative path in the new workspace.
-        base = Path(file_paths[0]).parent
+        base = file_paths[0].parent
         for file_path in file_paths:
             if verbose:
                 print(f"Copying {file_path} to workspace")
@@ -188,22 +161,11 @@ class LocalRegistry(ModelRegistry):
 
     @property
     def paths(self) -> set[Path]:
+        """Set of paths that have been indexed."""
         return self._paths
 
-    @property
-    def files(self) -> dict:
-        return self._files
 
-    @property
-    def models(self) -> dict:
-        return self._models
-
-    @property
-    def examples(self) -> dict:
-        return self._examples
-
-
-class PoochRegistry(ModelRegistry):
+class PoochRegistry(Registry):
     """
     A registry of models living in one or more GitHub repositories, accessible via
     URLs. The registry uses Pooch to fetch models from the remote(s) where needed.
@@ -224,6 +186,16 @@ class PoochRegistry(ModelRegistry):
     models_file_name: ClassVar = "models.toml"
     examples_file_name: ClassVar = "examples.toml"
 
+    # Non-Pydantic instance variables
+    _registry_path: Path
+    _registry_file_path: Path
+    _models_file_path: Path
+    _examples_file_path: Path
+    _path: Path
+    _pooch: Pooch
+    _fetchers: dict
+    _urls: dict
+
     def __init__(
         self,
         path: str | PathLike | None = None,
@@ -231,6 +203,10 @@ class PoochRegistry(ModelRegistry):
         env: str | None = None,
         retries: int = 3,
     ):
+        # Initialize Pydantic parent with empty data (will be populated by _load())
+        super().__init__(meta=None, files={}, models={}, examples={})
+
+        # Initialize non-Pydantic instance variables
         self._registry_path = Path(__file__).parent.parent / "registry"
         self._registry_path.mkdir(parents=True, exist_ok=True)
         self._registry_file_path = (
@@ -252,8 +228,8 @@ class PoochRegistry(ModelRegistry):
             env=env,
             retry_if_failed=retries,
         )
-        self._fetchers: dict = {}
-        self._urls: dict = {}
+        self._fetchers = {}
+        self._urls = {}
         self._load()
 
     def _fetcher(self, model_name, file_names) -> Callable:
@@ -307,48 +283,41 @@ class PoochRegistry(ModelRegistry):
             if not cached:
                 return False
 
-            # Merge all cached registries
-            all_files = {}
-            all_models = {}
-            all_examples = {}
-
+            # Merge all cached registries into Pydantic fields
             for source, ref in cached:
                 registry = load_cached_registry(source, ref)
                 if registry:
-                    # Merge files
+                    # Merge files - create FileEntry with both url and cached path
                     for fname, file_entry in registry.files.items():
-                        all_files[fname] = {
-                            "path": self.pooch.path / fname,
-                            "hash": file_entry.hash,
-                            "url": file_entry.url,
-                        }
+                        self.files[fname] = FileEntry(
+                            url=file_entry.url,
+                            path=self.pooch.path / fname,
+                            hash=file_entry.hash,
+                        )
 
-                    # Merge models
-                    all_models.update(registry.models)
+                    # Merge models and examples
+                    self.models.update(registry.models)
+                    self.examples.update(registry.examples)
 
-                    # Merge examples
-                    all_examples.update(registry.examples)
+                    # Store metadata from first registry
+                    if not self.meta and registry.meta:
+                        self.meta = registry.meta
 
-            if not all_files:
+            if not self.files:
                 return False
 
-            # Set registry data
-            self._files = all_files
-            self._models = all_models
-            self._examples = all_examples
-
             # Configure Pooch
-            self.urls = {
-                k: v["url"] for k, v in all_files.items() if v.get("url")
+            self._urls = {
+                name: entry.url for name, entry in self.files.items() if entry.url
             }
             self.pooch.registry = {
-                k: v.get("hash") for k, v in all_files.items()
+                name: entry.hash for name, entry in self.files.items()
             }
-            self.pooch.urls = self.urls
+            self.pooch.urls = self._urls
 
             # Set up fetchers
             self._fetchers = {}
-            for model_name, file_list in self._models.items():
+            for model_name, file_list in self.models.items():
                 self._fetchers[model_name] = self._fetcher(model_name, file_list)
 
             return True
@@ -376,21 +345,25 @@ class PoochRegistry(ModelRegistry):
                 PoochRegistry.anchor, PoochRegistry.registry_file_name
             ) as registry_file:
                 registry = tomli.load(registry_file)
-                self._files = {
-                    k: {"path": self.pooch.path / k, "hash": v.get("hash", None)}
-                    for k, v in registry.items()
-                }
-                # extract urls then drop them. registry directly maps file name to hash
-                self.urls = {
-                    k: v["url"] for k, v in registry.items() if v.get("url", None)
+                # Create FileEntry objects for each file
+                for fname, entry in registry.items():
+                    self.files[fname] = FileEntry(
+                        url=entry.get("url"),
+                        path=self.pooch.path / fname,
+                        hash=entry.get("hash"),
+                    )
+                # Extract URLs and configure Pooch
+                self._urls = {
+                    fname: entry.url
+                    for fname, entry in self.files.items()
+                    if entry.url
                 }
                 self.pooch.registry = {
-                    k: v.get("hash", None) for k, v in registry.items()
+                    fname: entry.hash for fname, entry in self.files.items()
                 }
-                self.pooch.urls = self.urls
+                self.pooch.urls = self._urls
         except:  # noqa: E722
             self._urls = {}
-            self._files = {}
             self.pooch.registry = {}
             warn(
                 f"No registry file '{PoochRegistry.registry_file_name}' "
@@ -401,11 +374,10 @@ class PoochRegistry(ModelRegistry):
             with pkg_resources.open_binary(
                 PoochRegistry.anchor, PoochRegistry.models_file_name
             ) as models_file:
-                self._models = tomli.load(models_file)
-                for model_name, registry in self.models.items():
-                    self._fetchers[model_name] = self._fetcher(model_name, registry)
+                self.models.update(tomli.load(models_file))
+                for model_name, file_list in self.models.items():
+                    self._fetchers[model_name] = self._fetcher(model_name, file_list)
         except:  # noqa: E722
-            self._models = {}
             warn(
                 f"No model mapping file '{PoochRegistry.models_file_name}' "
                 f"in module '{PoochRegistry.anchor}' resources"
@@ -415,9 +387,8 @@ class PoochRegistry(ModelRegistry):
             with pkg_resources.open_binary(
                 PoochRegistry.anchor, PoochRegistry.examples_file_name
             ) as examples_file:
-                self._examples = tomli.load(examples_file)
+                self.examples.update(tomli.load(examples_file))
         except:  # noqa: E722
-            self._examples = {}
             warn(
                 f"No examples file '{PoochRegistry.examples_file_name}' "
                 f"in module '{PoochRegistry.anchor}' resources"
@@ -611,18 +582,6 @@ class PoochRegistry(ModelRegistry):
     @property
     def path(self) -> Path:
         return self.pooch.path
-
-    @property
-    def files(self) -> dict:
-        return self._files
-
-    @property
-    def models(self) -> dict:
-        return self._models
-
-    @property
-    def examples(self) -> dict:
-        return self._examples
 
 
 _DEFAULT_ENV = "MFMODELS_PATH"
