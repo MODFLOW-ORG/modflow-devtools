@@ -616,9 +616,17 @@ The format is simply how the data is serialized to disk. Any schema version can 
 
 The schema describes the semantic structure and meaning of the specification, independent of how it's serialized.
 
-**Key distinction**: The schema migration is about separating structural specification (components, relationships, variables, types) from input format representation. For example:
+**Key distinction**: The schema migration is about separating structural specification (components, relationships, variables, types) from input format representation. This is discussed in detail in [pyphoenix-project issue #246](https://github.com/modflowpy/pyphoenix-project/issues/246).
+
+For example:
 - **Input format issue** (v1): Period data defined as recarrays with artificial dimensions like `maxbound`
-- **Structural reality** (v2): Each column is actually a variable living on (a subset of) the grid
+- **Structural reality** (v2): Each column is actually a variable living on (a subset of) the grid, using semantically meaningful dimensions
+
+The v1 schema conflates:
+- **Structural information**: Components, their relationships, and variables within each component
+- **Format information**: How MF6 allows arrays to be provided, when keywords like `FILEIN`/`FILEOUT` are necessary
+
+The v2 schema should treat these as **separate layers**, where consumers can selectively apply formatting details atop a canonical data model.
 
 **Current state** (on dfn branch):
 - The code supports loading both `dfn` and `toml` formats
@@ -651,9 +659,12 @@ The schema describes the semantic structure and meaning of the specification, in
 
 **v2 schema** (future - comprehensive redesign):
 - For devtools 2.x / FloPy 4.x / eventually MF6
-- Complete separation of structural specification from input format concerns
+- **Complete separation of structural specification from input format concerns** (see [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246))
+  - Structural layer: components, relationships, variables, data models
+  - Format layer: how MF6 allows arrays to be provided, FILEIN/FILEOUT keywords, etc.
+  - Consumers can selectively apply formatting details atop canonical data model
 - **Explicit parent-child relationships in DFN files** (see Component Hierarchy section)
-- Modern type system with proper array types
+- Modern type system with proper array types and semantically meaningful dimensions
 - Consolidated attribute representation (see Tentative v2 schema design)
 - Likely serialized as TOML or YAML (with JSON-Schema validation via Pydantic)
 
@@ -666,7 +677,16 @@ The schema describes the semantic structure and meaning of the specification, in
 
 ### Tentative v2 schema design
 
-Based on feedback from mwtoews in [PR #229](https://github.com/MODFLOW-ORG/modflow-devtools/pull/229):
+Based on feedback from mwtoews in [PR #229](https://github.com/MODFLOW-ORG/modflow-devtools/pull/229) and the structural/format separation discussed in [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246):
+
+**Structural vs format separation**:
+The v2 schema should cleanly separate:
+- **Structural specification**: Component definitions, relationships, variable data models
+  - Generated classes encode only structure and data models
+  - Use semantically meaningful dimensions (grid dimensions, time periods)
+- **Format specification**: How MF6 reads/writes the data (separate layer)
+  - I/O layers exclusively handle input format concerns
+  - FILEIN/FILEOUT keywords, array input methods, etc.
 
 **Consolidated attributes**: Replace individual boolean fields with an `attrs` list:
 ```toml
@@ -690,12 +710,16 @@ shape = ["nper", "nnodes"]
 
 **Format considerations**:
 - **TOML vs YAML**: YAML's more forgiving whitespace better accommodates long descriptions (common for scientific parameters)
-- **JSON-Schema validation**: Use Pydantic to define schema classes, which provides JSON-Schema generation for free
-- **Validation tooling**: Convert TOML/YAML to JSON, validate against JSON-Schema using standard tools (no custom parsing logic)
+- **Validation approach**: Use Pydantic for both schema definition and validation
+  - Pydantic provides rigorous validation (addresses pyphoenix-project #246 requirement for formal specification)
+  - Built-in validation after parsing TOML/YAML to dict (no custom parsing logic)
+  - Automatic JSON-Schema generation for documentation and external tooling
+  - More Pythonic than using `python-jsonschema` directly
 
 **Pydantic integration**:
 ```python
 from pydantic import BaseModel, Field
+from typing import Any
 
 class FieldV2(BaseModel):
     name: str
@@ -707,16 +731,22 @@ class FieldV2(BaseModel):
     default: Any = None
     children: dict[str, "FieldV2"] | None = None
 
-    # JSON-Schema is automatically generated
-    # Can validate TOML/YAML after parsing to dict
+# Usage:
+# 1. Parse TOML/YAML to dict (using tomli/pyyaml/etc)
+# 2. Validate with Pydantic (built-in)
+parsed = tomli.load(f)
+field = FieldV2(**parsed)  # Validates automatically
+
+# 3. Export JSON-Schema if needed (for docs, external tools)
+schema = FieldV2.model_json_schema()
 ```
 
 Benefits:
-- Free JSON-Schema generation from Pydantic models
-- Standard validation tooling
-- Type safety in Python code
-- Clear, concise serialization format
-- Better handling of multi-line descriptions (if using YAML)
+- **Validation and schema in one**: Pydantic handles both, no separate validation library needed
+- **Type safety**: Full Python type hints and IDE support
+- **JSON-Schema export**: Available for documentation and external tooling
+- **Widely adopted**: Well-maintained, used throughout Python ecosystem
+- **Better UX**: Clear error messages, better handling of multi-line descriptions (if using YAML)
 
 ## Component Hierarchy
 
@@ -767,6 +797,8 @@ The `dfn` branch already includes substantial infrastructure:
 - ✅ Validation utilities
 - ✅ `dfn2toml` conversion tool
 
+**Note**: FloPy 3 is already generating code from an early version of this schema (per [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246)), which creates some stability requirements for the v1.1/v2 transition.
+
 **Needed for DFNs API**:
 - ❌ Bootstrap file and registry schema
 - ❌ Registry discovery and synchronization
@@ -782,7 +814,7 @@ The `dfn` branch already includes substantial infrastructure:
 **Foundation** (no dependencies):
 1. Merge dfn branch work (schema, parser, utility code)
 2. Add bootstrap file (`modflow_devtools/dfn/bootstrap.toml`)
-3. Define registry schema with Pydantic (provides JSON-Schema for free)
+3. Define registry schema with Pydantic (handles validation and provides JSON-Schema export)
 4. Implement registry discovery logic
 5. Create cache directory structure utilities
 
@@ -890,6 +922,16 @@ Following the recommendation in [issue #262](https://github.com/MODFLOW-ORG/modf
 - **Progress bars**: Better user experience for downloads
 - **Well-tested**: Pooch is mature and widely used
 - **Consistency**: Same approach as Models API
+
+### Use Pydantic for schema validation
+
+Pydantic will be used for defining and validating DFN schemas (both registry schemas and DFN content schemas):
+
+- **Built-in validation**: No need for separate validation libraries like `python-jsonschema`
+- **Type safety**: Full Python type hints and IDE support
+- **JSON-Schema export**: Can generate JSON-Schema for documentation and external tooling
+- **Developer experience**: Clear error messages, good Python integration
+- **Justification**: Widely adopted, well-maintained, addresses the formal specification requirement from [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246)
 
 ### Schema versioning strategy
 
