@@ -15,9 +15,10 @@ This is a living document which will be updated as development proceeds.
   - [Bootstrap file](#bootstrap-file)
     - [Bootstrap file contents](#bootstrap-file-contents)
     - [Sample bootstrap file](#sample-bootstrap-file)
-  - [Registry files](#registry-files)
+  - [DFN index and registry files](#dfn-index-and-registry-files)
+    - [Specification index file](#specification-index-file)
     - [Registry file format](#registry-file-format)
-    - [Sample registry file](#sample-registry-file)
+    - [Sample files](#sample-files)
   - [Registry discovery](#registry-discovery)
     - [Discovery modes](#discovery-modes)
     - [Registry discovery procedure](#registry-discovery-procedure)
@@ -37,6 +38,11 @@ This is a living document which will be updated as development proceeds.
   - [Schema evolution](#schema-evolution)
   - [Tentative v2 schema design](#tentative-v2-schema-design)
 - [Component Hierarchy](#component-hierarchy)
+- [Backwards Compatibility Strategy](#backwards-compatibility-strategy)
+  - [Development approach](#development-approach)
+  - [Schema version support](#schema-version-support)
+  - [API compatibility](#api-compatibility)
+  - [Migration timeline](#migration-timeline)
 - [Implementation Dependencies](#implementation-dependencies)
   - [Existing work on dfn branch](#existing-work-on-dfn-branch)
   - [Core components](#core-components)
@@ -95,7 +101,7 @@ Create a DFNs API that:
 
 ## Overview
 
-Make the MODFLOW 6 repository responsible for publishing definition file registries.
+Make the MODFLOW 6 repository responsible for publishing a definition file registry.
 
 Make `modflow-devtools` responsible for:
 - Defining the DFN registry publication contract
@@ -108,6 +114,8 @@ Make `modflow-devtools` responsible for:
 - Mapping between schema versions
 
 MODFLOW 6 developers can use `modflow-devtools` registry-creation facilities to generate registry metadata in CI.
+
+MODFLOW 6 is currently the only repository using the DFN specification system, but this leaves the door open for other repositories to begin using it.
 
 ## Architecture
 
@@ -144,35 +152,23 @@ refs = [
 
 **Note**: The bootstrap file focuses on the primary source (MODFLOW 6 repository). Support for additional sources can be added later if needed.
 
-### Registry files
+### DFN manifest and registry files
 
-DFN registries describe available definition files and metadata needed for discovery.
+Two types of metadata files support the DFNs API:
 
-#### Registry file format
+1. **Specification index** (`index.toml`): Part of the DFN set, handwritten metadata about the specification
+2. **Registry file** (`dfns.toml`): Infrastructure for discovery and distribution
 
-A `dfns.toml` registry file with the following structure:
+#### Specification index file
+
+An `index.toml` file lives **in the DFN directory** alongside the DFN files. It's a handwritten index describing the specification:
 
 ```toml
-# Metadata
-generated_at = "2025-01-02T10:30:00Z"
-devtools_version = "1.9.0"
-schema_version = "1.1"  # Schema version of the DFNs themselves
-registry_schema_version = "1.0"  # Schema version of this registry file format
-
-[metadata]
-mf6_version = "6.6.0"
-ref = "6.6.0"
-format = "dfn"  # or "toml" for TOML-format definitions
-
-# File listings (Pooch-compatible)
-[files]
-"sim-nam.dfn" = {url = "https://raw.githubusercontent.com/MODFLOW-ORG/modflow6/6.6.0/doc/mf6io/mf6ivar/dfn/sim-nam.dfn", hash = "sha256:..."}
-"sim-tdis.dfn" = {url = "https://raw.githubusercontent.com/MODFLOW-ORG/modflow6/6.6.0/doc/mf6io/mf6ivar/dfn/sim-tdis.dfn", hash = "sha256:..."}
-"gwf-nam.dfn" = {url = "https://raw.githubusercontent.com/MODFLOW-ORG/modflow6/6.6.0/doc/mf6io/mf6ivar/dfn/gwf-nam.dfn", hash = "sha256:..."}
-# ... all DFN files
+# MODFLOW 6 input specification
+schema_version = "1.1"
 
 [components]
-# Component metadata (organized by type for easier discovery)
+# Component organization by type
 simulation = ["sim-nam", "sim-tdis"]
 models = ["gwf-nam", "gwt-nam", "gwe-nam"]
 packages = ["gwf-chd", "gwf-drn", "gwf-wel", ...]
@@ -181,30 +177,108 @@ solutions = ["sln-ims"]
 ```
 
 **Notes**:
-- The `files` section is Pooch-compatible (each file has `url` and optional `hash`)
-- The `schema_version` indicates the DFN schema version (e.g., "1", "1.1", "2")
-- The `format` indicates the file format ("dfn" for legacy, "toml" or "yaml" for newer formats)
-- The `components` section organizes DFNs by type for easier discovery
-- Component parent-child relationships are defined in the DFN files themselves (see Component Hierarchy section)
+- The index is **part of the DFN set**, not registry infrastructure
+- **Handwritten** by MODFLOW 6 developers, not generated
+- Describes the specification as a whole (schema version, component organization)
+- Lives in the DFN directory: `doc/mf6io/mf6ivar/dfn/index.toml`
+- Component parent-child relationships are in individual DFN files (see Component Hierarchy section)
+- Index metadata is optional - can be inferred if not present:
+  - `schema_version` can be inferred from DFN content or defaulted
+  - `components` section can be inferred from DFN filenames
+- **Future**: For v2 schema, could be a single `index.toml` file with everything, or keep as index to separate component files
 
-#### Sample registry file
+**Minimal handwritten index**:
+```toml
+schema_version = "1.1"
+```
 
-For TOML-format definitions (future):
+Or even simpler - no index needed, everything inferred.
+
+#### Registry file format
+
+A `dfns.toml` registry file for **discovery and distribution**:
 
 ```toml
-generated_at = "2025-06-01T10:30:00Z"
-devtools_version = "2.0.0"
-schema_version = "2.0"
+# Registry metadata (optional)
+generated_at = "2025-01-02T10:30:00Z"
+devtools_version = "1.9.0"
 registry_schema_version = "1.0"
 
 [metadata]
-mf6_version = "7.0.0"
-ref = "7.0.0"
-format = "toml"
+ref = "6.6.0"  # Optional, known from discovery context
 
+# File listings (filenames and hashes, URLs constructed as needed)
 [files]
-"sim-nam.toml" = {url = "https://raw.githubusercontent.com/MODFLOW-ORG/modflow6/7.0.0/doc/mf6io/mf6ivar/dfn/sim-nam.toml", hash = "sha256:..."}
+"index.toml" = {hash = "sha256:..."}  # Specification index
+"sim-nam.dfn" = {hash = "sha256:..."}
+"sim-tdis.dfn" = {hash = "sha256:..."}
+"gwf-nam.dfn" = {hash = "sha256:..."}
+"gwf-chd.dfn" = {hash = "sha256:..."}
+# ... all DFN files
+```
+
+**Notes**:
+- Registry is purely **infrastructure** for discovery and distribution
+- The `files` section maps filenames to hashes for verification
+- URLs are constructed dynamically from bootstrap metadata (repo, ref, dfn_path) + filename
+- This allows using personal forks by changing the bootstrap file
+- **All registry metadata is optional** - registries can be handwritten minimally
+- The specification index is listed alongside DFN files
+
+**Minimal handwritten registry**:
+```toml
+[files]
+"index.toml" = {hash = "sha256:abc123..."}
+"sim-nam.dfn" = {hash = "sha256:def456..."}
+"gwf-nam.dfn" = {hash = "sha256:789abc..."}
+```
+
+#### Sample files
+
+**For TOML-format DFNs (future v2 schema)**:
+
+**Option A**: Separate component files with index
+
+Index (`index.toml`):
+```toml
+schema_version = "2.0"
+
+[components]
+simulation = ["sim-nam", "sim-tdis"]
+models = ["gwf-nam", "gwt-nam", "gwe-nam"]
 # ...
+```
+
+Registry (`dfns.toml`):
+```toml
+[files]
+"index.toml" = {hash = "sha256:..."}
+"sim-nam.toml" = {hash = "sha256:..."}
+"gwf-nam.toml" = {hash = "sha256:..."}
+# ...
+```
+
+**Option B**: Single specification file
+
+`index.toml` contains everything:
+```toml
+schema_version = "2.0"
+
+[sim-nam]
+parent = null
+# ... all sim-nam fields
+
+[gwf-nam]
+parent = "sim-nam"
+# ... all gwf-nam fields
+
+# ... all other components
+```
+
+Registry just points to the one file:
+```toml
+[files]
+"index.toml" = {hash = "sha256:..."}
 ```
 
 ### Registry discovery
@@ -341,13 +415,13 @@ python -m modflow_devtools.dfn list
 Or via Python API:
 
 ```python
-from modflow_devtools.dfn import sync_registries, get_sync_status
+from modflow_devtools.dfn import sync_dfns, get_sync_status
 
 # Sync all configured refs
-sync_registries()
+sync_dfns()
 
 # Sync specific ref
-sync_registries(ref="6.6.0")
+sync_dfns(ref="6.6.0")
 
 # Check sync status
 status = get_sync_status()
@@ -364,19 +438,29 @@ status = get_sync_status()
 
 For the MODFLOW 6 repository to integrate:
 
-1. **Generate registry metadata** in CI:
+1. **Handwrite `index.toml`** in the DFN directory (one-time, updated as needed):
+   ```toml
+   # doc/mf6io/mf6ivar/dfn/index.toml
+   schema_version = "1.1"
+
+   [components]
+   simulation = ["sim-nam", "sim-tdis"]
+   models = ["gwf-nam", "gwt-nam", "gwe-nam"]
+   # ...
+   ```
+
+2. **Generate registry** in CI:
    ```bash
    # In MODFLOW 6 repository CI
    python -m modflow_devtools.dfn.make_registry \
      --dfn-path doc/mf6io/mf6ivar/dfn \
      --output .registry/dfns.toml \
-     --ref ${{ github.ref_name }} \
-     --schema-version 1
+     --ref ${{ github.ref_name }}
    ```
 
-2. **Commit registry** to `.registry/dfns.toml` (for version-controlled mode)
+3. **Commit registry** to `.registry/dfns.toml`
 
-3. **Example CI integration** (GitHub Actions):
+4. **Example CI integration** (GitHub Actions):
    ```yaml
    - name: Generate DFN registry
      run: |
@@ -384,8 +468,7 @@ For the MODFLOW 6 repository to integrate:
        python -m modflow_devtools.dfn.make_registry \
          --dfn-path doc/mf6io/mf6ivar/dfn \
          --output .registry/dfns.toml \
-         --ref ${{ github.ref_name }} \
-         --schema-version 1
+         --ref ${{ github.ref_name }}
 
    - name: Commit registry
      run: |
@@ -482,11 +565,15 @@ class RemoteDfnRegistry(DfnRegistry):
         self.source = source
         self._ref = ref
         self._registry_meta = None
+        self._bootstrap_meta = None
         self._pooch = None
         self._load()
 
     def _load(self):
-        # Check cache first
+        # Load bootstrap metadata for this source
+        self._bootstrap_meta = self._load_bootstrap(self.source)
+
+        # Check cache for registry
         if cached := self._load_from_cache():
             self._registry_meta = cached
         else:
@@ -497,28 +584,41 @@ class RemoteDfnRegistry(DfnRegistry):
         self._setup_pooch()
 
     def _setup_pooch(self):
-        # Create Pooch instance from registry metadata
-        # Pooch will handle file fetching and caching
+        # Create Pooch instance with dynamically constructed URLs
         import pooch
 
         cache_dir = self._get_cache_dir()
+
+        # Construct base URL from bootstrap metadata
+        repo = self._bootstrap_meta["repo"]
+        dfn_path = self._bootstrap_meta.get("dfn_path", "doc/mf6io/mf6ivar/dfn")
+        base_url = f"https://raw.githubusercontent.com/{repo}/{self._ref}/{dfn_path}/"
+
         self._pooch = pooch.create(
             path=cache_dir,
-            base_url="",  # URLs are absolute in registry
-            registry=self._registry_meta["files"],
+            base_url=base_url,
+            registry=self._registry_meta["files"],  # Just filename -> hash
         )
 
     def get_dfn_path(self, component: str) -> Path:
         # Use Pooch to fetch file (from cache or remote)
+        # Pooch constructs full URL from base_url + filename
         filename = self._get_filename(component)
         return Path(self._pooch.fetch(filename))
 
     def get_dfn(self, component: str) -> Dfn:
         path = self.get_dfn_path(component)
-        format = self._registry_meta["metadata"]["format"]
+        # Infer format from file extension
+        format = "toml" if path.suffix in [".toml", ".yaml"] else "dfn"
         with path.open("rb" if format == "toml" else "r") as f:
             return load(f, name=component, format=format)
 ```
+
+**Benefits of dynamic URL construction**:
+- Registry files are smaller and simpler
+- Users can substitute personal forks by modifying bootstrap file
+- Single source of truth for repository location
+- URLs adapt automatically when repo/path changes
 
 #### LocalDfnRegistry
 
@@ -555,7 +655,7 @@ from modflow_devtools.dfn import (
     get_dfn,
     get_dfn_path,
     list_components,
-    sync_registries,
+    sync_dfns,
     get_registry,
 )
 
@@ -589,8 +689,8 @@ from modflow_devtools.dfn import fetch_dfns
 fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 
 # New API (preferred - uses registry and caching)
-from modflow_devtools.dfn import sync_registries, get_registry
-sync_registries(ref="6.6.0")
+from modflow_devtools.dfn import sync_dfns, get_registry
+sync_dfns(ref="6.6.0")
 registry = get_registry(ref="6.6.0")
 ```
 
@@ -781,6 +881,147 @@ Benefits:
 - But parent-child relationships belong in the DFN files themselves
 - Registry generation can validate that the inferred/explicit hierarchy is consistent
 
+## Backwards Compatibility Strategy
+
+Since FloPy 3 is already consuming the v1.1 schema and we need to develop v2 schema in parallel, careful planning is needed to avoid breaking existing consumers.
+
+### Development approach
+
+**Mainline (develop branch)**:
+- Keep v1.1 schema stable on mainline
+- Implement DFNs API with full v1/v1.1 support
+- All v1.1 schema changes are **additive only** (no breaking changes)
+- FloPy 3 continues consuming from mainline without disruption
+
+**V2 development (dfn-v2 branch)**:
+- Create separate `dfn-v2` branch for v2 schema development
+- Develop v2 schema, Pydantic models, and structural/format separation
+- Test v2 schema with experimental FloPy 4 development
+- Iterate on v2 design without affecting mainline stability
+
+**Integration approach**:
+1. **Phase 1**: DFNs API on mainline supports v1/v1.1 only
+2. **Phase 2**: Add v2 schema support to mainline (v1, v1.1, and v2 all supported)
+3. **Phase 3**: Merge dfn-v2 branch, deprecate v1 (but keep it working)
+4. **Phase 4**: Eventually remove v1 support in devtools 3.x (v1.1 and v2 only)
+
+### Schema version support
+
+The DFNs API will support **multiple schema versions simultaneously**:
+
+```python
+# Schema version is tracked per registry/ref
+registry_v1 = get_registry(ref="6.4.4")  # MODFLOW 6.4.4 uses v1 schema
+registry_v11 = get_registry(ref="6.6.0")  # MODFLOW 6.6.0 uses v1.1 schema
+registry_v2 = get_registry(ref="develop")  # Future: develop uses v2 schema
+
+# Get DFN in native schema version
+dfn_v1 = registry_v1.get_dfn("gwf-chd")  # Returns v1 schema
+dfn_v11 = registry_v11.get_dfn("gwf-chd")  # Returns v1.1 schema
+
+# Transparently map to desired schema version
+from modflow_devtools.dfn import map
+dfn_v2 = map(dfn_v1, schema_version="2")  # v1 → v2
+dfn_v2 = map(dfn_v11, schema_version="2")  # v1.1 → v2
+```
+
+**Registry support**:
+- Each registry metadata includes `schema_version` (from `index.toml` or inferred)
+- Different refs can have different schema versions
+- `RemoteDfnRegistry` loads appropriate schema version for each ref
+- `load()` function detects schema version and uses appropriate parser/validator
+
+**Schema detection**:
+```python
+# In RemoteDfnRegistry
+def _detect_schema_version(self) -> Version:
+    # 1. Check index.toml if present
+    if index := self._load_index():
+        return index.schema_version
+
+    # 2. Infer from DFN content
+    sample_dfn = self._load_sample_dfn()
+    return infer_schema_version(sample_dfn)
+
+    # 3. Default to latest stable
+    return Version("1.1")
+```
+
+### API compatibility
+
+**Backwards compatible API design**:
+
+```python
+# Existing dfn branch API (continue to work)
+from modflow_devtools.dfn import load, load_flat, load_tree, fetch_dfns
+
+# Works exactly as before
+dfns = load_flat("/path/to/dfn/dir")
+sim = load_tree("/path/to/dfn/dir")
+fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
+
+# New DFNs API (additive, doesn't break existing)
+from modflow_devtools.dfn import get_dfn, get_registry, sync_dfns
+
+# New functionality
+sync_dfns(ref="6.6.0")
+dfn = get_dfn("gwf-chd", ref="6.6.0")
+registry = get_registry(ref="6.6.0")
+```
+
+**No breaking changes to existing classes**:
+- `Dfn`, `Block`, `Field` dataclasses remain compatible
+- `FieldV1`, `FieldV2` continue to work
+- `MapV1To2` schema mapping continues to work
+- Add `MapV1To11` and `MapV11To2` as needed
+- `load()`, `load_flat()`, `load_tree()` signatures unchanged
+
+**Deprecation strategy**:
+- Mark old APIs as deprecated with clear migration path
+- Deprecation warnings point to new equivalent functionality
+- Keep deprecated APIs working for at least one major version
+- Document migration in release notes and migration guide
+
+### Migration timeline
+
+**devtools 1.x** (current):
+- ✅ Merge dfn branch with v1.1 schema (stable, no breaking changes)
+- ✅ Implement DFNs API with v1/v1.1 support
+- ✅ FloPy 3 continues using v1.1 schema from mainline
+- ✅ All existing APIs remain unchanged and supported
+- ⚠️ Deprecate `fetch_dfns()` in favor of DFNs API (but keep working)
+
+**devtools 2.0** (future):
+- ✅ Add v2 schema support (v1, v1.1, and v2 all work)
+- ✅ Merge dfn-v2 branch to mainline
+- ✅ FloPy 4 begins using v2 schema
+- ✅ FloPy 3 continues using v1.1 schema (no changes needed)
+- ⚠️ Deprecate v1 schema support (but keep working for one more major version)
+
+**devtools 3.0** (distant future):
+- ✅ v1.1 and v2 schema both fully supported
+- ❌ Remove v1 schema support (deprecated in 2.0)
+- ⚠️ Final deprecation warnings for any legacy APIs
+
+**Key principles**:
+1. **Additive changes only** on mainline during 1.x
+2. **Multi-version support** - DFNs API works with v1, v1.1, and v2 simultaneously
+3. **No forced upgrades** - FloPy 3 never has to migrate off v1.1
+4. **Explicit migration** - Users opt-in to v2 via schema mapping
+5. **Long deprecation** - At least one major version warning before removal
+
+**Testing strategy**:
+- Test suite covers all schema versions (v1, v1.1, v2)
+- Test schema mapping in all directions (v1↔v1.1↔v2)
+- Test FloPy 3 integration continuously (don't break existing consumers)
+- Test mixed-version scenarios (different refs with different schemas)
+
+**Documentation**:
+- Clear migration guides for each transition
+- Document which MODFLOW 6 versions use which schema versions
+- Examples showing multi-version usage
+- Deprecation timeline clearly communicated
+
 ## Implementation Dependencies
 
 ### Existing work on dfn branch
@@ -823,7 +1064,7 @@ The `dfn` branch already includes substantial infrastructure:
 2. Implement `DfnRegistry` abstract base class
 3. Implement `RemoteDfnRegistry` with Pooch for file fetching
 4. Refactor existing code into `LocalDfnRegistry`
-5. Implement `sync_registries()` function
+5. Implement `sync_dfns()` function
 6. Add registry metadata caching with hash verification
 7. Implement version-controlled registry discovery
 8. Add auto-sync on first use (with opt-out via `MODFLOW_DEVTOOLS_NO_AUTO_SYNC`)
@@ -840,13 +1081,14 @@ The `dfn` branch already includes substantial infrastructure:
 
 **Registry generation tool** (depends on Foundation):
 1. Implement `modflow_devtools/dfn/make_registry.py`
-2. Scan DFN directory and generate registry metadata
-3. Compute file hashes (SHA256)
-4. Organize components by type (simulation, models, packages, exchanges, solutions)
-5. For v1/v1.1: infer hierarchy from naming conventions for validation
-6. For v2: read explicit parent relationships from DFN files for validation
-7. Include schema version and format metadata
-8. Output Pooch-compatible file listings
+2. Scan DFN directory and generate **registry file** (`dfns.toml`): file listings with hashes
+3. Compute file hashes (SHA256) for all files (including `index.toml` index if present)
+4. Registry output: just filename -> hash mapping (no URLs - constructed dynamically)
+5. Support both full output (for CI) and minimal output (for handwriting)
+6. **Do NOT generate `index.toml`** - that's handwritten by MODFLOW 6 developers
+7. Optionally validate `index.toml` against DFN set for consistency if it exists
+8. For v1/v1.1: infer hierarchy from naming conventions for validation
+9. For v2: read explicit parent relationships from DFN files for validation
 
 ### MODFLOW 6 repository integration
 
@@ -855,6 +1097,7 @@ The `dfn` branch already includes substantial infrastructure:
 2. Generate registry on push to develop and release tags
 3. Commit registry to `.registry/dfns.toml`
 4. Test registry discovery and sync
+5. **Note**: `index.toml` is handwritten by developers, checked into repo like DFN files
 
 **Bootstrap configuration** (depends on MODFLOW 6 CI):
 1. Add stable MODFLOW 6 releases to bootstrap refs (6.6.0, 6.5.0, etc.)
