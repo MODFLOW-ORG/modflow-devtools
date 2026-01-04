@@ -7,16 +7,16 @@ This is a living document which will be updated as development proceeds.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+
 - [Background](#background)
 - [Objective](#objective)
-- [Motivation](#motivation)
 - [Overview](#overview)
 - [Architecture](#architecture)
   - [Bootstrap file](#bootstrap-file)
     - [Bootstrap file contents](#bootstrap-file-contents)
     - [Sample bootstrap file](#sample-bootstrap-file)
-  - [DFN index and registry files](#dfn-index-and-registry-files)
-    - [Specification index file](#specification-index-file)
+  - [DFN spec and registry files](#dfn-spec-and-registry-files)
+    - [Specification file](#specification-file)
     - [Registry file format](#registry-file-format)
     - [Sample files](#sample-files)
   - [Registry discovery](#registry-discovery)
@@ -51,6 +51,7 @@ This is a living document which will be updated as development proceeds.
 - [Relationship to Models and Programs APIs](#relationship-to-models-and-programs-apis)
 - [Design Decisions](#design-decisions)
   - [Use Pooch for fetching](#use-pooch-for-fetching)
+  - [Use Pydantic for schema validation](#use-pydantic-for-schema-validation)
   - [Schema versioning strategy](#schema-versioning-strategy)
   - [Future enhancements](#future-enhancements)
 
@@ -167,15 +168,17 @@ solutions = ["sln-ims"]
 - **Handwritten** by MODFLOW 6 developers, not generated
 - Describes the specification as a whole (schema version, component organization)
 - Lives in the DFN directory: `doc/mf6io/mf6ivar/dfn/spec.toml`
-- Component parent-child relationships are in individual DFN files (see Component Hierarchy section)
 - **v1/v1.1**: Spec file is **optional** - can be inferred if not present:
   - `schema_version` can be inferred from DFN content or defaulted
-  - `components` section can be inferred from DFN filenames
+  - `components` section (shown above) is just for categorization/convenience, not hierarchy
   - Hierarchy inferred from naming conventions (e.g., `gwf-chd` → parent is `gwf-nam`)
 - **v2**: Spec file is **required** for clarity and correctness:
   - Explicit `schema_version = "2.0"` declaration
+  - Defines hierarchy via `root` attribute (string reference or inline definition)
+  - Component files define `children` lists (preferred) or `parent` attributes (backward-compatible)
   - Can be a single file containing everything, or a spec file pointing to separate component files
   - Ensures clean structural/format separation
+  - See Component Hierarchy section for details
 - **Correspondence**: `spec.toml` (on disk) ↔ `DfnSpec` (in Python)
 
 **Minimal handwritten spec file (v1/v1.1)**:
@@ -228,16 +231,28 @@ ref = "6.6.0"  # Optional, known from discovery context
 
 **For TOML-format DFNs (future v2 schema)**:
 
-**Option A**: Separate component files with spec file
+**Option A**: Separate component files (spec.toml references external files)
 
 Spec file (`spec.toml`):
 ```toml
 schema_version = "2.0"
+root = "sim-nam"  # References external sim-nam.toml file
+```
 
-[components]
-simulation = ["sim-nam", "sim-tdis"]
-models = ["gwf-nam", "gwt-nam", "gwe-nam"]
-# ...
+Component file (`sim-nam.toml`):
+```toml
+children = ["sim-tdis", "gwf-nam", "gwt-nam", "gwe-nam", "exg-gwfgwf", "sln-ims"]
+
+[options]
+# ... fields
+```
+
+Component file (`gwf-nam.toml`):
+```toml
+children = ["gwf-dis", "gwf-chd", "gwf-wel", "gwf-drn", ...]
+
+[options]
+# ... fields
 ```
 
 Registry (`dfns.toml`):
@@ -246,24 +261,35 @@ Registry (`dfns.toml`):
 "spec.toml" = {hash = "sha256:..."}
 "sim-nam.toml" = {hash = "sha256:..."}
 "gwf-nam.toml" = {hash = "sha256:..."}
-# ...
+"gwf-chd.toml" = {hash = "sha256:..."}
+# ... all component files
 ```
 
-**Option B**: Single specification file
+**Option B**: Single specification file (spec.toml contains everything)
 
-`spec.toml` contains everything:
+`spec.toml` contains entire specification:
 ```toml
 schema_version = "2.0"
 
-[sim-nam]
-parent = null
+[root]  # Root component defined inline
+name = "sim-nam"
+
+[root.options]
 # ... all sim-nam fields
 
-[gwf-nam]
-parent = "sim-nam"
+[root.children.sim-tdis]
+# ... all sim-tdis fields
+
+[root.children.gwf-nam]
+children = ["gwf-dis", "gwf-chd", "gwf-wel", ...]  # Can nest children inline too
+
+[root.children.gwf-nam.options]
 # ... all gwf-nam fields
 
-# ... all other components
+[root.children.gwf-nam.children.gwf-chd]
+# ... all gwf-chd fields nested within gwf-nam
+
+# ... entire hierarchy nested in one file
 ```
 
 Registry just points to the one file:
@@ -272,28 +298,31 @@ Registry just points to the one file:
 "spec.toml" = {hash = "sha256:..."}
 ```
 
+**Key design**: The `root` attribute is overloaded:
+- **String value** (`root = "sim-nam"`): Reference to external component file
+- **Table/section** (`[root]`): Inline component definition with full nested hierarchy
+
+Component `children` are always a list of strings, whether referencing external files or naming nested inline sections.
+
 ### Registry discovery
 
 DFN registries can be discovered in two modes, similar to the Models API.
 
 #### Discovery modes
 
-**1. Registry as version-controlled file** (primary mode):
+**1. Registry as version-controlled file**:
 
-Registry files are versioned in the MODFLOW 6 repository at a conventional path (e.g., `.registry/dfns.toml`). Discovery uses GitHub raw content URLs:
+Registry files can be versioned in the repository at a conventional path, in which case discovery uses GitHub raw content URLs:
 
 ```
 https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/dfns.toml
 ```
 
-This mode supports:
-- Any git ref (branches, tags, commit hashes)
-- Tight coupling between registry and actual DFN files
-- Easy manual inspection of registry contents
+This mode supports any git ref (branches, tags, commit hashes).
 
-**2. Registry as release asset** (future mode):
+**2. Registry as release asset**:
 
-For MODFLOW 6 releases, registry files can also be published as release assets:
+Registry files can also be published as release assets:
 
 ```
 https://github.com/{org}/{repo}/releases/download/{tag}/dfns.toml
@@ -322,7 +351,7 @@ At sync time, `modflow-devtools` discovers remote registries for each configured
    - If found, use it
    - If ref exists but lacks registry file, raise error:
      ```python
-     RegistryDiscoveryError(
+     DfnRegistryDiscoveryError(
          f"Registry file not found in {registry_path} for 'modflow6@{ref}'"
      )
      ```
@@ -330,7 +359,7 @@ At sync time, `modflow-devtools` discovers remote registries for each configured
 3. **Failure case**:
    - If no matching ref found at all, raise error:
      ```python
-     RegistryDiscoveryError(
+     DfnRegistryDiscoveryError(
          f"Registry discovery failed, ref 'modflow6@{ref}' does not exist"
      )
      ```
@@ -938,36 +967,62 @@ Benefits:
 
 ## Component Hierarchy
 
-**Design decision**: Component parent-child relationships should be defined **in the DFN files themselves**, not in the registry file.
+**Design decision**: Component parent-child relationships are defined in `spec.toml` for v2, with backward-compatible support for `parent` attributes in component files.
 
-The registry file's purpose is to tell devtools what it needs to know to consume the DFNs and make them available to users (file locations, hashes, basic organization). The DFN files are the single source of truth for the specification itself, including component relationships.
+The registry file's purpose is to tell devtools what it needs to know to consume the DFNs and make them available to users (file locations, hashes). The specification file (`spec.toml`) and component files are the single source of truth for the specification itself, including component relationships.
 
-**v2 schema approach**:
+**v2 schema approach (primary)** - Hierarchy in `spec.toml`:
 ```toml
-# In gwf-chd.toml
-name = "gwf-chd"
-parent = "gwf-nam"
+# spec.toml
 schema_version = "2.0"
+root = "sim-nam"  # Or inline [root] definition
+```
+
+```toml
+# sim-nam.toml
+children = ["sim-tdis", "gwf-nam", "gwt-nam", ...]
 
 [options]
 # ... field definitions
 ```
 
-Benefits:
-- Single source of truth - specification is self-contained
-- No risk of registry and DFN content getting out of sync
-- Registry remains focused on discovery/distribution, not specification
-- Hierarchy is intrinsic to the specification, not metadata about it
+```toml
+# gwf-nam.toml
+children = ["gwf-dis", "gwf-chd", "gwf-wel", ...]
+
+[options]
+# ... field definitions
+```
+
+**v2 schema approach (alternative)** - `parent` attribute still supported:
+```toml
+# gwf-chd.toml
+parent = "gwf-nam"  # Backward-compatible
+
+[options]
+# ... field definitions
+```
+
+`DfnSpec.load()` can build the hierarchy from either:
+1. **`children` lists** (preferred for v2) - parent components list their children
+2. **`parent` attributes** (backward-compatible) - child components reference their parent
+
+Benefits of `children` in `spec.toml`:
+- **Single top-down view** - entire hierarchy visible from root
+- **Matches `DfnSpec` design** - `spec.toml` ↔ `DfnSpec` with `.root` and tree structure
+- **Cleaner component files** - focus on their structure, not their position in hierarchy
+- **Easier validation** - validate entire tree structure in one pass
+
+Benefits of keeping `parent` support:
+- **Backward compatibility** - existing component files with `parent` still work
+- **Gradual migration** - can transition incrementally to v2
+- **Flexibility** - both approaches work, choose based on preference
 
 **Current state (v1/v1.1)**:
 - Hierarchy is **implicit** in naming conventions: `gwf-dis` → parent is `gwf-nam`
 - `to_tree()` function infers relationships from component names
 - Works but fragile (relies on naming conventions being followed)
-
-**Registry file role**:
-- The registry's `[components]` section can still organize components by type (simulation, models, packages, exchanges, solutions) for easier discovery
-- But parent-child relationships belong in the DFN files themselves
-- Registry generation can validate that the inferred/explicit hierarchy is consistent
+- No `spec.toml` required (everything inferred)
 
 ## Backwards Compatibility Strategy
 
@@ -1054,7 +1109,7 @@ from modflow_devtools.dfn import DfnSpec, get_dfn, get_registry, sync_dfns
 sync_dfns(ref="6.6.0")
 dfn = get_dfn("gwf-chd", ref="6.6.0")
 registry = get_registry(ref="6.6.0")
-spec = DfnSpec.load(registry)
+spec = registry.spec  # Registry wraps a DfnSpec
 ```
 
 **No breaking changes to existing classes**:
