@@ -513,8 +513,8 @@ Similar to `ModelRegistry` and `ProgramRegistry`, defines the contract:
 class DfnRegistry(ABC):
     @property
     @abstractmethod
-    def components(self) -> dict[str, str]:
-        """Get all DFN components (name -> filename mapping)."""
+    def spec(self) -> DfnSpec:
+        """Get the full DFN specification."""
         pass
 
     @property
@@ -523,36 +523,27 @@ class DfnRegistry(ABC):
         """Get the git ref for this registry."""
         pass
 
-    @property
-    @abstractmethod
-    def schema_version(self) -> Version:
-        """Get the schema version of the DFNs."""
-        pass
-
-    @abstractmethod
     def get_dfn(self, component: str) -> Dfn:
         """
         Get a parsed DFN for the specified component.
-
-        Returns a Dfn object in the registry's native schema version.
-        Use map() to convert between schema versions if needed.
+        Convenience method for spec[component].
         """
-        pass
+        return self.spec[component]
 
     @abstractmethod
     def get_dfn_path(self, component: str) -> Path:
         """Get the local path to a DFN file (fetching if needed)."""
         pass
 
-    @abstractmethod
-    def load_flat(self) -> Dfns:
-        """Load all DFNs as a flat (unlinked) dictionary."""
-        pass
+    @property
+    def schema_version(self) -> str:
+        """Get the schema version. Convenience for spec.schema_version."""
+        return self.spec.schema_version
 
-    @abstractmethod
-    def load_tree(self) -> Dfn:
-        """Load all DFNs as a hierarchical tree (linked parent-child)."""
-        pass
+    @property
+    def components(self) -> dict[str, Dfn]:
+        """Get all components. Convenience for dict(spec.items())."""
+        return dict(self.spec.items())
 ```
 
 #### RemoteDfnRegistry
@@ -564,9 +555,11 @@ class RemoteDfnRegistry(DfnRegistry):
     def __init__(self, source: str = "modflow6", ref: str = "develop"):
         self.source = source
         self._ref = ref
+        self._spec = None
         self._registry_meta = None
         self._bootstrap_meta = None
         self._pooch = None
+        self._cache_dir = None
         self._load()
 
     def _load(self):
@@ -583,11 +576,29 @@ class RemoteDfnRegistry(DfnRegistry):
         # Set up Pooch for file fetching
         self._setup_pooch()
 
+        # Ensure all files are cached (lazy fetching on access)
+        # Don't load spec until needed
+
+    @property
+    def spec(self) -> DfnSpec:
+        """Lazy-load the DfnSpec from cached files."""
+        if self._spec is None:
+            # Ensure all DFN files are cached
+            self._ensure_cached()
+            # Load spec from cache directory
+            self._spec = DfnSpec.load(self._cache_dir)
+        return self._spec
+
+    def _ensure_cached(self):
+        """Ensure all DFN files are fetched and cached."""
+        for filename in self._registry_meta["files"]:
+            self._pooch.fetch(filename)
+
     def _setup_pooch(self):
         # Create Pooch instance with dynamically constructed URLs
         import pooch
 
-        cache_dir = self._get_cache_dir()
+        self._cache_dir = self._get_cache_dir()
 
         # Construct base URL from bootstrap metadata
         repo = self._bootstrap_meta["repo"]
@@ -595,7 +606,7 @@ class RemoteDfnRegistry(DfnRegistry):
         base_url = f"https://raw.githubusercontent.com/{repo}/{self._ref}/{dfn_path}/"
 
         self._pooch = pooch.create(
-            path=cache_dir,
+            path=self._cache_dir,
             base_url=base_url,
             registry=self._registry_meta["files"],  # Just filename -> hash
         )
@@ -605,13 +616,6 @@ class RemoteDfnRegistry(DfnRegistry):
         # Pooch constructs full URL from base_url + filename
         filename = self._get_filename(component)
         return Path(self._pooch.fetch(filename))
-
-    def get_dfn(self, component: str) -> Dfn:
-        path = self.get_dfn_path(component)
-        # Infer format from file extension
-        format = "toml" if path.suffix in [".toml", ".yaml"] else "dfn"
-        with path.open("rb" if format == "toml" else "r") as f:
-            return load(f, name=component, format=format)
 ```
 
 **Benefits of dynamic URL construction**:
@@ -629,17 +633,21 @@ class LocalDfnRegistry(DfnRegistry):
     def __init__(self, path: str | PathLike, ref: str = "local"):
         self.path = Path(path).expanduser().resolve()
         self._ref = ref
-        self._scan()
+        self._spec = None
 
-    def _scan(self):
-        # Scan directory for DFN/TOML files
-        self._dfn_paths = list(self.path.glob("*.dfn"))
-        self._toml_paths = list(self.path.glob("*.toml"))
+    @property
+    def spec(self) -> DfnSpec:
+        """Lazy-load the DfnSpec from local directory."""
+        if self._spec is None:
+            self._spec = DfnSpec.load(self.path)
+        return self._spec
 
     def get_dfn_path(self, component: str) -> Path:
         # Return local file path directly
-        for p in self._dfn_paths + self._toml_paths:
-            if p.stem == component:
+        # Look for both .dfn and .toml extensions
+        for ext in [".dfn", ".toml"]:
+            p = self.path / f"{component}{ext}"
+            if p.exists():
                 return p
         raise ValueError(f"Component {component} not found in {self.path}")
 ```
@@ -652,14 +660,16 @@ Convenient module-level functions:
 # Default registry for latest stable MODFLOW 6 version
 from modflow_devtools.dfn import (
     DEFAULT_REGISTRY,
+    DfnSpec,
     get_dfn,
     get_dfn_path,
     list_components,
     sync_dfns,
     get_registry,
+    map,
 )
 
-# Usage
+# Get individual DFNs
 dfn = get_dfn("gwf-chd")  # Uses DEFAULT_REGISTRY
 dfn = get_dfn("gwf-chd", ref="6.5.0")  # Specific version
 
@@ -672,14 +682,91 @@ components = list_components(ref="6.6.0")
 # Work with specific registry
 registry = get_registry(ref="6.6.0")
 gwf_nam = registry.get_dfn("gwf-nam")
-all_dfns = registry.load_flat()
-sim_tree = registry.load_tree()
+
+# Load full specification - single canonical hierarchical representation
+spec = DfnSpec.load("/path/to/dfns")  # Load from directory
+
+# Hierarchical access
+spec.schema_version  # "1.1"
+spec.root  # Root Dfn (simulation component)
+spec.root.children["gwf-nam"]  # Navigate hierarchy
+spec.root.children["gwf-nam"].children["gwf-chd"]
+
+# Flat dict-like access via Mapping protocol
+gwf_chd = spec["gwf-chd"]  # Get component by name
+for name, dfn in spec.items():  # Iterate all components
+    print(name)
+len(spec)  # Total number of components
+
+# Access spec through registry (registry provides the spec)
+registry = get_registry(ref="6.6.0")
+spec = registry.spec  # Registry wraps a DfnSpec
+gwf_chd = registry.spec["gwf-chd"]
 
 # Map between schema versions
-from modflow_devtools.dfn import map
 dfn_v1 = get_dfn("gwf-chd", ref="6.4.4")  # Older version in v1 schema
 dfn_v2 = map(dfn_v1, schema_version="2")  # Convert to v2 schema
 ```
+
+**`DfnSpec` class**:
+
+The `DfnSpec` dataclass represents the full specification with a single canonical hierarchical representation:
+
+```python
+from collections.abc import Mapping
+from dataclasses import dataclass
+
+@dataclass
+class DfnSpec(Mapping):
+    """Full DFN specification with hierarchical structure and flat dict access."""
+
+    schema_version: str
+    root: Dfn  # Hierarchical canonical representation (simulation component)
+
+    # Mapping protocol - provides flat dict-like access
+    def __getitem__(self, name: str) -> Dfn:
+        """Get component by name (flattened lookup)."""
+        ...
+
+    def __iter__(self):
+        """Iterate over all component names."""
+        ...
+
+    def __len__(self):
+        """Total number of components in the spec."""
+        ...
+
+    @classmethod
+    def load(cls, path: Path | str) -> "DfnSpec":
+        """
+        Load specification from a directory of DFN files.
+
+        The specification is always loaded as a hierarchical tree,
+        with flat access available via the Mapping protocol.
+        """
+        ...
+```
+
+**Design benefits**:
+- **Single canonical representation**: Hierarchical tree is the source of truth
+- **Flat access when needed**: Mapping protocol provides dict-like interface
+- **Simple, focused responsibility**: `DfnSpec` only knows how to load from a directory
+- **Clean layering**: Registries built on top of `DfnSpec`, not intertwined
+- **Clean semantics**: `DfnSpec` = full specification, `Dfn` = individual component
+- **Pythonic**: Implements standard `Mapping` protocol
+
+**Separation of concerns**:
+- **`DfnSpec`**: Canonical representation of the full specification (foundation)
+  - Loads from a directory of DFN files via `load()` classmethod
+  - Hierarchical tree via `.root` property
+  - Flat dict access via `Mapping` protocol
+  - No knowledge of registries, caching, or remote sources
+- **Registries**: Handle discovery, distribution, and caching (built on DfnSpec)
+  - Fetch and cache DFN files from remote sources
+  - Internally use `DfnSpec` to represent the loaded specification
+  - Provide access via `.spec` property
+  - `get_dfn(component)` → convenience for `spec[component]`
+  - `get_dfn_path(component)` → returns cached file path
 
 Backwards compatibility with existing `fetch_dfns()`:
 
@@ -689,9 +776,10 @@ from modflow_devtools.dfn import fetch_dfns
 fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 
 # New API (preferred - uses registry and caching)
-from modflow_devtools.dfn import sync_dfns, get_registry
+from modflow_devtools.dfn import sync_dfns, get_registry, DfnSpec
 sync_dfns(ref="6.6.0")
 registry = get_registry(ref="6.6.0")
+spec = registry.spec  # Registry wraps a DfnSpec
 ```
 
 ## Schema Versioning
@@ -953,20 +1041,20 @@ def _detect_schema_version(self) -> Version:
 
 ```python
 # Existing dfn branch API (continue to work)
-from modflow_devtools.dfn import load, load_flat, load_tree, fetch_dfns
+from modflow_devtools.dfn import load, fetch_dfns
 
 # Works exactly as before
-dfns = load_flat("/path/to/dfn/dir")
-sim = load_tree("/path/to/dfn/dir")
+dfn = load("/path/to/dfn/file.dfn")
 fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 
 # New DFNs API (additive, doesn't break existing)
-from modflow_devtools.dfn import get_dfn, get_registry, sync_dfns
+from modflow_devtools.dfn import DfnSpec, get_dfn, get_registry, sync_dfns
 
 # New functionality
 sync_dfns(ref="6.6.0")
 dfn = get_dfn("gwf-chd", ref="6.6.0")
 registry = get_registry(ref="6.6.0")
+spec = DfnSpec.load(registry)
 ```
 
 **No breaking changes to existing classes**:
@@ -974,7 +1062,8 @@ registry = get_registry(ref="6.6.0")
 - `FieldV1`, `FieldV2` continue to work
 - `MapV1To2` schema mapping continues to work
 - Add `MapV1To11` and `MapV11To2` as needed
-- `load()`, `load_flat()`, `load_tree()` signatures unchanged
+- `load()` function continues to work (loads individual DFN files)
+- New `DfnSpec` class is additive (doesn't break existing code)
 
 **Deprecation strategy**:
 - Mark old APIs as deprecated with clear migration path
@@ -1033,12 +1122,97 @@ The `dfn` branch already includes substantial infrastructure:
 - ✅ Schema definitions (`FieldV1`, `FieldV2`)
 - ✅ Parsers for both DFN and TOML formats
 - ✅ Schema mapping (V1 → V2) with `MapV1To2`
-- ✅ Flat/tree conversion utilities
+- ✅ Flat/tree conversion utilities (`load_flat()`, `load_tree()`, `to_tree()`)
 - ✅ `fetch_dfns()` function for manual downloads
 - ✅ Validation utilities
 - ✅ `dfn2toml` conversion tool
 
+**Integration with `DfnSpec` design**:
+
+The `dfn` branch currently has:
+```python
+# Returns dict[str, Dfn] - flat representation
+dfns = load_flat("/path/to/dfns")
+
+# Returns root Dfn with children - hierarchical representation
+root = load_tree("/path/to/dfns")
+```
+
+The new `DfnSpec` class will consolidate these:
+```python
+# Single load, both representations available
+spec = DfnSpec.load("/path/to/dfns")
+spec.root  # Hierarchical (same as old load_tree)
+spec["gwf-chd"]  # Flat dict access (same as old load_flat)
+```
+
+**Migration path**:
+1. **Add `DfnSpec` class** - wraps existing `to_tree()` logic and implements `Mapping`
+2. **Keep `load_flat()` and `load_tree()`** - mark as internal/deprecated but maintain for compatibility
+3. **`DfnSpec.load()` implementation** - uses existing functions internally:
+   ```python
+   @classmethod
+   def load(cls, path: Path | str) -> "DfnSpec":
+       # Use existing load_flat for paths
+       dfns = load_flat(path)
+
+       # Use existing to_tree to build hierarchy
+       root = to_tree(dfns)
+       schema_version = root.schema_version  # or load from index.toml
+       return cls(schema_version=schema_version, root=root)
+   ```
+4. **Update registries** - make them wrap `DfnSpec`:
+   ```python
+   class RemoteDfnRegistry(DfnRegistry):
+       @property
+       def spec(self) -> DfnSpec:
+           if self._spec is None:
+               self._ensure_cached()  # Fetch all files
+               self._spec = DfnSpec.load(self._cache_dir)  # Load from cache
+           return self._spec
+   ```
+5. **Future**: Eventually remove `load_flat()` and `load_tree()` from public API
+
+This approach:
+- Reuses all existing parsing/conversion logic
+- Provides cleaner API without breaking existing code
+- Smooth transition: old functions work, new class preferred
+
 **Note**: FloPy 3 is already generating code from an early version of this schema (per [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246)), which creates some stability requirements for the v1.1/v2 transition.
+
+**Choreography with develop branch**:
+
+Currently:
+- **develop branch** has `modflow_devtools/dfn.py` (single file, basic utilities)
+- **dfn branch** has `modflow_devtools/dfn/` (package with full implementation)
+- **dfns-api branch** (current) just adds planning docs
+
+Merge sequence:
+1. **First**: Merge `dfns-api` branch → `develop` (adds planning docs)
+2. **Then**: Merge `dfn` branch → `develop` (replaces `dfn.py` with `dfn/` package)
+   - This replaces the single file with the package
+   - Maintains API compatibility: `from modflow_devtools.dfn import ...` still works
+   - Adds substantial new functionality (schema classes, parsers, etc.)
+3. **Finally**: Implement DFNs API features on `develop` (registries, sync, CLI, `DfnSpec`)
+
+API compatibility during merge:
+```python
+# Old dfn.py API (on develop now) - uses TypedDicts
+from modflow_devtools.dfn import get_dfns, Field, Dfn
+
+# New dfn/ package API (after dfn branch merge) - upgrades to dataclasses
+from modflow_devtools.dfn import get_dfns  # Aliased to fetch_dfns, still works
+from modflow_devtools.dfn import fetch_dfns  # New preferred name
+from modflow_devtools.dfn import load, Dfn, Block, Field  # Upgraded to dataclasses
+from modflow_devtools.dfn import DfnSpec, get_registry, sync_dfns  # New additions
+
+# The import path stays the same, functionality expands
+# get_dfns() kept as alias for backwards compatibility
+```
+
+Breaking changes (justified):
+- `Field`, `Dfn`, etc. change from `TypedDict` to `dataclass` - more powerful, better typing
+- This is acceptable since only internal dogfooding currently (FloPy uses schema, not these classes directly)
 
 **Needed for DFNs API**:
 - ❌ Bootstrap file and registry schema
@@ -1068,7 +1242,7 @@ The `dfn` branch already includes substantial infrastructure:
 6. Add registry metadata caching with hash verification
 7. Implement version-controlled registry discovery
 8. Add auto-sync on first use (with opt-out via `MODFLOW_DEVTOOLS_NO_AUTO_SYNC`)
-9. Add `load_flat()` and `load_tree()` methods to registries
+9. **Implement `DfnSpec` dataclass** with `Mapping` protocol for single canonical hierarchical representation with flat dict access
 
 **CLI and module API** (depends on Registry infrastructure):
 1. Create `modflow_devtools/dfn/__main__.py`
