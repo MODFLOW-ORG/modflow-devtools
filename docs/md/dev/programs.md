@@ -1,0 +1,905 @@
+# Programs API Design
+
+This document describes the design of the Programs API ([GitHub issue #263](https://github.com/MODFLOW-ORG/modflow-devtools/issues/263)). It is intended to be developer-facing, not user-facing, though users may also find it informative.
+
+This is a living document which will be updated as development proceeds.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Background](#background)
+- [Objective](#objective)
+- [Overview](#overview)
+- [Architecture](#architecture)
+  - [Bootstrap file](#bootstrap-file)
+    - [Bootstrap file contents](#bootstrap-file-contents)
+    - [Sample bootstrap file](#sample-bootstrap-file)
+  - [Registry files](#registry-files)
+    - [Registry file format](#registry-file-format)
+    - [Registries vs. installation metadata](#registries-vs-installation-metadata)
+  - [Registry discovery](#registry-discovery)
+    - [Registry discovery procedure](#registry-discovery-procedure)
+  - [Registry/program metadata caching](#registryprogram-metadata-caching)
+  - [Registry synchronization](#registry-synchronization)
+    - [Manual sync](#manual-sync)
+    - [Automatic sync](#automatic-sync)
+  - [Program installation](#program-installation)
+  - [Source program integration](#source-program-integration)
+  - [Program addressing](#program-addressing)
+  - [Registry classes](#registry-classes)
+    - [ProgramRegistry (abstract base)](#programregistry-abstract-base)
+    - [RemoteRegistry](#remoteregistry)
+    - [MergedRegistry](#mergedregistry)
+  - [Module-level API](#module-level-api)
+- [Migration path](#migration-path)
+  - [Transitioning from pymake](#transitioning-from-pymake)
+  - [Implementation plan](#implementation-plan)
+- [Relationship to Models API](#relationship-to-models-api)
+- [Relationship to get-modflow](#relationship-to-get-modflow)
+  - [Reusable patterns from get-modflow](#reusable-patterns-from-get-modflow)
+    - [1. Platform detection](#1-platform-detection)
+    - [2. Installation metadata tracking](#2-installation-metadata-tracking)
+    - [3. Bindir selection and writable directory discovery](#3-bindir-selection-and-writable-directory-discovery)
+    - [4. Executable extraction and installation](#4-executable-extraction-and-installation)
+    - [5. GitHub API interactions](#5-github-api-interactions)
+    - [6. Archive caching](#6-archive-caching)
+  - [Key enhancements over get-modflow](#key-enhancements-over-get-modflow)
+  - [Migration path](#migration-path-1)
+- [Design Decisions](#design-decisions)
+  - [Initial implementation](#initial-implementation)
+  - [Explicitly out of scope](#explicitly-out-of-scope)
+  - [Future enhancements](#future-enhancements)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Background
+
+Currently, program information is maintained in `pymake`, which serves dual purposes: (1) maintaining a database of program metadata (download URLs, versions, build configuration), and (2) providing build capabilities. The latter is pymake's explicit responsibility, the former accidental and located in pymake just for convenience.
+
+Some preliminary work has begun to transfer program metadata responsibilities to `modflow-devtools`. The existing `modflow_devtools.programs` module provides a minimal read-only interface to a database (`programs.csv`) copied more or less directly from the pymake database, including information like each program's:
+
+- name
+- version
+- source code download URL
+- build information (e.g. double precision)
+
+This approach has several limitations:
+
+1. **Static coupling**: Pymake (or any other project containing such a program database, like `modflow-devtools`) must be updated whenever any program is released, creating a maintenance bottleneck.
+
+2. **No introspection**: Limited ability to query available program versions or builds
+
+3. **Manual maintenance**: Developers must manually update the CSV file
+
+4. **No install support**: The API only provides metadata, not installation capabilities
+
+## Objective
+
+Create a Programs API that:
+
+1. Decouples program releases from devtools releases
+3. Discovers and synchronizes program metadata from remote sources
+4. Supports installation and management of program binaries
+5. Facilitates the eventual retirement of pymake by consolidating program database responsibilities in devtools
+6. Mirrors Models API and DFNs API architecture/UX for consistency
+
+## Overview
+
+Make MODFLOW ecosystem repositories responsible for publishing their own metadata.
+
+Make `modflow-devtools` responsible for:
+- Defining the program registry publication contract
+- Providing registry-creation machinery
+- Storing bootstrap information locating program repositories
+- Discovering remote registries at install time or on demand
+- Caching registry metadata locally
+- Exposing a synchronized view of available programs
+- Installing pre-built program binaries
+
+Program maintainers can publish metadata as release assets, either manually or in CI.
+
+## Architecture
+
+The Programs API will mirror the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
+
+### Bootstrap file
+
+The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/bootstrap.toml` and distributed with the package.
+
+#### Bootstrap file contents
+
+At the top level, the bootstrap file consists of a table of `sources`, each describing a repository distributing one or more programs. 
+
+Each source entry has:
+- `repo`: Repository identifier (owner/name)
+- `refs`: List of release tags to sync by default
+
+#### Sample bootstrap file
+
+```toml
+[sources.modflow6]
+repo = "MODFLOW-ORG/modflow6"
+refs = ["6.6.3"]
+# Provides mf6, zbud6, mf5to6, libmf6
+
+[sources.modpath7]
+repo = "MODFLOW-ORG/modpath7"
+refs = ["7.2.001"]
+
+[sources.mt3d-usgs]
+repo = "MODFLOW-ORG/mt3d-usgs"
+refs = ["1.1.0"]
+
+[sources.executables]
+repo = "MODFLOW-ORG/executables"
+refs = ["latest"]
+# Consolidated repo for legacy programs (mf2005, mfnwt, etc).
+# TODO: replace with separate repos as they become available.
+```
+
+**Note**: A source repository described in the bootstrap file may provide a single program or multiple programs. E.g., the `modflow6` repository provides `mf6`, `zbud6`, and `mf5to6`).
+
+### Registry files
+
+Each source repository must make a **program registry** file available. Program registries describe available programs and metadata needed for installation.
+
+#### Registry file format
+
+Registry files shall be named `registry.toml` and contain, at minimum, a dictionary `programs` enumerating programs provided by the source repository. For instance:
+
+```toml
+# Metadata
+generated_at = "2025-12-29T10:30:00Z"
+devtools_version = "2.0.0"
+schema_version = "1.0"
+
+[programs.mf6]
+version = "6.6.3"
+description = "MODFLOW 6 groundwater flow model"
+repo = "MODFLOW-ORG/modflow6"
+license = "CC0-1.0"
+
+[programs.mf6.binaries.linux]
+asset = "mf6.6.3_linux.zip"
+hash = "sha256:..."
+exe = "bin/mf6"
+
+[programs.mf6.binaries.mac]
+asset = "mf6.6.3_mac.zip"
+hash = "sha256:..."
+exe = "bin/mf6"
+
+[programs.mf6.binaries.win64]
+asset = "mf6.6.3_win64.zip"
+hash = "sha256:..."
+exe = "bin/mf6.exe"
+
+[programs.zbud6]
+version = "6.6.3"
+description = "MODFLOW 6 Zonebudget utility"
+repo = "MODFLOW-ORG/modflow6"
+license = "CC0-1.0"
+
+[programs.zbud6.binaries.linux]
+asset = "mf6.6.3_linux.zip"
+hash = "sha256:..."
+exe = "bin/zbud6"
+```
+
+The top-level metadata is optional; if a `schema_version` is not provided it will be inferred if possible.
+
+Platform identifiers are as defined in the [modflow-devtools OS tag specification](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html): `linux`, `mac`, `win64`.
+
+**Binary asset URLs**: The `asset` field contains just the filename. Full download URLs are constructed as:
+```
+https://github.com/{repo}/releases/download/{tag}/{asset}
+```
+For example: `https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_linux.zip`
+
+#### Registries vs. installation metadata
+
+The Programs API maintains two distinct layers of metadata:
+
+**Registry files** (`registry.toml`) - Published by program maintainers:
+- Describe what's available from a release
+- GitHub-coupled by design (asset names, not full URLs)
+- Controlled by program repositories
+- Cached locally after sync
+
+**Installation metadata** (`{program}.json`) - Maintained by modflow-devtools:
+- Track what's installed locally and where
+- Source-agnostic (store full `asset_url`, not just asset name)
+- Enable executable discovery and version management
+- Support any installation source
+
+This separation provides architectural flexibility:
+
+1. **Future extensibility**: Installation metadata format doesn't change if we add support for:
+   - Mirror sites (different URLs, same metadata structure)
+   - Direct binary URLs (no GitHub release required)
+   - Local builds (user-compiled binaries)
+   - Import from get-modflow or other tools
+
+2. **Clean responsibilities**: Registry files describe "what exists", metadata tracks "what I installed from where"
+
+3. **Portability**: Users could theoretically register manually-installed binaries using the same metadata format
+
+While registries are currently tied to GitHub releases (which is pragmatic and appropriate for the MODFLOW ecosystem), the installation metadata layer remains flexible for future needs.
+
+### Registry discovery
+
+Program registries are published as GitHub release assets alongside binary distributions. Registry files assets must be named `registry.toml`.
+
+Registry discovery URL pattern:
+```
+https://github.com/{org}/{repo}/releases/download/{tag}/registry.toml
+```
+
+Examples:
+```
+https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/registry.toml
+https://github.com/MODFLOW-ORG/modpath7/releases/download/7.2.001/registry.toml
+```
+
+#### Registry discovery procedure
+
+At sync time, `modflow-devtools` discovers remote registries for each configured source and release tag:
+
+1. **Check for release tag**: Look for a GitHub release with the specified tag
+2. **Fetch registry asset**: Download `registry.toml` from the release assets
+3. **Failure cases**:
+   - If release tag doesn't exist:
+     ```python
+     ProgramRegistryDiscoveryError(
+         f"Release tag '{tag}' not found for {repo}"
+     )
+     ```
+   - If release exists but lacks `registry.toml` asset:
+     ```python
+     ProgramRegistryDiscoveryError(
+         f"Program registry file 'registry.toml' not found as release asset "
+         f"for {repo}@{tag}"
+     )
+     ```
+
+### Registry/program metadata caching
+
+Cache structure:
+
+```
+~/.cache/modflow-devtools/
+├── programs/
+│   ├── registries/
+│   │   ├── modflow6/              # by source repo
+│   │   │   └── 6.6.3/
+│   │   │       └── registry.toml
+│   │   ├── modpath7/
+│   │   │   └── 7.2.001/
+│   │   │       └── registry.toml
+│   │   └── executables/
+│   │       └── latest/
+│   │           └── registry.toml
+│   ├── archives/
+│   │   ├── mf6/                    # downloaded archives
+│   │   │   └── 6.6.3/
+│   │   │       └── linux/
+│   │   │           └── mf6.6.6.3_linux.zip
+│   │   └── mp7/
+│   │       └── 7.2.001/
+│   │           └── linux/
+│   │               └── mp7.7.2.001_linux.zip
+│   ├── binaries/
+│   │   ├── mf6/                    # extracted binaries (all versions)
+│   │   │   ├── 6.6.3/
+│   │   │   │   └── linux/
+│   │   │   │       └── bin/
+│   │   │   │           └── mf6
+│   │   │   └── 6.5.0/
+│   │   │       └── linux/
+│   │   │           └── bin/
+│   │   │               └── mf6
+│   │   ├── zbud6/
+│   │   │   └── 6.6.3/
+│   │   │       └── linux/
+│   │   │           └── ...
+│   │   └── mp7/
+│   │       └── 7.2.001/
+│   │           └── ...
+│   └── metadata/
+│       ├── mf6.json                # installation tracking per program
+│       ├── zbud6.json
+│       └── mp7.json
+```
+
+**Metadata tracking** (inspired by get-modflow):
+- Each program has a metadata JSON file at `~/.cache/modflow-devtools/programs/metadata/{program}.json`
+- Tracks all installations and versions:
+  - Program name, installed versions, platform
+  - For each installation: bindir, version, installation timestamp
+  - Source repository, tag, asset URL, SHA256 hash
+  - Currently active version in each bindir
+- Enables executable discovery, version management, and fast re-switching
+
+**Example metadata file** (`mf6.json`):
+```json
+{
+  "program": "mf6",
+  "installations": [
+    {
+      "version": "6.6.3",
+      "platform": "linux",
+      "bindir": "/usr/local/bin",
+      "installed_at": "2024-01-15T10:30:00Z",
+      "source": {
+        "repo": "MODFLOW-ORG/modflow6",
+        "tag": "6.6.3",
+        "asset_url": "https://github.com/.../mf6.6.6.3_linux.zip",
+        "hash": "sha256:..."
+      },
+      "executables": ["mf6"],
+      "active": true
+    },
+    {
+      "version": "6.5.0",
+      "platform": "linux",
+      "bindir": "/home/user/.local/bin",
+      "installed_at": "2024-01-10T14:20:00Z",
+      "source": {...},
+      "active": false
+    }
+  ]
+}
+```
+
+**Cache management**:
+- Registry files are cached per source repository and release tag
+- Downloaded archives are cached and verified against registry hashes before reuse
+- Binary distributions (all versions) are cached per program name, version, and platform
+- Installed binaries are **copies** from cache to user's chosen bindir (not symlinks)
+- Cache can be cleared with `programs clean` command (with options for archives, binaries, or registries)
+- Users can list cached/installed programs with `programs list`
+- Cache is optional after installation - only needed for version switching without re-download
+
+### Registry synchronization
+
+Synchronization updates the local registry cache with remote program metadata.
+
+#### Manual sync
+
+Exposed as a CLI command and Python API:
+
+```bash
+# Sync all configured sources and release tags
+python -m modflow_devtools.programs sync
+
+# Sync specific source to specific release tag
+python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --tag 6.6.3
+
+# Force re-download
+python -m modflow_devtools.programs sync --force
+
+# Show sync status
+python -m modflow_devtools.programs info
+
+# List available programs
+python -m modflow_devtools.programs list
+```
+
+Or via Python API:
+
+```python
+from modflow_devtools.programs import sync_registries, get_sync_status
+
+# Sync all
+sync_registries()
+
+# Sync specific
+sync_registries(repo="MODFLOW-ORG/modflow6", tag="6.6.3")
+
+# Check status
+status = get_sync_status()
+```
+
+#### Automatic sync
+
+- **At install time**: Best-effort sync during package installation (fail silently on network errors)
+- **On first use**: If registry cache is empty, attempt to sync before raising errors
+- **Configurable**: Users can disable auto-sync via environment variable: `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`
+
+### Program installation
+
+Installation extends beyond metadata to actually providing program executables by downloading and managing pre-built platform-specific binaries.
+
+```bash
+# Install from binary (auto-detects platform)
+python -m modflow_devtools.programs install mf6
+
+# Install specific version
+python -m modflow_devtools.programs install mf6@6.6.3
+
+# Install to custom location (interactive selection like get-modflow)
+python -m modflow_devtools.programs install mf6 --bindir :
+
+# Install to specific directory
+python -m modflow_devtools.programs install mf6 --bindir /usr/local/bin
+
+# Install multiple versions side-by-side (cached separately)
+python -m modflow_devtools.programs install mf6@6.6.3
+python -m modflow_devtools.programs install mf6@6.5.0
+
+# Select active version (re-copies from cache to bindir)
+python -m modflow_devtools.programs select mf6@6.6.3
+
+# List installed programs
+python -m modflow_devtools.programs list --installed
+
+# List available versions of a program
+python -m modflow_devtools.programs list mf6
+
+# Show where program is installed
+python -m modflow_devtools.programs which mf6
+
+# Uninstall specific version
+python -m modflow_devtools.programs uninstall mf6@6.6.3
+
+# Uninstall all versions
+python -m modflow_devtools.programs uninstall mf6 --all
+```
+
+Python API:
+
+```python
+from modflow_devtools.programs import install_program, list_installed, get_executable
+
+# Install
+install_program("mf6", version="6.6.3")
+
+# Install to custom bindir
+install_program("mf6", version="6.6.3", bindir="/usr/local/bin")
+
+# Get executable path (looks up active version in bindir)
+mf6_path = get_executable("mf6")
+
+# Get specific version
+mf6_path = get_executable("mf6", version="6.6.3")
+
+# List installed
+installed = list_installed()
+```
+
+**Installation process** (adapted from get-modflow):
+1. Resolve program name to registry entry
+2. Detect platform (or use specified platform)
+3. Check if binary distribution available for platform
+4. Determine bindir (interactive selection, explicit path, or default from previous install)
+5. Check cache for existing archive (verify hash if present)
+6. Download archive to cache if needed: `~/.cache/modflow-devtools/programs/archives/{program}/{version}/{platform}/`
+7. Extract to binaries cache: `~/.cache/modflow-devtools/programs/binaries/{program}/{version}/{platform}/`
+8. **Copy** executables from cache to user's chosen bindir (not symlink)
+9. Apply executable permissions on Unix (`chmod +x`)
+10. Update metadata file: `~/.cache/modflow-devtools/programs/metadata/{program}.json`
+11. Return paths to installed executables
+
+**Version management**:
+- Multiple versions cached separately in `~/.cache/modflow-devtools/programs/binaries/{program}/{version}/`
+- User can install to different bindirs (e.g., `/usr/local/bin`, `~/.local/bin`)
+- Only one version is "active" per bindir (the actual copy at that location)
+- `select` command re-copies a different version from cache to bindir
+- Metadata tracks which version is active in each bindir
+- Version switching is fast (copy operation, milliseconds for typical MODFLOW binaries)
+
+**Why copy instead of symlink?**
+- **Simplicity**: Single code path for all platforms (Unix, Windows, macOS)
+- **Consistency**: Same behavior everywhere
+- **Robustness**: Installed binary is independent of cache (cache can be cleared)
+- **User expectations**: Binary is actually where they asked for it, not a symlink
+- **No Windows symlink issues**: Avoids admin privilege requirements on older Windows
+
+**Note**: Programs are expected to publish pre-built binaries for all supported platforms. Building from source is not supported - program repositories are responsible for releasing platform-specific binaries.
+
+### Source program integration
+
+For program repositories to integrate:
+
+1. **Generate registry metadata**:
+   ```bash
+   # In program repository
+   python -m modflow_devtools.make_program_registry \
+     --version 6.6.3 \
+     --platforms linux mac win64 \
+     --output .registry/registry.toml
+   ```
+
+2. **Publish registry**: Attach `registry.toml` as a release asset
+
+3. **Example CI integration** (GitHub Actions):
+   ```yaml
+   - name: Generate program registry
+     run: |
+       python -m modflow_devtools.make_program_registry \
+         --version ${{ github.ref_name }} \
+         --platforms linux mac win64 \
+         --output registry.toml
+
+   - name: Upload registry to release
+     uses: actions/upload-release-asset@v1
+     with:
+       asset_path: registry.toml
+       asset_name: registry.toml
+   ```
+
+### Program addressing
+
+**Format**: `{program}@{version}`
+
+Examples:
+- `mf6@6.6.3` - MODFLOW 6 version 6.6.3
+- `zbud6@6.6.3` - MODFLOW 6 Zonebudget version 6.6.3
+- `mf5to6@6.6.3` - MODFLOW 5 to 6 converter version 6.6.3
+- `mp7@7.2.001` - MODPATH 7 version 7.2.001
+- `mf2005@1.12.00` - MODFLOW-2005 version 1.12.00
+
+**Benefits**:
+- Simple, intuitive addressing
+- Explicit versioning
+- Prevents version conflicts
+- Enables side-by-side installations
+
+**Note**: Program names are assumed to be globally unique across all sources. The source repository is an implementation detail of registry discovery - users just need to know the program name and version. All versions correspond to GitHub release tags.
+
+### Registry classes
+
+#### ProgramRegistry (abstract base)
+
+Similar to `ModelRegistry`, defines the contract:
+
+```python
+class ProgramRegistry(ABC):
+    @property
+    @abstractmethod
+    def programs(self) -> dict[str, Program]:
+        """Get all programs in registry."""
+        pass
+
+    @abstractmethod
+    def get_program(self, name: str) -> Program:
+        """Get a specific program."""
+        pass
+
+    @abstractmethod
+    def install(self, name: str, **kwargs) -> Path:
+        """Install a program and return executable path."""
+        pass
+```
+
+#### RemoteRegistry
+
+Handles remote registry discovery and caching:
+
+```python
+class RemoteRegistry(ProgramRegistry):
+    def __init__(self, source: str, ref: str):
+        self.source = source
+        self.ref = ref
+        self._load()
+
+    def _load(self):
+        # Check cache first
+        if cached := self._load_from_cache():
+            return cached
+        # Otherwise sync from remote
+        self._sync()
+```
+
+#### MergedRegistry
+
+Compositor for multiple registries:
+
+```python
+class MergedRegistry(ProgramRegistry):
+    def __init__(self, registries: list[ProgramRegistry]):
+        self.registries = registries
+
+    @property
+    def programs(self) -> dict[str, Program]:
+        # Merge programs from all registries
+        # Later registries override earlier ones
+        merged = {}
+        for registry in self.registries:
+            merged.update(registry.programs)
+        return merged
+```
+
+### Module-level API
+
+Convenient module-level functions:
+
+```python
+# Default merged registry from bootstrap config
+from modflow_devtools.programs import (
+    DEFAULT_REGISTRY,
+    get_programs,
+    get_program,
+    install_program,
+    list_installed,
+    sync_registries,
+    get_executable,
+)
+
+# Usage
+programs = get_programs()
+mf6 = get_program("mf6", version="6.6.3")
+install_program("mf6", version="6.6.3")
+exe_path = get_executable("mf6")
+```
+
+Backwards compatibility with existing API:
+
+```python
+from modflow_devtools.programs import get_programs, get_program
+
+programs = get_programs()  # dict[str, Program]
+mf6 = get_program("mf6")   # Program instance
+```
+
+## Migration path
+
+### Transitioning from pymake
+
+Since programs will publish pre-built binaries, pymake is no longer needed for building or for maintaining the program database:
+
+1. **Phase 1**: Programs API provides read-only access to program metadata
+2. **Phase 2**: Add installation capabilities, users can install programs via devtools
+3. **Phase 3**: Program repositories begin publishing their own registries with pre-built binaries
+4. **Phase 4**: devtools becomes the authoritative source for program metadata
+5. **Phase 5**: pymake deprecated entirely (no longer needed)
+
+### Implementation plan
+
+Core components to implement:
+
+1. **Bootstrap & Schema**
+   - Create bootstrap file (`modflow_devtools/programs/bootstrap.toml`)
+   - Define registry schema with Pydantic validation (`modflow_devtools/programs/schema.py`)
+
+2. **Registry Classes**
+   - Implement `ProgramRegistry` abstract base class
+   - Create `RemoteRegistry` for remote discovery and caching
+   - Implement `MergedRegistry` compositor
+
+3. **Discovery & Sync**
+   - Implement cache directory utilities (`modflow_devtools/programs/cache.py`)
+   - Add release asset discovery logic (`modflow_devtools/programs/discovery.py`)
+   - Implement sync functionality (`modflow_devtools/programs/sync.py`)
+
+4. **Installation System**
+   - Implement binary distribution download and extraction
+   - Add platform detection and binary selection
+   - Implement bindir selection (adapted from get-modflow's `get_bindir_options()`)
+   - Create installation management (install/uninstall/select/list)
+   - Implement copy-based installation from cache to bindir
+   - Add `get_executable()` function for looking up installed executables
+   - Handle executable permissions on Unix systems (`chmod +x`)
+   - Add metadata tracking for all installations
+   - Add verification/validation of downloaded binaries (hash checking)
+
+5. **CLI & API**
+   - Create CLI commands (`modflow_devtools/programs/__main__.py` - sync, info, list, install, select, which, uninstall, clean)
+   - Update module-level API to use registries
+
+6. **Registry Generation**
+   - Add registry generation utilities (`make_program_registry.py`)
+   - Document registry publication workflow for program maintainers
+
+7. **Testing & Documentation**
+   - Comprehensive test suite (sync, network failures, multi-platform, registry merging)
+   - User documentation
+   - Migration guide for pymake users
+
+**Upstream Integration** (concurrent with devtools development):
+- Add registry generation to program repositories' CI (starting with modflow6)
+- Publish registries as release assets
+- Test discovery and installation with real releases
+
+**Future**: Once all programs publish registries and the system is mature, deprecate pymake's program database functionality
+
+## Relationship to Models API
+
+The Programs API deliberately mirrors the Models API architecture:
+
+| Aspect | Models API | Programs API |
+|--------|-----------|--------------|
+| **Bootstrap file** | `models/bootstrap.toml` | `programs/bootstrap.toml` |
+| **Registry format** | TOML with files/models/examples | TOML with programs/binaries |
+| **Discovery** | Release assets or version control | Release assets only |
+| **Caching** | `~/.cache/modflow-devtools/models` | `~/.cache/modflow-devtools/programs` |
+| **Addressing** | `source@ref/path/to/model` | `program@version` |
+| **CLI** | `models sync/info/list` | `programs sync/info/list/install` |
+| **Registries** | `PoochRegistry`, `MergedRegistry` | `RemoteRegistry`, `MergedRegistry` |
+
+**Key differences**:
+- Programs API adds installation capabilities (Models API just provides file access)
+- Programs API handles platform-specific binaries (no building from source)
+- Programs have simpler addressing (just `program@version`, no source or path components)
+- Programs only use release asset discovery (no version-controlled registries)
+
+**Shared patterns**:
+- Bootstrap-driven discovery
+- Remote sync with caching
+- Registry merging and composition
+- CLI command structure
+- Fallback to bundled data during migration
+
+This consistency benefits both developers and users with a familiar experience across both APIs.
+
+## Relationship to get-modflow
+
+The Programs API should eventually supersede flopy's [`get-modflow`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py) utility. Many of its patterns are directly applicable and can be adapted or reused.
+
+### Reusable patterns from get-modflow
+
+#### 1. Platform detection
+**get-modflow approach**: `get_ostag()` function detects OS and returns platform identifiers (`linux`, `win32`, `win64`, `mac`, `macarm`).
+
+**Programs API adaptation**:
+- Reuse the platform detection logic
+- Map to modflow-devtools OS tag values (`linux`, `mac`, `win64`)
+
+```python
+# Adapted from get-modflow
+def get_platform() -> str:
+    """Detect current platform for binary selection."""
+    # Reuse get-modflow's logic, mapping to OS tag values
+```
+
+#### 2. Installation metadata tracking
+**get-modflow approach**: Maintains JSON at `~/.local/share/flopy/get_modflow.json` with installation history:
+```json
+[
+  {
+    "bindir": "/usr/local/bin",
+    "owner": "MODFLOW-USGS",
+    "repo": "executables",
+    "release_id": "12345",
+    "asset_name": "linux.zip",
+    "installed": "2024-01-15T10:30:00Z",
+    "md5": "abc123...",
+    "subset": ["mf6", "mp7"],
+    "updated_at": "2024-01-15T09:00:00Z"
+  }
+]
+```
+
+**Programs API adaptation**:
+- Store metadata per program at `~/.cache/modflow-devtools/programs/metadata/{program}.json`
+- Track all installations (different versions, different bindirs) for each program
+- Use JSON format similar to get-modflow but structured to track multiple installations
+- See cache structure section for detailed metadata schema
+
+#### 3. Bindir selection and writable directory discovery
+**get-modflow approach**: `get_bindir_options()` evaluates directories in priority order:
+1. Previous installation location
+2. FloPy-specific directory (if in FloPy)
+3. Python's Scripts/bin directory
+4. User local bin (`~/.local/bin`, `%LOCALAPPDATA%\Microsoft\WindowsApps`)
+5. System local bin (`/usr/local/bin`)
+
+Returns only writable directories with interactive/auto-select modes.
+
+**Programs API adaptation**:
+- Reuse the writable directory discovery logic exactly
+- Support same interactive selection (`:` prompt) and auto-select modes (`:python`)
+- Default to previous installation location for that program
+- Copy executables from cache to selected bindir (same as get-modflow's direct install approach)
+
+```python
+# Adapted from get-modflow
+def get_install_locations(previous: Path | None = None) -> list[Path]:
+    """Get writable installation directories in priority order."""
+    # Reuse get-modflow's logic directly
+```
+
+#### 4. Executable extraction and installation
+**get-modflow approach**:
+1. Download ZIP to `~/Downloads`
+2. Extract files from internal `bin/` directories
+3. Parse optional `code.json` manifest
+4. Filter by subset parameter
+5. Extract to bindir root
+6. Apply executable permissions on Unix (`chmod +x`)
+
+**Programs API adaptation**:
+- Download to cache: `~/.cache/modflow-devtools/programs/archives/`
+- Use registry `exe` field instead of scanning for `bin/` dirs
+- Apply same permission handling
+- Track extracted files in metadata
+
+```python
+# Adapted from get-modflow
+def extract_executables(archive: Path, dest: Path, executables: list[str]):
+    """Extract specified executables from archive and set permissions."""
+    # Reuse get-modflow's extraction and permission logic
+```
+
+#### 5. GitHub API interactions
+**get-modflow approach**:
+- Token authentication via `GITHUB_TOKEN` environment variable
+- Retry logic for HTTP 503/404 (up to 3 attempts)
+- Rate limit warnings (< 10 requests remaining)
+- Release metadata fetching
+
+**Programs API adaptation**:
+- Reuse token authentication and retry logic
+- Adapt for registry asset discovery (downloading `registry.toml`)
+- Keep rate limit handling
+- Add caching of GitHub API responses
+
+```python
+# Adapted from get-modflow
+def get_github_request(url: str, token: str | None = None) -> requests.Response:
+    """Make GitHub API request with token auth and retry logic."""
+    # Reuse get-modflow's implementation
+```
+
+#### 6. Archive caching
+**get-modflow approach**: Cache downloaded ZIPs in `~/Downloads`, reuse unless `--force`.
+
+**Programs API adaptation**:
+- Cache in `~/.cache/modflow-devtools/programs/archives/{program}/{version}/{platform}/`
+- Verify cached archives against registry hash before reuse
+- Support `--force` to bypass cache
+
+### Key enhancements over get-modflow
+
+1. **Registry-driven discovery**: Use TOML registries instead of hard-coded GitHub repos
+2. **Multiple versions**: Support side-by-side caching with fast version switching via re-copy
+3. **Unified cache structure**: Organize by program/version/platform hierarchy
+4. **Comprehensive metadata**: Track all installations across different bindirs and versions
+6. **Version selection**: `select` command to switch active version in a bindir
+
+### Migration path
+
+Users of get-modflow should be able to migrate smoothly:
+
+1. **Compatible metadata**: Programs API can read get-modflow's JSON to discover existing installations
+3. **Import existing installations**: Detect executables installed by get-modflow and import metadata
+4. **Gradual transition**: Both tools can coexist during migration period
+
+## Design Decisions
+
+### Initial implementation
+
+These features are in scope for the initial implementation:
+
+1. **Multiple versions side-by-side**: Users can install multiple versions of the same program in cache. Copy selected version to bindir to make it active. Fast version switching via re-copy from cache.
+
+2. **Installation metadata tracking**: Maintain metadata about each installation (similar to flopy's `get-modflow`) to support executable discovery and version management.
+
+3. **Executable discovery**: Provide utilities to locate previously installed executables.
+
+4. **Platform error messages**: When a platform-specific binary isn't available, show helpful error messages indicating which platforms are supported.
+
+5. **PATH management**: Support adding installed programs to PATH (similar to flopy's `get-modflow`).
+
+6. **flopy integration**: This API should eventually supersede flopy's `get-modflow` utility. See "Relationship to get-modflow" section for reusable patterns.
+
+### Explicitly out of scope
+
+1. **Cross-platform installations**: No support for installing Windows binaries on Linux, etc.
+
+2. **Dependency handling**: Programs don't depend on each other, so no dependency modeling needed.
+
+3. **Mirror URLs**: Use GitHub releases only (no mirror support).
+
+### Future enhancements
+
+These features are desirable but can be added after the initial implementation:
+
+1. **Semantic version ranges**: Support version specifiers like `mf6@^6.6` to install any compatible version satisfying the range.
+
+2. **Aliases and special versions**: Support aliasing (e.g., `mf6-latest` → `mf6@6.6.3`) and special version identifiers like `mf6@latest` or `mf6@stable`.
+
+3. **Checksum/signature verification**: Verify checksums or signatures on binary distributions for security and integrity.
+
+4. **Update notifications**: Notify users when newer versions are available.
