@@ -637,10 +637,6 @@ exe_path = get_executable("mf6")
 Backwards compatibility with existing API:
 
 ```python
-# Old API (still works, uses bundled CSV)
-from modflow_devtools.programs import PROGRAMS, get_program
-
-# New API
 from modflow_devtools.programs import get_programs, get_program
 
 programs = get_programs()  # dict[str, Program]
@@ -691,7 +687,6 @@ Core components to implement:
 5. **CLI & API**
    - Create CLI commands (`modflow_devtools/programs/__main__.py` - sync, info, list, install, select, which, uninstall, clean)
    - Update module-level API to use registries
-   - Fallback to bundled CSV for backwards compatibility
 
 6. **Registry Generation**
    - Add registry generation utilities (`make_program_registry.py`)
