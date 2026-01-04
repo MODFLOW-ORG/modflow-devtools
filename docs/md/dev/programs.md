@@ -10,7 +10,6 @@ This is a living document which will be updated as development proceeds.
 
 - [Background](#background)
 - [Objective](#objective)
-- [Motivation](#motivation)
 - [Overview](#overview)
 - [Architecture](#architecture)
   - [Bootstrap file](#bootstrap-file)
@@ -18,9 +17,8 @@ This is a living document which will be updated as development proceeds.
     - [Sample bootstrap file](#sample-bootstrap-file)
   - [Registry files](#registry-files)
     - [Registry file format](#registry-file-format)
-    - [Sample registry file](#sample-registry-file)
+    - [Registries vs. installation metadata](#registries-vs-installation-metadata)
   - [Registry discovery](#registry-discovery)
-    - [Registry as release asset](#registry-as-release-asset)
     - [Registry discovery procedure](#registry-discovery-procedure)
   - [Registry/program metadata caching](#registryprogram-metadata-caching)
   - [Registry synchronization](#registry-synchronization)
@@ -57,43 +55,38 @@ This is a living document which will be updated as development proceeds.
 
 ## Background
 
-Currently, program information is maintained in `pymake`, which serves dual purposes: (1) maintaining a database of program metadata (download URLs, versions, build configuration), and (2) providing build capabilities. This tight coupling means pymake must be updated whenever any program is released, creating a maintenance bottleneck.
+Currently, program information is maintained in `pymake`, which serves dual purposes: (1) maintaining a database of program metadata (download URLs, versions, build configuration), and (2) providing build capabilities. The latter is pymake's explicit responsibility, the former accidental and located in pymake just for convenience.
 
-The existing `modflow_devtools.programs` module provides a minimal read-only interface to a static CSV database (`programs.csv`) containing metadata for MODFLOW-family programs. This database includes information like:
-- Program target name
-- Version
-- Download URL
-- Build metadata (for legacy source building)
+Some preliminary work has begun to transfer program metadata responsibilities to `modflow-devtools`. The existing `modflow_devtools.programs` module provides a minimal read-only interface to a database (`programs.csv`) copied more or less directly from the pymake database, including information like each program's:
+
+- name
+- version
+- source code download URL
+- build information (e.g. double precision)
 
 This approach has several limitations:
-1. **Static coupling**: Every program update requires a new devtools release
-2. **pymake dependency**: Program metadata is duplicated between pymake and devtools
-3. **No introspection**: Limited ability to query available versions or builds
-4. **Manual maintenance**: Developers must manually update the CSV file
-5. **No installation support**: The API only provides metadata, not installation capabilities
+
+1. **Static coupling**: Pymake (or any other project containing such a program database, like `modflow-devtools`) must be updated whenever any program is released, creating a maintenance bottleneck.
+
+2. **No introspection**: Limited ability to query available program versions or builds
+
+3. **Manual maintenance**: Developers must manually update the CSV file
+
+4. **No install support**: The API only provides metadata, not installation capabilities
 
 ## Objective
 
 Create a Programs API that:
-1. **Decouples** program releases from devtools releases
-2. **Enables** individual programs to maintain their own metadata in their repositories
-3. **Provides** discovery and synchronization of program metadata from remote sources
-4. **Supports** installation and management of pre-built program binaries
-5. **Facilitates** the eventual retirement of pymake by consolidating program database responsibilities in devtools
-6. **Mirrors** the architectural patterns established by the Models API for consistency
 
-## Motivation
-
-- **Decouple releases**: Allow programs to evolve independently of devtools
-- **Reduce maintenance burden**: Eliminate manual CSV updates and registry regeneration
-- **Improve user experience**: Provide access to latest program releases without waiting for devtools updates
-- **Enable pymake retirement**: Consolidate program metadata in devtools, eliminating the need for pymake's program database
-- **Provide installation capabilities**: Extend beyond metadata to actual program installation and management
-- **Consistency**: Align with Models API patterns for familiar developer and user experience
+1. Decouples program releases from devtools releases
+3. Discovers and synchronizes program metadata from remote sources
+4. Supports installation and management of program binaries
+5. Facilitates the eventual retirement of pymake by consolidating program database responsibilities in devtools
+6. Mirrors Models API and DFNs API architecture/UX for consistency
 
 ## Overview
 
-Make program repositories responsible for publishing their own program metadata.
+Make MODFLOW ecosystem repositories responsible for publishing their own metadata.
 
 Make `modflow-devtools` responsible for:
 - Defining the program registry publication contract
@@ -104,7 +97,7 @@ Make `modflow-devtools` responsible for:
 - Exposing a synchronized view of available programs
 - Installing pre-built program binaries
 
-Program repository developers can publish program metadata as release assets or in special branches, either manually or in CI.
+Program maintainers can publish metadata as release assets, either manually or in CI.
 
 ## Architecture
 
@@ -112,13 +105,13 @@ The Programs API will mirror the Models API architecture with adaptations for pr
 
 ### Bootstrap file
 
-The **bootstrap** file tells `modflow-devtools` where to look for program registries. This file will be checked into the repository at `modflow_devtools/programs/bootstrap.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/bootstrap.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
-At the top level, the bootstrap file consists of a table of `sources`, each describing a program repository or collection.
+At the top level, the bootstrap file consists of a table of `sources`, each describing a repository distributing one or more programs. 
 
-Each source has:
+Each source entry has:
 - `repo`: Repository identifier (owner/name)
 - `refs`: List of release tags to sync by default
 
@@ -141,18 +134,19 @@ refs = ["1.1.0"]
 [sources.executables]
 repo = "MODFLOW-ORG/executables"
 refs = ["latest"]
-# Consolidated repo for legacy programs (mf2005, mfnwt, etc.)
+# Consolidated repo for legacy programs (mf2005, mfnwt, etc).
+# TODO: replace with separate repos as they become available.
 ```
 
-**Note**: The bootstrap file can reference both individual program repositories (e.g., `modflow6` providing mf6, zbud6, mf5to6) and consolidated repositories that provide multiple unrelated programs. The source names in the bootstrap file are internal - users just use program names when installing.
+**Note**: A source repository described in the bootstrap file may provide a single program or multiple programs. E.g., the `modflow6` repository provides `mf6`, `zbud6`, and `mf5to6`).
 
 ### Registry files
 
-Program registries describe available program builds and metadata needed for installation.
+Each source repository must make a **program registry** file available. Program registries describe available programs and metadata needed for installation.
 
 #### Registry file format
 
-A consolidated `registry.toml` file with the following structure:
+Registry files shall be named `registry.toml` and contain, at minimum, a dictionary `programs` enumerating programs provided by the source repository. For instance:
 
 ```toml
 # Metadata
@@ -160,30 +154,27 @@ generated_at = "2025-12-29T10:30:00Z"
 devtools_version = "2.0.0"
 schema_version = "1.0"
 
-# Program definitions
 [programs.mf6]
 version = "6.6.3"
 description = "MODFLOW 6 groundwater flow model"
 repo = "MODFLOW-ORG/modflow6"
 license = "CC0-1.0"
 
-# Binary distributions (platform-specific)
 [programs.mf6.binaries.linux]
-url = "https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_linux.zip"
+asset = "mf6.6.3_linux.zip"
 hash = "sha256:..."
-executables = ["bin/mf6"]
+exe = "bin/mf6"
 
-[programs.mf6.binaries.darwin]
-url = "https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_mac.zip"
+[programs.mf6.binaries.mac]
+asset = "mf6.6.3_mac.zip"
 hash = "sha256:..."
-executables = ["bin/mf6"]
+exe = "bin/mf6"
 
-[programs.mf6.binaries.win32]
-url = "https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_win64.zip"
+[programs.mf6.binaries.win64]
+asset = "mf6.6.3_win64.zip"
 hash = "sha256:..."
-executables = ["bin/mf6.exe"]
+exe = "bin/mf6.exe"
 
-# Additional programs in same registry
 [programs.zbud6]
 version = "6.6.3"
 description = "MODFLOW 6 Zonebudget utility"
@@ -191,41 +182,54 @@ repo = "MODFLOW-ORG/modflow6"
 license = "CC0-1.0"
 
 [programs.zbud6.binaries.linux]
-url = "https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_linux.zip"
+asset = "mf6.6.3_linux.zip"
 hash = "sha256:..."
-executables = ["bin/zbud6"]
+exe = "bin/zbud6"
 ```
 
-**Platform identifiers**: Use `sys.platform` values: `linux`, `darwin`, `win32`
+The top-level metadata is optional; if a `schema_version` is not provided it will be inferred if possible.
 
-#### Sample registry file
+Platform identifiers are as defined in the [modflow-devtools OS tag specification](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html): `linux`, `mac`, `win64`.
 
-For a legacy program repository that consolidates multiple programs:
-
-```toml
-generated_at = "2025-12-29T10:30:00Z"
-devtools_version = "2.0.0"
-schema_version = "1.0"
-
-[programs.mf2005]
-version = "1.12.00"
-description = "MODFLOW-2005"
-repo = "MODFLOW-ORG/mf2005"
-license = "CC0-1.0"
-
-[programs.mf2005.binaries.linux]
-url = "https://github.com/MODFLOW-ORG/mf2005/releases/download/v.1.12.00/MF2005.1_12u_linux.zip"
-hash = "sha256:..."
-executables = ["bin/mf2005"]
+**Binary asset URLs**: The `asset` field contains just the filename. Full download URLs are constructed as:
 ```
+https://github.com/{repo}/releases/download/{tag}/{asset}
+```
+For example: `https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_linux.zip`
+
+#### Registries vs. installation metadata
+
+The Programs API maintains two distinct layers of metadata:
+
+**Registry files** (`registry.toml`) - Published by program maintainers:
+- Describe what's available from a release
+- GitHub-coupled by design (asset names, not full URLs)
+- Controlled by program repositories
+- Cached locally after sync
+
+**Installation metadata** (`{program}.json`) - Maintained by modflow-devtools:
+- Track what's installed locally and where
+- Source-agnostic (store full `asset_url`, not just asset name)
+- Enable executable discovery and version management
+- Support any installation source
+
+This separation provides architectural flexibility:
+
+1. **Future extensibility**: Installation metadata format doesn't change if we add support for:
+   - Mirror sites (different URLs, same metadata structure)
+   - Direct binary URLs (no GitHub release required)
+   - Local builds (user-compiled binaries)
+   - Import from get-modflow or other tools
+
+2. **Clean responsibilities**: Registry files describe "what exists", metadata tracks "what I installed from where"
+
+3. **Portability**: Users could theoretically register manually-installed binaries using the same metadata format
+
+While registries are currently tied to GitHub releases (which is pragmatic and appropriate for the MODFLOW ecosystem), the installation metadata layer remains flexible for future needs.
 
 ### Registry discovery
 
-Program registries are published as GitHub release assets alongside binary distributions.
-
-#### Registry as release asset
-
-Registry files are published as release assets named `registry.toml`. This couples the registry metadata directly with the binary distributions.
+Program registries are published as GitHub release assets alongside binary distributions. Registry files assets must be named `registry.toml`.
 
 Registry discovery URL pattern:
 ```
@@ -238,13 +242,6 @@ https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/registry.toml
 https://github.com/MODFLOW-ORG/modpath7/releases/download/7.2.001/registry.toml
 ```
 
-Benefits:
-- Strongly couples registry with released binaries
-- No version control overhead for registry files
-- Natural alignment with binary distribution workflow
-- Generated automatically in release CI
-- Users always get metadata for released, tested binaries
-
 #### Registry discovery procedure
 
 At sync time, `modflow-devtools` discovers remote registries for each configured source and release tag:
@@ -254,14 +251,14 @@ At sync time, `modflow-devtools` discovers remote registries for each configured
 3. **Failure cases**:
    - If release tag doesn't exist:
      ```python
-     RegistryDiscoveryError(
+     ProgramRegistryDiscoveryError(
          f"Release tag '{tag}' not found for {repo}"
      )
      ```
    - If release exists but lacks `registry.toml` asset:
      ```python
-     RegistryDiscoveryError(
-         f"Registry file 'registry.toml' not found as release asset "
+     ProgramRegistryDiscoveryError(
+         f"Program registry file 'registry.toml' not found as release asset "
          f"for {repo}@{tag}"
      )
      ```
@@ -510,8 +507,7 @@ For program repositories to integrate:
    # In program repository
    python -m modflow_devtools.make_program_registry \
      --version 6.6.3 \
-     --platforms linux darwin win32 \
-     --binary-url "https://github.com/MODFLOW-ORG/modflow6/releases/download/{version}/mf6.{version}_{platform}.zip" \
+     --platforms linux mac win64 \
      --output .registry/registry.toml
    ```
 
@@ -523,7 +519,7 @@ For program repositories to integrate:
      run: |
        python -m modflow_devtools.make_program_registry \
          --version ${{ github.ref_name }} \
-         --platforms linux darwin win32 \
+         --platforms linux mac win64 \
          --output registry.toml
 
    - name: Upload registry to release
@@ -753,14 +749,13 @@ The Programs API should eventually supersede flopy's [`get-modflow`](https://git
 
 **Programs API adaptation**:
 - Reuse the platform detection logic
-- Map to `sys.platform` values (`linux`, `darwin`, `win32`) as specified in registry schema
-- Handle ARM Mac detection (`macarm` → `darwin` with architecture check)
+- Map to modflow-devtools OS tag values (`linux`, `mac`, `win64`)
 
 ```python
 # Adapted from get-modflow
 def get_platform() -> str:
     """Detect current platform for binary selection."""
-    # Reuse get-modflow's logic, mapping to sys.platform values
+    # Reuse get-modflow's logic, mapping to OS tag values
 ```
 
 #### 2. Installation metadata tracking
@@ -821,9 +816,9 @@ def get_install_locations(previous: Path | None = None) -> list[Path]:
 
 **Programs API adaptation**:
 - Download to cache: `~/.cache/modflow-devtools/programs/archives/`
-- Use registry `executables` field instead of scanning for `bin/` dirs
+- Use registry `exe` field instead of scanning for `bin/` dirs
 - Apply same permission handling
-- Track extracted files in `.metadata`
+- Track extracted files in metadata
 
 ```python
 # Adapted from get-modflow
