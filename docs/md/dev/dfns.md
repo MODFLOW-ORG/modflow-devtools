@@ -71,7 +71,6 @@ However, there is currently no registry-based API for:
 - Automatically discovering and synchronizing DFN files from remote sources
 - Managing multiple versions of definition files simultaneously
 - Caching definition files locally for offline use
-- Providing a consistent interface for accessing definition files across versions
 
 Users must manually download definition files or rely on whatever happens to be bundled with their installation. This creates similar problems to what the Models API addressed:
 1. **Version coupling**: Users are locked to whatever DFN version is bundled
@@ -90,15 +89,6 @@ Create a DFNs API that:
 6. **Handles schema evolution** with proper separation of file format vs schema version
 7. **Maintains loose coupling** between devtools and remote DFN sources
 
-## Motivation
-
-- **Decouple from MODFLOW 6 releases**: Access definition files for any MODFLOW 6 version without waiting for devtools updates
-- **Multi-version support**: Work with definitions for multiple MODFLOW 6 versions simultaneously (critical for tools like FloPy that support multiple versions)
-- **Reduce maintenance burden**: Eliminate need to bundle and update DFN files manually
-- **Consistency**: Align with established Models and Programs API patterns
-- **Enable schema evolution**: Support transition from legacy representation that mixes structural and format concerns to new, normalized representation
-- **Improve developer experience**: Provide a smooth, consistent API for acquiring and working with definition files
-
 ## Overview
 
 Make the MODFLOW 6 repository responsible for publishing a definition file registry.
@@ -112,8 +102,6 @@ Make `modflow-devtools` responsible for:
 - Exposing a synchronized view of available definition files
 - Parsing and validating definition files
 - Mapping between schema versions
-
-MODFLOW 6 developers can use `modflow-devtools` registry-creation facilities to generate registry metadata in CI.
 
 MODFLOW 6 is currently the only repository using the DFN specification system, but this leaves the door open for other repositories to begin using it.
 
@@ -150,18 +138,16 @@ refs = [
 ]
 ```
 
-**Note**: The bootstrap file focuses on the primary source (MODFLOW 6 repository). Support for additional sources can be added later if needed.
-
-### DFN manifest and registry files
+### DFN spec and registry files
 
 Two types of metadata files support the DFNs API:
 
-1. **Specification index** (`index.toml`): Part of the DFN set, handwritten metadata about the specification
+1. **Specification file** (`spec.toml`): Part of the DFN set, describes the specification itself
 2. **Registry file** (`dfns.toml`): Infrastructure for discovery and distribution
 
-#### Specification index file
+#### Specification file
 
-An `index.toml` file lives **in the DFN directory** alongside the DFN files. It's a handwritten index describing the specification:
+A `spec.toml` file lives **in the DFN directory** alongside the DFN files. It describes the specification:
 
 ```toml
 # MODFLOW 6 input specification
@@ -177,22 +163,27 @@ solutions = ["sln-ims"]
 ```
 
 **Notes**:
-- The index is **part of the DFN set**, not registry infrastructure
+- The spec file is **part of the DFN set**, not registry infrastructure
 - **Handwritten** by MODFLOW 6 developers, not generated
 - Describes the specification as a whole (schema version, component organization)
-- Lives in the DFN directory: `doc/mf6io/mf6ivar/dfn/index.toml`
+- Lives in the DFN directory: `doc/mf6io/mf6ivar/dfn/spec.toml`
 - Component parent-child relationships are in individual DFN files (see Component Hierarchy section)
-- Index metadata is optional - can be inferred if not present:
+- **v1/v1.1**: Spec file is **optional** - can be inferred if not present:
   - `schema_version` can be inferred from DFN content or defaulted
   - `components` section can be inferred from DFN filenames
-- **Future**: For v2 schema, could be a single `index.toml` file with everything, or keep as index to separate component files
+  - Hierarchy inferred from naming conventions (e.g., `gwf-chd` → parent is `gwf-nam`)
+- **v2**: Spec file is **required** for clarity and correctness:
+  - Explicit `schema_version = "2.0"` declaration
+  - Can be a single file containing everything, or a spec file pointing to separate component files
+  - Ensures clean structural/format separation
+- **Correspondence**: `spec.toml` (on disk) ↔ `DfnSpec` (in Python)
 
-**Minimal handwritten index**:
+**Minimal handwritten spec file (v1/v1.1)**:
 ```toml
 schema_version = "1.1"
 ```
 
-Or even simpler - no index needed, everything inferred.
+Or for v1/v1.1, no spec file needed - everything inferred.
 
 #### Registry file format
 
@@ -209,7 +200,7 @@ ref = "6.6.0"  # Optional, known from discovery context
 
 # File listings (filenames and hashes, URLs constructed as needed)
 [files]
-"index.toml" = {hash = "sha256:..."}  # Specification index
+"spec.toml" = {hash = "sha256:..."}  # Specification file
 "sim-nam.dfn" = {hash = "sha256:..."}
 "sim-tdis.dfn" = {hash = "sha256:..."}
 "gwf-nam.dfn" = {hash = "sha256:..."}
@@ -223,12 +214,12 @@ ref = "6.6.0"  # Optional, known from discovery context
 - URLs are constructed dynamically from bootstrap metadata (repo, ref, dfn_path) + filename
 - This allows using personal forks by changing the bootstrap file
 - **All registry metadata is optional** - registries can be handwritten minimally
-- The specification index is listed alongside DFN files
+- The specification file is listed alongside DFN files
 
 **Minimal handwritten registry**:
 ```toml
 [files]
-"index.toml" = {hash = "sha256:abc123..."}
+"spec.toml" = {hash = "sha256:abc123..."}
 "sim-nam.dfn" = {hash = "sha256:def456..."}
 "gwf-nam.dfn" = {hash = "sha256:789abc..."}
 ```
@@ -237,9 +228,9 @@ ref = "6.6.0"  # Optional, known from discovery context
 
 **For TOML-format DFNs (future v2 schema)**:
 
-**Option A**: Separate component files with index
+**Option A**: Separate component files with spec file
 
-Index (`index.toml`):
+Spec file (`spec.toml`):
 ```toml
 schema_version = "2.0"
 
@@ -252,7 +243,7 @@ models = ["gwf-nam", "gwt-nam", "gwe-nam"]
 Registry (`dfns.toml`):
 ```toml
 [files]
-"index.toml" = {hash = "sha256:..."}
+"spec.toml" = {hash = "sha256:..."}
 "sim-nam.toml" = {hash = "sha256:..."}
 "gwf-nam.toml" = {hash = "sha256:..."}
 # ...
@@ -260,7 +251,7 @@ Registry (`dfns.toml`):
 
 **Option B**: Single specification file
 
-`index.toml` contains everything:
+`spec.toml` contains everything:
 ```toml
 schema_version = "2.0"
 
@@ -278,7 +269,7 @@ parent = "sim-nam"
 Registry just points to the one file:
 ```toml
 [files]
-"index.toml" = {hash = "sha256:..."}
+"spec.toml" = {hash = "sha256:..."}
 ```
 
 ### Registry discovery
@@ -438,9 +429,9 @@ status = get_sync_status()
 
 For the MODFLOW 6 repository to integrate:
 
-1. **Handwrite `index.toml`** in the DFN directory (one-time, updated as needed):
+1. **Optionally handwrite `spec.toml`** in the DFN directory (if not present, everything is inferred):
    ```toml
-   # doc/mf6io/mf6ivar/dfn/index.toml
+   # doc/mf6io/mf6ivar/dfn/spec.toml
    schema_version = "1.1"
 
    [components]
@@ -448,6 +439,14 @@ For the MODFLOW 6 repository to integrate:
    models = ["gwf-nam", "gwt-nam", "gwe-nam"]
    # ...
    ```
+
+   If `spec.toml` is absent (v1/v1.1 only), `DfnSpec.load()` will:
+   - Scan the directory for `.dfn` and `.toml` files
+   - Infer schema version from DFN content
+   - Infer component organization from filenames
+   - Build hierarchy using naming conventions
+
+   **Note**: For v2 schema, `spec.toml` is required and must declare `schema_version = "2.0"`
 
 2. **Generate registry** in CI:
    ```bash
@@ -847,6 +846,7 @@ The v2 schema should treat these as **separate layers**, where consumers can sel
 
 **v2 schema** (future - comprehensive redesign):
 - For devtools 2.x / FloPy 4.x / eventually MF6
+- **Requires explicit `spec.toml` file** - no inference for v2 (ensures clarity and correctness)
 - **Complete separation of structural specification from input format concerns** (see [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246))
   - Structural layer: components, relationships, variables, data models
   - Format layer: how MF6 allows arrays to be provided, FILEIN/FILEOUT keywords, etc.
@@ -1014,18 +1014,18 @@ dfn_v2 = map(dfn_v11, schema_version="2")  # v1.1 → v2
 ```
 
 **Registry support**:
-- Each registry metadata includes `schema_version` (from `index.toml` or inferred)
+- Each registry metadata includes `schema_version` (from `spec.toml` or inferred)
 - Different refs can have different schema versions
 - `RemoteDfnRegistry` loads appropriate schema version for each ref
 - `load()` function detects schema version and uses appropriate parser/validator
 
 **Schema detection**:
 ```python
-# In RemoteDfnRegistry
+# In RemoteDfnRegistry or DfnSpec.load()
 def _detect_schema_version(self) -> Version:
-    # 1. Check index.toml if present
-    if index := self._load_index():
-        return index.schema_version
+    # 1. Check spec.toml if present
+    if spec_file := self._load_spec_file():
+        return spec_file.schema_version
 
     # 2. Infer from DFN content
     sample_dfn = self._load_sample_dfn()
@@ -1158,7 +1158,7 @@ spec["gwf-chd"]  # Flat dict access (same as old load_flat)
 
        # Use existing to_tree to build hierarchy
        root = to_tree(dfns)
-       schema_version = root.schema_version  # or load from index.toml
+       schema_version = root.schema_version  # or load from spec.toml
        return cls(schema_version=schema_version, root=root)
    ```
 4. **Update registries** - make them wrap `DfnSpec`:
@@ -1256,11 +1256,11 @@ Breaking changes (justified):
 **Registry generation tool** (depends on Foundation):
 1. Implement `modflow_devtools/dfn/make_registry.py`
 2. Scan DFN directory and generate **registry file** (`dfns.toml`): file listings with hashes
-3. Compute file hashes (SHA256) for all files (including `index.toml` index if present)
+3. Compute file hashes (SHA256) for all files (including `spec.toml` if present)
 4. Registry output: just filename -> hash mapping (no URLs - constructed dynamically)
 5. Support both full output (for CI) and minimal output (for handwriting)
-6. **Do NOT generate `index.toml`** - that's handwritten by MODFLOW 6 developers
-7. Optionally validate `index.toml` against DFN set for consistency if it exists
+6. **Do NOT generate `spec.toml`** - that's handwritten by MODFLOW 6 developers
+7. Optionally validate `spec.toml` against DFN set for consistency if it exists
 8. For v1/v1.1: infer hierarchy from naming conventions for validation
 9. For v2: read explicit parent relationships from DFN files for validation
 
@@ -1271,7 +1271,7 @@ Breaking changes (justified):
 2. Generate registry on push to develop and release tags
 3. Commit registry to `.registry/dfns.toml`
 4. Test registry discovery and sync
-5. **Note**: `index.toml` is handwritten by developers, checked into repo like DFN files
+5. **Note**: `spec.toml` is handwritten by developers (optional), checked into repo like DFN files
 
 **Bootstrap configuration** (depends on MODFLOW 6 CI):
 1. Add stable MODFLOW 6 releases to bootstrap refs (6.6.0, 6.5.0, etc.)
