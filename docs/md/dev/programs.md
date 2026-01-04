@@ -861,7 +861,6 @@ def get_github_request(url: str, token: str | None = None) -> requests.Response:
 2. **Multiple versions**: Support side-by-side caching with fast version switching via re-copy
 3. **Unified cache structure**: Organize by program/version/platform hierarchy
 4. **Comprehensive metadata**: Track all installations across different bindirs and versions
-5. **Hash verification**: Use registry-provided hashes (SHA256) instead of MD5
 6. **Version selection**: `select` command to switch active version in a bindir
 
 ### Migration path
@@ -869,7 +868,6 @@ def get_github_request(url: str, token: str | None = None) -> requests.Response:
 Users of get-modflow should be able to migrate smoothly:
 
 1. **Compatible metadata**: Programs API can read get-modflow's JSON to discover existing installations
-2. **Same CLI patterns**: Maintain similar command structure and options where possible
 3. **Import existing installations**: Detect executables installed by get-modflow and import metadata
 4. **Gradual transition**: Both tools can coexist during migration period
 
