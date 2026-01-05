@@ -134,8 +134,12 @@ class TestBootstrap:
         # Create bundled config
         bundled = Bootstrap(
             sources={
-                "source1": BootstrapSource(repo="org/repo1", name="source1", refs=["main"]),
-                "source2": BootstrapSource(repo="org/repo2", name="source2", refs=["develop"]),
+                "source1": BootstrapSource(
+                    repo="org/repo1", name="source1", refs=["main"]
+                ),
+                "source2": BootstrapSource(
+                    repo="org/repo2", name="source2", refs=["develop"]
+                ),
             }
         )
 
@@ -145,7 +149,9 @@ class TestBootstrap:
                 "source1": BootstrapSource(
                     repo="user/custom-repo1", name="source1", refs=["feature"]
                 ),
-                "source3": BootstrapSource(repo="user/repo3", name="source3", refs=["master"]),
+                "source3": BootstrapSource(
+                    repo="user/repo3", name="source3", refs=["master"]
+                ),
             }
         )
 
@@ -190,12 +196,11 @@ refs = ["custom-branch"]
         # Check that user config overrode bundled config for testmodels
         if TEST_SOURCE in bootstrap.sources:
             assert (
-                bootstrap.sources[TEST_SOURCE].repo
-                == "user/modflow6-testmodels-fork"
+                bootstrap.sources[TEST_SOURCE].repo == "user/modflow6-testmodels-fork"
             )
 
     def test_load_bootstrap_explicit_path_no_overlay(self, tmp_path):
-        """Test that explicit bootstrap path doesn't use user config overlay by default."""
+        """Test that explicit bootstrap path doesn't default to user config overlay."""
         # Create an explicit bootstrap file
         explicit_config = tmp_path / "explicit-bootstrap.toml"
         explicit_config.write_text(
@@ -224,7 +229,7 @@ refs = ["develop"]
         assert "user-source" not in bootstrap.sources
 
     def test_load_bootstrap_explicit_path_with_overlay(self, tmp_path):
-        """Test that explicit bootstrap path can use user config overlay when specified."""
+        """Test that explicit bootstrap path can use user config overlay."""
         # Create an explicit bootstrap file
         explicit_config = tmp_path / "explicit-bootstrap.toml"
         explicit_config.write_text(
