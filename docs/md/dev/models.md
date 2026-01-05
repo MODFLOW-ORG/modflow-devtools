@@ -124,8 +124,8 @@ Note: The bootstrap refs list indicates default refs to sync at install time. Us
 #### User config overlay
 
 Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
-- Linux/macOS: `~/.config/modflow-devtools/bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
-- Windows: `%APPDATA%/modflow-devtools/bootstrap.toml`
+- Linux/macOS: `~/.config/modflow-devtools/models-bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/models-bootstrap.toml`
 
 The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config:
 - Sources with the same key will be completely replaced by the user version
@@ -133,31 +133,53 @@ The user config follows the same format as the bundled bootstrap file. Sources d
 
 This allows users to:
 - Add private or custom model repositories
-- Point to forks of existing repositories
+- Point to forks of existing repositories (useful for testing)
 - Override default refs for existing sources
 - Temporarily disable sources (by overriding with empty refs list)
 
 The user config is automatically loaded and merged when using the default bootstrap location. For testing, a custom user config path can be specified via the `user_config_path` parameter to `load_bootstrap()`.
 
+**Implementation note**: The user config path logic (`get_user_config_path("models")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
+
 ### Registry files
 
-There are currently three separate registry files:
+Model repositories publish a single consolidated registry file named **`models.toml`** (not `registry.toml` - the specific naming distinguishes it from the Programs and DFNs registries).
 
-- `registry.toml`: enumerates invidual files known to the registry. Each file is a section consisting of at minimum a `url` attribute, as well as an optional `hash` attribute. These attributes deliberately provide the information Pooch expects for each file and no more, so that a `pooch.Pooch` instance's `.registry` property may be set directly from the contents of `registry.toml`.
-- `models.toml`: groups files appearing in `registry.toml` according to the model they belong to. From the perspective of the Models API, a model consists of an unordered set of input files.
-- `examples.toml`: groups models appearing in `models.toml` according to the example scenario they belong to. From the perspective of the Models API, an example scenario consists of an *ordered* set of models &mdash; order is relevant because a flow model, for instance, must run before a transport model. This allows API consumers to run models in the order received.
+The registry file contains:
 
-It seems simplest to consolidate these into a single `registry.toml` file defining sections `files`, `models`, and `examples` corresponding to the contents of each of the current registry files. It remains convenient, I think, for the contents of the `files` section to continue conforming to the expectations of `Pooch.registry`.
+- **Metadata** (top-level): Version and generation info
+- **`files`**: Map of filenames to hashes (URLs constructed dynamically, not stored)
+- **`models`**: Map of model names to file lists
+- **`examples`**: Map of example names to model lists
 
-Registry files can begin to define a few new items of metadata:
+Example `models.toml`:
 
 ```toml
+# Metadata (top-level)
+schema_version = "1.0"
 generated_at = "2025-12-04T14:30:00Z"
 devtools_version = "1.9.0"
-schema_version = "1.1"
+
+[files]
+"ex-gwf-twri01/mfsim.nam" = {hash = "sha256:abc123..."}
+"ex-gwf-twri01/gwf.nam" = {hash = "sha256:def456..."}
+# ... more files
+
+[models]
+"ex-gwf-twri01" = [
+    "ex-gwf-twri01/mfsim.nam",
+    "ex-gwf-twri01/gwf.nam",
+    # ... more files
+]
+
+[examples]
+"ex-gwf-twri" = ["ex-gwf-twri01"]
 ```
 
-Versioning the registry file schema will smooth the migration from the existing state of the API to the proposed design, as well as any further migrations pending future development.
+**Key design decisions**:
+- **No `url` field**: URLs are constructed dynamically from bootstrap metadata (repo, ref, registry_path) + filename. This allows testing against forks by simply changing the bootstrap configuration.
+- **Top-level metadata**: Use `schema_version` (not nested under `_meta`) for consistency with Programs and DFNs APIs.
+- **Named `models.toml`**: Distinguishes from `programs.toml` and `dfns.toml` in other APIs.
 
 ### Registry discovery
 
@@ -168,10 +190,10 @@ Model repositories can publish models to `modflow-devtools` in two ways.
 Model input files and registry metadata files may be versioned in the model repository. Under this scheme, registry files are expected by default in a `.registry/` directory &mdash; this location can be overridden by the `registry_path` attribute in the bootstrap file (see above). Registry files are discovered for each of the `refs` specified in the registry bootstrap metadata file, according to the GitHub raw content URL:
 
 ```
-https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/registry.toml
+https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/models.toml
 ```
 
-On model access, model input files are fetched and cached (by Pooch) individually, also via GitHub raw content URLs.
+On model access, model input files are fetched and cached (by Pooch) individually, also via GitHub raw content URLs. File URLs are constructed dynamically from the bootstrap metadata (repo, ref) and filename, not stored in the registry.
 
 This mode supports repositories for which model input files live directly in the repository and does not require the repository to publish releases, e.g.
 
@@ -180,24 +202,26 @@ This mode supports repositories for which model input files live directly in the
 
 #### Model files as release assets
 
-Model input files and the registry metadata file may also be published as release assets. Registry metadata files are again discovered for each of the `refs` specified in the registry bootstrap metadata file. In this scheme, the registry file need not be checked into the repository, and may instead be generated on demand by release automation. Registry files are sought instead under a release asset download URLs:
+Model input files and the registry metadata file may also be published as release assets. Registry metadata files are again discovered for each of the `refs` specified in the registry bootstrap metadata file. In this scheme, the registry file need not be checked into the repository, and may instead be generated on demand by release automation. Registry files are sought instead under a release asset download URL:
 
 ```
-https://github.com/{repo}/releases/download/{ref}/registry.toml
+https://github.com/{repo}/releases/download/{ref}/models.toml
 ```
 
 Note that only release tags, not other ref types (e.g. commit hashes or branch names), are supported.
 
 This scheme is meant to support repositories which distribute model input files as GitHub releases, and may not version them &mdash; for instance, in the case of `MODFLOW-ORG/modflow6-examples`, only FloPy scripts are under version control, and model input files are built by the release automation.
 
-For models distributed this way, file entries' `url` attribute in the registry file should point to a release asset download URL for a zipfile containing model input files, e.g. for the `MODFLOW-ORG/modflow6-examples` repo:
+For models distributed this way, the registry file maps filenames to hashes (no `url` stored). The URL for the zipfile containing model input files is constructed dynamically from bootstrap metadata, e.g.:
 
 ```toml
-["ex-gwe-ates/ex-gwe-ates.tdis"]
-url = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+# models.toml (for modflow6-examples)
+[files]
+"ex-gwe-ates/ex-gwe-ates.tdis" = {hash = "sha256:..."}
+# URL constructed as: https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip
 ```
 
-On model access, the release asset containing models is fetched from its asset download URL, unzipped, and all models are cached at once (all by Pooch). This means that model input files published in this way will be slower upon first model access (while the zip file is fetched and unzipped) than with the version-controlled model input file approach.
+On model access, the release asset containing models is fetched from its asset download URL (constructed at runtime), unzipped, and all models are cached at once (all by Pooch). This means that model input files published this way will be slower upon first model access (while the zip file is fetched and unzipped) than with the version-controlled model input file approach.
 
 #### Combining publication schemes
 
@@ -207,11 +231,11 @@ A repository may make registry files and model input files available in both way
 
 At sync time, `modflow-devtools` attempts to discover remote registries according to the following algorithm for each of the `refs` specified in the bootstrap metadata file:
 
-1. Look for a matching release tag. If one exists, the registry discovery mechanism continues in **release asset** mode, looking for a release asset named `registry.toml`. If no matching release tag can be found, go to step 2. If the matching release contains no asset named `registry.toml`, raise an error indicating that the given release lacks the required registry metadata file asset:
+1. Look for a matching release tag. If one exists, the registry discovery mechanism continues in **release asset** mode, looking for a release asset named `models.toml`. If no matching release tag can be found, go to step 2. If the matching release contains no asset named `models.toml`, raise an error indicating that the given release lacks the required registry metadata file asset:
 
 ```python
 RegistryDiscoveryError(
-    f"Registry file 'registry.toml' not found "
+    f"Registry file 'models.toml' not found "
     f"as release asset for '{source}@{ref}'"
 )
 ```
@@ -229,12 +253,12 @@ If no registry metadata file can be found, raise an error indicating that the gi
 
 ```python
 RegistryDiscoveryError(
-    f"Registry file 'registry.toml' not found "
+    f"Registry file 'models.toml' not found "
     f"in {registry_path} for '{source}@{ref}'"
 )
 ```
 
-If registry metadata file discovery is successful, it is fetched and parsed to determine the location(s) of model input files.
+If registry metadata file discovery is successful, it is fetched and parsed. Model input file URLs are constructed dynamically at fetch time from bootstrap metadata (repo, ref) and filenames in the registry.
 
 **Note**: for repositories combining the version-control and release publication schemes, `modflow-devtools` will discover tagged releases *before* tags as mere refs, therefore the Models API will reflect registry files and model input files published as release assets, not files under version control.
 
@@ -370,34 +394,45 @@ Benefits of this approach:
 
 ### Registry classes
 
-The registry class hierarchy has been consolidated onto a Pydantic-based `Registry` base class (defined in `schema.py`):
+The registry class hierarchy is based on a Pydantic `Registry` base class (defined in `schema.py`):
 
 **`Registry` (base class)**:
 - Pydantic model with `files`, `models`, `examples` fields
 - Optional `meta` field for registry metadata (present when loaded from TOML, None for local registries)
-- `FileEntry` model supports both local (`path`) and remote (`url`) files
+- `FileEntry` model has `path` (local/cached file) and `hash` (for verification)
+  - **No `url` field** - URLs are constructed dynamically at runtime from bootstrap metadata
 - Base `copy_to()` raises `NotImplementedError` - subclasses override
 - Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
 
-**`LocalRegistry`**:
+**`LocalRegistry(Registry)`**:
 - Inherits from `Registry`
 - Scans local filesystem directories for models
-- Creates `FileEntry` objects with `path` field
+- Creates `FileEntry` objects with `path` field only
 - Implements `copy_to()` for local file copying
 - No `meta` field (remains None)
 
-**`PoochRegistry`**:
+**`PoochRegistry(Registry)`**:
 - Inherits from `Registry`
 - Loads from cached or bundled registry files
-- Creates `FileEntry` objects with both `url` (source) and `path` (cache location)
+- Constructs file URLs dynamically from bootstrap metadata (repo, ref) + filename
+- Creates `FileEntry` objects with `path` (cache location) and `hash`
 - Implements `copy_to()` for remote fetching + copying
 - Populates `meta` from registry file if available
+- Associated with a single state of a single repository (source + ref)
+- Immutable - to synchronize to a new model source state, create a new instance
 
-**Key changes from original design**:
-- Removed `ModelRegistry` ABC - consolidated onto Pydantic `Registry`
-- `FileEntry` supports both local and remote files via optional `url`/`path` fields
-- `MergedRegistry` not yet implemented - registries are merged during cache loading in `PoochRegistry`
-- `LocalRegistry` kept its name (not renamed to `DeveloperRegistry`)
+**`MergedRegistry(Registry)`**:
+- Compositor pattern for combining multiple registries
+- Accepts a list of `Registry` instances (typically `PoochRegistry` instances from different sources/refs)
+- Merges their `files`, `models`, and `examples` into unified views
+- Used to create `DEFAULT_REGISTRY` from multiple sources/refs configured in bootstrap
+- Later registries override earlier ones in case of conflicts
+
+**Design decisions**:
+- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
+- **Dynamic URL construction** - enables testing against forks by changing bootstrap config
+- **No `url` in `FileEntry`** - URLs constructed at runtime, not stored in registry files
+- **Synchronization handled at module level** - registries don't manage their own sync
 
 ### Module-Level API
 
@@ -486,6 +521,60 @@ Use `python -m modflow_devtools.models sync` to download the latest registry.
 2. ⬜ Make sync required for PoochRegistry
 3. ⬜ Update documentation
 4. ⬜ Release notes with clear migration instructions
+
+## Cross-API Consistency
+
+The Models, Programs, and DFNs APIs share a consistent design for ease of use and implementation:
+
+### Shared Patterns
+
+1. **Bootstrap files**: Separate files for each API
+   - `modflow_devtools/models/bootstrap.toml`
+   - `modflow_devtools/programs/bootstrap.toml`
+   - `modflow_devtools/dfn/bootstrap.toml`
+
+2. **User config files**: Separate, API-specific user configs
+   - `~/.config/modflow-devtools/models-bootstrap.toml`
+   - `~/.config/modflow-devtools/programs-bootstrap.toml`
+   - `~/.config/modflow-devtools/dfn-bootstrap.toml`
+
+3. **Registry files**: Distinctly named to avoid confusion
+   - Models: `models.toml`
+   - Programs: `programs.toml`
+   - DFNs: `dfns.toml`
+
+4. **Registry schema**: All use Pydantic-based base classes (not ABCs)
+   - Allows direct instantiation for data-only use
+   - Consistent top-level `schema_version` metadata field
+
+5. **Dynamic URL construction**: URLs constructed at runtime from bootstrap metadata, not stored in registry files
+   - Enables fork testing by changing bootstrap config
+   - Smaller registry files
+   - Single source of truth for repository locations
+
+6. **Shared config utility**: `modflow_devtools.config.get_user_config_path(api_name)`
+   - Provides platform-appropriate config path
+   - Each API implements its own `merge_bootstrap()` with API-specific schemas
+
+7. **Unified CLI operations**:
+   - Sync all APIs: `python -m modflow_devtools sync --all`
+   - Clean all caches: `python -m modflow_devtools clean --all`
+   - Individual API operations: `python -m modflow_devtools.{api} sync|info|list|clean`
+
+8. **MergedRegistry pattern**: Only used where needed
+   - Models: Yes (essential for multi-source/multi-ref unified view)
+   - Programs: No (program names globally unique, simple merge functions suffice)
+   - DFNs: No (users work with one MF6 version at a time)
+
+### Key Differences
+
+| Aspect | Models | Programs | DFNs |
+|--------|--------|----------|------|
+| **Discovery** | Release assets or version control | Release assets only | Version control (+ release assets future) |
+| **URL type** | Raw content or release download | Release download only | Raw content only |
+| **Bootstrap fields** | `repo`, `name`, `refs`, `registry_path` | `repo`, `refs` | `repo`, `refs`, `dfn_path`, `registry_path` |
+| **Addressing** | `source@ref/path` | `program@version` | `mf6@ref/component` |
+| **MergedRegistry** | Yes | No | No |
 
 ## Open Questions / Future Enhancements
 

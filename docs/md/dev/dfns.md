@@ -124,6 +124,19 @@ Each source has:
 - `registry_path`: Path within the repository to the registry metadata file (defaults to `.registry/dfns.toml`)
 - `refs`: List of git refs (branches, tags, or commit hashes) to sync by default
 
+#### User config overlay
+
+Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
+- Linux/macOS: `~/.config/modflow-devtools/dfn-bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/dfn-bootstrap.toml`
+
+The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config, allowing users to:
+- Add custom DFN repositories
+- Point to forks of existing repositories (useful for testing experimental schema versions)
+- Override default refs for existing sources
+
+**Implementation note**: The user config path logic (`get_user_config_path("dfn")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
+
 #### Sample bootstrap file
 
 ```toml
@@ -190,13 +203,13 @@ Or for v1/v1.1, no spec file needed - everything inferred.
 
 #### Registry file format
 
-A `dfns.toml` registry file for **discovery and distribution**:
+A **`dfns.toml`** registry file for **discovery and distribution** (the specific naming distinguishes it from `models.toml` and `programs.toml`):
 
 ```toml
-# Registry metadata (optional)
+# Registry metadata (top-level, optional)
+schema_version = "1.0"
 generated_at = "2025-01-02T10:30:00Z"
 devtools_version = "1.9.0"
-registry_schema_version = "1.0"
 
 [metadata]
 ref = "6.6.0"  # Optional, known from discovery context
@@ -533,50 +546,23 @@ Examples:
 
 ### Registry classes
 
-#### DfnRegistry (abstract base)
+The registry class hierarchy is based on a Pydantic `DfnRegistry` base class:
 
-Similar to `ModelRegistry` and `ProgramRegistry`, defines the contract:
+**`DfnRegistry` (base class)**:
+- Pydantic model with optional `meta` field for registry metadata
+- Provides access to a `DfnSpec` (the full parsed specification)
+- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
+- Key properties:
+  - `spec` - The full DFN specification (lazy-loaded)
+  - `ref` - Git ref for this registry
+  - `get_dfn(component)` - Convenience for `spec[component]`
+  - `get_dfn_path(component)` - Get local path to DFN file
+  - `schema_version` - Convenience for `spec.schema_version`
+  - `components` - Convenience for `dict(spec.items())`
 
-```python
-class DfnRegistry(ABC):
-    @property
-    @abstractmethod
-    def spec(self) -> DfnSpec:
-        """Get the full DFN specification."""
-        pass
+**`RemoteDfnRegistry(DfnRegistry)`**:
 
-    @property
-    @abstractmethod
-    def ref(self) -> str:
-        """Get the git ref for this registry."""
-        pass
-
-    def get_dfn(self, component: str) -> Dfn:
-        """
-        Get a parsed DFN for the specified component.
-        Convenience method for spec[component].
-        """
-        return self.spec[component]
-
-    @abstractmethod
-    def get_dfn_path(self, component: str) -> Path:
-        """Get the local path to a DFN file (fetching if needed)."""
-        pass
-
-    @property
-    def schema_version(self) -> str:
-        """Get the schema version. Convenience for spec.schema_version."""
-        return self.spec.schema_version
-
-    @property
-    def components(self) -> dict[str, Dfn]:
-        """Get all components. Convenience for dict(spec.items())."""
-        return dict(self.spec.items())
-```
-
-#### RemoteDfnRegistry
-
-Handles remote registry discovery, caching, and DFN fetching:
+Handles remote registry discovery, caching, and DFN fetching. Constructs DFN file URLs dynamically from bootstrap metadata:
 
 ```python
 class RemoteDfnRegistry(DfnRegistry):
@@ -590,45 +576,13 @@ class RemoteDfnRegistry(DfnRegistry):
         self._cache_dir = None
         self._load()
 
-    def _load(self):
-        # Load bootstrap metadata for this source
-        self._bootstrap_meta = self._load_bootstrap(self.source)
-
-        # Check cache for registry
-        if cached := self._load_from_cache():
-            self._registry_meta = cached
-        else:
-            # Sync from remote
-            self._sync()
-
-        # Set up Pooch for file fetching
-        self._setup_pooch()
-
-        # Ensure all files are cached (lazy fetching on access)
-        # Don't load spec until needed
-
-    @property
-    def spec(self) -> DfnSpec:
-        """Lazy-load the DfnSpec from cached files."""
-        if self._spec is None:
-            # Ensure all DFN files are cached
-            self._ensure_cached()
-            # Load spec from cache directory
-            self._spec = DfnSpec.load(self._cache_dir)
-        return self._spec
-
-    def _ensure_cached(self):
-        """Ensure all DFN files are fetched and cached."""
-        for filename in self._registry_meta["files"]:
-            self._pooch.fetch(filename)
-
     def _setup_pooch(self):
         # Create Pooch instance with dynamically constructed URLs
         import pooch
 
         self._cache_dir = self._get_cache_dir()
 
-        # Construct base URL from bootstrap metadata
+        # Construct base URL from bootstrap metadata (NOT stored in registry)
         repo = self._bootstrap_meta["repo"]
         dfn_path = self._bootstrap_meta.get("dfn_path", "doc/mf6io/mf6ivar/dfn")
         base_url = f"https://raw.githubusercontent.com/{repo}/{self._ref}/{dfn_path}/"
@@ -641,18 +595,18 @@ class RemoteDfnRegistry(DfnRegistry):
 
     def get_dfn_path(self, component: str) -> Path:
         # Use Pooch to fetch file (from cache or remote)
-        # Pooch constructs full URL from base_url + filename
+        # Pooch constructs full URL from base_url + filename at runtime
         filename = self._get_filename(component)
         return Path(self._pooch.fetch(filename))
 ```
 
 **Benefits of dynamic URL construction**:
-- Registry files are smaller and simpler
-- Users can substitute personal forks by modifying bootstrap file
+- Registry files are smaller and simpler (no URLs stored)
+- Users can test against personal forks by modifying bootstrap file
 - Single source of truth for repository location
 - URLs adapt automatically when repo/path changes
 
-#### LocalDfnRegistry
+**`LocalDfnRegistry(DfnRegistry)`**:
 
 For developers working with local DFN files:
 
@@ -679,6 +633,11 @@ class LocalDfnRegistry(DfnRegistry):
                 return p
         raise ValueError(f"Component {component} not found in {self.path}")
 ```
+
+**Design decisions**:
+- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
+- **Dynamic URL construction** - DFN file URLs constructed at runtime, not stored in registry
+- **No `MergedRegistry`** - users typically work with one MODFLOW 6 version at a time, so merging across versions doesn't make sense
 
 ### Module-level API
 
@@ -1382,6 +1341,24 @@ The DFNs API deliberately mirrors the Models and Programs API architecture for c
 - Environment variable opt-out for auto-sync
 
 This consistency benefits both developers and users with a familiar experience across all three APIs.
+
+## Cross-API Consistency
+
+The DFNs API follows the same design patterns as the Models and Programs APIs for consistency. See the **Cross-API Consistency** section in `models.md` for full details.
+
+**Key shared patterns**:
+- Pydantic-based registry classes (not ABCs)
+- Dynamic URL construction (URLs built at runtime, not stored in registries)
+- Separate bootstrap and user config files (`dfn-bootstrap.toml`)
+- Top-level `schema_version` metadata field
+- Distinctly named registry file (`dfns.toml`)
+- Shared config utility: `get_user_config_path("dfn")`
+
+**Unique to DFNs API**:
+- Discovery via version control (release assets mode planned for future)
+- Extra `dfn_path` bootstrap field (location of DFN files within repo)
+- Schema versioning and mapping capabilities
+- No `MergedRegistry` (users work with one MF6 version at a time)
 
 ## Design Decisions
 
