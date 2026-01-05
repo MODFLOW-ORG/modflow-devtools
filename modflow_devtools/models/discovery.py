@@ -51,9 +51,7 @@ class DiscoveredRegistry:
 
 def discover_registry(
     source: BootstrapSource,
-    source_name: str,
     ref: str,
-    registry_path: str = ".registry",
 ) -> DiscoveredRegistry:
     """
     Discover a registry for the given source and ref.
@@ -65,13 +63,9 @@ def discover_registry(
     Parameters
     ----------
     source : BootstrapSource
-        Source metadata from bootstrap file
-    source_name : str
-        Name of the source (for addressing models)
+        Source metadata from bootstrap file (must have name populated)
     ref : str
         Git ref (tag, branch, or commit hash)
-    registry_path : str
-        Path to registry directory in repository (default: .registry)
 
     Returns
     -------
@@ -84,6 +78,7 @@ def discover_registry(
         If registry cannot be discovered
     """
     org, repo_name = source.repo.split("/")
+    registry_path = source.registry_path
 
     # Step 1: Try release assets
     release_url = (
@@ -95,7 +90,7 @@ def discover_registry(
         return DiscoveredRegistry(
             registry=registry,
             mode="release_asset",
-            source=source_name,
+            source=source.name,
             ref=ref,
             url=release_url,
         )
@@ -104,7 +99,7 @@ def discover_registry(
             # Some other error - re-raise
             raise RegistryDiscoveryError(
                 f"Error fetching registry from release "
-                f"assets for '{source_name}@{ref}': {e}"
+                f"assets for '{source.name}@{ref}': {e}"
             )
         # 404 means no release with this tag, fall through to version-controlled
 
@@ -116,7 +111,7 @@ def discover_registry(
         return DiscoveredRegistry(
             registry=registry,
             mode="version_controlled",
-            source=source_name,
+            source=source.name,
             ref=ref,
             url=vc_url,
         )
@@ -124,16 +119,16 @@ def discover_registry(
         if e.code == 404:
             raise RegistryDiscoveryError(
                 f"Registry file 'registry.toml' not found "
-                f"in {registry_path} for '{source_name}@{ref}'"
+                f"in {registry_path} for '{source.name}@{ref}'"
             )
         else:
             raise RegistryDiscoveryError(
                 "Error fetching registry from repository "
-                f"for '{source_name}@{ref}': {e}"
+                f"for '{source.name}@{ref}': {e}"
             )
     except Exception as e:
         raise RegistryDiscoveryError(
-            f"Registry discovery failed for '{source_name}@{ref}': {e}"
+            f"Registry discovery failed for '{source.name}@{ref}': {e}"
         )
 
 
@@ -179,9 +174,7 @@ def get_user_config_path() -> Path:
     if os.name == "nt":  # Windows
         config_dir = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming"))
     else:  # Unix-like (Linux, macOS, etc.)
-        config_dir = Path(
-            os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
-        )
+        config_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
 
     return config_dir / "modflow-devtools" / "bootstrap.toml"
 
@@ -266,6 +259,13 @@ def load_bootstrap(
     # Load the primary bootstrap file
     with bootstrap_path.open("rb") as f:
         data = tomli.load(f)
+
+    # Inject source keys as names if not explicitly provided
+    if "sources" in data:
+        for key, source_data in data["sources"].items():
+            if "name" not in source_data:
+                source_data["name"] = key
+
     bundled = Bootstrap(**data)
 
     # If applying user config overlay, load and merge
@@ -280,6 +280,13 @@ def load_bootstrap(
         if user_config_path.exists():
             with user_config_path.open("rb") as f:
                 user_data = tomli.load(f)
+
+            # Inject source keys as names if not explicitly provided
+            if "sources" in user_data:
+                for key, source_data in user_data["sources"].items():
+                    if "name" not in source_data:
+                        source_data["name"] = key
+
             user = Bootstrap(**user_data)
             return merge_bootstrap(bundled, user)
 

@@ -18,11 +18,10 @@ import tomli_w
 from boltons.iterutils import remap
 from filelock import FileLock
 from pooch import Pooch
-from pydantic import Field
 
 import modflow_devtools
 from modflow_devtools.misc import drop_none_or_empty, get_model_paths
-from modflow_devtools.models.schema import FileEntry, Registry, RegistryMetadata
+from modflow_devtools.models.schema import FileEntry, Registry
 
 # Best-effort sync flag (to avoid multiple sync attempts)
 _SYNC_ATTEMPTED = False
@@ -60,7 +59,7 @@ class LocalRegistry(Registry):
 
     exclude: ClassVar = [".DS_Store", "compare"]
 
-    #Non-Pydantic instance variable for tracking indexed paths
+    # Non-Pydantic instance variable for tracking indexed paths
     _paths: set[Path]
 
     def __init__(self) -> None:
@@ -335,7 +334,7 @@ class PoochRegistry(Registry):
 
         warnings.warn(
             "Loading bundled registry. This is deprecated and will be removed in v2.0. "
-            "Use 'python -m modflow_devtools.models sync' to download the latest registry.",
+            "Use 'python -m modflow_devtools.models sync' to get the latest registry.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -354,9 +353,7 @@ class PoochRegistry(Registry):
                     )
                 # Extract URLs and configure Pooch
                 self._urls = {
-                    fname: entry.url
-                    for fname, entry in self.files.items()
-                    if entry.url
+                    fname: entry.url for fname, entry in self.files.items() if entry.url
                 }
                 self.pooch.registry = {
                     fname: entry.hash for fname, entry in self.files.items()
@@ -438,7 +435,7 @@ class PoochRegistry(Registry):
         output_path : str | PathLike | None
             Path to output directory. If None, uses default registry path.
         separate : bool
-            If True, generates separate registry.toml, models.toml, examples.toml (for 1.x compatibility).
+            If True, generates separate registry.toml, models.toml, examples.toml.
             If False (default), generates single consolidated registry.toml.
         """
         path = Path(path).expanduser().resolve().absolute()

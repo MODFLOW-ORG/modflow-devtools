@@ -14,8 +14,8 @@ class BootstrapSource(BaseModel):
     """A single source model repository in the bootstrap file."""
 
     repo: str = Field(..., description="Repository in format 'owner/name'")
-    name: str | None = Field(
-        None, description="Override name for model addressing (default: section name)"
+    name: str = Field(
+        ..., description="Name for model addressing (injected from key if not explicit)"
     )
     refs: list[str] = Field(
         default_factory=list,
@@ -40,6 +40,74 @@ class BootstrapSource(BaseModel):
             raise ValueError(f"repo owner and name cannot be empty, got: {v}")
         return v
 
+    def sync(
+        self,
+        ref: str | None = None,
+        repo: str | None = None,
+        force: bool = False,
+        verbose: bool = False,
+    ):
+        """
+        Sync this source to local cache.
+
+        Parameters
+        ----------
+        ref : str | None
+            Specific ref to sync. If None, syncs all configured refs.
+        repo : str | None
+            Override repository (for testing forks). Format: "owner/name"
+        force : bool
+            Force re-download even if cached
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        SyncResult
+            Results of the sync operation
+        """
+        from .sync import sync_registry
+
+        return sync_registry(
+            source=self.name,
+            ref=ref,
+            repo=repo or self.repo,
+            force=force,
+            verbose=verbose,
+        )
+
+    def is_synced(self, ref: str) -> bool:
+        """
+        Check if a specific ref is synced to cache.
+
+        Parameters
+        ----------
+        ref : str
+            The git ref to check
+
+        Returns
+        -------
+        bool
+            True if the ref is synced and cached
+        """
+        from .cache import is_registry_cached
+
+        return is_registry_cached(self.name, ref)
+
+    def list_synced_refs(self) -> list[str]:
+        """
+        Get list of refs that are currently synced to cache.
+
+        Returns
+        -------
+        list[str]
+            List of synced refs for this source
+        """
+        from .cache import list_cached_registries
+
+        cached = list_cached_registries()
+        return [ref for source, ref in cached if source == self.name]
+
 
 class Bootstrap(BaseModel):
     """Bootstrap metadata file structure."""
@@ -47,11 +115,6 @@ class Bootstrap(BaseModel):
     sources: dict[str, BootstrapSource] = Field(
         ..., description="Map of source names to source metadata"
     )
-
-    def get_source_name(self, key: str) -> str:
-        """Get the name for a source (uses override if present, else key)."""
-        source = self.sources[key]
-        return source.name if source.name else key
 
 
 class RegistryMetadata(BaseModel):
@@ -77,7 +140,7 @@ class FileEntry(BaseModel):
     path: Path | None = Field(None, description="Local file path (original or cached)")
     hash: str | None = Field(None, description="SHA256 hash of the file")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_location(self):
         """Ensure at least one of url or path is provided."""
         if not self.url and not self.path:
@@ -94,7 +157,9 @@ class Registry(BaseModel):
     Subclasses (LocalRegistry, PoochRegistry) override copy_to() for active use.
     """
 
-    meta: RegistryMetadata | None = Field(None, alias="_meta", description="Registry metadata (optional)")
+    meta: RegistryMetadata | None = Field(
+        None, alias="_meta", description="Registry metadata (optional)"
+    )
     files: dict[str, FileEntry] = Field(
         default_factory=dict, description="Map of file names to file entries"
     )

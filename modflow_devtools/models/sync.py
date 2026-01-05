@@ -100,7 +100,7 @@ def sync_registry(
 
     # Sync each source/ref combination
     for source_key, source_meta in sources_to_sync.items():
-        source_name = bootstrap.get_source_name(source_key)
+        source_name = source_meta.name
 
         # Determine which refs to sync
         if ref:
@@ -128,9 +128,7 @@ def sync_registry(
 
                 discovered = discover_registry(
                     source=source_meta,
-                    source_name=source_name,
                     ref=ref_name,
-                    registry_path=source_meta.registry_path,
                 )
 
                 if verbose:
@@ -175,7 +173,7 @@ def get_sync_status(bootstrap_path: Path | str | None = None) -> dict:
 
     status = {}
     for source_key, source_meta in bootstrap.sources.items():
-        source_name = bootstrap.get_source_name(source_key)
+        source_name = source_meta.name
         refs = source_meta.refs if source_meta.refs else []
 
         source_status = {

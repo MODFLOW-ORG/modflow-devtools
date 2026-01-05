@@ -110,7 +110,7 @@ def main():
     )
     sync_parser.add_argument(
         "--repo",
-        help='Override repository in "owner/name" format (e.g., "wpbonelli/modflow6-testmodels"). Requires --source.',
+        help='Override repository in "owner/name" format. Requires --source.',
     )
     sync_parser.add_argument(
         "--force",
