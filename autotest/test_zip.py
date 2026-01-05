@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import zipfile
+from collections.abc import Generator
 from pathlib import Path
 from pprint import pprint
 from shutil import which
@@ -15,7 +16,9 @@ from modflow_devtools.zip import MFZipFile
 
 ext, _ = get_suffixes(sys.platform)
 exe_stem = "pytest"
-exe_path = Path(which(exe_stem))
+_exe_which = which(exe_stem)
+assert _exe_which is not None, f"{exe_stem} not found in PATH"
+exe_path = Path(_exe_which)
 exe_name = f"{exe_stem}{ext}"
 
 
@@ -38,7 +41,7 @@ def test_compressall(function_tmpdir):
 
 
 @pytest.fixture(scope="module")
-def empty_archive(module_tmpdir) -> Path:
+def empty_archive(module_tmpdir) -> Generator[Path, None, None]:
     # https://stackoverflow.com/a/25195628/6514033
     data = b"PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # noqa: E501
     path = module_tmpdir / "empty.zip"
@@ -53,7 +56,7 @@ def test_extractall_empty(empty_archive, function_tmpdir):
 
 
 @pytest.fixture(scope="module")
-def archive(module_tmpdir) -> Path:
+def archive(module_tmpdir) -> Generator[Path, None, None]:
     zip_path = module_tmpdir / "nonempty.zip"
     shutil.copy(exe_path, module_tmpdir)
     with set_dir(module_tmpdir):

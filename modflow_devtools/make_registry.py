@@ -74,7 +74,7 @@ if __name__ == "__main__":
         action="store_true",
         help=(
             "Generate separate files (registry.toml, models.toml, examples.toml) "
-            "for 1.x compatibility. Default is consolidated.",
+            "for 1.x compatibility. Default is consolidated."
         ),
     )
     parser.add_argument(

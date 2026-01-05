@@ -43,10 +43,11 @@ def test_set_env():
             assert environ.get(key) is None
 
 
-_repos_path = environ.get("REPOS_PATH")
-if _repos_path is None:
-    _repos_path = Path(__file__).parent.parent.parent.parent
-_repos_path = Path(_repos_path).expanduser().absolute()
+_repos_path_str = environ.get("REPOS_PATH")
+if _repos_path_str is None:
+    _repos_path: Path = Path(__file__).parent.parent.parent.parent
+else:
+    _repos_path = Path(_repos_path_str).expanduser().absolute()
 _testmodels_repo_path = _repos_path / "modflow6-testmodels"
 _testmodels_repo_paths_mf6 = sorted((_testmodels_repo_path / "mf6").glob("test*"))
 _testmodels_repo_paths_mf5to6 = sorted((_testmodels_repo_path / "mf5to6").glob("test*"))
@@ -132,7 +133,7 @@ def get_expected_model_dirs(path, pattern="mfsim.nam") -> list[Path]:
 
 
 def get_expected_namefiles(path, pattern="mfsim.nam") -> list[Path]:
-    folders = []
+    folders: list[Path] = []
     for root, dirs, _ in os.walk(path):
         for d in dirs:
             p = Path(root) / d

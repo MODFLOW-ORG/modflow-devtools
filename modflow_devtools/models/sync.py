@@ -176,18 +176,21 @@ def get_sync_status(bootstrap_path: Path | str | None = None) -> dict:
         source_name = source_meta.name
         refs = source_meta.refs if source_meta.refs else []
 
+        cached_refs: list[str] = []
+        missing_refs: list[str] = []
+
         source_status = {
             "repo": source_meta.repo,
             "configured_refs": refs,
-            "cached_refs": [],
-            "missing_refs": [],
+            "cached_refs": cached_refs,
+            "missing_refs": missing_refs,
         }
 
         for ref_name in refs:
             if (source_name, ref_name) in cached_registries:
-                source_status["cached_refs"].append(ref_name)
+                cached_refs.append(ref_name)
             else:
-                source_status["missing_refs"].append(ref_name)
+                missing_refs.append(ref_name)
 
         status[source_name] = source_status
 

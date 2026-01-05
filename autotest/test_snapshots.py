@@ -6,7 +6,9 @@ import pytest
 from _pytest.config import ExitCode
 
 proj_root = Path(__file__).parents[1]
-module_path = Path(inspect.getmodulename(__file__))
+_module_name = inspect.getmodulename(__file__)
+assert _module_name is not None
+module_path = Path(_module_name)
 snapshot_array = np.array([1.1, 2.2, 3.3])
 snapshots_path = proj_root / "autotest" / "__snapshots__"
 

@@ -43,7 +43,7 @@ def update_docs_config(version: Version):
 
 def update_version(
     timestamp: datetime = datetime.now(),
-    version: Version = None,
+    version: Version | None = None,
 ):
     lock_path = Path(_version_txt_path.name + ".lock")
     lock = FileLock(lock_path)
@@ -52,7 +52,7 @@ def update_version(
         version = (
             version
             if version
-            else Version(previous.major, previous.minor, previous.micro)
+            else Version(f"{previous.major}.{previous.minor}.{previous.micro}")
         )
 
         update_version_txt(version)

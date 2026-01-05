@@ -64,7 +64,7 @@ class LocalRegistry(Registry):
 
     def __init__(self) -> None:
         # Initialize Pydantic parent with empty data (no meta for local registries)
-        super().__init__(meta=None, files={}, models={}, examples={})
+        super().__init__(_meta=None, files={}, models={}, examples={})
         # Initialize non-Pydantic tracking variable
         self._paths = set()
 
@@ -139,7 +139,9 @@ class LocalRegistry(Registry):
             return None
 
         # Get actual file paths from FileEntry objects
-        file_paths = [self.files[name].path for name in file_names]
+        file_paths = [
+            p for name in file_names if (p := self.files[name].path) is not None
+        ]
 
         # create the workspace if needed
         workspace = Path(workspace).expanduser().absolute()
@@ -203,7 +205,7 @@ class PoochRegistry(Registry):
         retries: int = 3,
     ):
         # Initialize Pydantic parent with empty data (will be populated by _load())
-        super().__init__(meta=None, files={}, models={}, examples={})
+        super().__init__(_meta=None, files={}, models={}, examples={})
 
         # Initialize non-Pydantic instance variables
         self._registry_path = Path(__file__).parent.parent / "registry"
@@ -530,10 +532,10 @@ class PoochRegistry(Registry):
             models_file_path = output_dir / PoochRegistry.models_file_name
             examples_file_path = output_dir / PoochRegistry.examples_file_name
 
-            with registry_file_path.open("ab+") as registry_file:
+            with registry_file_path.open("ab+") as f:
                 tomli_w.dump(
                     remap(dict(sorted(files.items())), visit=drop_none_or_empty),
-                    registry_file,
+                    f,
                 )
 
             with models_file_path.open("ab+") as models_file:
@@ -628,12 +630,12 @@ def get_examples() -> dict[str, list[str]]:
     return DEFAULT_REGISTRY.examples
 
 
-def get_models() -> dict[str, str]:
+def get_models() -> dict[str, list[str]]:
     """Get a map of model names to input files."""
     return DEFAULT_REGISTRY.models
 
 
-def get_files() -> dict[str, dict[str, str]]:
+def get_files() -> dict[str, FileEntry]:
     """
     Get a map of file names to URLs. Note that this mapping
     contains no information on which files belong to which
