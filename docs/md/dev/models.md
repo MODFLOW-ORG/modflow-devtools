@@ -63,7 +63,7 @@ Transition from a static model registry baked into `modflow-devtools` releases t
 
 ## Overview
 
-Make model repositories reponsible for publishing their own registries.
+Make model repositories responsible for publishing their own registries.
 
 Make `modflow-devtools` responsible only for
 
