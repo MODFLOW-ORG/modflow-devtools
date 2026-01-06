@@ -44,15 +44,15 @@ This is a living document which will be updated as development proceeds. As the 
 
 ## Background
 
-Currently each release of `modflow-devtools` is fixed to a specific state of each model repository. It is incumbent on this package's developers to monitor the status of model repositories and, when models are updated, regenerate the registry and release a new version of this package.
+Previously, each release of `modflow-devtools` was fixed to a specific state of each model repository. It was incumbent on this package's developers to monitor the status of model repositories and, when models were updated, regenerate the registry and release a new version of this package.
 
-This tight coupling is inconvenient for consumers. It is not currently clear which version of `modflow-devtools` provides access to which versions of each model repository, and users must wait until developers manually re-release `modflow-devtools` for access to updated models. Also, 1.7MB+ in TOML registry files are currently shipped with package, bloating the install time network payload.
+This tight coupling was inconvenient for consumers. It was not clear which version of `modflow-devtools` provided access to which versions of each model repository, and users had to wait until developers manually re-released `modflow-devtools` for access to updated models. Also, 1.7MB+ in TOML registry files were shipped with package, bloating the install time network payload.
 
-The coupling is also burdensome to developers, preventing model repositories and `modflow-devtools` from moving independently.
+The coupling was also burdensome to developers, preventing model repositories and `modflow-devtools` from moving independently.
 
 ## Objective
 
-Transition from a static model registry baked into `modflow-devtools` releases to a dynamic, explicitly versioned registry system where model repositories publish catalogs which `modflow-devtools` discovers and synchronizes to on-demand.
+The Models API has transitioned from a static model registry baked into `modflow-devtools` releases to a dynamic, explicitly versioned registry system where model repositories publish catalogs which `modflow-devtools` discovers and synchronizes on-demand.
 
 ## Motivation
 
@@ -82,7 +82,7 @@ This involves several new components (bootstrap file, user config overlay) and a
 
 ### Bootstrap file
 
-The **bootstrap** file will tell `modflow-devtools` where to look for remote model repositories. This file will be checked into the repository at `modflow_devtools/models/bootstrap.toml` and distributed with the package.
+The **bootstrap** file will tell `modflow-devtools` where to look for remote model repositories. This file will be checked into the repository at `modflow_devtools/models/models.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
@@ -124,8 +124,8 @@ Note: The bootstrap refs list indicates default refs to sync at install time. Us
 #### User config overlay
 
 Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
-- Linux/macOS: `~/.config/modflow-devtools/models-bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
-- Windows: `%APPDATA%/modflow-devtools/models-bootstrap.toml`
+- Linux/macOS: `~/.config/modflow-devtools/models.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/models.toml`
 
 The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config:
 - Sources with the same key will be completely replaced by the user version
@@ -413,7 +413,7 @@ The registry class hierarchy is based on a Pydantic `Registry` base class (defin
 
 **`PoochRegistry(Registry)`**:
 - Inherits from `Registry`
-- Loads from cached or bundled registry files
+- Loads from cached registry files (synced via `sync_registry()`)
 - Constructs file URLs dynamically from bootstrap metadata (repo, ref) + filename
 - Creates `FileEntry` objects with `path` (cache location) and `hash`
 - Implements `copy_to()` for remote fetching + copying
@@ -444,83 +444,47 @@ This will break any code checking `isinstance(DEFAULT_REGISTRY, PoochRegistry)`,
 
 ## Migration path
 
-Ideally, we can avoid breaking existing code, and provide a gentle migration path for users with clear deprecation warnings and/or error messages where necessary.
+The transition to the dynamic registry system is complete. The package no longer ships large TOML registry files - only a minimal bootstrap file (`modflow_devtools/models/models.toml`) that tells the system where to find remote model repositories.
 
-For the remainder of the 1.x release series, keep shipping registry metadata with `modflow-devtools` for backwards-compatibility, now with the benefit of explicit model versioning. Allow syncing on demand for access to model updates. Stop shipping registry metadata and begin syncing remote model registry metadata at install time with the release of 2.x, at which point metadata shipped with `modflow-devtools` should be a few KB at most.
+On first import, `modflow-devtools` attempts to auto-sync the default registries. If this fails (e.g., no network), users will get a clear error message when trying to use the registry, directing them to run `python -m modflow_devtools.models sync`.
 
-For 1.x, show a deprecation warning on import:
+Since `modflow-devtools` is currently used only internally (dogfooding), there are no external consumers to worry about for backwards compatibility.
 
-```
-DeprecationWarning: Bundled registry is deprecated and will be removed in v2.0.
-Use `python -m modflow_devtools.models sync` to download the latest registry.
-```
+### Implementation Summary
 
-### Implementation plan
+The dynamic registry system has been fully implemented:
 
-#### Phase 1: Foundation (v1.x) - ✅ COMPLETE
+#### ✅ Core Infrastructure
+- Bootstrap metadata file (`modflow_devtools/models/models.toml`)
+- Registry schema with Pydantic validation (`modflow_devtools/models/schema.py`)
+- Cache directory structure utilities (`modflow_devtools/models/cache.py`)
+- Sync functionality with download logic (`modflow_devtools/models/sync.py`)
+- Registry discovery with priority resolution (`modflow_devtools/models/discovery.py`)
+- CLI subcommands (`python -m modflow_devtools.models` - sync, info, list)
 
-1. ✅ Add bootstrap metadata file (`modflow_devtools/models/bootstrap.toml`)
-2. ✅ Implement registry schema with Pydantic validation (`modflow_devtools/models/schema.py`)
-3. ✅ Create cache directory structure utilities (`modflow_devtools/models/cache.py`)
-4. ✅ Add `sync_registry()` function with download logic (`modflow_devtools/models/sync.py`)
-5. ✅ Implement branch priority resolution (`modflow_devtools/models/discovery.py`)
-6. ✅ Add CLI subcommands (`modflow_devtools/models/__main__.py` - sync, info, list)
+#### ✅ Registry Classes
+- Pydantic-based `Registry` base class (not ABC)
+- `FileEntry` supporting both local and remote files
+- `LocalRegistry` for indexing local model directories
+- `PoochRegistry` for remote model fetching via cache
+- Auto-sync on first import (`_try_best_effort_sync()`)
 
-**Bonus features:**
-- ✅ Updated registry generation machinery (`make_registry.py`) with `--output` and `--separate` flags
-- ✅ Added `repo` parameter to `sync_registry()` for testing forks
-- ✅ Implemented nested directory cache structure for source names with slashes
-- ✅ Comprehensive test suite (`autotest/test_models_v2.py`)
+#### ✅ User Features
+- User config overlay (`~/.config/modflow-devtools/models.toml`)
+- Bootstrap config merging for custom sources
+- Explicit model versioning via git refs
+- Platform-appropriate cache locations
+- Clear error messages when sync is needed
 
-#### Phase 2: PoochRegistry Adaptation (v1.x) - ✅ COMPLETE
+#### ✅ Testing
+- Comprehensive test suite in `autotest/test_models.py`
+- Tests configured via `.env` file
+- Parallel execution with pytest-xdist (`--dist loadgroup`)
 
-1. ✅ Modify `PoochRegistry` to check cache first (`_try_load_from_cache()`)
-2. ✅ Add fallback to bundled registry (`_load_from_bundled()`)
-3. ✅ Implement best-effort sync on import (`_try_best_effort_sync()`)
-4. ✅ Add deprecation warnings for bundled registry
-
-**Implementation details:**
-- Modified `PoochRegistry._load()` to try cache first, fall back to bundled
-- Added `_try_best_effort_sync()` called on module import (silent failure on network issues)
-- Deprecation warning shown when loading bundled registry
-- Cache-aware registry merges all synced sources/refs automatically
-
-#### Phase 3: Upstream CI (concurrent with Phase 1-2) - ⚠️ PARTIALLY COMPLETE
-
-1. ⬜ Add `.github/workflows/registry.yml` to each model repo
-2. ⬜ Test registry generation in CI
-3. ✅ Commit registry files to `.registry/` directories (done in test fork)
-4. ⬜ For repos with releases, add registry as release asset
-
-#### Phase 4: Testing & Documentation (v1.x) - ⚠️ PARTIALLY COMPLETE
-
-1. ✅ Add comprehensive tests for sync mechanism
-2. ⚠️ Test network failure scenarios (partial - nonexistent ref covered)
-3. ⬜ Document new workflow in `models.md`
-4. ⬜ Add migration guide for v2.x
-
-#### Phase 4.5: Architecture Improvements (v1.x) - ✅ COMPLETE
-
-1. ✅ User config overlay support
-   - Added `get_user_config_path()` for platform-appropriate config location
-   - Added `merge_bootstrap()` to merge user + bundled configs
-   - Updated `load_bootstrap()` with optional `user_config_path` parameter
-   - User config automatically loaded and merged when using default bootstrap
-   - Comprehensive tests in `test_models_v2.py::TestBootstrap`
-
-2. ✅ Registry class consolidation
-   - Removed `ModelRegistry` ABC
-   - Made `Registry` (Pydantic) the base class for all registries
-   - Updated `FileEntry` to support both local (`path`) and remote (`url`) files
-   - Updated `LocalRegistry` and `PoochRegistry` to inherit from `Registry`
-   - All 26 tests passing in `test_models_v2.py`
-
-#### Phase 5: v2.x Release - ⬜ NOT STARTED
-
-1. ⬜ Remove bundled registry files (keep bootstrap.toml)
-2. ⬜ Make sync required for PoochRegistry
-3. ⬜ Update documentation
-4. ⬜ Release notes with clear migration instructions
+#### 🚧 Future Work (Upstream CI)
+- Add `.github/workflows/registry.yml` to each model repo
+- Automate registry generation in CI
+- Add registry as release asset for repos with releases
 
 ## Cross-API Consistency
 
@@ -528,17 +492,11 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
 
 ### Shared Patterns
 
-1. **Bootstrap files**: Separate files for each API
-   - `modflow_devtools/models/bootstrap.toml`
-   - `modflow_devtools/programs/bootstrap.toml`
-   - `modflow_devtools/dfn/bootstrap.toml`
+1. **Bootstrap files**: Separate files for each API, using identical naming to registry files but distinguished by location
+   - Bundled: `modflow_devtools/models/models.toml`, `modflow_devtools/programs/programs.toml`, `modflow_devtools/dfn/dfns.toml`
+   - User config: `~/.config/modflow-devtools/models.toml`, `~/.config/modflow-devtools/programs.toml`, `~/.config/modflow-devtools/dfns.toml`
 
-2. **User config files**: Separate, API-specific user configs
-   - `~/.config/modflow-devtools/models-bootstrap.toml`
-   - `~/.config/modflow-devtools/programs-bootstrap.toml`
-   - `~/.config/modflow-devtools/dfn-bootstrap.toml`
-
-3. **Registry files**: Distinctly named to avoid confusion
+2. **Registry files**: Same naming as bootstrap files, distinguished by location (in source repos)
    - Models: `models.toml`
    - Programs: `programs.toml`
    - DFNs: `dfns.toml`

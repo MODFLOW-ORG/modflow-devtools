@@ -105,7 +105,7 @@ The Programs API will mirror the Models API architecture with adaptations for pr
 
 ### Bootstrap file
 
-The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/bootstrap.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/programs.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
@@ -118,8 +118,8 @@ Each source entry has:
 #### User config overlay
 
 Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
-- Linux/macOS: `~/.config/modflow-devtools/programs-bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
-- Windows: `%APPDATA%/modflow-devtools/programs-bootstrap.toml`
+- Linux/macOS: `~/.config/modflow-devtools/programs.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/programs.toml`
 
 The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config, allowing users to:
 - Add custom program repositories
@@ -649,7 +649,7 @@ Since programs will publish pre-built binaries, pymake is no longer needed for b
 Core components to implement:
 
 1. **Bootstrap & Schema**
-   - Create bootstrap file (`modflow_devtools/programs/bootstrap.toml`)
+   - Create bootstrap file (`modflow_devtools/programs/programs.toml`)
    - Define registry schema with Pydantic validation (`modflow_devtools/programs/schema.py`)
 
 2. **Registry Classes**
@@ -699,7 +699,7 @@ The Programs API deliberately mirrors the Models API architecture:
 
 | Aspect | Models API | Programs API |
 |--------|-----------|--------------|
-| **Bootstrap file** | `models/bootstrap.toml` | `programs/bootstrap.toml` |
+| **Bootstrap file** | `models/models.toml` | `programs/programs.toml` |
 | **Registry format** | TOML with files/models/examples | TOML with programs/binaries |
 | **Discovery** | Release assets or version control | Release assets only |
 | **Caching** | `~/.cache/modflow-devtools/models` | `~/.cache/modflow-devtools/programs` |
@@ -862,7 +862,7 @@ The Programs API follows the same design patterns as the Models and DFNs APIs fo
 **Key shared patterns**:
 - Pydantic-based registry classes (not ABCs)
 - Dynamic URL construction (URLs built at runtime, not stored in registries)
-- Separate bootstrap and user config files (`programs-bootstrap.toml`)
+- Bootstrap and user config files with identical naming (`programs.toml`), distinguished by location
 - Top-level `schema_version` metadata field
 - Distinctly named registry file (`programs.toml`)
 - Shared config utility: `get_user_config_path("programs")`

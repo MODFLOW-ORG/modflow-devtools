@@ -3,14 +3,12 @@
 #   fetch zip of the repo instead of individual files?
 
 import hashlib
-import importlib.resources as pkg_resources
 from collections.abc import Callable
 from functools import partial
 from os import PathLike
 from pathlib import Path
 from shutil import copy
 from typing import ClassVar
-from warnings import warn
 
 import pooch
 import tomli
@@ -258,17 +256,20 @@ class PoochRegistry(Registry):
 
     def _load(self):
         """
-        Load registry data.
+        Load registry data from cache.
 
-        Tries to load from cached registries first (if synced),
-        falls back to bundled registry with deprecation warning.
+        Raises an error if no cached registries are found.
+        Run 'python -m modflow_devtools.models sync' to populate the cache.
         """
-        # Try to load from cache first
+        # Try to load from cache
         loaded_from_cache = self._try_load_from_cache()
 
         if not loaded_from_cache:
-            # Fall back to bundled registry
-            self._load_from_bundled()
+            raise RuntimeError(
+                "No model registries found in cache. "
+                "Run 'python -m modflow_devtools.models sync' to download registries, "
+                "or use sync_registry() programmatically."
+            )
 
     def _try_load_from_cache(self) -> bool:
         """
@@ -325,73 +326,6 @@ class PoochRegistry(Registry):
 
         except Exception:
             return False
-
-    def _load_from_bundled(self):
-        """
-        Load registry from bundled package resources.
-
-        Shows deprecation warning.
-        """
-        import warnings
-
-        warnings.warn(
-            "Loading bundled registry. This is deprecated and will be removed in v2.0. "
-            "Use 'python -m modflow_devtools.models sync' to get the latest registry.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-
-        try:
-            with pkg_resources.open_binary(
-                PoochRegistry.anchor, PoochRegistry.registry_file_name
-            ) as registry_file:
-                registry = tomli.load(registry_file)
-                # Create FileEntry objects for each file
-                for fname, entry in registry.items():
-                    self.files[fname] = FileEntry(
-                        url=entry.get("url"),
-                        path=self.pooch.path / fname,
-                        hash=entry.get("hash"),
-                    )
-                # Extract URLs and configure Pooch
-                self._urls = {
-                    fname: entry.url for fname, entry in self.files.items() if entry.url
-                }
-                self.pooch.registry = {
-                    fname: entry.hash for fname, entry in self.files.items()
-                }
-                self.pooch.urls = self._urls
-        except:  # noqa: E722
-            self._urls = {}
-            self.pooch.registry = {}
-            warn(
-                f"No registry file '{PoochRegistry.registry_file_name}' "
-                f"in module '{PoochRegistry.anchor}' resources"
-            )
-
-        try:
-            with pkg_resources.open_binary(
-                PoochRegistry.anchor, PoochRegistry.models_file_name
-            ) as models_file:
-                self.models.update(tomli.load(models_file))
-                for model_name, file_list in self.models.items():
-                    self._fetchers[model_name] = self._fetcher(model_name, file_list)
-        except:  # noqa: E722
-            warn(
-                f"No model mapping file '{PoochRegistry.models_file_name}' "
-                f"in module '{PoochRegistry.anchor}' resources"
-            )
-
-        try:
-            with pkg_resources.open_binary(
-                PoochRegistry.anchor, PoochRegistry.examples_file_name
-            ) as examples_file:
-                self.examples.update(tomli.load(examples_file))
-        except:  # noqa: E722
-            warn(
-                f"No examples file '{PoochRegistry.examples_file_name}' "
-                f"in module '{PoochRegistry.anchor}' resources"
-            )
 
     def index(
         self,
@@ -595,8 +529,9 @@ def _try_best_effort_sync():
     Attempt to sync registries on first import.
 
     This is a best-effort operation - if it fails (network issues,
-    misconfiguration, etc.), we silently continue and fall back to
-    the bundled registry.
+    misconfiguration, etc.), we silently continue. The user will get
+    a clear error message if they try to use the registry without
+    having synced successfully.
     """
     global _SYNC_ATTEMPTED
 
@@ -612,7 +547,7 @@ def _try_best_effort_sync():
         # Try to sync default refs (don't be verbose, don't fail on errors)
         sync_registry(verbose=False)
     except Exception:
-        # Silently fail - we'll fall back to bundled registry
+        # Silently fail - user will get clear error when trying to use registry
         pass
 
 

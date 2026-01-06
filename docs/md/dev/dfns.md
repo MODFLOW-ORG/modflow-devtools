@@ -112,7 +112,7 @@ The DFNs API will mirror the Models and Programs API architecture, adapted for d
 
 ### Bootstrap file
 
-The **bootstrap** file tells `modflow-devtools` where to look for DFN registries. This file will be checked into the repository at `modflow_devtools/dfn/bootstrap.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for DFN registries. This file will be checked into the repository at `modflow_devtools/dfn/dfns.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
@@ -127,8 +127,8 @@ Each source has:
 #### User config overlay
 
 Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
-- Linux/macOS: `~/.config/modflow-devtools/dfn-bootstrap.toml` (respects `$XDG_CONFIG_HOME`)
-- Windows: `%APPDATA%/modflow-devtools/dfn-bootstrap.toml`
+- Linux/macOS: `~/.config/modflow-devtools/dfns.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/dfns.toml`
 
 The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config, allowing users to:
 - Add custom DFN repositories
@@ -1242,7 +1242,7 @@ Breaking changes (justified):
 
 **Foundation** (no dependencies):
 1. Merge dfn branch work (schema, parser, utility code)
-2. Add bootstrap file (`modflow_devtools/dfn/bootstrap.toml`)
+2. Add bootstrap file (`modflow_devtools/dfn/dfns.toml`)
 3. Define registry schema with Pydantic (handles validation and provides JSON-Schema export)
 4. Implement registry discovery logic
 5. Create cache directory structure utilities
@@ -1318,7 +1318,7 @@ The DFNs API deliberately mirrors the Models and Programs API architecture for c
 
 | Aspect | Models API | Programs API | **DFNs API** |
 |--------|-----------|--------------|--------------|
-| **Bootstrap file** | `models/bootstrap.toml` | `programs/bootstrap.toml` | `dfn/bootstrap.toml` |
+| **Bootstrap file** | `models/models.toml` | `programs/programs.toml` | `dfn/dfns.toml` |
 | **Registry format** | TOML with files/models/examples | TOML with programs/binaries | TOML with files/components/hierarchy |
 | **Discovery** | Release assets or version control | Release assets only | Version control (+ release assets future) |
 | **Caching** | `~/.cache/.../models` | `~/.cache/.../programs` | `~/.cache/.../dfn` |
@@ -1349,7 +1349,7 @@ The DFNs API follows the same design patterns as the Models and Programs APIs fo
 **Key shared patterns**:
 - Pydantic-based registry classes (not ABCs)
 - Dynamic URL construction (URLs built at runtime, not stored in registries)
-- Separate bootstrap and user config files (`dfn-bootstrap.toml`)
+- Bootstrap and user config files with identical naming (`dfns.toml`), distinguished by location
 - Top-level `schema_version` metadata field
 - Distinctly named registry file (`dfns.toml`)
 - Shared config utility: `get_user_config_path("dfn")`

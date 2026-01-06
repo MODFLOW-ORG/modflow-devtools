@@ -1,30 +1,18 @@
 """
-Tests for the models API.
+Tests for the models API (dynamic registry).
 
-Includes tests for both v1 (bundled registry) and v2 (dynamic registry).
-V2 tests can be configured via environment variables (loaded from .env file).
+Tests can be configured via environment variables (loaded from .env file).
 """
 
 import os
-from itertools import islice
 from pathlib import Path
 
 import pytest
-import tomli
 
-import modflow_devtools.models as models
-from modflow_devtools.misc import is_in_ci
 from modflow_devtools.models import cache, discovery, sync
 from modflow_devtools.models.schema import Bootstrap, BootstrapSource, Registry
 
-# V1 test configuration (bundled registry)
-TAKE = 5 if is_in_ci() else None
-PROJ_ROOT = Path(__file__).parents[1]
-MODELS_PATH = PROJ_ROOT / "modflow_devtools" / "registry" / "models.toml"
-MODELS = tomli.load(MODELS_PATH.open("rb"))
-
-# V2 test configuration (dynamic registry)
-# Loaded from .env file via pytest-dotenv plugin
+# Test configuration (loaded from .env file via pytest-dotenv plugin)
 TEST_REPO = os.getenv("TEST_REPO", "wpbonelli/modflow6-testmodels")
 TEST_REF = os.getenv("TEST_REF", "registry")
 TEST_SOURCE = os.getenv("TEST_SOURCE", "modflow6-testmodels")
@@ -32,77 +20,7 @@ TEST_SOURCE_NAME = os.getenv("TEST_SOURCE_NAME", "mf6/test")
 
 
 # ============================================================================
-# V1 Tests (Bundled Registry - Backward Compatibility)
-# ============================================================================
-
-
-@pytest.fixture(scope="module")
-def bundled_registry():
-    """
-    Create a PoochRegistry from bundled files.
-
-    This fixture creates a registry using the v1 API with the default base_url
-    for MODFLOW 6 examples.  Clears cache first to ensure we load from bundled
-    files rather than any v2 test registries that might be cached.
-    """
-    # Clear cache to force loading from bundled files
-    cache.clear_registry_cache()
-
-    # Create registry with default base_url - it will load from bundled files
-    base_url = (
-        "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/"
-    )
-    registry = models.PoochRegistry(base_url=base_url)
-    return registry
-
-
-@pytest.mark.xdist_group("registry_cache")
-def test_files(bundled_registry):
-    files = bundled_registry.files
-    assert files is not None, "Files not loaded"
-    assert any(files), "Registry is empty"
-
-
-@pytest.mark.xdist_group("registry_cache")
-@pytest.mark.parametrize("model_name, files", MODELS.items(), ids=list(MODELS.keys()))
-def test_models(bundled_registry, model_name, files):
-    model_names = list(bundled_registry.models.keys())
-    assert model_name in model_names, f"Model {model_name} not found in model map"
-    assert files == bundled_registry.models[model_name], (
-        f"Files for model {model_name} do not match"
-    )
-    if "mf6" in model_name:
-        assert any(Path(f).name == "mfsim.nam" for f in files)
-
-
-def test_examples(bundled_registry):
-    """Test that examples are loaded from bundled registry."""
-    # Note: bundled registry uses models.toml which doesn't have examples section
-    # This test just verifies the examples dict exists
-    assert bundled_registry.examples is not None
-
-
-@pytest.mark.xdist_group("registry_cache")
-@pytest.mark.parametrize(
-    "model_name, files",
-    list(islice(MODELS.items(), TAKE)),
-    ids=list(MODELS.keys())[:TAKE],
-)
-def test_copy_to(bundled_registry, model_name, files, tmp_path):
-    workspace = bundled_registry.copy_to(tmp_path, model_name, verbose=True)
-    assert workspace.exists(), f"Model {model_name} was not copied to {tmp_path}"
-    assert workspace.is_dir(), f"Model {model_name} is not a directory"
-    found = [p for p in workspace.rglob("*") if p.is_file()]
-    assert len(found) == len(files), (
-        f"Model {model_name} does not have the correct number of files, "
-        f"expected {len(files)}, got {len(found)}"
-    )
-    if "mf6" in model_name:
-        assert any(Path(f).name == "mfsim.nam" for f in files)
-
-
-# ============================================================================
-# V2 Tests (Dynamic Registry)
+# Tests (Dynamic Registry)
 # ============================================================================
 
 
@@ -141,7 +59,7 @@ class TestBootstrap:
         """Test that user config path is platform-appropriate."""
         user_config_path = discovery.get_user_config_path()
         assert isinstance(user_config_path, Path)
-        assert "bootstrap.toml" in user_config_path.name
+        assert user_config_path.name == "models.toml"
         assert "modflow-devtools" in str(user_config_path)
         # Should be in .config or AppData depending on platform
         assert ".config" in str(user_config_path) or "AppData" in str(user_config_path)

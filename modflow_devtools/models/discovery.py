@@ -162,9 +162,9 @@ def get_user_config_path() -> Path:
     Get the path to the user bootstrap configuration file.
 
     Returns the platform-appropriate user config location:
-    - Linux/macOS: $XDG_CONFIG_HOME/modflow-devtools/bootstrap.toml
-                   (defaults to ~/.config/modflow-devtools/bootstrap.toml)
-    - Windows: %APPDATA%/modflow-devtools/bootstrap.toml
+    - Linux/macOS: $XDG_CONFIG_HOME/modflow-devtools/models.toml
+                   (defaults to ~/.config/modflow-devtools/models.toml)
+    - Windows: %APPDATA%/modflow-devtools/models.toml
 
     Returns
     -------
@@ -176,7 +176,7 @@ def get_user_config_path() -> Path:
     else:  # Unix-like (Linux, macOS, etc.)
         config_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
 
-    return config_dir / "modflow-devtools" / "bootstrap.toml"
+    return config_dir / "modflow-devtools" / "models.toml"
 
 
 def merge_bootstrap(bundled: Bootstrap, user: Bootstrap) -> Bootstrap:
@@ -216,8 +216,8 @@ def load_bootstrap(
 
     When bootstrap_path is None (default), loads the bundled bootstrap file
     and merges it with user config if present. User config is loaded from:
-    - Linux/macOS: ~/.config/modflow-devtools/bootstrap.toml
-    - Windows: %APPDATA%/modflow-devtools/bootstrap.toml
+    - Linux/macOS: ~/.config/modflow-devtools/models.toml
+    - Windows: %APPDATA%/modflow-devtools/models.toml
 
     When an explicit bootstrap_path is provided, only that file is loaded
     (no user config overlay unless user_config_path is also provided).
@@ -249,7 +249,7 @@ def load_bootstrap(
 
     if bootstrap_path is None:
         # Default location - bundled bootstrap
-        bootstrap_path = Path(__file__).parent / "bootstrap.toml"
+        bootstrap_path = Path(__file__).parent / "models.toml"
     else:
         bootstrap_path = Path(bootstrap_path)
 

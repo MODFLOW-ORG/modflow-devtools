@@ -63,10 +63,7 @@ if __name__ == "__main__":
         "--output",
         "-o",
         type=str,
-        help=(
-            "Output directory for registry file(s). "
-            "Defaults to modflow_devtools/registry."
-        ),
+        help=("Output directory for registry file(s). "),
         default=None,
     )
     parser.add_argument(
