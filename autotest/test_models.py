@@ -39,30 +39,31 @@ TEST_SOURCE_NAME = os.getenv("TEST_SOURCE_NAME", "mf6/test")
 @pytest.fixture(scope="module")
 def bundled_registry():
     """
-    Create a fresh PoochRegistry from bundled files (ignoring cache).
+    Create a PoochRegistry from bundled files.
 
-    This ensures v1 tests use the actual bundled registry, not the v2 cache.
+    This fixture creates a registry using the v1 API with the default base_url
+    for MODFLOW 6 examples.  Clears cache first to ensure we load from bundled
+    files rather than any v2 test registries that might be cached.
     """
-    # Temporarily clear cache to force loading from bundled files
+    # Clear cache to force loading from bundled files
     cache.clear_registry_cache()
 
-    # Create fresh registry with default base_url - it will load from bundled files
-    # Use same base_url as DEFAULT_REGISTRY
+    # Create registry with default base_url - it will load from bundled files
     base_url = (
         "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/"
     )
     registry = models.PoochRegistry(base_url=base_url)
-
-    # Cache may be populated during test runs, that's OK
     return registry
 
 
+@pytest.mark.xdist_group("registry_cache")
 def test_files(bundled_registry):
     files = bundled_registry.files
     assert files is not None, "Files not loaded"
     assert any(files), "Registry is empty"
 
 
+@pytest.mark.xdist_group("registry_cache")
 @pytest.mark.parametrize("model_name, files", MODELS.items(), ids=list(MODELS.keys()))
 def test_models(bundled_registry, model_name, files):
     model_names = list(bundled_registry.models.keys())
@@ -81,6 +82,7 @@ def test_examples(bundled_registry):
     assert bundled_registry.examples is not None
 
 
+@pytest.mark.xdist_group("registry_cache")
 @pytest.mark.parametrize(
     "model_name, files",
     list(islice(MODELS.items(), TAKE)),
@@ -369,6 +371,7 @@ class TestDiscovery:
             )
 
 
+@pytest.mark.xdist_group("registry_cache")
 class TestSync:
     """Test registry synchronization."""
 
@@ -495,6 +498,7 @@ class TestSync:
         assert TEST_REF in source.list_synced_refs()
 
 
+@pytest.mark.xdist_group("registry_cache")
 class TestRegistry:
     """Test registry structure and operations."""
 
@@ -589,6 +593,7 @@ class TestCLI:
         assert "Models:" in captured.out
 
 
+@pytest.mark.xdist_group("registry_cache")
 class TestIntegration:
     """Integration tests for full workflows."""
 
