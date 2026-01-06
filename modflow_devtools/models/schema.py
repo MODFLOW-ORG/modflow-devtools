@@ -6,7 +6,13 @@ from datetime import datetime
 from os import PathLike
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class BootstrapSource(BaseModel):
@@ -127,10 +133,10 @@ class RegistryMetadata(BaseModel):
         ..., description="Version of modflow-devtools used to generate"
     )
 
-    model_config = {
-        # Pydantic v2: serialize datetime to ISO format string
-        "json_encoders": {datetime: lambda v: v.isoformat()}
-    }
+    @field_serializer("generated_at")
+    def serialize_datetime(self, dt: datetime, _info):
+        """Serialize datetime to ISO format string."""
+        return dt.isoformat()
 
 
 class FileEntry(BaseModel):
@@ -139,6 +145,11 @@ class FileEntry(BaseModel):
     url: str | None = Field(None, description="URL to fetch the file (for remote)")
     path: Path | None = Field(None, description="Local file path (original or cached)")
     hash: str | None = Field(None, description="SHA256 hash of the file")
+
+    @field_serializer("path")
+    def serialize_path(self, p: Path | None, _info):
+        """Serialize Path to string (POSIX format)."""
+        return str(p) if p is not None else None
 
     @model_validator(mode="after")
     def check_location(self):
