@@ -554,20 +554,40 @@ def _try_best_effort_sync():
 # Try to sync on first import
 _try_best_effort_sync()
 
-DEFAULT_REGISTRY = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
-"""The default model registry."""
+# Lazy initialization of default registry
+_default_registry_cache = None
+
+
+def get_default_registry():
+    """
+    Get or create the default model registry (lazy initialization).
+
+    This allows the module to import successfully even if the cache
+    is empty, with a clear error message on first use.
+
+    Returns
+    -------
+    PoochRegistry
+        The default model registry
+    """
+    global _default_registry_cache
+    if _default_registry_cache is None:
+        _default_registry_cache = PoochRegistry(
+            base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV
+        )
+    return _default_registry_cache
 
 
 def get_examples() -> dict[str, list[str]]:
     """
     Get a map of example names to models in the example.
     """
-    return DEFAULT_REGISTRY.examples
+    return get_default_registry().examples
 
 
 def get_models() -> dict[str, list[str]]:
     """Get a map of model names to input files."""
-    return DEFAULT_REGISTRY.models
+    return get_default_registry().models
 
 
 def get_files() -> dict[str, FileEntry]:
@@ -576,7 +596,7 @@ def get_files() -> dict[str, FileEntry]:
     contains no information on which files belong to which
     models. For that information, use `get_models()`.
     """
-    return DEFAULT_REGISTRY.files
+    return get_default_registry().files
 
 
 def copy_to(
@@ -586,4 +606,4 @@ def copy_to(
     Copy the model's input files to the given workspace.
     The workspace will be created if it does not exist.
     """
-    return DEFAULT_REGISTRY.copy_to(workspace, model_name, verbose=verbose)
+    return get_default_registry().copy_to(workspace, model_name, verbose=verbose)
