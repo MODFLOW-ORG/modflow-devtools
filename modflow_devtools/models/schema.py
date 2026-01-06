@@ -69,9 +69,9 @@ class BootstrapSource(BaseModel):
         from .sync import sync_registry
 
         return sync_registry(
-            source=self.name,
+            source=self,
             ref=ref,
-            repo=repo or self.repo,
+            repo=repo,
             force=force,
             verbose=verbose,
         )

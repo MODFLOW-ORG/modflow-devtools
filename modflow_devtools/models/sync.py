@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .cache import cache_registry, is_registry_cached, list_cached_registries
 from .discovery import RegistryDiscoveryError, discover_registry, load_bootstrap
+from .schema import BootstrapSource
 
 
 class SyncResult:
@@ -25,7 +26,7 @@ class SyncResult:
 
 
 def sync_registry(
-    source: str | None = None,
+    source: str | BootstrapSource | None = None,
     ref: str | None = None,
     repo: str | None = None,
     force: bool = False,
@@ -37,8 +38,9 @@ def sync_registry(
 
     Parameters
     ----------
-    source : str | None
-        Specific source to sync. If None, syncs all sources from bootstrap.
+    source : str | BootstrapSource | None
+        Specific source to sync. Can be a source name (string) to look up in bootstrap,
+        or a BootstrapSource object directly. If None, syncs all sources from bootstrap.
     ref : str | None
         Specific ref to sync. If None, syncs all refs from bootstrap for the source(s).
     repo : str | None
@@ -82,20 +84,30 @@ def sync_registry(
         raise ValueError("Cannot specify 'repo' without specifying 'source'")
 
     result = SyncResult()
-    bootstrap = load_bootstrap(bootstrap_path)
 
     # Determine which sources to sync
     if source:
-        if source not in bootstrap.sources:
-            raise ValueError(f"Source '{source}' not found in bootstrap")
-        source_meta = bootstrap.sources[source]
-
-        # Override repo if provided
-        if repo:
-            source_meta = source_meta.model_copy(update={"repo": repo})
-
-        sources_to_sync = {source: source_meta}
+        # Handle BootstrapSource object directly
+        if isinstance(source, BootstrapSource):
+            source_meta = source
+            # Override repo if provided
+            if repo:
+                source_meta = source_meta.model_copy(update={"repo": repo})
+            # Use a dummy key for the dict (will use source_meta.name later)
+            sources_to_sync = {source_meta.name: source_meta}
+        # Handle source name (string) - look up in bootstrap
+        else:
+            bootstrap = load_bootstrap(bootstrap_path)
+            if source not in bootstrap.sources:
+                raise ValueError(f"Source '{source}' not found in bootstrap")
+            source_meta = bootstrap.sources[source]
+            # Override repo if provided
+            if repo:
+                source_meta = source_meta.model_copy(update={"repo": repo})
+            sources_to_sync = {source: source_meta}
     else:
+        # No source specified - sync all sources from bootstrap
+        bootstrap = load_bootstrap(bootstrap_path)
         sources_to_sync = bootstrap.sources
 
     # Sync each source/ref combination
@@ -138,17 +150,19 @@ def sync_registry(
                 cache_registry(discovered.registry, source_name, ref_name)
 
                 if verbose:
-                    print(f"  ✓ Synced {source_name}@{ref_name}")
+                    print(f"  [+] Synced {source_name}@{ref_name}")
 
                 result.synced.append((source_name, ref_name))
 
             except RegistryDiscoveryError as e:
                 if verbose:
-                    print(f"  ✗ Failed to sync {source_name}@{ref_name}: {e}")
+                    print(f"  [-] Failed to sync {source_name}@{ref_name}: {e}")
                 result.failed.append((source_name, ref_name, str(e)))
             except Exception as e:
                 if verbose:
-                    print(f"  ✗ Unexpected error syncing {source_name}@{ref_name}: {e}")
+                    print(
+                        f"  [-] Unexpected error syncing {source_name}@{ref_name}: {e}"
+                    )
                 result.failed.append((source_name, ref_name, str(e)))
 
     return result
