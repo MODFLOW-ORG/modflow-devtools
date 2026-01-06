@@ -85,7 +85,8 @@ def cache_registry(registry: Registry, source: str, ref: str) -> Path:
     registry_file = cache_dir / "registry.toml"
 
     # Convert registry to dict for TOML serialization
-    registry_dict = registry.model_dump(by_alias=True, exclude_none=True)
+    # Use mode='json' to ensure datetime and Path objects are serialized to strings
+    registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
 
     with registry_file.open("wb") as f:
         tomli_w.dump(registry_dict, f)

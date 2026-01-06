@@ -5,7 +5,6 @@ Pydantic models for registry schema validation.
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -128,9 +127,10 @@ class RegistryMetadata(BaseModel):
         ..., description="Version of modflow-devtools used to generate"
     )
 
-    class Config:
-        # Allow datetime parsing from ISO format strings
-        json_encoders: ClassVar = {datetime: lambda v: v.isoformat()}
+    model_config = {
+        # Pydantic v2: serialize datetime to ISO format string
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 
 class FileEntry(BaseModel):
