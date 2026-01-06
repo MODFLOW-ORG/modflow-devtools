@@ -166,22 +166,35 @@ def clear_registry_cache(source: str | None = None, ref: str | None = None) -> N
         clear_registry_cache(source="modflow6-testmodels", ref="develop")
     """
     import shutil
+    import time
+
+    def _rmtree_with_retry(path, max_retries=5, delay=0.5):
+        """Remove tree with retry logic for Windows file handle delays."""
+        for attempt in range(max_retries):
+            try:
+                shutil.rmtree(path)
+                return
+            except PermissionError:
+                if attempt < max_retries - 1:
+                    time.sleep(delay)
+                else:
+                    raise
 
     if source and ref:
         # Clear specific source/ref
         cache_dir = get_registry_cache_dir(source, ref)
         if cache_dir.exists():
-            shutil.rmtree(cache_dir)
+            _rmtree_with_retry(cache_dir)
     elif source:
         # Clear all refs for a source
         source_dir = get_cache_root() / "registries" / source
         if source_dir.exists():
-            shutil.rmtree(source_dir)
+            _rmtree_with_retry(source_dir)
     else:
         # Clear all registries
         registries_dir = get_cache_root() / "registries"
         if registries_dir.exists():
-            shutil.rmtree(registries_dir)
+            _rmtree_with_retry(registries_dir)
 
 
 def list_cached_registries() -> list[tuple[str, str]]:

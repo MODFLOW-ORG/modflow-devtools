@@ -293,16 +293,10 @@ class TestDiscovery:
 class TestSync:
     """Test registry synchronization."""
 
-    @pytest.fixture(autouse=True)
-    def clear_cache(self):
-        """Clear cache before each test."""
-        cache.clear_registry_cache()
-        yield
-        # Optionally clear after as well
-        # cache.clear_registry_cache()
-
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
+        cache.clear_registry_cache()
+
         result = sync.sync_registry(
             source=TEST_SOURCE,
             ref=TEST_REF,
@@ -316,6 +310,7 @@ class TestSync:
 
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
+        cache.clear_registry_cache()
         assert not cache.is_registry_cached(TEST_SOURCE_NAME, TEST_REF)
 
         sync.sync_registry(
@@ -328,6 +323,8 @@ class TestSync:
 
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
+        cache.clear_registry_cache()
+
         # First sync
         result1 = sync.sync_registry(
             source=TEST_SOURCE,
@@ -347,6 +344,8 @@ class TestSync:
 
     def test_sync_force(self):
         """Test that force flag re-syncs cached registries."""
+        cache.clear_registry_cache()
+
         # First sync
         sync.sync_registry(
             source=TEST_SOURCE,
@@ -383,6 +382,8 @@ class TestSync:
 
     def test_source_is_synced_method(self):
         """Test BootstrapSource.is_synced() method."""
+        cache.clear_registry_cache()
+
         source = BootstrapSource(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
@@ -400,6 +401,8 @@ class TestSync:
 
     def test_source_list_synced_refs_method(self):
         """Test BootstrapSource.list_synced_refs() method."""
+        cache.clear_registry_cache()
+
         source = BootstrapSource(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
@@ -420,9 +423,9 @@ class TestSync:
 class TestRegistry:
     """Test registry structure and operations."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def synced_registry(self):
-        """Fixture that syncs and loads a registry."""
+        """Fixture that syncs and loads a registry once for all tests."""
         cache.clear_registry_cache()
         sync.sync_registry(
             source=TEST_SOURCE,
