@@ -120,7 +120,7 @@ jobs:
           TEST_REF: registry
           TEST_SOURCE: modflow6-testmodels
           TEST_SOURCE_NAME: mf6/test
-        run: uv run pytest -v -n auto --durations 0 test_download.py test_models.py
+        run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py
   
   rtd:
     name: Docs
