@@ -88,7 +88,7 @@ if __name__ == "__main__":
             if args.output:
                 print(f"Output directory: {args.output}")
             print(f"Format: {'separate files' if args.separate else 'consolidated'}")
-        models.DEFAULT_REGISTRY.index(
+        models.get_default_registry().index(
             path=args.path,
             url=args.url,
             prefix=args.model_name_prefix,
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         for options in _DEFAULT_REGISTRY_OPTIONS:
             if args.verbose:
                 print(f"Adding {options['path']} to the registry.")
-            models.DEFAULT_REGISTRY.index(
+            models.get_default_registry().index(
                 path=options["path"],  # type: ignore
                 url=options["url"],  # type: ignore
                 prefix=options["model-name-prefix"],  # type: ignore
