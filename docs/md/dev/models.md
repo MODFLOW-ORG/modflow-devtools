@@ -556,6 +556,228 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
 | **Addressing** | `source@ref/path` | `program@version` | `mf6@ref/component` |
 | **MergedRegistry** | Yes | No | No |
 
+## Demo & Usage Examples
+
+This section provides practical examples of using the new Models API.
+
+### Python API
+
+#### Basic Workflow
+
+```python
+from modflow_devtools.models import discovery, sync, cache
+
+# 1. Load bootstrap configuration (with user overlay)
+bootstrap = discovery.load_bootstrap()
+
+# 2. Discover remote registry
+source = bootstrap.sources["modflow6-testmodels"]
+discovered = discovery.discover_registry(source, ref="develop")
+# Returns: DiscoveredRegistry with mode, URL, and parsed registry
+
+# 3. Sync registry to local cache
+result = sync.sync_registry(
+    source="modflow6-testmodels",
+    ref="develop",
+    verbose=True
+)
+# Returns: SyncResult(synced=1, skipped=0, failed=0)
+
+# 4. Load cached registry and use it
+registry = cache.load_cached_registry("mf6/test", "develop")
+print(f"Models: {len(registry.models)}")
+print(f"Files: {len(registry.files)}")
+```
+
+#### Convenience Methods on BootstrapSource
+
+```python
+source = bootstrap.sources["modflow6-testmodels"]
+
+# Check if synced
+if source.is_synced("develop"):
+    print("Already cached!")
+
+# List synced refs
+synced_refs = source.list_synced_refs()
+
+# Sync via source method
+result = source.sync(ref="develop", verbose=True)
+```
+
+#### Cache Management
+
+```python
+from modflow_devtools.models import cache
+
+# Get cache locations
+cache_root = cache.get_cache_root()
+models_dir = cache.get_models_cache_dir()
+
+# List all cached registries
+cached = cache.list_cached_registries()  # Returns: [(source, ref), ...]
+
+# Check specific cache
+is_cached = cache.is_registry_cached("mf6/test", "develop")
+
+# Clear cache
+cache.clear_registry_cache()
+```
+
+### CLI Usage
+
+#### Show Registry Status
+
+```bash
+$ python -m modflow_devtools.models info
+
+Registry sync status:
+
+mf6/test (wpbonelli/modflow6-testmodels)
+  Configured refs: registry
+  Cached refs: registry
+
+mf6/example (MODFLOW-ORG/modflow6-examples)
+  Configured refs: current
+  Cached refs: none
+  Missing refs: current
+```
+
+#### Sync Registries
+
+```bash
+# Sync all configured sources/refs
+$ python -m modflow_devtools.models sync
+
+# Sync specific source
+$ python -m modflow_devtools.models sync --source modflow6-testmodels
+
+# Sync specific ref
+$ python -m modflow_devtools.models sync --source modflow6-testmodels --ref develop
+
+# Force re-download
+$ python -m modflow_devtools.models sync --force
+
+# Test against a fork
+$ python -m modflow_devtools.models sync \
+    --source modflow6-testmodels \
+    --ref feature-branch \
+    --repo myusername/modflow6-testmodels
+```
+
+#### List Available Models
+
+```bash
+# Summary view
+$ python -m modflow_devtools.models list
+
+# Verbose view (show all model names)
+$ python -m modflow_devtools.models list --verbose
+
+# Filter by source
+$ python -m modflow_devtools.models list --source mf6/test
+
+# Filter by ref
+$ python -m modflow_devtools.models list --ref registry
+
+# Combine filters
+$ python -m modflow_devtools.models list --source mf6/test --ref registry --verbose
+```
+
+### Registry Creation Tool
+
+The `make_registry` tool uses a mode-based interface with automatic URL construction:
+
+**Version-controlled models** (files in git):
+```bash
+# Path in repo is auto-detected from directory structure!
+python -m modflow_devtools.make_registry \
+  --path ./mf6 \
+  --mode version \
+  --repo MODFLOW-ORG/modflow6-testmodels \
+  --ref master \
+  --name mf6/test \
+  --output .registry
+```
+
+**Release asset models** (zip published with releases):
+```bash
+python -m modflow_devtools.make_registry \
+  --path ./examples \
+  --mode release \
+  --repo MODFLOW-ORG/modflow6-examples \
+  --ref current \
+  --asset-file mf6examples.zip \
+  --name mf6/example \
+  --output .registry
+```
+
+**Key Features**:
+- **Mode-based interface**: Choose `--mode version` or `--mode release`
+- **Automatic URL construction**: No manual URL typing required
+- **Smart path detection**: Finds subdirectory path from directory structure (no git required!)
+- **Clear naming**: `--name` matches bootstrap file's `name` field
+- **Required arguments**: `--mode`, `--repo`, `--ref`, and `--name` prevent mistakes
+
+### User Config Overlay for Fork Testing
+
+Create a user config at `%APPDATA%/modflow-devtools/models.toml` (Windows) or `~/.config/modflow-devtools/models.toml` (Linux/macOS):
+
+```toml
+[sources.modflow6-testmodels]
+repo = "wpbonelli/modflow6-testmodels"
+name = "mf6/test"
+refs = ["registry"]
+
+[sources.modflow6-largetestmodels]
+repo = "wpbonelli/modflow6-largetestmodels"
+name = "mf6/large"
+refs = ["registry"]
+```
+
+This allows testing against forks without modifying the bundled config!
+
+### Upstream CI Workflow Examples
+
+**For version-controlled models** (e.g., testmodels):
+```yaml
+- name: Generate registry
+  run: |
+    python -m modflow_devtools.make_registry \
+      --path ./mf6 \
+      --mode version \
+      --repo MODFLOW-ORG/modflow6-testmodels \
+      --ref ${{ github.ref_name }} \
+      --name mf6/test \
+      --output .registry
+
+- name: Commit registry
+  run: |
+    git add .registry/models.toml
+    git commit -m "Update registry [skip ci]"
+    git push
+```
+
+**For release asset models** (e.g., examples):
+```yaml
+- name: Generate registry
+  run: |
+    python -m modflow_devtools.make_registry \
+      --path ./examples \
+      --mode release \
+      --repo MODFLOW-ORG/modflow6-examples \
+      --ref ${{ github.ref_name }} \
+      --asset-file mf6examples.zip \
+      --name mf6/example \
+      --output .registry
+
+- name: Upload registry as release asset
+  uses: actions/upload-release-asset@v1
+  with:
+    asset_path: .registry/models.toml
+    asset_name: models.toml
+```
+
 ## Open Questions / Future Enhancements
 
 1. **Registry compression**: Zip registry files for faster downloads?
