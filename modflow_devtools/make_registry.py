@@ -30,7 +30,33 @@ _DEFAULT_REGISTRY_OPTIONS = [
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Make a registry of models.")
+    parser = argparse.ArgumentParser(
+        description="Make a registry of models.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Version-controlled models (e.g., testmodels)
+  # Path in repo auto-detected from directory structure!
+  # If path contains 'modflow6-testmodels/mf6', uses 'mf6' in URL
+  python -m modflow_devtools.make_registry \\
+    --path /path/to/modflow6-testmodels/mf6 \\
+    --repo MODFLOW-ORG/modflow6-testmodels \\
+    --ref master \\
+    --mode version \\
+    --name mf6/test \\
+    --output .registry
+
+  # Release asset models (e.g., examples)
+  python -m modflow_devtools.make_registry \\
+    --path /path/to/modflow6-examples/examples \\
+    --repo MODFLOW-ORG/modflow6-examples \\
+    --ref current \\
+    --mode release \\
+    --asset-file mf6examples.zip \\
+    --name mf6/example \\
+    --output .registry
+""",
+    )
     parser.add_argument(
         "--path",
         "-p",
@@ -40,18 +66,37 @@ if __name__ == "__main__":
         help="Path to the model directory.",
     )
     parser.add_argument(
-        "--model-name-prefix",
+        "--name",
+        required=True,
         type=str,
-        help="Prefix for model names.",
-        default="",
+        help="Model name prefix - must match the 'name' field in bootstrap sources (e.g., 'mf6/test', 'mf6/example').",
+    )
+
+    # Mode-based URL construction
+    parser.add_argument(
+        "--mode",
+        required=True,
+        choices=["version", "release"],
+        help="Publication mode: 'version' (version-controlled files) or 'release' (release asset zip).",
     )
     parser.add_argument(
-        "--url",
-        "-u",
+        "--repo",
+        required=True,
         type=str,
-        help="Base URL for models.",
-        default=models._DEFAULT_BASE_URL,
+        help='Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6-testmodels).',
     )
+    parser.add_argument(
+        "--ref",
+        required=True,
+        type=str,
+        help="Git ref (branch, tag, or commit hash).",
+    )
+    parser.add_argument(
+        "--asset-file",
+        type=str,
+        help="Asset filename for 'release' mode (e.g., mf6examples.zip). Required when mode=release.",
+    )
+
     parser.add_argument(
         "--namefile",
         "-n",
@@ -63,7 +108,7 @@ if __name__ == "__main__":
         "--output",
         "-o",
         type=str,
-        help=("Output directory for registry file(s). "),
+        help="Output directory for registry file(s).",
         default=None,
     )
     parser.add_argument(
@@ -82,6 +127,56 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # Validate arguments and construct URL
+    if args.mode == "version":
+        # Auto-detect path in repo from directory structure
+        path_in_repo = ""
+
+        if args.path:
+            path_obj = Path(args.path).resolve()
+            # Extract repository name from owner/repo format
+            repo_name = args.repo.split("/")[1]
+
+            # Look for the repo name in the path
+            path_parts = path_obj.parts
+            try:
+                # Find the index of the repo name in the path
+                repo_index = path_parts.index(repo_name)
+                # Everything after the repo name is the path in repo
+                if repo_index + 1 < len(path_parts):
+                    remaining_parts = path_parts[repo_index + 1 :]
+                    path_in_repo = "/".join(remaining_parts)
+                    if args.verbose:
+                        print(
+                            f"Detected path in repo: '{path_in_repo}' (from directory structure)"
+                        )
+                else:
+                    # Path ends at repo name, so we're at repo root
+                    if args.verbose:
+                        print("Detected path in repo: '' (repo root)")
+            except ValueError:
+                # Repo name not found in path - assume repo root
+                if args.verbose:
+                    print(
+                        f"Warning: Repository name '{repo_name}' not found in path, using repo root"
+                    )
+
+        # Construct raw GitHub URL for version-controlled files
+        path_suffix = f"/{path_in_repo}" if path_in_repo else ""
+        url = f"https://github.com/{args.repo}/raw/{args.ref}{path_suffix}"
+        if args.verbose:
+            print("Mode: version (version-controlled)")
+            print(f"Constructed URL: {url}")
+
+    elif args.mode == "release":
+        # Construct release download URL for release assets
+        if not args.asset_file:
+            parser.error("--asset-file is required when mode=release")
+        url = f"https://github.com/{args.repo}/releases/download/{args.ref}/{args.asset_file}"
+        if args.verbose:
+            print("Mode: release (release asset)")
+            print(f"Constructed URL: {url}")
+
     if args.path:
         if args.verbose:
             print(f"Adding {args.path} to the registry.")
@@ -90,8 +185,8 @@ if __name__ == "__main__":
             print(f"Format: {'separate files' if args.separate else 'consolidated'}")
         models.get_default_registry().index(
             path=args.path,
-            url=args.url,
-            prefix=args.model_name_prefix,
+            url=url,
+            prefix=args.name,
             namefile=args.namefile,
             output_path=args.output,
             separate=args.separate,
@@ -108,7 +203,7 @@ if __name__ == "__main__":
             models.get_default_registry().index(
                 path=options["path"],  # type: ignore
                 url=options["url"],  # type: ignore
-                prefix=options["model-name-prefix"],  # type: ignore
+                prefix=options.get("name", options.get("model-name-prefix", "")),  # type: ignore
                 namefile=options.get("namefile", "mfsim.nam"),  # type: ignore
                 output_path=args.output,
                 separate=args.separate,

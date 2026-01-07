@@ -122,23 +122,6 @@ class Bootstrap(BaseModel):
     )
 
 
-class RegistryMetadata(BaseModel):
-    """Metadata section of a registry file."""
-
-    schema_version: str = Field(..., description="Registry schema version")
-    generated_at: datetime = Field(
-        ..., description="Timestamp when registry was generated"
-    )
-    devtools_version: str = Field(
-        ..., description="Version of modflow-devtools used to generate"
-    )
-
-    @field_serializer("generated_at")
-    def serialize_datetime(self, dt: datetime, _info):
-        """Serialize datetime to ISO format string."""
-        return dt.isoformat()
-
-
 class FileEntry(BaseModel):
     """A single file entry in the registry - supports both local and remote files."""
 
@@ -168,8 +151,12 @@ class Registry(BaseModel):
     Subclasses (LocalRegistry, PoochRegistry) override copy_to() for active use.
     """
 
-    meta: RegistryMetadata | None = Field(
-        None, alias="_meta", description="Registry metadata (optional)"
+    schema_version: str | None = Field(None, description="Registry schema version")
+    generated_at: datetime | None = Field(
+        None, description="Timestamp when registry was generated"
+    )
+    devtools_version: str | None = Field(
+        None, description="Version of modflow-devtools used to generate"
     )
     files: dict[str, FileEntry] = Field(
         default_factory=dict, description="Map of file names to file entries"
@@ -182,6 +169,11 @@ class Registry(BaseModel):
     )
 
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+
+    @field_serializer("generated_at")
+    def serialize_datetime(self, dt: datetime | None, _info):
+        """Serialize datetime to ISO format string."""
+        return dt.isoformat() if dt is not None else None
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False

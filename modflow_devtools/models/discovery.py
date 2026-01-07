@@ -82,7 +82,7 @@ def discover_registry(
 
     # Step 1: Try release assets
     release_url = (
-        f"https://github.com/{org}/{repo_name}/releases/download/{ref}/registry.toml"
+        f"https://github.com/{org}/{repo_name}/releases/download/{ref}/models.toml"
     )
     try:
         registry_data = _fetch_url(release_url)
@@ -104,7 +104,7 @@ def discover_registry(
         # 404 means no release with this tag, fall through to version-controlled
 
     # Step 2: Try version-controlled registry
-    vc_url = f"https://raw.githubusercontent.com/{org}/{repo_name}/{ref}/{registry_path}/registry.toml"
+    vc_url = f"https://raw.githubusercontent.com/{org}/{repo_name}/{ref}/{registry_path}/models.toml"
     try:
         registry_data = _fetch_url(vc_url)
         registry = Registry(**tomli.loads(registry_data))
@@ -118,7 +118,7 @@ def discover_registry(
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise RegistryDiscoveryError(
-                f"Registry file 'registry.toml' not found "
+                f"Registry file 'models.toml' not found "
                 f"in {registry_path} for '{source.name}@{ref}'"
             )
         else:

@@ -61,8 +61,15 @@ class LocalRegistry(Registry):
     _paths: set[Path]
 
     def __init__(self) -> None:
-        # Initialize Pydantic parent with empty data (no meta for local registries)
-        super().__init__(_meta=None, files={}, models={}, examples={})
+        # Initialize Pydantic parent with empty data (no metadata for local registries)
+        super().__init__(
+            schema_version=None,
+            generated_at=None,
+            devtools_version=None,
+            files={},
+            models={},
+            examples={},
+        )
         # Initialize non-Pydantic tracking variable
         self._paths = set()
 
@@ -203,7 +210,14 @@ class PoochRegistry(Registry):
         retries: int = 3,
     ):
         # Initialize Pydantic parent with empty data (will be populated by _load())
-        super().__init__(_meta=None, files={}, models={}, examples={})
+        super().__init__(
+            schema_version=None,
+            generated_at=None,
+            devtools_version=None,
+            files={},
+            models={},
+            examples={},
+        )
 
         # Initialize non-Pydantic instance variables
         self._registry_path = Path(__file__).parent.parent / "registry"
@@ -302,8 +316,10 @@ class PoochRegistry(Registry):
                     self.examples.update(registry.examples)
 
                     # Store metadata from first registry
-                    if not self.meta and registry.meta:
-                        self.meta = registry.meta
+                    if not self.schema_version and registry.schema_version:
+                        self.schema_version = registry.schema_version
+                        self.generated_at = registry.generated_at
+                        self.devtools_version = registry.devtools_version
 
             if not self.files:
                 return False
@@ -415,7 +431,7 @@ class PoochRegistry(Registry):
                 else:
                     relpath = p.expanduser().resolve().absolute().relative_to(path)
                     name = "/".join(relpath.parts)
-                    url_ = f"{url}/{relpath!s}" if url else None
+                    url_ = f"{url}/{relpath.as_posix()}" if url else None
                     hash = _sha256(p)
                 files[name] = {"hash": hash, "url": url_}
                 models[model_name].append(name)
@@ -424,10 +440,10 @@ class PoochRegistry(Registry):
             examples[example_name] = sorted(examples[example_name], key=_model_sort_key)
 
         if not separate:
-            # Write single consolidated registry.toml (default)
+            # Write single consolidated models.toml (default)
             from datetime import datetime, timezone
 
-            registry_file = output_dir / "registry.toml"
+            registry_file = output_dir / "models.toml"
 
             # Read existing registry if it exists (to support multiple index() calls)
             existing_files = {}
@@ -446,11 +462,9 @@ class PoochRegistry(Registry):
             existing_examples.update(examples)
 
             registry_data = {
-                "_meta": {
-                    "schema_version": "1.0",
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
-                    "devtools_version": modflow_devtools.__version__,
-                },
+                "schema_version": "1.0",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "devtools_version": modflow_devtools.__version__,
                 "files": remap(
                     dict(sorted(existing_files.items())), visit=drop_none_or_empty
                 ),

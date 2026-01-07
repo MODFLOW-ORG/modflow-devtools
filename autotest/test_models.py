@@ -5,6 +5,8 @@ Tests can be configured via environment variables (loaded from .env file).
 """
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -437,9 +439,12 @@ class TestRegistry:
 
     def test_registry_has_metadata(self, synced_registry):
         """Test that registry has required metadata."""
-        assert hasattr(synced_registry.meta, "schema_version")
-        assert hasattr(synced_registry.meta, "generated_at")
-        assert hasattr(synced_registry.meta, "devtools_version")
+        assert hasattr(synced_registry, "schema_version")
+        assert hasattr(synced_registry, "generated_at")
+        assert hasattr(synced_registry, "devtools_version")
+        assert synced_registry.schema_version is not None
+        assert synced_registry.generated_at is not None
+        assert synced_registry.devtools_version is not None
 
     def test_registry_has_files(self, synced_registry):
         """Test that registry has files."""
@@ -568,3 +573,143 @@ class TestIntegration:
         # Load and check models
         registry = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
         assert len(registry.models) > 0
+
+
+class TestMakeRegistry:
+    """Test registry creation tool (make_registry.py)."""
+
+    def _detect_path_in_repo(self, path_str: str, repo: str) -> str:
+        """Helper to extract path-in-repo using the same logic as make_registry."""
+        from pathlib import Path
+
+        path_obj = Path(path_str).resolve()
+        repo_name = repo.split("/")[1]
+
+        path_parts = path_obj.parts
+        try:
+            repo_index = path_parts.index(repo_name)
+            if repo_index + 1 < len(path_parts):
+                remaining_parts = path_parts[repo_index + 1 :]
+                return "/".join(remaining_parts)
+            else:
+                return ""
+        except ValueError:
+            return ""
+
+    def _get_constructed_url(self, mode, repo, ref, **kwargs):
+        """Helper to extract constructed URL from make_registry verbose output."""
+        cmd = [
+            sys.executable,
+            "-m",
+            "modflow_devtools.make_registry",
+            "--mode",
+            mode,
+            "--repo",
+            repo,
+            "--ref",
+            ref,
+            "--verbose",
+        ]
+
+        for key, value in kwargs.items():
+            cmd.extend([f"--{key.replace('_', '-')}", value])
+
+        # Don't provide --path so it won't actually index anything
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        # Extract constructed URL from output
+        for line in result.stdout.split("\n"):
+            if "Constructed URL:" in line:
+                return line.split("Constructed URL: ")[1].strip()
+
+        return None
+
+    def test_url_construction_version(self):
+        """Test URL construction for version mode (auto-detects path from directory)."""
+        url = self._get_constructed_url(
+            mode="version",
+            repo="MODFLOW-ORG/modflow6-testmodels",
+            ref="master",
+            name="mf6/test",
+        )
+        # Should be repo root (no path, or auto-detected)
+        assert url.startswith(
+            "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master"
+        )
+
+    def test_url_construction_version_different_ref(self):
+        """Test URL construction for version mode with different ref."""
+        url = self._get_constructed_url(
+            mode="version",
+            repo="MODFLOW-ORG/modflow6-largetestmodels",
+            ref="develop",
+            name="mf6/large",
+        )
+        assert url.startswith(
+            "https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/develop"
+        )
+
+    def test_url_construction_release(self):
+        """Test URL construction for release mode."""
+        url = self._get_constructed_url(
+            mode="release",
+            repo="MODFLOW-ORG/modflow6-examples",
+            ref="current",
+            asset_file="mf6examples.zip",
+            name="mf6/example",
+        )
+        assert (
+            url
+            == "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip"
+        )
+
+    def test_url_construction_release_custom(self):
+        """Test URL construction for release mode with custom repo/tag."""
+        url = self._get_constructed_url(
+            mode="release",
+            repo="username/my-models",
+            ref="v1.0.0",
+            asset_file="models.zip",
+            name="custom/models",
+        )
+        assert (
+            url
+            == "https://github.com/username/my-models/releases/download/v1.0.0/models.zip"
+        )
+
+    def test_path_detection_subdirectory(self):
+        """Test path-in-repo detection for subdirectory."""
+        result = self._detect_path_in_repo(
+            "C:/repos/modflow6-testmodels/mf6", "MODFLOW-ORG/modflow6-testmodels"
+        )
+        assert result == "mf6"
+
+    def test_path_detection_repo_root(self):
+        """Test path-in-repo detection for repo root."""
+        result = self._detect_path_in_repo(
+            "C:/repos/modflow6-largetestmodels", "MODFLOW-ORG/modflow6-largetestmodels"
+        )
+        assert result == ""
+
+    def test_path_detection_nested_subdirectory(self):
+        """Test path-in-repo detection for nested subdirectory."""
+        result = self._detect_path_in_repo(
+            "/home/user/projects/modflow6-testmodels/mf6/test001",
+            "MODFLOW-ORG/modflow6-testmodels",
+        )
+        assert result == "mf6/test001"
+
+    def test_path_detection_fallback_no_match(self):
+        """Test path-in-repo detection falls back to root when repo name not found."""
+        result = self._detect_path_in_repo(
+            "/tmp/build/examples", "MODFLOW-ORG/modflow6-examples"
+        )
+        assert result == ""
+
+    def test_path_detection_windows_path(self):
+        """Test path-in-repo detection on Windows paths."""
+        result = self._detect_path_in_repo(
+            r"C:\Users\wpbonelli\repos\modflow6-examples\examples",
+            "MODFLOW-ORG/modflow6-examples",
+        )
+        assert result == "examples"

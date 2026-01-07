@@ -358,14 +358,36 @@ Synchronization involves:
 Required steps in source model repositories include:
 
 - Install `modflow-devtools` (provides registry generation machinery)
-- Generate registries
+- Generate registries using the mode-based interface:
+
+   **For version-controlled models** (files in git):
+   ```bash
+   # Path in repo is auto-detected from directory structure!
+   # If path contains 'modflow6-testmodels/mf6', uses 'mf6' in URL
+   python -m modflow_devtools.make_registry \
+     --path ./mf6 \
+     --mode version \
+     --repo MODFLOW-ORG/modflow6-testmodels \
+     --ref master \
+     --name mf6/test \
+     --output .registry
+   ```
+
+   **For release asset models** (zip published with releases):
    ```bash
    python -m modflow_devtools.make_registry \
-     --path . \
-     --output .registry \
-     --url <appropriate-base-url>
+     --path ./examples \
+     --mode release \
+     --repo MODFLOW-ORG/modflow6-examples \
+     --ref current \
+     --asset-file mf6examples.zip \
+     --name mf6/example \
+     --output .registry
    ```
+
 - Commit registry files to `.registry/` directory (for version-controlled model repositories) or post them as release assets (for repositories publishing releases)
+
+**Note**: The tool now requires explicit `--mode`, `--repo`, and `--ref` arguments and automatically constructs the appropriate GitHub URLs. For version-controlled models, the path within the repository is auto-detected from the directory structure (by finding the repository name in the path), eliminating error-prone manual configuration and requiring no git dependency.
 
 
 ### Model Addressing

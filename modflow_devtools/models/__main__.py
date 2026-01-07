@@ -61,6 +61,26 @@ def cmd_list(args):
         print("No cached registries. Run 'sync' first.")
         return
 
+    # Apply filters
+    if args.source or args.ref:
+        filtered = []
+        for source, ref in cached:
+            if args.source and source != args.source:
+                continue
+            if args.ref and ref != args.ref:
+                continue
+            filtered.append((source, ref))
+        cached = filtered
+
+    if not cached:
+        filter_desc = []
+        if args.source:
+            filter_desc.append(f"source={args.source}")
+        if args.ref:
+            filter_desc.append(f"ref={args.ref}")
+        print(f"No cached registries matching filters: {', '.join(filter_desc)}")
+        return
+
     print("Available models:\n")
     for source, ref in sorted(cached):
         registry = load_cached_registry(source, ref)
@@ -70,10 +90,9 @@ def cmd_list(args):
             if models:
                 print(f"  Models: {len(models)}")
                 if args.verbose:
-                    for model_name in sorted(models.keys())[:10]:  # Show first 10
+                    # Show all models in verbose mode
+                    for model_name in sorted(models.keys()):
                         print(f"    - {model_name}")
-                    if len(models) > 10:
-                        print(f"    ... and {len(models) - 10} more")
             else:
                 print("  No models")
 
@@ -81,10 +100,9 @@ def cmd_list(args):
             if examples:
                 print(f"  Examples: {len(examples)}")
                 if args.verbose:
-                    for example_name in sorted(examples.keys())[:5]:  # Show first 5
+                    # Show all examples in verbose mode
+                    for example_name in sorted(examples.keys()):
                         print(f"    - {example_name}")
-                    if len(examples) > 5:
-                        print(f"    ... and {len(examples) - 5} more")
             print()
 
 
@@ -125,10 +143,20 @@ def main():
     # List command
     list_parser = subparsers.add_parser("list", help="List available models")
     list_parser.add_argument(
+        "--source",
+        "-s",
+        help="Filter by specific source",
+    )
+    list_parser.add_argument(
+        "--ref",
+        "-r",
+        help="Filter by specific ref",
+    )
+    list_parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
-        help="Show model names",
+        help="Show all model names (not truncated)",
     )
 
     args = parser.parse_args()
