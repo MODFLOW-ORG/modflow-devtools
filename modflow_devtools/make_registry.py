@@ -69,7 +69,10 @@ Examples:
         "--name",
         required=True,
         type=str,
-        help="Model name prefix - must match the 'name' field in bootstrap sources (e.g., 'mf6/test', 'mf6/example').",
+        help=(
+            "Model name prefix - must match the 'name' field in "
+            "bootstrap sources (e.g., 'mf6/test', 'mf6/example')."
+        ),
     )
 
     # Mode-based URL construction
@@ -77,13 +80,18 @@ Examples:
         "--mode",
         required=True,
         choices=["version", "release"],
-        help="Publication mode: 'version' (version-controlled files) or 'release' (release asset zip).",
+        help=(
+            "Publication mode: 'version' (version-controlled files) "
+            "or 'release' (release asset zip)."
+        ),
     )
     parser.add_argument(
         "--repo",
         required=True,
         type=str,
-        help='Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6-testmodels).',
+        help=(
+            'Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6-testmodels).'
+        ),
     )
     parser.add_argument(
         "--ref",
@@ -94,7 +102,10 @@ Examples:
     parser.add_argument(
         "--asset-file",
         type=str,
-        help="Asset filename for 'release' mode (e.g., mf6examples.zip). Required when mode=release.",
+        help=(
+            "Asset filename for 'release' mode (e.g., mf6examples.zip). "
+            "Required when mode=release."
+        ),
     )
 
     parser.add_argument(
@@ -148,7 +159,8 @@ Examples:
                     path_in_repo = "/".join(remaining_parts)
                     if args.verbose:
                         print(
-                            f"Detected path in repo: '{path_in_repo}' (from directory structure)"
+                            f"Detected path in repo: '{path_in_repo}' "
+                            "(from directory structure)"
                         )
                 else:
                     # Path ends at repo name, so we're at repo root
@@ -158,7 +170,8 @@ Examples:
                 # Repo name not found in path - assume repo root
                 if args.verbose:
                     print(
-                        f"Warning: Repository name '{repo_name}' not found in path, using repo root"
+                        f"Warning: Repository name '{repo_name}' not found in path, "
+                        "using repo root"
                     )
 
         # Construct raw GitHub URL for version-controlled files
