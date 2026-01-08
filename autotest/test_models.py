@@ -41,10 +41,14 @@ class TestBootstrap:
         assert TEST_SOURCE in bootstrap.sources
 
     def test_bootstrap_testmodels_config(self):
-        """Test testmodels configuration."""
-        bootstrap = discovery.load_bootstrap()
+        """Test testmodels configuration in bundled config (without user overlay)."""
+        # Load bundled config explicitly (no user config overlay)
+        bundled_path = (
+            Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
+        )
+        bootstrap = discovery.load_bootstrap(bootstrap_path=bundled_path)
         testmodels = bootstrap.sources[TEST_SOURCE]
-        # Note: bundled config points to MODFLOW-ORG, not the test fork
+        # Bundled config should point to MODFLOW-ORG
         assert "MODFLOW-ORG/modflow6-testmodels" in testmodels.repo
         assert "develop" in testmodels.refs or "master" in testmodels.refs
 
@@ -511,7 +515,7 @@ class TestCLI:
 
         from modflow_devtools.models.__main__ import cmd_list
 
-        args = argparse.Namespace(verbose=True)
+        args = argparse.Namespace(verbose=True, source=None, ref=None)
         cmd_list(args)
 
         captured = capsys.readouterr()
