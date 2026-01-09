@@ -20,9 +20,7 @@ def pytest_generate_tests(metafunc):
         if not any(DFN_DIR.glob("*.dfn")):
             get_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
         dfn_names = [
-            dfn.stem
-            for dfn in DFN_DIR.glob("*.dfn")
-            if dfn.stem not in ["common", "flopy"]
+            dfn.stem for dfn in DFN_DIR.glob("*.dfn") if dfn.stem not in ["common", "flopy"]
         ]
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 

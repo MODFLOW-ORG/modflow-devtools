@@ -4,6 +4,7 @@
 
 import hashlib
 from collections.abc import Callable
+from datetime import datetime, timezone
 from functools import partial
 from os import PathLike
 from pathlib import Path
@@ -105,9 +106,7 @@ class LocalRegistry(Registry):
             raise NotADirectoryError(f"Directory path not found: {path}")
         self._paths.add(path)
 
-        model_paths = get_model_paths(
-            path, prefix=prefix, namefile=namefile, excluded=excluded
-        )
+        model_paths = get_model_paths(path, prefix=prefix, namefile=namefile, excluded=excluded)
         for model_path in model_paths:
             model_path = model_path.expanduser().resolve().absolute()
             rel_path = model_path.relative_to(path)
@@ -144,9 +143,7 @@ class LocalRegistry(Registry):
             return None
 
         # Get actual file paths from FileEntry objects
-        file_paths = [
-            p for name in file_names if (p := self.files[name].path) is not None
-        ]
+        file_paths = [p for name in file_names if (p := self.files[name].path) is not None]
 
         # create the workspace if needed
         workspace = Path(workspace).expanduser().absolute()
@@ -222,13 +219,9 @@ class PoochRegistry(Registry):
         # Initialize non-Pydantic instance variables
         self._registry_path = Path(__file__).parent.parent / "registry"
         self._registry_path.mkdir(parents=True, exist_ok=True)
-        self._registry_file_path = (
-            self._registry_path / PoochRegistry.registry_file_name
-        )
+        self._registry_file_path = self._registry_path / PoochRegistry.registry_file_name
         self._models_file_path = self._registry_path / PoochRegistry.models_file_name
-        self._examples_file_path = (
-            self._registry_path / PoochRegistry.examples_file_name
-        )
+        self._examples_file_path = self._registry_path / PoochRegistry.examples_file_name
         self._path = (
             Path(path).expanduser().absolute()
             if path
@@ -325,12 +318,8 @@ class PoochRegistry(Registry):
                 return False
 
             # Configure Pooch
-            self._urls = {
-                name: entry.url for name, entry in self.files.items() if entry.url
-            }
-            self.pooch.registry = {
-                name: entry.hash for name, entry in self.files.items()
-            }
+            self._urls = {name: entry.url for name, entry in self.files.items() if entry.url}
+            self.pooch.registry = {name: entry.hash for name, entry in self.files.items()}
             self.pooch.urls = self._urls
 
             # Set up fetchers
@@ -350,7 +339,6 @@ class PoochRegistry(Registry):
         prefix: str = "",
         namefile: str = "mfsim.nam",
         output_path: str | PathLike | None = None,
-        separate: bool = False,
     ):
         """
         Add models in the given path to the registry.
@@ -359,20 +347,20 @@ class PoochRegistry(Registry):
         This function is *not* idempotent. It should
         be called with different arguments each time.
 
-        The `url` must be a remote repository which
-        contains models. The registry will be fixed
-        to the state of the repository at the given
-        URL at the current time.
-
         The `path` must be the root of, or a folder
         within, a local clone of the repository. The
         branch checked out must match the URL branch.
 
-        The `path` may contain model subdirectories
+         The `path` may contain model subdirectories
         at arbitrary depth. Model input subdirectories
         are identified by the presence of a namefile
         matching the provided pattern. A prefix may be
         specified for model names to avoid collisions.
+
+        The `url` must be a remote repository which
+        contains models. The registry will be fixed
+        to the state of the repository at the given
+        URL at the current time.
 
         Parameters
         ----------
@@ -386,9 +374,6 @@ class PoochRegistry(Registry):
             Namefile pattern to look for in the model directories.
         output_path : str | PathLike | None
             Path to output directory. If None, uses default registry path.
-        separate : bool
-            If True, generates separate registry.toml, models.toml, examples.toml.
-            If False (default), generates single consolidated registry.toml.
         """
         path = Path(path).expanduser().resolve().absolute()
         if not path.is_dir():
@@ -405,8 +390,8 @@ class PoochRegistry(Registry):
         models: dict[str, list[str]] = {}
         examples: dict[str, list[str]] = {}
         exclude = [".DS_Store", "compare"]
-        if url and (is_zip := url.endswith((".zip", ".tar"))):
-            files[url.rpartition("/")[2]] = {"hash": None, "url": url}
+        is_zip = url.endswith((".zip", ".tar")) if url else False
+        # Note: Don't store URL in registry - URLs are constructed dynamically at runtime
 
         model_paths = get_model_paths(path, namefile=namefile)
         for model_path in model_paths:
@@ -423,74 +408,48 @@ class PoochRegistry(Registry):
             for p in model_path.rglob("*"):
                 if not p.is_file() or any(e in p.name for e in exclude):
                     continue
-                if is_zip:
-                    relpath = p.expanduser().resolve().absolute().relative_to(path)
-                    name = "/".join(relpath.parts)
-                    url_: str | None = url
-                    hash = None
-                else:
-                    relpath = p.expanduser().resolve().absolute().relative_to(path)
-                    name = "/".join(relpath.parts)
-                    url_ = f"{url}/{relpath.as_posix()}" if url else None
-                    hash = _sha256(p)
-                files[name] = {"hash": hash, "url": url_}
+                relpath = p.expanduser().resolve().absolute().relative_to(path)
+                name = "/".join(relpath.parts)
+
+                # Compute hash (None for zip-based registries)
+                hash = None if is_zip else _sha256(p)
+
+                # Don't store URL - it will be constructed dynamically at runtime
+                files[name] = {"hash": hash}
                 models[model_name].append(name)
 
         for example_name in examples.keys():
             examples[example_name] = sorted(examples[example_name], key=_model_sort_key)
 
-        if not separate:
-            # Write single consolidated models.toml (default)
-            from datetime import datetime, timezone
+        registry_file = output_dir / "models.toml"
 
-            registry_file = output_dir / "models.toml"
+        # Read existing registry if it exists (to support multiple index() calls)
+        existing_files = {}
+        existing_models = {}
+        existing_examples = {}
+        if registry_file.exists():
+            with registry_file.open("rb") as f:
+                existing_data = tomli.load(f)
+                existing_files = existing_data.get("files", {})
+                existing_models = existing_data.get("models", {})
+                existing_examples = existing_data.get("examples", {})
 
-            # Read existing registry if it exists (to support multiple index() calls)
-            existing_files = {}
-            existing_models = {}
-            existing_examples = {}
-            if registry_file.exists():
-                with registry_file.open("rb") as f:
-                    existing_data = tomli.load(f)
-                    existing_files = existing_data.get("files", {})
-                    existing_models = existing_data.get("models", {})
-                    existing_examples = existing_data.get("examples", {})
+        # Merge with new data
+        existing_files.update(files)
+        existing_models.update(models)
+        existing_examples.update(examples)
 
-            # Merge with new data
-            existing_files.update(files)
-            existing_models.update(models)
-            existing_examples.update(examples)
+        registry_data = {
+            "schema_version": "1.0",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "devtools_version": modflow_devtools.__version__,
+            "files": remap(dict(sorted(existing_files.items())), visit=drop_none_or_empty),
+            "models": dict(sorted(existing_models.items())),
+            "examples": dict(sorted(existing_examples.items())),
+        }
 
-            registry_data = {
-                "schema_version": "1.0",
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "devtools_version": modflow_devtools.__version__,
-                "files": remap(
-                    dict(sorted(existing_files.items())), visit=drop_none_or_empty
-                ),
-                "models": dict(sorted(existing_models.items())),
-                "examples": dict(sorted(existing_examples.items())),
-            }
-
-            with registry_file.open("wb") as f:
-                tomli_w.dump(registry_data, f)
-        else:
-            # Write separate files (for 1.x compatibility)
-            registry_file_path = output_dir / PoochRegistry.registry_file_name
-            models_file_path = output_dir / PoochRegistry.models_file_name
-            examples_file_path = output_dir / PoochRegistry.examples_file_name
-
-            with registry_file_path.open("ab+") as f:
-                tomli_w.dump(
-                    remap(dict(sorted(files.items())), visit=drop_none_or_empty),
-                    f,
-                )
-
-            with models_file_path.open("ab+") as models_file:
-                tomli_w.dump(dict(sorted(models.items())), models_file)
-
-            with examples_file_path.open("ab+") as examples_file:
-                tomli_w.dump(dict(sorted(examples.items())), examples_file)
+        with registry_file.open("wb") as f:
+            tomli_w.dump(registry_data, f)
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False
@@ -532,9 +491,7 @@ class PoochRegistry(Registry):
 
 
 _DEFAULT_ENV = "MFMODELS_PATH"
-_DEFAULT_BASE_URL = (
-    "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current"
-)
+_DEFAULT_BASE_URL = "https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current"
 _DEFAULT_ZIP_NAME = "mf6examples.zip"
 
 
@@ -586,9 +543,7 @@ def get_default_registry():
     """
     global _default_registry_cache
     if _default_registry_cache is None:
-        _default_registry_cache = PoochRegistry(
-            base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV
-        )
+        _default_registry_cache = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
     return _default_registry_cache
 
 
@@ -613,9 +568,7 @@ def get_files() -> dict[str, FileEntry]:
     return get_default_registry().files
 
 
-def copy_to(
-    workspace: str | PathLike, model_name: str, verbose: bool = False
-) -> Path | None:
+def copy_to(workspace: str | PathLike, model_name: str, verbose: bool = False) -> Path | None:
     """
     Copy the model's input files to the given workspace.
     The workspace will be created if it does not exist.

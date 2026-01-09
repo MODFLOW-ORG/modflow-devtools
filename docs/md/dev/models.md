@@ -7,7 +7,6 @@ This is a living document which will be updated as development proceeds. As the 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Background](#background)
 - [Objective](#objective)
 - [Motivation](#motivation)
@@ -194,6 +193,7 @@ devtools_version = "1.9.0"
 ```
 
 **Key design decisions**:
+- **Consolidated format only**: Always generates a single `models.toml` file with all sections. The deprecated `--separate` option (which generated separate `registry.toml`, `models.toml`, `examples.toml` files) has been removed.
 - **No `url` field**: URLs are constructed dynamically from bootstrap metadata (repo, ref, registry_path) + filename. This allows testing against forks by simply changing the bootstrap configuration.
 - **Top-level metadata**: Use `schema_version` (not nested under `_meta`) for consistency with Programs and DFNs APIs.
 - **Named `models.toml`**: Distinguishes from `programs.toml` and `dfns.toml` in other APIs.
@@ -379,32 +379,37 @@ Required steps in source model repositories include:
 
    **For version-controlled models** (files in git):
    ```bash
-   # Path in repo is auto-detected from directory structure!
-   # If path contains 'modflow6-testmodels/mf6', uses 'mf6' in URL
+   # Downloads from remote and indexes subdirectory (recommended)
    python -m modflow_devtools.make_registry \
-     --path ./mf6 \
      --mode version \
      --repo MODFLOW-ORG/modflow6-testmodels \
      --ref master \
      --name mf6/test \
+     --path mf6 \
      --output .registry
    ```
 
    **For release asset models** (zip published with releases):
    ```bash
+   # Downloads from remote and indexes subdirectory (recommended)
    python -m modflow_devtools.make_registry \
-     --path ./examples \
      --mode release \
      --repo MODFLOW-ORG/modflow6-examples \
      --ref current \
      --asset-file mf6examples.zip \
      --name mf6/example \
+     --path examples \
      --output .registry
    ```
 
 - Commit registry files to `.registry/` directory (for version-controlled model repositories) or post them as release assets (for repositories publishing releases)
 
-**Note**: The tool now requires explicit `--mode`, `--repo`, and `--ref` arguments and automatically constructs the appropriate GitHub URLs. For version-controlled models, the path within the repository is auto-detected from the directory structure (by finding the repository name in the path), eliminating error-prone manual configuration and requiring no git dependency.
+**Note**: The tool operates in **remote-first mode** by default - it downloads the repository from GitHub at the specified ref, ensuring the registry exactly matches the remote state. The `--path` parameter can specify:
+- A subdirectory within the repo (e.g., `mf6`) - downloads and navigates to it
+- An existing local directory - uses local checkout (for testing only, may not match remote)
+- Omitted - downloads and indexes entire repo root
+
+This eliminates local/remote state mismatches and requires no git dependency or local checkout.
 
 
 ### Model Addressing
@@ -500,13 +505,16 @@ The dynamic registry system has been fully implemented:
 - Sync functionality with download logic (`modflow_devtools/models/sync.py`)
 - Registry discovery with priority resolution (`modflow_devtools/models/discovery.py`)
 - CLI subcommands (`python -m modflow_devtools.models` - sync, info, list)
+- **Remote-first registry generation**: `make_registry` downloads from GitHub by default, ensuring registry matches remote state
+- **Intelligent path parameter**: Single `--path` parameter auto-detects local vs. remote subpath usage
 
 #### ✅ Registry Classes
 - Pydantic-based `Registry` base class (not ABC)
-- `FileEntry` supporting both local and remote files
+- `FileEntry` supporting both local and remote files (no URL storage)
 - `LocalRegistry` for indexing local model directories
 - `PoochRegistry` for remote model fetching via cache
 - Auto-sync on first import (`_try_best_effort_sync()`)
+- **Consolidated registry format**: Single `models.toml` file (removed deprecated `--separate` option)
 
 #### ✅ User Features
 - User config overlay (`~/.config/modflow-devtools/models.toml`)
@@ -703,13 +711,37 @@ $ python -m modflow_devtools.models list --source mf6/test --ref registry --verb
 
 ### Registry Creation Tool
 
-The `make_registry` tool uses a mode-based interface with automatic URL construction:
+The `make_registry` tool uses a mode-based interface with **remote-first operation** by default:
 
-**Version-controlled models** (files in git):
+**Version-controlled models** (downloads from remote):
 ```bash
-# Path in repo is auto-detected from directory structure!
+# Downloads repo and indexes subdirectory
 python -m modflow_devtools.make_registry \
-  --path ./mf6 \
+  --mode version \
+  --repo MODFLOW-ORG/modflow6-testmodels \
+  --ref master \
+  --name mf6/test \
+  --path mf6 \
+  --output .registry
+```
+
+**Release asset models** (downloads from remote):
+```bash
+# Downloads repo and indexes subdirectory
+python -m modflow_devtools.make_registry \
+  --mode release \
+  --repo MODFLOW-ORG/modflow6-examples \
+  --ref current \
+  --asset-file mf6examples.zip \
+  --name mf6/example \
+  --path examples \
+  --output .registry
+```
+
+**No path - indexes entire repo**:
+```bash
+# Downloads repo and indexes from root
+python -m modflow_devtools.make_registry \
   --mode version \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
@@ -717,24 +749,29 @@ python -m modflow_devtools.make_registry \
   --output .registry
 ```
 
-**Release asset models** (zip published with releases):
+**Local testing** (only if path exists locally):
 ```bash
+# Uses existing local checkout
 python -m modflow_devtools.make_registry \
-  --path ./examples \
-  --mode release \
-  --repo MODFLOW-ORG/modflow6-examples \
-  --ref current \
-  --asset-file mf6examples.zip \
-  --name mf6/example \
+  --mode version \
+  --repo MODFLOW-ORG/modflow6-testmodels \
+  --ref master \
+  --name mf6/test \
+  --path /absolute/path/to/modflow6-testmodels/mf6 \
   --output .registry
 ```
 
 **Key Features**:
+- **Remote-first**: Downloads from GitHub by default, ensuring registry matches remote state
+- **Intelligent `--path` parameter**:
+  - Relative path like `mf6` → downloads and uses as subdirectory
+  - Existing local directory → uses local checkout (for testing)
+  - Omitted → downloads and indexes repo root
 - **Mode-based interface**: Choose `--mode version` or `--mode release`
 - **Automatic URL construction**: No manual URL typing required
-- **Smart path detection**: Finds subdirectory path from directory structure (no git required!)
+- **No git dependency**: Uses GitHub's zipball API
 - **Clear naming**: `--name` matches bootstrap file's `name` field
-- **Required arguments**: `--mode`, `--repo`, `--ref`, and `--name` prevent mistakes
+- **Consolidated registry format**: Always generates single `models.toml` file
 
 ### User Config Overlay for Fork Testing
 
@@ -761,11 +798,11 @@ This allows testing against forks without modifying the bundled config!
 - name: Generate registry
   run: |
     python -m modflow_devtools.make_registry \
-      --path ./mf6 \
       --mode version \
       --repo MODFLOW-ORG/modflow6-testmodels \
       --ref ${{ github.ref_name }} \
       --name mf6/test \
+      --path mf6 \
       --output .registry
 
 - name: Commit registry
@@ -780,12 +817,12 @@ This allows testing against forks without modifying the bundled config!
 - name: Generate registry
   run: |
     python -m modflow_devtools.make_registry \
-      --path ./examples \
       --mode release \
       --repo MODFLOW-ORG/modflow6-examples \
       --ref ${{ github.ref_name }} \
       --asset-file mf6examples.zip \
       --name mf6/example \
+      --path examples \
       --output .registry
 
 - name: Upload registry as release asset
@@ -794,6 +831,8 @@ This allows testing against forks without modifying the bundled config!
     asset_path: .registry/models.toml
     asset_name: models.toml
 ```
+
+**Note**: The tool will download from the remote repository at the specified ref, ensuring the generated registry exactly matches what will be available remotely. This eliminates any possibility of local/remote state mismatches.
 
 ## Open Questions / Future Enhancements
 

@@ -35,9 +35,7 @@ def get_request(url, params={}):
     return urllib.request.Request(url, headers=headers)
 
 
-def get_releases(
-    repo, per_page=30, max_pages=10, retries=3, verbose=False
-) -> list[dict]:
+def get_releases(repo, per_page=30, max_pages=10, retries=3, verbose=False) -> list[dict]:
     """
     Get available releases for the given repository.
 
@@ -78,21 +76,14 @@ def get_releases(
             tries += 1
             try:
                 if verbose:
-                    print(
-                        f"Fetching releases for "
-                        f"repo {repo} "
-                        f"(page {page}, "
-                        f"{per_page} per page)"
-                    )
+                    print(f"Fetching releases for repo {repo} (page {page}, {per_page} per page)")
                 with urllib.request.urlopen(request, timeout=10) as resp:
                     return json.loads(resp.read().decode())
             except urllib.error.HTTPError as err:
                 if err.code == 401 and os.environ.get("GITHUB_TOKEN"):
                     raise ValueError("GITHUB_TOKEN is invalid") from err
                 elif err.code == 403 and "rate limit exceeded" in err.reason:
-                    raise ValueError(
-                        f"use GITHUB_TOKEN env to bypass rate limit ({err})"
-                    ) from err
+                    raise ValueError(f"use GITHUB_TOKEN env to bypass rate limit ({err})") from err
                 elif err.code in (404, 503) and tries < retries:
                     # GitHub sometimes returns this error for valid URLs, so retry
                     warn(f"URL request try {tries} failed ({err})")
@@ -140,11 +131,7 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
         raise ValueError("retries must be a positive int")
 
     req_url = f"https://api.github.com/repos/{repo}"
-    req_url = (
-        f"{req_url}/releases/latest"
-        if tag == "latest"
-        else f"{req_url}/releases/tags/{tag}"
-    )
+    req_url = f"{req_url}/releases/latest" if tag == "latest" else f"{req_url}/releases/tags/{tag}"
     request = get_request(req_url)
     num_tries = 0
 
@@ -155,18 +142,13 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
                 result = resp.read()
                 remaining = resp.headers.get("x-ratelimit-remaining", None)
                 if remaining and int(remaining) <= 10:
-                    warn(
-                        f"Only {remaining} GitHub API requests remaining "
-                        "before rate-limiting"
-                    )
+                    warn(f"Only {remaining} GitHub API requests remaining before rate-limiting")
                 break
         except urllib.error.HTTPError as err:
             if err.code == 401 and os.environ.get("GITHUB_TOKEN"):
                 raise ValueError("GITHUB_TOKEN env is invalid") from err
             elif err.code == 403 and "rate limit exceeded" in err.reason:
-                raise ValueError(
-                    f"use GITHUB_TOKEN env to bypass rate limit ({err})"
-                ) from err
+                raise ValueError(f"use GITHUB_TOKEN env to bypass rate limit ({err})") from err
             elif err.code == 404:
                 raise ValueError(f"Release {tag} not found")
             elif err.code == 503 and num_tries < retries:

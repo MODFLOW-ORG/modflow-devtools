@@ -43,10 +43,7 @@ class DiscoveredRegistry:
         self.url = url
 
     def __repr__(self) -> str:
-        return (
-            f"DiscoveredRegistry(source={self.source}, "
-            f"ref={self.ref}, mode={self.mode})"
-        )
+        return f"DiscoveredRegistry(source={self.source}, ref={self.ref}, mode={self.mode})"
 
 
 def discover_registry(
@@ -81,9 +78,7 @@ def discover_registry(
     registry_path = source.registry_path
 
     # Step 1: Try release assets
-    release_url = (
-        f"https://github.com/{org}/{repo_name}/releases/download/{ref}/models.toml"
-    )
+    release_url = f"https://github.com/{org}/{repo_name}/releases/download/{ref}/models.toml"
     try:
         registry_data = _fetch_url(release_url)
         registry = Registry(**tomli.loads(registry_data))
@@ -98,13 +93,14 @@ def discover_registry(
         if e.code != 404:
             # Some other error - re-raise
             raise RegistryDiscoveryError(
-                f"Error fetching registry from release "
-                f"assets for '{source.name}@{ref}': {e}"
+                f"Error fetching registry from release assets for '{source.name}@{ref}': {e}"
             )
         # 404 means no release with this tag, fall through to version-controlled
 
     # Step 2: Try version-controlled registry
-    vc_url = f"https://raw.githubusercontent.com/{org}/{repo_name}/{ref}/{registry_path}/models.toml"
+    vc_url = (
+        f"https://raw.githubusercontent.com/{org}/{repo_name}/{ref}/{registry_path}/models.toml"
+    )
     try:
         registry_data = _fetch_url(vc_url)
         registry = Registry(**tomli.loads(registry_data))
@@ -123,13 +119,10 @@ def discover_registry(
             )
         else:
             raise RegistryDiscoveryError(
-                "Error fetching registry from repository "
-                f"for '{source.name}@{ref}': {e}"
+                f"Error fetching registry from repository for '{source.name}@{ref}': {e}"
             )
     except Exception as e:
-        raise RegistryDiscoveryError(
-            f"Registry discovery failed for '{source.name}@{ref}': {e}"
-        )
+        raise RegistryDiscoveryError(f"Registry discovery failed for '{source.name}@{ref}': {e}")
 
 
 def _fetch_url(url: str, timeout: int = 30) -> str:

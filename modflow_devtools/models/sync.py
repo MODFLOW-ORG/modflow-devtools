@@ -160,9 +160,7 @@ def sync_registry(
                 result.failed.append((source_name, ref_name, str(e)))
             except Exception as e:
                 if verbose:
-                    print(
-                        f"  [-] Unexpected error syncing {source_name}@{ref_name}: {e}"
-                    )
+                    print(f"  [-] Unexpected error syncing {source_name}@{ref_name}: {e}")
                 result.failed.append((source_name, ref_name, str(e)))
 
     return result

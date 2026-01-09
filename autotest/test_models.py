@@ -43,9 +43,7 @@ class TestBootstrap:
     def test_bootstrap_testmodels_config(self):
         """Test testmodels configuration in bundled config (without user overlay)."""
         # Load bundled config explicitly (no user config overlay)
-        bundled_path = (
-            Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
-        )
+        bundled_path = Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
         bootstrap = discovery.load_bootstrap(bootstrap_path=bundled_path)
         testmodels = bootstrap.sources[TEST_SOURCE]
         # Bundled config should point to MODFLOW-ORG
@@ -75,12 +73,8 @@ class TestBootstrap:
         # Create bundled config
         bundled = Bootstrap(
             sources={
-                "source1": BootstrapSource(
-                    repo="org/repo1", name="source1", refs=["main"]
-                ),
-                "source2": BootstrapSource(
-                    repo="org/repo2", name="source2", refs=["develop"]
-                ),
+                "source1": BootstrapSource(repo="org/repo1", name="source1", refs=["main"]),
+                "source2": BootstrapSource(repo="org/repo2", name="source2", refs=["develop"]),
             }
         )
 
@@ -90,9 +84,7 @@ class TestBootstrap:
                 "source1": BootstrapSource(
                     repo="user/custom-repo1", name="source1", refs=["feature"]
                 ),
-                "source3": BootstrapSource(
-                    repo="user/repo3", name="source3", refs=["master"]
-                ),
+                "source3": BootstrapSource(repo="user/repo3", name="source3", refs=["master"]),
             }
         )
 
@@ -136,9 +128,7 @@ refs = ["custom-branch"]
 
         # Check that user config overrode bundled config for testmodels
         if TEST_SOURCE in bootstrap.sources:
-            assert (
-                bootstrap.sources[TEST_SOURCE].repo == "user/modflow6-testmodels-fork"
-            )
+            assert bootstrap.sources[TEST_SOURCE].repo == "user/modflow6-testmodels-fork"
 
     def test_load_bootstrap_explicit_path_no_overlay(self, tmp_path):
         """Test that explicit bootstrap path doesn't default to user config overlay."""
@@ -245,8 +235,7 @@ class TestCache:
         # Normalize path separators for comparison (Windows uses \, Unix uses /)
         cache_dir_str = str(cache_dir).replace("\\", "/")
         assert (
-            TEST_SOURCE_NAME in cache_dir_str
-            or TEST_SOURCE_NAME.replace("/", "-") in cache_dir_str
+            TEST_SOURCE_NAME in cache_dir_str or TEST_SOURCE_NAME.replace("/", "-") in cache_dir_str
         )
         assert TEST_REF in str(cache_dir)
         assert "registries" in str(cache_dir)
@@ -547,9 +536,7 @@ class TestIntegration:
         assert isinstance(discovered.registry, Registry)
 
         # Cache registry
-        cache_path = cache.cache_registry(
-            discovered.registry, TEST_SOURCE_NAME, TEST_REF
-        )
+        cache_path = cache.cache_registry(discovered.registry, TEST_SOURCE_NAME, TEST_REF)
         assert cache_path.exists()
 
         # Load from cache
@@ -582,51 +569,39 @@ class TestIntegration:
 class TestMakeRegistry:
     """Test registry creation tool (make_registry.py)."""
 
-    def _detect_path_in_repo(self, path_str: str, repo: str) -> str:
-        """Helper to extract path-in-repo using the same logic as make_registry."""
-        from pathlib import Path
-
-        path_obj = Path(path_str).resolve()
-        repo_name = repo.split("/")[1]
-
-        path_parts = path_obj.parts
-        try:
-            repo_index = path_parts.index(repo_name)
-            if repo_index + 1 < len(path_parts):
-                remaining_parts = path_parts[repo_index + 1 :]
-                return "/".join(remaining_parts)
-            else:
-                return ""
-        except ValueError:
-            return ""
-
     def _get_constructed_url(self, mode, repo, ref, **kwargs):
         """Helper to extract constructed URL from make_registry verbose output."""
-        cmd = [
-            sys.executable,
-            "-m",
-            "modflow_devtools.make_registry",
-            "--mode",
-            mode,
-            "--repo",
-            repo,
-            "--ref",
-            ref,
-            "--verbose",
-        ]
+        import tempfile
 
-        for key, value in kwargs.items():
-            cmd.extend([f"--{key.replace('_', '-')}", value])
+        # Create a temporary directory to use as dummy path
+        # This prevents the tool from trying to download (which would fail for fake repos)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = [
+                sys.executable,
+                "-m",
+                "modflow_devtools.make_registry",
+                "--mode",
+                mode,
+                "--repo",
+                repo,
+                "--ref",
+                ref,
+                "--path",
+                tmpdir,  # Provide dummy path to test URL construction without downloading
+                "--verbose",
+            ]
 
-        # Don't provide --path so it won't actually index anything
-        result = subprocess.run(cmd, capture_output=True, text=True)
+            for key, value in kwargs.items():
+                cmd.extend([f"--{key.replace('_', '-')}", value])
 
-        # Extract constructed URL from output
-        for line in result.stdout.split("\n"):
-            if "Constructed URL:" in line:
-                return line.split("Constructed URL: ")[1].strip()
+            result = subprocess.run(cmd, capture_output=True, text=True)
 
-        return None
+            # Extract constructed URL from output
+            for line in result.stdout.split("\n"):
+                if "Constructed URL:" in line:
+                    return line.split("Constructed URL: ")[1].strip()
+
+            return None
 
     def test_url_construction_version(self):
         """Test URL construction for version mode (auto-detects path from directory)."""
@@ -637,9 +612,7 @@ class TestMakeRegistry:
             name="mf6/test",
         )
         # Should be repo root (no path, or auto-detected)
-        assert url.startswith(
-            "https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master"
-        )
+        assert url.startswith("https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master")
 
     def test_url_construction_version_different_ref(self):
         """Test URL construction for version mode with different ref."""
@@ -649,9 +622,7 @@ class TestMakeRegistry:
             ref="develop",
             name="mf6/large",
         )
-        assert url.startswith(
-            "https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/develop"
-        )
+        assert url.startswith("https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/develop")
 
     def test_url_construction_release(self):
         """Test URL construction for release mode."""
@@ -676,44 +647,4 @@ class TestMakeRegistry:
             asset_file="models.zip",
             name="custom/models",
         )
-        assert (
-            url
-            == "https://github.com/username/my-models/releases/download/v1.0.0/models.zip"
-        )
-
-    def test_path_detection_subdirectory(self):
-        """Test path-in-repo detection for subdirectory."""
-        result = self._detect_path_in_repo(
-            "C:/repos/modflow6-testmodels/mf6", "MODFLOW-ORG/modflow6-testmodels"
-        )
-        assert result == "mf6"
-
-    def test_path_detection_repo_root(self):
-        """Test path-in-repo detection for repo root."""
-        result = self._detect_path_in_repo(
-            "C:/repos/modflow6-largetestmodels", "MODFLOW-ORG/modflow6-largetestmodels"
-        )
-        assert result == ""
-
-    def test_path_detection_nested_subdirectory(self):
-        """Test path-in-repo detection for nested subdirectory."""
-        result = self._detect_path_in_repo(
-            "/home/user/projects/modflow6-testmodels/mf6/test001",
-            "MODFLOW-ORG/modflow6-testmodels",
-        )
-        assert result == "mf6/test001"
-
-    def test_path_detection_fallback_no_match(self):
-        """Test path-in-repo detection falls back to root when repo name not found."""
-        result = self._detect_path_in_repo(
-            "/tmp/build/examples", "MODFLOW-ORG/modflow6-examples"
-        )
-        assert result == ""
-
-    def test_path_detection_windows_path(self):
-        """Test path-in-repo detection on Windows paths."""
-        result = self._detect_path_in_repo(
-            r"C:\Users\wpbonelli\repos\modflow6-examples\examples",
-            "MODFLOW-ORG/modflow6-examples",
-        )
-        assert result == "examples"
+        assert url == "https://github.com/username/my-models/releases/download/v1.0.0/models.zip"

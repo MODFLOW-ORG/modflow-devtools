@@ -152,9 +152,7 @@ class Registry(BaseModel):
     """
 
     schema_version: str | None = Field(None, description="Registry schema version")
-    generated_at: datetime | None = Field(
-        None, description="Timestamp when registry was generated"
-    )
+    generated_at: datetime | None = Field(None, description="Timestamp when registry was generated")
     devtools_version: str | None = Field(
         None, description="Version of modflow-devtools used to generate"
     )
@@ -213,8 +211,4 @@ class Registry(BaseModel):
 
     def to_pooch_urls(self) -> dict[str, str]:
         """Convert to format expected by Pooch.urls (filename -> url)."""
-        return {
-            name: entry.url
-            for name, entry in self.files.items()
-            if entry.url is not None
-        }
+        return {name: entry.url for name, entry in self.files.items() if entry.url is not None}

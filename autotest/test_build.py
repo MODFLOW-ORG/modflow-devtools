@@ -15,15 +15,11 @@ _repos_path = Path(_repos_path).expanduser().absolute()
 _modflow6_repo_path = _repos_path / "modflow6"
 _system = platform.system()
 _exe_ext = ".exe" if _system == "Windows" else ""
-_lib_ext = (
-    ".so" if _system == "Linux" else (".dylib" if _system == "Darwin" else ".dll")
-)
+_lib_ext = ".so" if _system == "Linux" else (".dylib" if _system == "Darwin" else ".dll")
 
 
 @requires_exe("meson", "ninja")
-@pytest.mark.skipif(
-    not _modflow6_repo_path.is_dir(), reason="modflow6 repository not found"
-)
+@pytest.mark.skipif(not _modflow6_repo_path.is_dir(), reason="modflow6 repository not found")
 def test_meson_build(tmp_path):
     build_path = tmp_path / "builddir"
     bin_path = tmp_path / "bin"
