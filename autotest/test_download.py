@@ -45,7 +45,7 @@ def test_get_release(repo):
     tag = "latest"
     release = get_release(repo, tag, verbose=True)
     assets = release["assets"]
-    expected_names = ["linux.zip", "mac.zip", "win64.zip"]
+    expected_names = ["linux.zip", "macarm.zip", "win64.zip"]
     actual_names = [asset["name"] for asset in assets]
 
     if repo == "MODFLOW-ORG/modflow6":
