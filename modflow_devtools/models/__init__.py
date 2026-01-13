@@ -2,7 +2,7 @@ import hashlib
 import os
 import urllib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import partial
 from os import PathLike
@@ -356,17 +356,9 @@ class ModelSourceRepo(BaseModel):
     class SyncResult:
         """Result of a sync operation."""
 
-        synced: list[tuple[str, str]] = None  # [(source, ref), ...]
-        skipped: list[tuple[str, str]] = None  # [(ref, reason), ...]
-        failed: list[tuple[str, str]] = None  # [(ref, error), ...]
-
-        def __post_init__(self):
-            if self.synced is None:
-                self.synced = []
-            if self.skipped is None:
-                self.skipped = []
-            if self.failed is None:
-                self.failed = []
+        synced: list[tuple[str, str]] = field(default_factory=list)  # [(source, ref), ...]
+        skipped: list[tuple[str, str]] = field(default_factory=list)  # [(ref, reason), ...]
+        failed: list[tuple[str, str]] = field(default_factory=list)  # [(ref, error), ...]
 
     @dataclass
     class SyncStatus:
