@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from modflow_devtools.models import cache, discovery, sync
-from modflow_devtools.models.schema import Bootstrap, BootstrapSource, Registry
+from modflow_devtools.models.schema import ModelRegistry, ModelSourceConfig, ModelSourceRepo
 
 # Test configuration (loaded from .env file via pytest-dotenv plugin)
 TEST_REPO = os.getenv("TEST_REPO", "wpbonelli/modflow6-testmodels")
@@ -32,7 +32,7 @@ class TestBootstrap:
     def test_load_bootstrap(self):
         """Test loading the bootstrap file."""
         bootstrap = discovery.load_bootstrap()
-        assert isinstance(bootstrap, Bootstrap)
+        assert isinstance(bootstrap, ModelSourceConfig)
         assert len(bootstrap.sources) > 0
 
     def test_bootstrap_has_testmodels(self):
@@ -71,20 +71,20 @@ class TestBootstrap:
     def test_merge_bootstrap(self):
         """Test merging bundled and user bootstrap configs."""
         # Create bundled config
-        bundled = Bootstrap(
+        bundled = ModelSourceConfig(
             sources={
-                "source1": BootstrapSource(repo="org/repo1", name="source1", refs=["main"]),
-                "source2": BootstrapSource(repo="org/repo2", name="source2", refs=["develop"]),
+                "source1": ModelSourceRepo(repo="org/repo1", name="source1", refs=["main"]),
+                "source2": ModelSourceRepo(repo="org/repo2", name="source2", refs=["develop"]),
             }
         )
 
         # Create user config that overrides source1 and adds source3
-        user = Bootstrap(
+        user = ModelSourceConfig(
             sources={
-                "source1": BootstrapSource(
+                "source1": ModelSourceRepo(
                     repo="user/custom-repo1", name="source1", refs=["feature"]
                 ),
-                "source3": BootstrapSource(repo="user/repo3", name="source3", refs=["master"]),
+                "source3": ModelSourceRepo(repo="user/repo3", name="source3", refs=["master"]),
             }
         )
 
@@ -240,11 +240,6 @@ class TestCache:
         assert TEST_REF in str(cache_dir)
         assert "registries" in str(cache_dir)
 
-    def test_get_models_cache_dir(self):
-        """Test getting models cache directory."""
-        models_dir = cache.get_models_cache_dir()
-        assert models_dir.name == "models"
-
 
 class TestDiscovery:
     """Test registry discovery."""
@@ -252,7 +247,7 @@ class TestDiscovery:
     def test_discover_registry(self):
         """Test discovering registry for test repo."""
         # Use test repo/ref from environment
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
@@ -263,21 +258,21 @@ class TestDiscovery:
             ref=TEST_REF,
         )
 
-        assert isinstance(discovered, discovery.DiscoveredRegistry)
+        assert isinstance(discovered, discovery.DiscoveredModelRegistry)
         assert discovered.source == TEST_SOURCE_NAME
         assert discovered.ref == TEST_REF
         assert discovered.mode == "version_controlled"
-        assert isinstance(discovered.registry, Registry)
+        assert isinstance(discovered.registry, ModelRegistry)
 
     def test_discover_registry_nonexistent_ref(self):
         """Test that discovery fails gracefully for nonexistent ref."""
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=["nonexistent-branch-12345"],
         )
 
-        with pytest.raises(discovery.RegistryDiscoveryError):
+        with pytest.raises(discovery.ModelRegistryDiscoveryError):
             discovery.discover_registry(
                 source=source,
                 ref="nonexistent-branch-12345",
@@ -363,7 +358,7 @@ class TestSync:
         cache.clear_registry_cache()
 
         # Create source with test repo override
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
@@ -379,7 +374,7 @@ class TestSync:
         """Test BootstrapSource.is_synced() method."""
         cache.clear_registry_cache()
 
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
@@ -398,7 +393,7 @@ class TestSync:
         """Test BootstrapSource.list_synced_refs() method."""
         cache.clear_registry_cache()
 
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
@@ -522,7 +517,7 @@ class TestIntegration:
         cache.clear_registry_cache()
 
         # Create test source
-        source = BootstrapSource(
+        source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
@@ -533,7 +528,7 @@ class TestIntegration:
             source=source,
             ref=TEST_REF,
         )
-        assert isinstance(discovered.registry, Registry)
+        assert isinstance(discovered.registry, ModelRegistry)
 
         # Cache registry
         cache_path = cache.cache_registry(discovered.registry, TEST_SOURCE_NAME, TEST_REF)

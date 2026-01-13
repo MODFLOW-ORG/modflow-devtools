@@ -35,6 +35,31 @@ def get_request(url, params={}):
     return urllib.request.Request(url, headers=headers)
 
 
+def fetch_url(url: str, timeout: int = 30) -> str:
+    """
+    Fetch content from a URL.
+
+    Parameters
+    ----------
+    url : str
+        URL to fetch
+    timeout : int
+        Timeout in seconds
+
+    Returns
+    -------
+    str
+        Content as string
+
+    Raises
+    ------
+    urllib.error.HTTPError
+        If HTTP request fails
+    """
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        return response.read().decode("utf-8")
+
+
 def get_releases(repo, per_page=30, max_pages=10, retries=3, verbose=False) -> list[dict]:
     """
     Get available releases for the given repository.

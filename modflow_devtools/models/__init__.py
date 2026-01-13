@@ -1,15 +1,14 @@
-# TODO
-# - switch modflow6-testmodels and -largetestmodels to
-#   fetch zip of the repo instead of individual files?
-
 import hashlib
+import os
+import urllib
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
 from os import PathLike
 from pathlib import Path
 from shutil import copy
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import pooch
 import tomli
@@ -17,10 +16,632 @@ import tomli_w
 from boltons.iterutils import remap
 from filelock import FileLock
 from pooch import Pooch
+from pydantic import (
+    BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 import modflow_devtools
+from modflow_devtools.download import fetch_url
 from modflow_devtools.misc import drop_none_or_empty, get_model_paths
-from modflow_devtools.models.schema import FileEntry, Registry
+
+_CACHE_ROOT = Path(pooch.os_cache("modflow-devtools"))
+"""
+Root cache directory
+
+Uses Pooch's os_cache() for platform-appropriate location:
+- Linux: ~/.cache/modflow-devtools
+- macOS: ~/Library/Caches/modflow-devtools
+- Windows: ~\\AppData\\Local\\modflow-devtools\\Cache
+"""
+
+_DEFAULT_REGISTRY_FILE_NAME = "registry.toml"
+"""The default registry file name"""
+
+
+class ModelInputFile(BaseModel):
+    """A single file entry in the registry. Can be local or remote."""
+
+    url: str | None = Field(None, description="URL (for remote files)")
+    path: Path | None = Field(None, description="Local file path (original or cached)")
+    hash: str | None = Field(None, description="SHA256 hash of the file")
+
+    @field_serializer("path")
+    def serialize_path(self, p: Path | None, _info):
+        """Serialize Path to string (POSIX format)."""
+        return str(p) if p is not None else None
+
+    @model_validator(mode="after")
+    def check_location(self):
+        """Ensure at least one of url or path is provided."""
+        if not self.url and not self.path:
+            raise ValueError("FileEntry must have either url or path")
+        return self
+
+
+class ModelRegistry(BaseModel):
+    """
+    Base class for model registries.
+
+    Defines the common structure for both local and remote registries.
+    """
+
+    schema_version: str | None = Field(None, description="Registry schema version")
+    generated_at: datetime | None = Field(None, description="Timestamp when registry was generated")
+    devtools_version: str | None = Field(
+        None, description="Version of modflow-devtools used to generate"
+    )
+    files: dict[str, ModelInputFile] = Field(
+        default_factory=dict, description="Map of file names to file entries"
+    )
+    models: dict[str, list[str]] = Field(
+        default_factory=dict, description="Map of model names to file lists"
+    )
+    examples: dict[str, list[str]] = Field(
+        default_factory=dict, description="Map of example names to model lists"
+    )
+
+    model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
+
+    @field_serializer("generated_at")
+    def serialize_datetime(self, dt: datetime | None, _info):
+        """Serialize datetime to ISO format string."""
+        return dt.isoformat() if dt is not None else None
+
+    def copy_to(
+        self, workspace: str | PathLike, model_name: str, verbose: bool = False
+    ) -> Path | None:
+        """
+        Copy a model's input files to the given workspace.
+
+        Subclasses must override this method to provide actual implementation.
+
+        Parameters
+        ----------
+        workspace : str | PathLike
+            Destination workspace directory
+        model_name : str
+            Name of the model to copy
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        Path | None
+            Path to the workspace, or None if model not found
+
+        Raises
+        ------
+        NotImplementedError
+            If called on base Registry class (must use subclass)
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement copy_to(). "
+            "Use LocalRegistry or PoochRegistry instead."
+        )
+
+    def to_pooch_registry(self) -> dict[str, str | None]:
+        """Convert to format expected by Pooch.registry (filename -> hash)."""
+        return {name: entry.hash for name, entry in self.files.items()}
+
+    def to_pooch_urls(self) -> dict[str, str]:
+        """Convert to format expected by Pooch.urls (filename -> url)."""
+        return {name: entry.url for name, entry in self.files.items() if entry.url is not None}
+
+
+@dataclass
+class ModelCache:
+    root: Path
+
+    def model_cache_dir(self) -> Path:
+        """Model cache directory"""
+        return self.root / "models"
+
+    def get_registry_cache_dir(self, source: str, ref: str) -> Path:
+        """
+        Get the cache directory for a specific source and ref.
+
+        Parameters
+        ----------
+        source : str
+            Source name (e.g., 'modflow6-testmodels' or 'mf6/test').
+            May contain slashes which will create nested directories.
+        ref : str
+            Git ref (branch, tag, or commit hash)
+        """
+        return self.root / "registries" / source / ref
+
+    def save(self, registry: ModelRegistry, source: str, ref: str) -> Path:
+        """
+        Cache a registry file.
+
+        Parameters
+        ----------
+        registry : Registry
+            Registry to cache
+        source : str
+            Source name
+        ref : str
+            Git ref
+
+        Returns
+        -------
+        Path
+            Path to cached registry file
+        """
+        cache_dir = self.get_registry_cache_dir(source, ref)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
+        with registry_file.open("wb") as f:
+            tomli_w.dump(registry.model_dump(mode="json", by_alias=True, exclude_none=True), f)
+
+        return registry_file
+
+    def load(self, source: str, ref: str) -> ModelRegistry | None:
+        """
+        Load a cached registry if it exists.
+
+        Parameters
+        ----------
+        source : str
+            Source name
+        ref : str
+            Git ref
+
+        Returns
+        -------
+        Registry | None
+            Cached registry if found, None otherwise
+        """
+        registry_file = self.get_registry_cache_dir(source, ref) / _DEFAULT_REGISTRY_FILE_NAME
+        if not registry_file.exists():
+            return None
+
+        with registry_file.open("rb") as f:
+            return ModelRegistry(**tomli.load(f))
+
+    def has(self, source: str, ref: str) -> bool:
+        """
+        Check if a registry is cached.
+
+        Parameters
+        ----------
+        source : str
+            Source name
+        ref : str
+            Git ref
+
+        Returns
+        -------
+        bool
+            True if registry is cached, False otherwise
+        """
+        registry_file = self.get_registry_cache_dir(source, ref) / _DEFAULT_REGISTRY_FILE_NAME
+        return registry_file.exists()
+
+    def clear(self, source: str | None = None, ref: str | None = None) -> None:
+        """
+        Clear cached registries.
+
+        Parameters
+        ----------
+        source : str | None
+            If provided, only clear this source. If None, clear all sources.
+        ref : str | None
+            If provided (with source), only clear this ref. If None, clear all refs.
+
+        Examples
+        --------
+        Clear everything:
+            clear_registry_cache()
+
+        Clear a specific source:
+            clear_registry_cache(source="modflow6-testmodels")
+
+        Clear a specific source/ref:
+            clear_registry_cache(source="modflow6-testmodels", ref="develop")
+        """
+        import shutil
+        import time
+
+        def _rmtree_with_retry(path, max_retries=5, delay=0.5):
+            """Remove tree with retry logic for Windows file handle delays."""
+            for attempt in range(max_retries):
+                try:
+                    shutil.rmtree(path)
+                    return
+                except PermissionError:
+                    if attempt < max_retries - 1:
+                        time.sleep(delay)
+                    else:
+                        raise
+
+        if source and ref:
+            # Clear specific source/ref
+            cache_dir = self.get_registry_cache_dir(source, ref)
+            if cache_dir.exists():
+                _rmtree_with_retry(cache_dir)
+        elif source:
+            # Clear all refs for a source
+            source_dir = self.root / "registries" / source
+            if source_dir.exists():
+                _rmtree_with_retry(source_dir)
+        else:
+            # Clear all registries
+            registries_dir = self.root / "registries"
+            if registries_dir.exists():
+                _rmtree_with_retry(registries_dir)
+
+    def list(self) -> list[tuple[str, str]]:
+        """
+        List all cached registries.
+
+        Returns
+        -------
+        list[tuple[str, str]]
+            List of (source, ref) tuples for cached registries
+        """
+        registries_dir = self.root / "registries"
+        if not registries_dir.exists():
+            return []
+
+        cached = []
+        for registry_file in registries_dir.rglob(_DEFAULT_REGISTRY_FILE_NAME):
+            # Extract source and ref from path
+            # e.g., registries/mf6/test/registry/registry.toml
+            # → parts = ['mf6', 'test', 'registry', 'registry.toml']
+            parts = registry_file.relative_to(registries_dir).parts
+            if len(parts) >= 2:
+                ref = parts[-2]  # 'registry' (second-to-last)
+                source = "/".join(parts[:-2])  # 'mf6/test' (everything before ref)
+                cached.append((source, ref))
+
+        return cached
+
+
+_DEFAULT_CACHE = ModelCache(root=_CACHE_ROOT)
+_DEFAULT_CONFIG_PATH = Path(__file__).parent / "models.toml"
+
+
+def get_user_config_path() -> Path:
+    """
+    Get the path to the user model configuration file.
+
+    Returns the platform-appropriate user config location:
+    - Linux/macOS: $XDG_CONFIG_HOME/modflow-devtools/models.toml
+                   (defaults to ~/.config/modflow-devtools/models.toml)
+    - Windows: %APPDATA%/modflow-devtools/models.toml
+
+    Returns
+    -------
+    Path
+        Path to user bootstrap config file
+    """
+    if os.name == "nt":  # Windows
+        config_dir = Path(os.environ.get("APPDATA", Path.home() / "AppData/Roaming"))
+    else:  # Unix-like (Linux, macOS, etc.)
+        config_dir = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+
+    return config_dir / "modflow-devtools" / "models.toml"
+
+
+RegistryMode = Literal["release_asset", "version_controlled"]
+
+
+class ModelRegistryDiscoveryError(Exception):
+    """Raised when registry discovery fails."""
+
+    pass
+
+
+@dataclass
+class DiscoveredModelRegistry:
+    """Result of registry discovery."""
+
+    registry: ModelRegistry
+    mode: RegistryMode
+    source: str
+    ref: str
+    url: str
+
+
+class ModelSourceRepo(BaseModel):
+    """A single source model repository in the bootstrap file."""
+
+    @dataclass
+    class SyncResult:
+        """Result of a sync operation."""
+
+        succeeded: list[str] = []  # successfully synced refs
+        skipped: list[tuple[str, str]] = []  # (ref, reason)
+        failed: list[tuple[str, str]] = []  # (ref, error)
+
+    @dataclass
+    class SyncStatus:
+        """Model source repo sync status."""
+
+        repo: str
+        configured_refs: list[str]
+        cached_refs: list[str]
+        missing_refs: list[str]
+
+    repo: str = Field(..., description="Repository in format 'owner/name'")
+    name: str = Field(
+        ..., description="Name for model addressing (injected from key if not explicit)"
+    )
+    refs: list[str] = Field(
+        default_factory=list,
+        description="Default refs to sync (branches, tags, or commit hashes)",
+    )
+    registry_path: str = Field(
+        default=".registry",
+        description="Path to registry directory in repository",
+    )
+
+    @field_validator("repo")
+    @classmethod
+    def validate_repo(cls, v: str) -> str:
+        """Validate repo format is 'owner/name'."""
+        if "/" not in v:
+            raise ValueError(f"repo must be in format 'owner/name', got: {v}")
+        parts = v.split("/")
+        if len(parts) != 2:
+            raise ValueError(f"repo must be in format 'owner/name', got: {v}")
+        owner, name = parts
+        if not owner or not name:
+            raise ValueError(f"repo owner and name cannot be empty, got: {v}")
+        return v
+
+    def discover(
+        self,
+        ref: str,
+    ) -> DiscoveredModelRegistry:
+        """
+        Discover a registry for the given source and ref.
+
+        Implements the discovery procedure:
+        1. Look for a matching release tag (registry as release asset)
+        2. Fall back to version-controlled registry (in .registry/ directory)
+
+        Parameters
+        ----------
+        source : BootstrapSource
+            Source metadata from bootstrap file (must have name populated)
+        ref : str
+            Git ref (tag, branch, or commit hash)
+
+        Returns
+        -------
+        DiscoveredRegistry
+            The discovered registry with metadata
+
+        Raises
+        ------
+        RegistryDiscoveryError
+            If registry cannot be discovered
+        """
+        org, repo_name = self.repo.split("/")
+        registry_path = self.registry_path
+
+        # Step 1: Try release assets
+        release_url = f"https://github.com/{org}/{repo_name}/releases/download/{ref}/models.toml"
+        try:
+            registry_data = fetch_url(release_url)
+            registry = ModelRegistry(**tomli.loads(registry_data))
+            return DiscoveredModelRegistry(
+                registry=registry,
+                mode="release_asset",
+                source=self.name,
+                ref=ref,
+                url=release_url,
+            )
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                # Some other error - re-raise
+                raise ModelRegistryDiscoveryError(
+                    f"Error fetching registry from release assets for '{self.name}@{ref}': {e}"
+                )
+            # 404 means no release with this tag, fall through to version-controlled
+
+        # Step 2: Try version-controlled registry
+        vc_url = (
+            f"https://raw.githubusercontent.com/{org}/{repo_name}/{ref}/{registry_path}/models.toml"
+        )
+        try:
+            registry_data = fetch_url(vc_url)
+            registry = ModelRegistry(**tomli.loads(registry_data))
+            return DiscoveredModelRegistry(
+                registry=registry,
+                mode="version_controlled",
+                source=self.name,
+                ref=ref,
+                url=vc_url,
+            )
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise ModelRegistryDiscoveryError(
+                    f"Registry file 'models.toml' not found "
+                    f"in {registry_path} for '{self.name}@{ref}'"
+                )
+            else:
+                raise ModelRegistryDiscoveryError(
+                    f"Error fetching registry from repository for '{self.name}@{ref}': {e}"
+                )
+        except Exception as e:
+            raise ModelRegistryDiscoveryError(
+                f"Registry discovery failed for '{self.name}@{ref}': {e}"
+            )
+
+    def sync(
+        self,
+        ref: str | None = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> SyncResult:
+        """
+        Sync this source to local cache.
+
+        Parameters
+        ----------
+        ref : str | None
+            Specific ref to sync. If None, syncs all configured refs.
+        force : bool
+            Force re-download even if cached
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        SyncResult
+            Results of the sync operation
+        """
+
+        source_name = self.name
+        refs = [ref] if ref else self.refs
+
+        if not refs:
+            if verbose:
+                print(f"No refs configured for source '{source_name}', aborting")
+            return
+
+        result = ModelSourceRepo.SyncResult()
+
+        for ref in refs:
+            if not force and _DEFAULT_CACHE.has(source_name, ref):
+                if verbose:
+                    print(f"Registry {source_name}@{ref} already cached, skipping")
+                result.skipped.append((ref, "already cached"))
+                continue
+
+            try:
+                if verbose:
+                    print(f"Discovering registry {source_name}@{ref}...")
+
+                discovered = self.discover(ref=ref)
+                if verbose:
+                    print(f"  Caching registry found via {discovered.mode} at {discovered.url}...")
+
+                _DEFAULT_CACHE.save(discovered.registry, source_name, ref)
+                if verbose:
+                    print(f"  [+] Synced {source_name}@{ref}")
+
+                result.succeeded.append(ref)
+
+            except ModelRegistryDiscoveryError as e:
+                print(f"  [-] Failed to sync {source_name}@{ref}: {e}")
+                result.failed.append((ref, str(e)))
+            except Exception as e:
+                print(f"  [-] Unexpected error syncing {source_name}@{ref}: {e}")
+                result.failed.append((ref, str(e)))
+
+        return result
+
+
+class ModelSourceConfig(BaseModel):
+    """Model source configuration file structure."""
+
+    sources: dict[str, ModelSourceRepo] = Field(
+        ..., description="Map of source names to source metadata"
+    )
+
+    @classmethod
+    def load(cls, *bootstrap_paths) -> "ModelSourceConfig":
+        with _DEFAULT_CONFIG_PATH.open("rb") as f:
+            cfg = tomli.load(f)
+
+        # provided config files override the default cfg
+        for path in bootstrap_paths:
+            with Path(path).open("rb") as f:
+                cfg = cfg | tomli.load(f)
+
+        # inject source names if not explicitly provided
+        for name, src in cfg.get("sources", {}).items():
+            if "name" not in src:
+                src["name"] = name
+
+        return cls(**cfg)
+
+    @property
+    def status(self) -> dict[str, ModelSourceRepo.SyncStatus]:
+        """
+        Sync status for all configured model source repositories.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping source names to sync status info
+        """
+        cached_registries = set(_DEFAULT_CACHE.list())
+
+        status = {}
+        for source in self.sources.items():
+            name = source.name
+            refs = source.refs if source.refs else []
+
+            cached: list[str] = []
+            missing: list[str] = []
+
+            status = {
+                "repo": source.repo,
+                "configured_refs": refs,
+                "cached_refs": cached,
+                "missing_refs": missing,
+            }
+
+            for ref in refs:
+                if (name, ref) in cached_registries:
+                    cached.append(ref)
+                else:
+                    missing.append(ref)
+
+            status[name] = status
+
+        return status
+
+    def sync(
+        self,
+        source: str | ModelSourceRepo | None = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> dict[str, ModelSourceRepo.SyncResult]:
+        """
+        Synchronize registry files from model source(s).
+
+        Parameters
+        ----------
+        source : str | BootstrapSource | None
+            Specific source to sync. Can be a source name (string) to look up in bootstrap,
+            or a BootstrapSource object directly. If None, syncs all sources from bootstrap.
+        force : bool
+            Force re-download even if cached
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        dict of SyncResult
+            Results of the sync operation
+
+        """
+
+        if source:
+            if isinstance(source, ModelSourceRepo):
+                if source.name not in self.sources:
+                    raise ValueError(f"Source '{source.name}' not found in bootstrap")
+                sources = [source]
+            elif isinstance(source, str):
+                if (source := self.sources.get(source, None)) is None:
+                    raise ValueError(f"Source '{source.name}' not found in bootstrap")
+                sources = [source]
+        else:
+            sources = self.sources
+
+        return {source.name: source.sync(force=force, verbose=verbose) for source in sources}
+
 
 # Best-effort sync flag (to avoid multiple sync attempts)
 _SYNC_ATTEMPTED = False
@@ -46,7 +667,7 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-class LocalRegistry(Registry):
+class LocalRegistry(ModelRegistry):
     """
     A registry of models in one or more local directories.
 
@@ -128,7 +749,7 @@ class LocalRegistry(Registry):
                 relpath = p.expanduser().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
                 # Create FileEntry with local path
-                self.files[name] = FileEntry(path=p, url=None, hash=None)
+                self.files[name] = ModelInputFile(path=p, url=None, hash=None)
                 self.models[model_name].append(name)
 
     def copy_to(
@@ -168,7 +789,7 @@ class LocalRegistry(Registry):
         return self._paths
 
 
-class PoochRegistry(Registry):
+class PoochRegistry(ModelRegistry):
     """
     A registry of models living in one or more GitHub repositories, accessible via
     URLs. The registry uses Pooch to fetch models from the remote(s) where needed.
@@ -298,7 +919,7 @@ class PoochRegistry(Registry):
                 if registry:
                     # Merge files - create FileEntry with both url and cached path
                     for fname, file_entry in registry.files.items():
-                        self.files[fname] = FileEntry(
+                        self.files[fname] = ModelInputFile(
                             url=file_entry.url,
                             path=self.pooch.path / fname,
                             hash=file_entry.hash,
@@ -559,7 +1180,7 @@ def get_models() -> dict[str, list[str]]:
     return get_default_registry().models
 
 
-def get_files() -> dict[str, FileEntry]:
+def get_files() -> dict[str, ModelInputFile]:
     """
     Get a map of file names to URLs. Note that this mapping
     contains no information on which files belong to which
