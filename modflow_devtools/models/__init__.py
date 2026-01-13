@@ -356,9 +356,17 @@ class ModelSourceRepo(BaseModel):
     class SyncResult:
         """Result of a sync operation."""
 
-        succeeded: list[str] = []  # successfully synced refs
-        skipped: list[tuple[str, str]] = []  # (ref, reason)
-        failed: list[tuple[str, str]] = []  # (ref, error)
+        synced: list[tuple[str, str]] = None  # [(source, ref), ...]
+        skipped: list[tuple[str, str]] = None  # [(ref, reason), ...]
+        failed: list[tuple[str, str]] = None  # [(ref, error), ...]
+
+        def __post_init__(self):
+            if self.synced is None:
+                self.synced = []
+            if self.skipped is None:
+                self.skipped = []
+            if self.failed is None:
+                self.failed = []
 
     @dataclass
     class SyncStatus:
@@ -506,7 +514,7 @@ class ModelSourceRepo(BaseModel):
         if not refs:
             if verbose:
                 print(f"No refs configured for source '{source_name}', aborting")
-            return
+            return ModelSourceRepo.SyncResult()
 
         result = ModelSourceRepo.SyncResult()
 
@@ -529,7 +537,7 @@ class ModelSourceRepo(BaseModel):
                 if verbose:
                     print(f"  [+] Synced {source_name}@{ref}")
 
-                result.succeeded.append(ref)
+                result.synced.append((source_name, ref))
 
             except ModelRegistryDiscoveryError as e:
                 print(f"  [-] Failed to sync {source_name}@{ref}: {e}")
@@ -540,6 +548,34 @@ class ModelSourceRepo(BaseModel):
 
         return result
 
+    def is_synced(self, ref: str) -> bool:
+        """
+        Check if a specific ref is synced.
+
+        Parameters
+        ----------
+        ref : str
+            Git ref to check
+
+        Returns
+        -------
+        bool
+            True if ref is cached, False otherwise
+        """
+        return _DEFAULT_CACHE.has(self.name, ref)
+
+    def list_synced_refs(self) -> list[str]:
+        """
+        List all synced refs for this source.
+
+        Returns
+        -------
+        list[str]
+            List of synced refs
+        """
+        cached = _DEFAULT_CACHE.list()
+        return [ref for source, ref in cached if source == self.name]
+
 
 class ModelSourceConfig(BaseModel):
     """Model source configuration file structure."""
@@ -549,14 +585,53 @@ class ModelSourceConfig(BaseModel):
     )
 
     @classmethod
-    def load(cls, *bootstrap_paths) -> "ModelSourceConfig":
-        with _DEFAULT_CONFIG_PATH.open("rb") as f:
-            cfg = tomli.load(f)
+    def load(
+        cls,
+        bootstrap_path: str | PathLike | None = None,
+        user_config_path: str | PathLike | None = None,
+    ) -> "ModelSourceConfig":
+        """
+        Load model source configuration.
 
-        # provided config files override the default cfg
-        for path in bootstrap_paths:
-            with Path(path).open("rb") as f:
-                cfg = cfg | tomli.load(f)
+        Parameters
+        ----------
+        bootstrap_path : str | PathLike | None
+            Path to bootstrap config file. If None, uses bundled default.
+            If provided, ONLY this file is loaded (no user config overlay unless specified).
+        user_config_path : str | PathLike | None
+            Path to user config file to overlay on top of bootstrap.
+            If None and bootstrap_path is None, attempts to load from default user config location.
+
+        Returns
+        -------
+        ModelSourceConfig
+            Loaded and merged configuration
+        """
+        # Load base config
+        if bootstrap_path is not None:
+            # Explicit bootstrap path - only load this file
+            with Path(bootstrap_path).open("rb") as f:
+                cfg = tomli.load(f)
+        else:
+            # Use bundled default
+            with _DEFAULT_CONFIG_PATH.open("rb") as f:
+                cfg = tomli.load(f)
+
+            # If no explicit bootstrap path, try to load user config overlay
+            if user_config_path is None:
+                user_config_path = get_user_config_path()
+
+        # Overlay user config if specified or found
+        if user_config_path is not None:
+            user_path = Path(user_config_path)
+            if user_path.exists():
+                with user_path.open("rb") as f:
+                    user_cfg = tomli.load(f)
+                    # Merge user config sources into base config
+                    if "sources" in user_cfg:
+                        if "sources" not in cfg:
+                            cfg["sources"] = {}
+                        cfg["sources"] = cfg["sources"] | user_cfg["sources"]
 
         # inject source names if not explicitly provided
         for name, src in cfg.get("sources", {}).items():
@@ -564,6 +639,27 @@ class ModelSourceConfig(BaseModel):
                 src["name"] = name
 
         return cls(**cfg)
+
+    @classmethod
+    def merge(cls, base: "ModelSourceConfig", overlay: "ModelSourceConfig") -> "ModelSourceConfig":
+        """
+        Merge two configurations, with overlay taking precedence.
+
+        Parameters
+        ----------
+        base : ModelSourceConfig
+            Base configuration
+        overlay : ModelSourceConfig
+            Configuration to overlay on top of base
+
+        Returns
+        -------
+        ModelSourceConfig
+            Merged configuration
+        """
+        merged_sources = base.sources.copy()
+        merged_sources.update(overlay.sources)
+        return cls(sources=merged_sources)
 
     @property
     def status(self) -> dict[str, ModelSourceRepo.SyncStatus]:
@@ -578,19 +674,12 @@ class ModelSourceConfig(BaseModel):
         cached_registries = set(_DEFAULT_CACHE.list())
 
         status = {}
-        for source in self.sources.items():
+        for source in self.sources.values():
             name = source.name
             refs = source.refs if source.refs else []
 
             cached: list[str] = []
             missing: list[str] = []
-
-            status = {
-                "repo": source.repo,
-                "configured_refs": refs,
-                "cached_refs": cached,
-                "missing_refs": missing,
-            }
 
             for ref in refs:
                 if (name, ref) in cached_registries:
@@ -598,7 +687,12 @@ class ModelSourceConfig(BaseModel):
                 else:
                     missing.append(ref)
 
-            status[name] = status
+            status[name] = ModelSourceRepo.SyncStatus(
+                repo=source.repo,
+                configured_refs=refs,
+                cached_refs=cached,
+                missing_refs=missing,
+            )
 
         return status
 
@@ -634,13 +728,13 @@ class ModelSourceConfig(BaseModel):
                     raise ValueError(f"Source '{source.name}' not found in bootstrap")
                 sources = [source]
             elif isinstance(source, str):
-                if (source := self.sources.get(source, None)) is None:
-                    raise ValueError(f"Source '{source.name}' not found in bootstrap")
-                sources = [source]
+                if (src := self.sources.get(source, None)) is None:
+                    raise ValueError(f"Source '{source}' not found in bootstrap")
+                sources = [src]
         else:
-            sources = self.sources
+            sources = list(self.sources.values())
 
-        return {source.name: source.sync(force=force, verbose=verbose) for source in sources}
+        return {src.name: src.sync(force=force, verbose=verbose) for src in sources}
 
 
 # Best-effort sync flag (to avoid multiple sync attempts)
@@ -906,16 +1000,13 @@ class PoochRegistry(ModelRegistry):
         Returns True if successful, False otherwise.
         """
         try:
-            # Import here to avoid circular dependency
-            from .cache import list_cached_registries, load_cached_registry
-
-            cached = list_cached_registries()
+            cached = _DEFAULT_CACHE.list()
             if not cached:
                 return False
 
             # Merge all cached registries into Pydantic fields
             for source, ref in cached:
-                registry = load_cached_registry(source, ref)
+                registry = _DEFAULT_CACHE.load(source, ref)
                 if registry:
                     # Merge files - create FileEntry with both url and cached path
                     for fname, file_entry in registry.files.items():
@@ -1133,11 +1224,9 @@ def _try_best_effort_sync():
     _SYNC_ATTEMPTED = True
 
     try:
-        # Import here to avoid circular dependency
-        from .sync import sync_registry
-
         # Try to sync default refs (don't be verbose, don't fail on errors)
-        sync_registry(verbose=False)
+        config = ModelSourceConfig.load()
+        config.sync(verbose=False)
     except Exception:
         # Silently fail - user will get clear error when trying to use registry
         pass
@@ -1166,6 +1255,41 @@ def get_default_registry():
     if _default_registry_cache is None:
         _default_registry_cache = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
     return _default_registry_cache
+
+
+def sync_registry(
+    source: str,
+    ref: str,
+    repo: str,
+    force: bool = False,
+    verbose: bool = False,
+) -> ModelSourceRepo.SyncResult:
+    """
+    Sync a specific registry from a model source repository.
+
+    This is a convenience function for testing and scripting.
+
+    Parameters
+    ----------
+    source : str
+        Source name
+    ref : str
+        Git ref (tag, branch, or commit)
+    repo : str
+        Repository in format 'owner/name'
+    force : bool
+        Force re-download even if cached
+    verbose : bool
+        Print progress messages
+
+    Returns
+    -------
+    SyncResult
+        Results of the sync operation
+    """
+    # Extract source name from repo if not provided
+    source_obj = ModelSourceRepo(repo=repo, name=source, refs=[ref])
+    return source_obj.sync(ref=ref, force=force, verbose=verbose)
 
 
 def get_examples() -> dict[str, list[str]]:

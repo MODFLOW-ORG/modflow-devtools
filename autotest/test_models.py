@@ -11,8 +11,16 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.models import cache, discovery, sync
-from modflow_devtools.models.schema import ModelRegistry, ModelSourceConfig, ModelSourceRepo
+from modflow_devtools.models import (
+    _DEFAULT_CACHE,
+    DiscoveredModelRegistry,
+    ModelRegistry,
+    ModelRegistryDiscoveryError,
+    ModelSourceConfig,
+    ModelSourceRepo,
+    get_user_config_path,
+    sync_registry,
+)
 
 # Test configuration (loaded from .env file via pytest-dotenv plugin)
 TEST_REPO = os.getenv("TEST_REPO", "wpbonelli/modflow6-testmodels")
@@ -31,20 +39,20 @@ class TestBootstrap:
 
     def test_load_bootstrap(self):
         """Test loading the bootstrap file."""
-        bootstrap = discovery.load_bootstrap()
+        bootstrap = ModelSourceConfig.load()
         assert isinstance(bootstrap, ModelSourceConfig)
         assert len(bootstrap.sources) > 0
 
     def test_bootstrap_has_testmodels(self):
         """Test that testmodels is configured."""
-        bootstrap = discovery.load_bootstrap()
+        bootstrap = ModelSourceConfig.load()
         assert TEST_SOURCE in bootstrap.sources
 
     def test_bootstrap_testmodels_config(self):
         """Test testmodels configuration in bundled config (without user overlay)."""
         # Load bundled config explicitly (no user config overlay)
         bundled_path = Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
-        bootstrap = discovery.load_bootstrap(bootstrap_path=bundled_path)
+        bootstrap = ModelSourceConfig.load(bootstrap_path=bundled_path)
         testmodels = bootstrap.sources[TEST_SOURCE]
         # Bundled config should point to MODFLOW-ORG
         assert "MODFLOW-ORG/modflow6-testmodels" in testmodels.repo
@@ -52,7 +60,7 @@ class TestBootstrap:
 
     def test_bootstrap_source_has_name(self):
         """Test that bootstrap sources have name injected."""
-        bootstrap = discovery.load_bootstrap()
+        bootstrap = ModelSourceConfig.load()
         for key, source in bootstrap.sources.items():
             assert source.name is not None
             # If no explicit name override, name should equal key
@@ -61,7 +69,7 @@ class TestBootstrap:
 
     def test_get_user_config_path(self):
         """Test that user config path is platform-appropriate."""
-        user_config_path = discovery.get_user_config_path()
+        user_config_path = get_user_config_path()
         assert isinstance(user_config_path, Path)
         assert user_config_path.name == "models.toml"
         assert "modflow-devtools" in str(user_config_path)
@@ -89,7 +97,7 @@ class TestBootstrap:
         )
 
         # Merge
-        merged = discovery.merge_bootstrap(bundled, user)
+        merged = ModelSourceConfig.merge(bundled, user)
 
         # Check that user source1 overrode bundled source1
         assert merged.sources["source1"].repo == "user/custom-repo1"
@@ -120,7 +128,7 @@ refs = ["custom-branch"]
         )
 
         # Load bootstrap with user config path specified
-        bootstrap = discovery.load_bootstrap(user_config_path=user_config)
+        bootstrap = ModelSourceConfig.load(user_config_path=user_config)
 
         # Check that user config was merged
         assert "custom-models" in bootstrap.sources
@@ -153,7 +161,7 @@ refs = ["develop"]
         )
 
         # Load with explicit path only (no user_config_path)
-        bootstrap = discovery.load_bootstrap(explicit_config)
+        bootstrap = ModelSourceConfig.load(explicit_config)
 
         # Should only have explicit source, not user source
         assert "explicit-source" in bootstrap.sources
@@ -182,7 +190,7 @@ refs = ["develop"]
         )
 
         # Load with both explicit paths
-        bootstrap = discovery.load_bootstrap(
+        bootstrap = ModelSourceConfig.load(
             bootstrap_path=explicit_config, user_config_path=user_config
         )
 
@@ -197,25 +205,11 @@ class TestBootstrapSourceMethods:
     """Test BootstrapSource sync methods."""
 
     def test_source_has_sync_method(self):
-        """Test that BootstrapSource has sync method."""
-        bootstrap = discovery.load_bootstrap()
+        """Test that ModelSourceRepo has sync method."""
+        bootstrap = ModelSourceConfig.load()
         source = bootstrap.sources[TEST_SOURCE]
         assert hasattr(source, "sync")
         assert callable(source.sync)
-
-    def test_source_has_is_synced_method(self):
-        """Test that BootstrapSource has is_synced method."""
-        bootstrap = discovery.load_bootstrap()
-        source = bootstrap.sources[TEST_SOURCE]
-        assert hasattr(source, "is_synced")
-        assert callable(source.is_synced)
-
-    def test_source_has_list_synced_refs_method(self):
-        """Test that BootstrapSource has list_synced_refs method."""
-        bootstrap = discovery.load_bootstrap()
-        source = bootstrap.sources[TEST_SOURCE]
-        assert hasattr(source, "list_synced_refs")
-        assert callable(source.list_synced_refs)
 
 
 class TestCache:
@@ -223,7 +217,7 @@ class TestCache:
 
     def test_get_cache_root(self):
         """Test getting cache root directory."""
-        cache_root = cache.get_cache_root()
+        cache_root = _DEFAULT_CACHE.root
         # Should contain modflow-devtools somewhere in the path
         assert "modflow-devtools" in str(cache_root)
         # Should be in user's cache directory (platform-specific)
@@ -231,7 +225,7 @@ class TestCache:
 
     def test_get_registry_cache_dir(self):
         """Test getting registry cache directory for a source/ref."""
-        cache_dir = cache.get_registry_cache_dir(TEST_SOURCE_NAME, TEST_REF)
+        cache_dir = _DEFAULT_CACHE.get_registry_cache_dir(TEST_SOURCE_NAME, TEST_REF)
         # Normalize path separators for comparison (Windows uses \, Unix uses /)
         cache_dir_str = str(cache_dir).replace("\\", "/")
         assert (
@@ -253,12 +247,9 @@ class TestDiscovery:
             refs=[TEST_REF],
         )
 
-        discovered = discovery.discover_registry(
-            source=source,
-            ref=TEST_REF,
-        )
+        discovered = source.discover(ref=TEST_REF)
 
-        assert isinstance(discovered, discovery.DiscoveredModelRegistry)
+        assert isinstance(discovered, DiscoveredModelRegistry)
         assert discovered.source == TEST_SOURCE_NAME
         assert discovered.ref == TEST_REF
         assert discovered.mode == "version_controlled"
@@ -272,11 +263,8 @@ class TestDiscovery:
             refs=["nonexistent-branch-12345"],
         )
 
-        with pytest.raises(discovery.ModelRegistryDiscoveryError):
-            discovery.discover_registry(
-                source=source,
-                ref="nonexistent-branch-12345",
-            )
+        with pytest.raises(ModelRegistryDiscoveryError):
+            source.discover(ref="nonexistent-branch-12345")
 
 
 @pytest.mark.xdist_group("registry_cache")
@@ -285,10 +273,10 @@ class TestSync:
 
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
-        result = sync.sync_registry(
-            source=TEST_SOURCE,
+        result = sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
             verbose=True,
@@ -300,32 +288,32 @@ class TestSync:
 
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
-        cache.clear_registry_cache()
-        assert not cache.is_registry_cached(TEST_SOURCE_NAME, TEST_REF)
+        _DEFAULT_CACHE.clear()
+        assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
 
-        sync.sync_registry(
-            source=TEST_SOURCE,
+        sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
 
-        assert cache.is_registry_cached(TEST_SOURCE_NAME, TEST_REF)
+        assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
 
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
         # First sync
-        result1 = sync.sync_registry(
-            source=TEST_SOURCE,
+        result1 = sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
         assert len(result1.synced) == 1
 
         # Second sync should skip
-        result2 = sync.sync_registry(
-            source=TEST_SOURCE,
+        result2 = sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
@@ -334,18 +322,18 @@ class TestSync:
 
     def test_sync_force(self):
         """Test that force flag re-syncs cached registries."""
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
         # First sync
-        sync.sync_registry(
-            source=TEST_SOURCE,
+        sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
 
         # Force sync
-        result = sync.sync_registry(
-            source=TEST_SOURCE,
+        result = sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
             force=True,
@@ -354,8 +342,8 @@ class TestSync:
         assert len(result.skipped) == 0
 
     def test_sync_via_source_method(self):
-        """Test syncing via BootstrapSource.sync() method."""
-        cache.clear_registry_cache()
+        """Test syncing via ModelSourceRepo.sync() method."""
+        _DEFAULT_CACHE.clear()
 
         # Create source with test repo override
         source = ModelSourceRepo(
@@ -371,8 +359,8 @@ class TestSync:
         assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
 
     def test_source_is_synced_method(self):
-        """Test BootstrapSource.is_synced() method."""
-        cache.clear_registry_cache()
+        """Test ModelSourceRepo.is_synced() method."""
+        _DEFAULT_CACHE.clear()
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -390,8 +378,8 @@ class TestSync:
         assert source.is_synced(TEST_REF)
 
     def test_source_list_synced_refs_method(self):
-        """Test BootstrapSource.list_synced_refs() method."""
-        cache.clear_registry_cache()
+        """Test ModelSourceRepo.list_synced_refs() method."""
+        _DEFAULT_CACHE.clear()
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -416,13 +404,13 @@ class TestRegistry:
     @pytest.fixture(scope="class")
     def synced_registry(self):
         """Fixture that syncs and loads a registry once for all tests."""
-        cache.clear_registry_cache()
-        sync.sync_registry(
-            source=TEST_SOURCE,
+        _DEFAULT_CACHE.clear()
+        sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
-        registry = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
+        registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
         return registry
 
     def test_registry_has_metadata(self, synced_registry):
@@ -474,7 +462,7 @@ class TestCLI:
 
     def test_cli_list_empty(self, capsys):
         """Test 'list' command with no cached registries."""
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
         import argparse
 
@@ -488,9 +476,9 @@ class TestCLI:
 
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
-        cache.clear_registry_cache()
-        sync.sync_registry(
-            source=TEST_SOURCE,
+        _DEFAULT_CACHE.clear()
+        sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
@@ -514,7 +502,7 @@ class TestIntegration:
     def test_full_workflow(self):
         """Test complete workflow: discover -> cache -> load."""
         # Clear cache
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
         # Create test source
         source = ModelSourceRepo(
@@ -524,40 +512,37 @@ class TestIntegration:
         )
 
         # Discover registry
-        discovered = discovery.discover_registry(
-            source=source,
-            ref=TEST_REF,
-        )
+        discovered = source.discover(ref=TEST_REF)
         assert isinstance(discovered.registry, ModelRegistry)
 
         # Cache registry
-        cache_path = cache.cache_registry(discovered.registry, TEST_SOURCE_NAME, TEST_REF)
+        cache_path = _DEFAULT_CACHE.save(discovered.registry, TEST_SOURCE_NAME, TEST_REF)
         assert cache_path.exists()
 
         # Load from cache
-        loaded = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
+        loaded = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
         assert loaded is not None
         assert len(loaded.models) == len(discovered.registry.models)
 
     def test_sync_and_list_models(self):
         """Test syncing and listing available models."""
-        cache.clear_registry_cache()
+        _DEFAULT_CACHE.clear()
 
         # Sync
-        result = sync.sync_registry(
-            source=TEST_SOURCE,
+        result = sync_registry(
+            source=TEST_SOURCE_NAME,
             ref=TEST_REF,
             repo=TEST_REPO,
         )
         assert len(result.synced) == 1
 
         # List cached registries
-        cached = cache.list_cached_registries()
+        cached = _DEFAULT_CACHE.list()
         assert len(cached) >= 1
         assert (TEST_SOURCE_NAME, TEST_REF) in cached
 
         # Load and check models
-        registry = cache.load_cached_registry(TEST_SOURCE_NAME, TEST_REF)
+        registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
         assert len(registry.models) > 0
 
 

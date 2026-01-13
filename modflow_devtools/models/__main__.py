@@ -10,8 +10,11 @@ Usage:
 import argparse
 import sys
 
-from .cache import list_cached_registries, load_cached_registry
-from .sync import get_sync_status, sync_registry
+from . import (
+    _DEFAULT_CACHE,
+    ModelSourceConfig,
+    sync_registry,
+)
 
 
 def cmd_sync(args):
@@ -38,24 +41,25 @@ def cmd_sync(args):
 
 def cmd_info(args):
     """Info command handler."""
-    status = get_sync_status()
+    config = ModelSourceConfig.load()
+    status = config.status
 
     print("Registry sync status:\n")
     for source_name, source_status in status.items():
-        print(f"{source_name} ({source_status['repo']})")
-        configured_refs = ", ".join(source_status["configured_refs"]) or "none"
+        print(f"{source_name} ({source_status.repo})")
+        configured_refs = ", ".join(source_status.configured_refs) or "none"
         print(f"  Configured refs: {configured_refs}")
-        cached_refs = ", ".join(source_status["cached_refs"]) or "none"
+        cached_refs = ", ".join(source_status.cached_refs) or "none"
         print(f"  Cached refs: {cached_refs}")
-        if source_status["missing_refs"]:
-            missing_refs = ", ".join(source_status["missing_refs"])
+        if source_status.missing_refs:
+            missing_refs = ", ".join(source_status.missing_refs)
             print(f"  Missing refs: {missing_refs}")
         print()
 
 
 def cmd_list(args):
     """List command handler."""
-    cached = list_cached_registries()
+    cached = _DEFAULT_CACHE.list()
 
     if not cached:
         print("No cached registries. Run 'sync' first.")
@@ -83,7 +87,7 @@ def cmd_list(args):
 
     print("Available models:\n")
     for source, ref in sorted(cached):
-        registry = load_cached_registry(source, ref)
+        registry = _DEFAULT_CACHE.load(source, ref)
         if registry:
             print(f"{source}@{ref}:")
             models = registry.models
