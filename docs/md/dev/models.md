@@ -94,7 +94,17 @@ Model repository developers can use the `modflow-devtools` registry-creation fac
 
 ## Architecture
 
-This involves several new components (bootstrap file, user config overlay) and a consolidated registry class hierarchy. The previous `ModelRegistry` ABC has been replaced with a Pydantic-based `Registry` base class that both `LocalRegistry` and `PoochRegistry` inherit from.
+The Models API uses a streamlined object-oriented design consolidated in a single `modflow_devtools/models/__init__.py` file. This makes the code easier to follow and maintain while providing clear separation of concerns through well-defined classes.
+
+Key classes:
+- **`ModelCache`**: Manages local caching of registries and model files
+- **`ModelSourceRepo`**: Represents a single model source repository with discovery and sync methods
+- **`ModelSourceConfig`**: Configuration container managing multiple sources from bootstrap file
+- **`ModelRegistry`**: Pydantic model representing a registry's structure (files/models/examples)
+- **`PoochRegistry`**: Uses Pooch to fetch and cache models from remote sources
+- **`DiscoveredModelRegistry`**: Result of registry discovery with metadata
+
+The design emphasizes encapsulation - each class has clear responsibilities and the overall API remains simple despite the underlying complexity.
 
 ### Bootstrap file
 
@@ -438,45 +448,61 @@ Benefits of this approach:
 
 ### Registry classes
 
-The registry class hierarchy is based on a Pydantic `Registry` base class (defined in `schema.py`):
+The registry implementation uses several Pydantic-based classes organized in a single module:
 
-**`Registry` (base class)**:
-- Pydantic model with `files`, `models`, `examples` fields
-- Optional `meta` field for registry metadata (present when loaded from TOML, None for local registries)
-- `FileEntry` model has `path` (local/cached file) and `hash` (for verification)
-  - **No `url` field** - URLs are constructed dynamically at runtime from bootstrap metadata
-- Base `copy_to()` raises `NotImplementedError` - subclasses override
-- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
+**`ModelRegistry`** (Pydantic base):
+- Core data model with `files`, `models`, `examples` fields
+- `ModelInputFile` has `hash` for verification (no `url` - constructed dynamically)
+- Optional `metadata` field for registry info
+- Can be instantiated directly or loaded from TOML
+- Provides `copy_to()` method for copying models to a workspace
 
-**`LocalRegistry(Registry)`**:
-- Inherits from `Registry`
-- Scans local filesystem directories for models
-- Creates `FileEntry` objects with `path` field only
-- Implements `copy_to()` for local file copying
-- No `meta` field (remains None)
+**`ModelCache`**:
+- Manages local caching of registries and model files
+- Methods: `save()`, `load()`, `has()`, `list()`, `clear()`
+- Platform-appropriate cache locations (`~/.cache/modflow-devtools/` on Linux)
+- Stores registries under `registries/{source}/{ref}/`
+- Uses Pooch for actual model file caching
 
-**`PoochRegistry(Registry)`**:
-- Inherits from `Registry`
-- Loads from cached registry files (synced via `sync_registry()`)
-- Constructs file URLs dynamically from bootstrap metadata (repo, ref) + filename
-- Creates `FileEntry` objects with `path` (cache location) and `hash`
-- Implements `copy_to()` for remote fetching + copying
-- Populates `meta` from registry file if available
-- Associated with a single state of a single repository (source + ref)
-- Immutable - to synchronize to a new model source state, create a new instance
+**`ModelSourceRepo`** (Pydantic):
+- Represents a single source repository
+- Fields: `repo`, `name`, `refs`, `registry_path`
+- Methods:
+  - `discover(ref)` - Discovers registry for a specific ref
+  - `sync(ref, force, verbose)` - Syncs registry to cache
+  - `is_synced(ref)` - Checks if ref is cached
+  - `list_synced_refs()` - Lists all synced refs for this source
+- Nested classes:
+  - `SyncResult` - Contains synced/skipped/failed lists
+  - `SyncStatus` - Shows configured vs cached refs
 
-**`MergedRegistry(Registry)`**:
-- Compositor pattern for combining multiple registries
-- Accepts a list of `Registry` instances (typically `PoochRegistry` instances from different sources/refs)
-- Merges their `files`, `models`, and `examples` into unified views
-- Used to create `DEFAULT_REGISTRY` from multiple sources/refs configured in bootstrap
-- Later registries override earlier ones in case of conflicts
+**`ModelSourceConfig`** (Pydantic):
+- Container for multiple `ModelSourceRepo` sources
+- Loaded from bootstrap file via `load()` classmethod
+- Methods:
+  - `status` property - Returns sync status for all sources
+  - `sync(source, force, verbose)` - Syncs one or all sources
+  - `merge()` classmethod - Merges two configurations
+
+**`PoochRegistry`**:
+- Uses Pooch to fetch and cache models from remote
+- Constructs URLs dynamically from bootstrap metadata
+- Lazy-loads registry from cache on first access
+- Attempts auto-sync if registry not cached
+- Provides access to the underlying `ModelRegistry`
+
+**`DiscoveredModelRegistry`** (dataclass):
+- Result of registry discovery
+- Fields: `source`, `ref`, `mode`, `url`, `registry`
+- `mode` is either "version_controlled" or "release"
 
 **Design decisions**:
-- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
-- **Dynamic URL construction** - enables testing against forks by changing bootstrap config
-- **No `url` in `FileEntry`** - URLs constructed at runtime, not stored in registry files
-- **Synchronization handled at module level** - registries don't manage their own sync
+- **Single-module design** - All code in `__init__.py` for easy navigation
+- **Pydantic-based** - Type-safe, validation built-in
+- **OO encapsulation** - Each class has clear, focused responsibility
+- **Dynamic URL construction** - URLs never stored, always computed from bootstrap
+- **Method-based API** - Objects have methods for their operations (e.g., `source.sync()`)
+- **No separate cache/discovery/sync modules** - Methods live on the classes that use them
 
 ### Module-Level API
 
@@ -496,37 +522,44 @@ Since `modflow-devtools` is currently used only internally (dogfooding), there a
 
 ### Implementation Summary
 
-The dynamic registry system has been fully implemented:
+The dynamic registry system has been fully implemented with a streamlined object-oriented design:
 
 #### ✅ Core Infrastructure
+- **Consolidated implementation**: All code in single `modflow_devtools/models/__init__.py` file
 - Bootstrap metadata file (`modflow_devtools/models/models.toml`)
-- Registry schema with Pydantic validation (`modflow_devtools/models/schema.py`)
-- Cache directory structure utilities (`modflow_devtools/models/cache.py`)
-- Sync functionality with download logic (`modflow_devtools/models/sync.py`)
-- Registry discovery with priority resolution (`modflow_devtools/models/discovery.py`)
+- Registry schema with Pydantic validation
+- Cache management via `ModelCache` class
+- Sync functionality via `ModelSourceRepo.sync()` method
+- Registry discovery via `ModelSourceRepo.discover()` method
 - CLI subcommands (`python -m modflow_devtools.models` - sync, info, list)
-- **Remote-first registry generation**: `make_registry` downloads from GitHub by default, ensuring registry matches remote state
+- **Remote-first registry generation**: `make_registry` downloads from GitHub by default
 - **Intelligent path parameter**: Single `--path` parameter auto-detects local vs. remote subpath usage
 
-#### ✅ Registry Classes
-- Pydantic-based `Registry` base class (not ABC)
-- `FileEntry` supporting both local and remote files (no URL storage)
-- `LocalRegistry` for indexing local model directories
-- `PoochRegistry` for remote model fetching via cache
+#### ✅ Registry Classes (Object-Oriented Design)
+- `ModelRegistry`: Pydantic data model (files/models/examples)
+- `ModelCache`: Cache management with save/load/list/clear
+- `ModelSourceRepo`: Source repository with discovery and sync methods
+- `ModelSourceConfig`: Configuration container managing multiple sources
+- `PoochRegistry`: Remote model fetching with Pooch integration
+- `DiscoveredModelRegistry`: Discovery result with metadata
+- **No separate modules**: Schema, cache, discovery, and sync logic integrated into classes
+- **Method-based API**: Operations are methods on objects (e.g., `source.sync()`, `cache.load()`)
 - Auto-sync on first import (`_try_best_effort_sync()`)
-- **Consolidated registry format**: Single `models.toml` file (removed deprecated `--separate` option)
 
 #### ✅ User Features
 - User config overlay (`~/.config/modflow-devtools/models.toml`)
-- Bootstrap config merging for custom sources
+- Bootstrap config merging via `ModelSourceConfig.load()`
 - Explicit model versioning via git refs
 - Platform-appropriate cache locations
 - Clear error messages when sync is needed
+- **Consolidated registry format**: Single `models.toml` file only
 
 #### ✅ Testing
 - Comprehensive test suite in `autotest/test_models.py`
+- All 34 tests passing
 - Tests configured via `.env` file
 - Parallel execution with pytest-xdist (`--dist loadgroup`)
+- Full mypy type checking with no errors
 
 #### 🚧 Future Work (Upstream CI)
 - Add `.github/workflows/registry.yml` to each model repo
@@ -539,11 +572,18 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
 
 ### Shared Patterns
 
-1. **Bootstrap files**: Separate files for each API, using identical naming to registry files but distinguished by location
+1. **Consolidated single-module design** (Models API implementation):
+   - All code in single `__init__.py` file for each API
+   - Easier to follow and maintain than split modules
+   - Clear separation via well-defined classes
+   - Object-oriented API with methods on classes (e.g., `source.sync()`, `cache.load()`)
+   - Recommended pattern for Programs and DFNs APIs to follow
+
+2. **Bootstrap files**: Separate files for each API, using identical naming to registry files but distinguished by location
    - Bundled: `modflow_devtools/models/models.toml`, `modflow_devtools/programs/programs.toml`, `modflow_devtools/dfn/dfns.toml`
    - User config: `~/.config/modflow-devtools/models.toml`, `~/.config/modflow-devtools/programs.toml`, `~/.config/modflow-devtools/dfns.toml`
 
-2. **Registry files**: Same naming as bootstrap files, distinguished by location (in source repos)
+3. **Registry files**: Same naming as bootstrap files, distinguished by location (in source repos)
    - Models: `models.toml`
    - Programs: `programs.toml`
    - DFNs: `dfns.toml`
@@ -571,6 +611,14 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
    - Programs: No (program names globally unique, simple merge functions suffice)
    - DFNs: No (users work with one MF6 version at a time)
 
+9. **Core class pattern** (Models API classes as template):
+   - **`{API}Cache`**: Cache management (save/load/has/list/clear methods)
+   - **`{API}SourceRepo`**: Source repository with discover/sync/is_synced methods
+   - **`{API}SourceConfig`**: Configuration container with load/merge/status/sync
+   - **`{API}Registry`**: Pydantic data model for registry structure
+   - **`Pooch{API}Registry`**: Remote fetching with Pooch integration
+   - **`Discovered{API}Registry`**: Discovery result with metadata
+
 ### Key Differences
 
 | Aspect | Models | Programs | DFNs |
@@ -590,34 +638,31 @@ This section provides practical examples of using the new Models API.
 #### Basic Workflow
 
 ```python
-from modflow_devtools.models import discovery, sync, cache
+from modflow_devtools.models import ModelSourceConfig, _DEFAULT_CACHE
 
 # 1. Load bootstrap configuration (with user overlay)
-bootstrap = discovery.load_bootstrap()
+config = ModelSourceConfig.load()
 
 # 2. Discover remote registry
-source = bootstrap.sources["modflow6-testmodels"]
-discovered = discovery.discover_registry(source, ref="develop")
-# Returns: DiscoveredRegistry with mode, URL, and parsed registry
+source = config.sources["modflow6-testmodels"]
+discovered = source.discover(ref="develop")
+# Returns: DiscoveredModelRegistry with mode, URL, and parsed registry
 
 # 3. Sync registry to local cache
-result = sync.sync_registry(
-    source="modflow6-testmodels",
-    ref="develop",
-    verbose=True
-)
-# Returns: SyncResult(synced=1, skipped=0, failed=0)
+result = source.sync(ref="develop", verbose=True)
+# Returns: SyncResult(synced=[...], skipped=[], failed=[])
 
 # 4. Load cached registry and use it
-registry = cache.load_cached_registry("mf6/test", "develop")
+registry = _DEFAULT_CACHE.load("mf6/test", "develop")
 print(f"Models: {len(registry.models)}")
 print(f"Files: {len(registry.files)}")
 ```
 
-#### Convenience Methods on BootstrapSource
+#### Object-Oriented API
 
 ```python
-source = bootstrap.sources["modflow6-testmodels"]
+# Work with sources directly
+source = config.sources["modflow6-testmodels"]
 
 # Check if synced
 if source.is_synced("develop"):
@@ -628,25 +673,38 @@ synced_refs = source.list_synced_refs()
 
 # Sync via source method
 result = source.sync(ref="develop", verbose=True)
+
+# Sync all sources
+results = config.sync(verbose=True)
+
+# Check status
+status = config.status
+for source_name, source_status in status.items():
+    print(f"{source_name}: {source_status.cached_refs}")
 ```
 
 #### Cache Management
 
 ```python
-from modflow_devtools.models import cache
+from modflow_devtools.models import _DEFAULT_CACHE
 
 # Get cache locations
-cache_root = cache.get_cache_root()
-models_dir = cache.get_models_cache_dir()
+cache_root = _DEFAULT_CACHE.root
 
 # List all cached registries
-cached = cache.list_cached_registries()  # Returns: [(source, ref), ...]
+cached = _DEFAULT_CACHE.list()  # Returns: [(source, ref), ...]
 
 # Check specific cache
-is_cached = cache.is_registry_cached("mf6/test", "develop")
+is_cached = _DEFAULT_CACHE.has("mf6/test", "develop")
+
+# Load from cache
+registry = _DEFAULT_CACHE.load("mf6/test", "develop")
+
+# Save to cache
+_DEFAULT_CACHE.save(registry, "mf6/test", "develop")
 
 # Clear cache
-cache.clear_registry_cache()
+_DEFAULT_CACHE.clear()
 ```
 
 ### CLI Usage

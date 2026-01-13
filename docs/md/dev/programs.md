@@ -103,6 +103,16 @@ Program maintainers can publish metadata as release assets, either manually or i
 
 The Programs API will mirror the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
 
+**Implementation approach**: Following the Models API's successful streamlined design, the Programs API should consolidate all code in a single `modflow_devtools/programs/__init__.py` file with clear class-based separation:
+- `ProgramCache`: Cache management (archives, binaries, metadata)
+- `ProgramSourceRepo`: Source repository with discovery/sync methods
+- `ProgramSourceConfig`: Configuration container from bootstrap file
+- `ProgramRegistry`: Pydantic data model for registry structure
+- `PoochProgramRegistry`: Remote fetching with Pooch
+- `DiscoveredProgramRegistry`: Discovery result
+
+This single-module OO design is easier to follow and maintain than splitting across separate cache/discovery/sync modules.
+
 ### Bootstrap file
 
 The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/programs.toml` and distributed with the package.
@@ -648,19 +658,24 @@ Since programs will publish pre-built binaries, pymake is no longer needed for b
 
 Core components to implement:
 
-1. **Bootstrap & Schema**
+1. **Consolidated Module Design** (following Models API pattern)
+   - Single `modflow_devtools/programs/__init__.py` with all classes
+   - `ProgramCache` class for cache management
+   - `ProgramSourceRepo` class with discover/sync/is_synced methods
+   - `ProgramSourceConfig` class for bootstrap configuration
+   - `ProgramRegistry` Pydantic model for data
+   - `PoochProgramRegistry` for remote fetching
+   - `DiscoveredProgramRegistry` dataclass for discovery results
+   - Object-oriented API with methods on classes
+
+2. **Bootstrap & Schema**
    - Create bootstrap file (`modflow_devtools/programs/programs.toml`)
-   - Define registry schema with Pydantic validation (`modflow_devtools/programs/schema.py`)
+   - Define registry schema with Pydantic validation (in `__init__.py`)
 
-2. **Registry Classes**
-   - Implement `ProgramRegistry` abstract base class
-   - Create `RemoteRegistry` for remote discovery and caching
-   - Implement `MergedRegistry` compositor
-
-3. **Discovery & Sync**
-   - Implement cache directory utilities (`modflow_devtools/programs/cache.py`)
-   - Add release asset discovery logic (`modflow_devtools/programs/discovery.py`)
-   - Implement sync functionality (`modflow_devtools/programs/sync.py`)
+3. **Registry Classes** (all in `__init__.py`)
+   - Implement `ProgramRegistry` Pydantic base class
+   - Create `ProgramSourceRepo` for discovery and sync
+   - Add installation tracking via `ProgramCache`
 
 4. **Installation System**
    - Implement binary distribution download and extraction

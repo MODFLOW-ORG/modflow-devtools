@@ -110,6 +110,17 @@ MODFLOW 6 is currently the only repository using the DFN specification system, b
 
 The DFNs API will mirror the Models and Programs API architecture, adapted for definition file-specific concerns.
 
+**Implementation approach**: Following the Models API's streamlined design, the DFNs API should consolidate core functionality in a single `modflow_devtools/dfn/__init__.py` file with clear class-based separation:
+- `DfnCache`: Cache management for registries and DFN files
+- `DfnSourceRepo`: Source repository with discovery/sync methods
+- `DfnSourceConfig`: Configuration container from bootstrap file
+- `DfnRegistry`: Pydantic data model for registry structure
+- `PoochDfnRegistry`: Remote fetching with Pooch integration
+- `DiscoveredDfnRegistry`: Discovery result with metadata
+- `DfnSpec`: Full specification with hierarchical and flat access
+
+This single-module OO design improves maintainability while keeping the existing `Dfn`, `Block`, and `Field` dataclasses that are already well-established.
+
 ### Bootstrap file
 
 The **bootstrap** file tells `modflow-devtools` where to look for DFN registries. This file will be checked into the repository at `modflow_devtools/dfn/dfns.toml` and distributed with the package.
