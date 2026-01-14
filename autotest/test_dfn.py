@@ -25,7 +25,9 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
     if "toml_name" in metafunc.fixturenames:
-        convert(DFN_DIR, TOML_DIR)
+        # Only convert if TOML files don't exist yet (avoid repeated conversions)
+        if not TOML_DIR.exists() or not list(TOML_DIR.glob("*.toml")):
+            convert(DFN_DIR, TOML_DIR)
         dfn_paths = list(DFN_DIR.glob("*.dfn"))
         assert all(
             (TOML_DIR / f"{dfn.stem}.toml").is_file()

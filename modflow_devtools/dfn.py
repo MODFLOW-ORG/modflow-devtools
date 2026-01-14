@@ -564,7 +564,7 @@ class Dfn(TypedDict):
 
         # load common variables
         common_path: Path | None = dfndir / "common.dfn"
-        if not common_path.is_file:
+        if not common_path.is_file():
             common = None
         else:
             with common_path.open() as f:
