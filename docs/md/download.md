@@ -18,7 +18,7 @@ assets = release["assets"]
 print([asset["name"] for asset in assets])
 ```
 
-This prints `['code.json', 'linux.zip', 'mac.zip', 'win64.zip']`.
+This prints `['code.json', 'linux.zip', 'macarm.zip', 'win64.zip']`.
 
 ## Downloads
 

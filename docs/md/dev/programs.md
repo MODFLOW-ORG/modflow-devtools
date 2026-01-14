@@ -191,7 +191,7 @@ hash = "sha256:..."
 exe = "bin/mf6"
 
 [programs.mf6.binaries.mac]
-asset = "mf6.6.3_mac.zip"
+asset = "mf6.6.3_macarm.zip"
 hash = "sha256:..."
 exe = "bin/mf6"
 
