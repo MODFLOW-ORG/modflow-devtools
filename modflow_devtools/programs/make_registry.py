@@ -15,7 +15,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
+import requests  # type: ignore[import-untyped]
 import tomli_w
 
 import modflow_devtools
@@ -24,7 +24,7 @@ import modflow_devtools
 def compute_sha256(file_path: Path) -> str:
     """Compute SHA256 hash of a file."""
     sha256 = hashlib.sha256()
-    with open(file_path, "rb") as f:
+    with file_path.open("rb") as f:
         for chunk in iter(lambda: f.read(8192), b""):
             sha256.update(chunk)
     return sha256.hexdigest()
@@ -58,7 +58,7 @@ def download_asset(asset_url: str, output_path: Path) -> None:
     response = requests.get(asset_url, stream=True)
     response.raise_for_status()
 
-    with open(output_path, "wb") as f:
+    with output_path.open("wb") as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
@@ -256,7 +256,7 @@ Examples:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, "wb") as f:
+        with output_path.open("wb") as f:
             tomli_w.dump(registry, f)
 
         if args.verbose:

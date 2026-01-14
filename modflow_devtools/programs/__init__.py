@@ -24,14 +24,14 @@ import hashlib
 import platform as pl
 import shutil
 from collections.abc import Callable
+import os
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from os import PathLike
 from pathlib import Path
-from typing import Literal
 
 import pooch
-import requests
+import requests  # type: ignore[import-untyped]
 import tomli
 import tomli_w
 from filelock import FileLock
@@ -180,10 +180,12 @@ class ProgramCache:
         lock_file = cache_dir / ".lock"
 
         with FileLock(str(lock_file)):
-            with open(cache_file, "wb") as f:
+            with cache_file.open("wb") as f:
                 data = registry.model_dump(mode="python", exclude_none=True)
                 # Convert datetime to ISO string if present
-                if "generated_at" in data and isinstance(data["generated_at"], datetime):
+                if "generated_at" in data and isinstance(
+                    data["generated_at"], datetime
+                ):
                     data["generated_at"] = data["generated_at"].isoformat()
                 tomli_w.dump(data, f)
 
@@ -209,7 +211,7 @@ class ProgramCache:
         if not cache_file.exists():
             return None
 
-        with open(cache_file, "rb") as f:
+        with cache_file.open("rb") as f:
             data = tomli.load(f)
             return ProgramRegistry(**data)
 
@@ -266,9 +268,15 @@ class ProgramSourceRepo(BaseModel):
     class SyncResult:
         """Result of a sync operation."""
 
-        synced: list[tuple[str, str]] = field(default_factory=list)  # [(source, ref), ...]
-        skipped: list[tuple[str, str]] = field(default_factory=list)  # [(ref, reason), ...]
-        failed: list[tuple[str, str]] = field(default_factory=list)  # [(ref, error), ...]
+        synced: list[tuple[str, str]] = field(
+            default_factory=list
+        )  # [(source, ref), ...]
+        skipped: list[tuple[str, str]] = field(
+            default_factory=list
+        )  # [(ref, reason), ...]
+        failed: list[tuple[str, str]] = field(
+            default_factory=list
+        )  # [(ref, error), ...]
 
     @dataclass
     class SyncStatus:
@@ -497,8 +505,6 @@ class ProgramSourceConfig(BaseModel):
         ProgramSourceConfig
             Loaded configuration
         """
-        import os
-
         # Load base config
         if bootstrap_path is not None:
             with Path(bootstrap_path).open("rb") as f:
@@ -560,8 +566,6 @@ _SYNC_ATTEMPTED = False
 """Track whether auto-sync has been attempted"""
 
 # Attempt best-effort sync on import (unless disabled)
-import os
-
 if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
     _try_best_effort_sync()
 

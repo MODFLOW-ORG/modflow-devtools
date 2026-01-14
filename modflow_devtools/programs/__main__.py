@@ -127,7 +127,7 @@ def main():
     )
 
     # Info command
-    info_parser = subparsers.add_parser("info", help="Show sync status")
+    subparsers.add_parser("info", help="Show sync status")
 
     # List command
     list_parser = subparsers.add_parser("list", help="List available programs")

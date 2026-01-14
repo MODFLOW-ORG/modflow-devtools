@@ -109,8 +109,12 @@ class TestProgramSourceConfig:
         # Create base config
         base = ProgramSourceConfig(
             sources={
-                "source1": ProgramSourceRepo(repo="org/repo1", name="source1", refs=["v1"]),
-                "source2": ProgramSourceRepo(repo="org/repo2", name="source2", refs=["v2"]),
+                "source1": ProgramSourceRepo(
+                    repo="org/repo1", name="source1", refs=["v1"]
+                ),
+                "source2": ProgramSourceRepo(
+                    repo="org/repo2", name="source2", refs=["v2"]
+                ),
             }
         )
 
@@ -190,20 +194,20 @@ class TestProgramSourceRepo:
     def test_source_has_sync_method(self):
         """Test that ProgramSourceRepo has sync method."""
         config = ProgramSourceConfig.load()
-        source = list(config.sources.values())[0]
+        source = next(iter(config.sources.values()))
         assert hasattr(source, "sync")
         assert callable(source.sync)
 
     def test_source_has_is_synced_method(self):
         """Test that ProgramSourceRepo has is_synced method."""
         config = ProgramSourceConfig.load()
-        source = list(config.sources.values())[0]
+        source = next(iter(config.sources.values()))
         assert hasattr(source, "is_synced")
         assert callable(source.is_synced)
 
     def test_source_has_list_synced_refs_method(self):
         """Test that ProgramSourceRepo has list_synced_refs method."""
         config = ProgramSourceConfig.load()
-        source = list(config.sources.values())[0]
+        source = next(iter(config.sources.values()))
         assert hasattr(source, "list_synced_refs")
         assert callable(source.list_synced_refs)
