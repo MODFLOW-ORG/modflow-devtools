@@ -211,3 +211,132 @@ class TestProgramSourceRepo:
         source = next(iter(config.sources.values()))
         assert hasattr(source, "list_synced_refs")
         assert callable(source.list_synced_refs)
+
+
+class TestProgramManager:
+    """Test ProgramManager class."""
+
+    def test_program_manager_init(self):
+        """Test ProgramManager initialization."""
+        from modflow_devtools.programs import ProgramCache, ProgramManager
+
+        # Test with default cache
+        manager = ProgramManager()
+        assert isinstance(manager.cache, ProgramCache)
+
+        # Test with custom cache
+        custom_cache = ProgramCache()
+        manager = ProgramManager(cache=custom_cache)
+        assert manager.cache is custom_cache
+
+    def test_program_manager_lazy_config(self):
+        """Test lazy configuration loading."""
+        from modflow_devtools.programs import ProgramManager
+
+        manager = ProgramManager()
+        # Config should not be loaded yet
+        assert manager._config is None
+
+        # Accessing config should load it
+        config = manager.config
+        assert config is not None
+        assert manager._config is config
+
+        # Second access should return same instance
+        config2 = manager.config
+        assert config2 is config
+
+    def test_default_manager_exists(self):
+        """Test that default manager instance exists."""
+        from modflow_devtools.programs import _DEFAULT_MANAGER, ProgramManager
+
+        assert isinstance(_DEFAULT_MANAGER, ProgramManager)
+
+    def test_convenience_wrappers(self):
+        """Test that convenience functions wrap the default manager."""
+        from modflow_devtools.programs import (
+            get_executable,
+            install_program,
+            list_installed,
+            select_version,
+            uninstall_program,
+        )
+
+        # All functions should exist and be callable
+        assert callable(install_program)
+        assert callable(select_version)
+        assert callable(uninstall_program)
+        assert callable(get_executable)
+        assert callable(list_installed)
+
+    def test_program_manager_list_installed_empty(self):
+        """Test list_installed with no installations."""
+        from modflow_devtools.programs import ProgramCache, ProgramManager
+
+        # Use fresh cache
+        cache = ProgramCache()
+        cache.clear()
+        manager = ProgramManager(cache=cache)
+
+        installed = manager.list_installed()
+        assert installed == {}
+
+    def test_program_manager_error_handling(self):
+        """Test error handling in ProgramManager."""
+        import pytest
+
+        from modflow_devtools.programs import ProgramInstallationError, ProgramManager
+
+        manager = ProgramManager()
+
+        # Test install non-existent program
+        with pytest.raises(ProgramInstallationError, match="not found"):
+            manager.install("nonexistent-program-xyz")
+
+        # Test get_executable for non-installed program
+        with pytest.raises(ProgramInstallationError, match="not installed"):
+            manager.get_executable("nonexistent-program-xyz")
+
+    def test_installation_metadata_integration(self):
+        """Test InstallationMetadata integration with ProgramManager."""
+        from datetime import datetime, timezone
+        from pathlib import Path
+
+        from modflow_devtools.programs import (
+            InstallationMetadata,
+            ProgramCache,
+            ProgramInstallation,
+        )
+
+        cache = ProgramCache()
+        cache.clear()
+
+        # Create and save metadata
+        metadata = InstallationMetadata("test-program")
+        installation = ProgramInstallation(
+            version="1.0.0",
+            platform="linux",
+            bindir=Path("/tmp/test"),
+            installed_at=datetime.now(timezone.utc),
+            source={
+                "repo": "test/repo",
+                "tag": "1.0.0",
+                "asset_url": "https://example.com/test.zip",
+                "hash": "",
+            },
+            executables=["test-program"],
+            active=True,
+        )
+        metadata.add_installation(installation)
+
+        # Verify it was saved
+        metadata2 = InstallationMetadata("test-program")
+        assert metadata2.load()
+        installations = metadata2.list_installations()
+        assert len(installations) == 1
+        assert installations[0].version == "1.0.0"
+        assert installations[0].platform == "linux"
+        assert installations[0].active is True
+
+        # Clean up
+        cache.clear()

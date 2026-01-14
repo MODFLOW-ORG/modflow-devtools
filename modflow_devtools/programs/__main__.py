@@ -2,9 +2,13 @@
 Command-line interface for the Programs API.
 
 Commands:
-    sync    Synchronize program registries
-    info    Show sync status
-    list    List available programs
+    sync        Synchronize program registries
+    info        Show sync status
+    list        List available programs
+    install     Install a program
+    select      Switch active program version
+    uninstall   Uninstall a program
+    which       Show path to installed executable
 """
 
 import argparse
@@ -13,6 +17,11 @@ import sys
 from . import (
     _DEFAULT_CACHE,
     ProgramSourceConfig,
+    get_executable,
+    install_program,
+    list_installed,
+    select_version,
+    uninstall_program,
 )
 
 
@@ -106,6 +115,121 @@ def cmd_list(args):
             print()
 
 
+def cmd_install(args):
+    """Install command handler."""
+    try:
+        paths = install_program(
+            program=args.program,
+            version=args.version,
+            bindir=args.bindir,
+            platform=args.platform,
+            force=args.force,
+            verbose=True,
+        )
+        print("\nInstalled executables:")
+        for path in paths:
+            print(f"  {path}")
+    except Exception as e:
+        print(f"Installation failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_select(args):
+    """Select command handler."""
+    # Parse program@version format
+    if "@" in args.program:
+        program, version = args.program.split("@", 1)
+    else:
+        print(
+            "Error: Must specify version with program@version format",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    try:
+        paths = select_version(
+            program=program,
+            version=version,
+            bindir=args.bindir,
+            verbose=True,
+        )
+        print("\nActivated executables:")
+        for path in paths:
+            print(f"  {path}")
+    except Exception as e:
+        print(f"Selection failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_uninstall(args):
+    """Uninstall command handler."""
+    # Parse program@version format if provided
+    if "@" in args.program:
+        program, version = args.program.split("@", 1)
+    else:
+        program = args.program
+        version = None
+
+    if not version and not args.all_versions:
+        print(
+            "Error: Must specify version (program@version) or use --all",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    try:
+        uninstall_program(
+            program=program,
+            version=version,
+            bindir=args.bindir,
+            all_versions=args.all_versions,
+            remove_cache=args.remove_cache,
+            verbose=True,
+        )
+    except Exception as e:
+        print(f"Uninstallation failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_which(args):
+    """Which command handler."""
+    try:
+        path = get_executable(
+            program=args.program,
+            version=args.version,
+            bindir=args.bindir,
+        )
+        print(path)
+    except Exception as e:
+        print(f"Executable not found: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_list_installed(args):
+    """List installed programs command handler."""
+    installed = list_installed(args.program)
+
+    if not installed:
+        if args.program:
+            print(f"No installations found for {args.program}")
+        else:
+            print("No programs installed")
+        return
+
+    print("Installed programs:\n")
+    for program_name, installations in sorted(installed.items()):
+        print(f"{program_name}:")
+        for inst in sorted(installations, key=lambda i: i.version):
+            active_marker = " (active)" if inst.active else ""
+            print(f"  {inst.version} in {inst.bindir}{active_marker}")
+            if args.verbose:
+                print(f"    Platform: {inst.platform}")
+                timestamp = inst.installed_at.strftime("%Y-%m-%d %H:%M:%S")
+                print(f"    Installed: {timestamp}")
+                print(f"    Executables: {', '.join(inst.executables)}")
+        print()
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -146,6 +270,98 @@ def main():
         help="Show detailed program information",
     )
 
+    # Install command
+    install_parser = subparsers.add_parser("install", help="Install a program")
+    install_parser.add_argument(
+        "program",
+        help="Program name (optionally with @version)",
+    )
+    install_parser.add_argument(
+        "--version",
+        help="Program version (if not specified in program name)",
+    )
+    install_parser.add_argument(
+        "--bindir",
+        help="Installation directory (default: auto-select)",
+    )
+    install_parser.add_argument(
+        "--platform",
+        help="Platform identifier (default: auto-detect)",
+    )
+    install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force reinstallation",
+    )
+
+    # Select command
+    select_parser = subparsers.add_parser(
+        "select", help="Switch active program version"
+    )
+    select_parser.add_argument(
+        "program",
+        help="Program name with version (program@version)",
+    )
+    select_parser.add_argument(
+        "--bindir",
+        help="Installation directory",
+    )
+
+    # Uninstall command
+    uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall a program")
+    uninstall_parser.add_argument(
+        "program",
+        help="Program name (optionally with @version)",
+    )
+    uninstall_parser.add_argument(
+        "--bindir",
+        help="Installation directory (default: all)",
+    )
+    uninstall_parser.add_argument(
+        "--all",
+        dest="all_versions",
+        action="store_true",
+        help="Uninstall all versions",
+    )
+    uninstall_parser.add_argument(
+        "--remove-cache",
+        action="store_true",
+        help="Also remove from cache",
+    )
+
+    # Which command
+    which_parser = subparsers.add_parser(
+        "which", help="Show path to installed executable"
+    )
+    which_parser.add_argument(
+        "program",
+        help="Program name",
+    )
+    which_parser.add_argument(
+        "--version",
+        help="Program version",
+    )
+    which_parser.add_argument(
+        "--bindir",
+        help="Installation directory",
+    )
+
+    # Installed command (list installed programs)
+    installed_parser = subparsers.add_parser(
+        "installed", help="List installed programs"
+    )
+    installed_parser.add_argument(
+        "program",
+        nargs="?",
+        help="Specific program to list (default: all)",
+    )
+    installed_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show detailed installation information",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -159,6 +375,16 @@ def main():
         cmd_info(args)
     elif args.command == "list":
         cmd_list(args)
+    elif args.command == "install":
+        cmd_install(args)
+    elif args.command == "select":
+        cmd_select(args)
+    elif args.command == "uninstall":
+        cmd_uninstall(args)
+    elif args.command == "which":
+        cmd_which(args)
+    elif args.command == "installed":
+        cmd_list_installed(args)
     else:
         parser.print_help()
         sys.exit(1)

@@ -101,7 +101,9 @@ Program maintainers can publish metadata as release assets, either manually or i
 
 ## Architecture
 
-The Programs API will mirror the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
+The Programs API mirrors the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
+
+Following the [shared design patterns](patterns.md), the Programs API uses a **consolidated single-module implementation** in `modflow_devtools/programs/__init__.py`. This object-oriented approach keeps all related functionality together (cache management, registry classes, discovery, sync) for easier maintenance and comprehension.
 
 **Implementation approach**: Following the Models API's successful streamlined design, the Programs API should consolidate all code in a single `modflow_devtools/programs/__init__.py` file with clear class-based separation:
 - `ProgramCache`: Cache management (archives, binaries, metadata)
@@ -575,71 +577,260 @@ Examples:
 
 ### Registry classes
 
-The registry class hierarchy is based on a Pydantic `ProgramRegistry` base class:
+The Programs API uses a consolidated object-oriented design with Pydantic models and concrete classes.
 
-**`ProgramRegistry` (base class)**:
-- Pydantic model with `programs` field (dict of program metadata)
-- Optional `meta` field for registry metadata
-- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
-- Program names are globally unique across all sources
+#### ProgramBinary
 
-**`RemoteRegistry(ProgramRegistry)`**:
-- Handles remote registry discovery and caching
-- Loads from cached registry files or syncs from remote
-- Associated with a single source and release tag
-- Constructs binary download URLs dynamically from bootstrap metadata (repo, tag) + asset filename
+Represents platform-specific binary information:
+
+```python
+class ProgramBinary(BaseModel):
+    """Platform-specific binary information."""
+    asset: str  # Release asset filename
+    hash: str | None  # SHA256 hash
+    exe: str  # Executable path within archive
+```
+
+#### ProgramMetadata
+
+Program metadata in registry:
 
 Example:
 ```python
-class RemoteRegistry(ProgramRegistry):
-    def __init__(self, source: str, ref: str):
-        self.source = source
-        self.ref = ref
-        self._load()
-
-    def _load(self):
-        # Check cache first
-        if cached := self._load_from_cache():
-            return cached
-        # Otherwise sync from remote
-        self._sync()
+class ProgramMetadata(BaseModel):
+    """Program metadata in registry."""
+    version: str
+    description: str | None
+    repo: str  # Source repository (owner/name)
+    license: str | None
+    binaries: dict[str, ProgramBinary]  # Platform-specific binaries
 ```
 
-**Design decisions**:
-- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
-- **Dynamic URL construction** - binary download URLs constructed at runtime, not stored in registry
-- **No `MergedRegistry`** - program names are globally unique, so merging is less critical than for Models API. Simple merge functions (like `get_all_programs()`) can be used instead if needed.
+#### ProgramRegistry
 
-### Module-level API
-
-Convenient module-level functions:
+Top-level registry data model:
 
 ```python
-# Default merged registry from bootstrap config
+class ProgramRegistry(BaseModel):
+    """Program registry data model."""
+    schema_version: str | None
+    generated_at: datetime | None
+    devtools_version: str | None
+    programs: dict[str, ProgramMetadata]
+```
+
+#### ProgramCache
+
+Manages local caching of program registries:
+
+```python
+class ProgramCache:
+    """Manages local caching of program registries."""
+    def save(self, registry: ProgramRegistry, source: str, ref: str) -> Path
+    def load(self, source: str, ref: str) -> ProgramRegistry | None
+    def has(self, source: str, ref: str) -> bool
+    def list(self) -> list[tuple[str, str]]
+    def clear(self)
+```
+
+#### ProgramSourceRepo
+
+Represents a single program source repository:
+
+```python
+class ProgramSourceRepo(BaseModel):
+    """A single program source repository."""
+    repo: str
+    name: str | None
+    refs: list[str]
+
+    def discover(self, ref: str) -> DiscoveredProgramRegistry
+    def sync(self, ref: str | None, force: bool, verbose: bool) -> SyncResult
+    def is_synced(self, ref: str) -> bool
+    def list_synced_refs(self) -> list[str]
+```
+
+#### ProgramSourceConfig
+
+Configuration for program sources:
+
+```python
+class ProgramSourceConfig(BaseModel):
+    """Configuration for program sources."""
+    sources: dict[str, ProgramSourceRepo]
+
+    @property
+    def status(self) -> dict[str, ProgramSourceRepo.SyncStatus]
+
+    def sync(self, source, force, verbose) -> dict[str, SyncResult]
+
+    @classmethod
+    def load(cls, bootstrap_path, user_config_path) -> "ProgramSourceConfig"
+```
+
+#### ProgramInstallation
+
+Tracks a single program installation:
+
+```python
+class ProgramInstallation(BaseModel):
+    """A single program installation."""
+    version: str
+    platform: str
+    bindir: Path
+    installed_at: datetime
+    source: dict[str, str]  # repo, tag, asset_url, hash
+    executables: list[str]
+    active: bool
+```
+
+#### InstallationMetadata
+
+Manages installation metadata for a program:
+
+```python
+class InstallationMetadata:
+    """Manages installation metadata for a program."""
+    def __init__(self, program: str, cache: ProgramCache | None = None)
+    def load(self) -> bool
+    def save(self) -> None
+    def add_installation(self, installation: ProgramInstallation) -> None
+    def remove_installation(self, version: str, bindir: Path | None) -> None
+    def get_installation(self, version: str, bindir: Path | None) -> ProgramInstallation | None
+    def list_installations(self) -> list[ProgramInstallation]
+    def get_active_installation(self, bindir: Path | None) -> ProgramInstallation | None
+    def set_active(self, version: str, bindir: Path) -> None
+```
+
+#### ProgramManager
+
+High-level manager for program installation and version management:
+
+```python
+class ProgramManager:
+    """High-level program installation manager."""
+    def __init__(self, cache: ProgramCache | None = None)
+
+    @property
+    def config(self) -> ProgramSourceConfig
+
+    def install(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: Path | None = None,
+        platform: str | None = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> list[Path]
+
+    def select(
+        self,
+        program: str,
+        version: str,
+        bindir: Path | None = None,
+        verbose: bool = False,
+    ) -> list[Path]
+
+    def uninstall(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: Path | None = None,
+        all_versions: bool = False,
+        remove_cache: bool = False,
+        verbose: bool = False,
+    ) -> None
+
+    def get_executable(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: Path | None = None,
+    ) -> Path
+
+    def list_installed(
+        self,
+        program: str | None = None,
+    ) -> dict[str, list[ProgramInstallation]]
+```
+
+### Python API
+
+The Programs API provides both object-oriented and functional interfaces.
+
+**Object-Oriented API** (using `ProgramManager`):
+
+```python
+from modflow_devtools.programs import ProgramManager
+
+# Create manager (or use _DEFAULT_MANAGER)
+manager = ProgramManager()
+
+# Install programs
+paths = manager.install("mf6", version="6.6.3", verbose=True)
+
+# Switch versions
+manager.select("mf6", version="6.5.0", verbose=True)
+
+# Get executable path
+mf6_path = manager.get_executable("mf6")
+
+# List installed programs
+installed = manager.list_installed()
+
+# Uninstall
+manager.uninstall("mf6", version="6.5.0")
+```
+
+**Functional API** (convenience wrappers):
+
+```python
 from modflow_devtools.programs import (
-    DEFAULT_REGISTRY,
-    get_programs,
-    get_program,
     install_program,
-    list_installed,
-    sync_registries,
+    select_version,
     get_executable,
+    list_installed,
+    uninstall_program,
 )
 
-# Usage
-programs = get_programs()
-mf6 = get_program("mf6", version="6.6.3")
-install_program("mf6", version="6.6.3")
-exe_path = get_executable("mf6")
+# Install
+paths = install_program("mf6", version="6.6.3", verbose=True)
+
+# Switch versions
+select_version("mf6", version="6.5.0")
+
+# Get executable path
+mf6_path = get_executable("mf6")
+
+# List installed
+installed = list_installed()
+
+# Uninstall
+uninstall_program("mf6", version="6.5.0")
 ```
 
-Backwards compatibility with existing API:
+**Registry and Configuration API**:
 
 ```python
-from modflow_devtools.programs import get_programs, get_program
+from modflow_devtools.programs import (
+    _DEFAULT_CACHE,
+    ProgramSourceConfig,
+    ProgramSourceRepo,
+    ProgramRegistry,
+)
 
-programs = get_programs()  # dict[str, Program]
-mf6 = get_program("mf6")   # Program instance
+# Load configuration and sync
+config = ProgramSourceConfig.load()
+results = config.sync(verbose=True)
+
+# Access cached registries
+registry = _DEFAULT_CACHE.load("modflow6", "6.6.3")
+programs = registry.programs  # dict[str, ProgramMetadata]
+
+# Work with specific sources
+source = config.sources["modflow6"]
+result = source.sync(ref="6.6.3", force=True, verbose=True)
 ```
 
 ## Migration path
@@ -654,59 +845,105 @@ Since programs will publish pre-built binaries, pymake is no longer needed for b
 4. **Phase 4**: devtools becomes the authoritative source for program metadata
 5. **Phase 5**: pymake deprecated entirely (no longer needed)
 
-### Implementation plan
+### Implementation Summary
 
-Core components to implement:
+The Programs API has been implemented following a consolidated object-oriented approach in `modflow_devtools/programs/__init__.py` (~600 lines).
 
-1. **Consolidated Module Design** (following Models API pattern)
-   - Single `modflow_devtools/programs/__init__.py` with all classes
-   - `ProgramCache` class for cache management
-   - `ProgramSourceRepo` class with discover/sync/is_synced methods
-   - `ProgramSourceConfig` class for bootstrap configuration
-   - `ProgramRegistry` Pydantic model for data
-   - `PoochProgramRegistry` for remote fetching
-   - `DiscoveredProgramRegistry` dataclass for discovery results
-   - Object-oriented API with methods on classes
+**Core Infrastructure** ✅
+- Bootstrap configuration: `modflow_devtools/programs/programs.toml`
+- Pydantic models: `ProgramRegistry`, `ProgramMetadata`, `ProgramBinary`
+- Cache management: `ProgramCache` class with save/load/list/clear operations
+- Thread-safe caching with filelock
+- User config overlay support at `~/.config/modflow-devtools/programs.toml`
 
-2. **Bootstrap & Schema**
-   - Create bootstrap file (`modflow_devtools/programs/programs.toml`)
-   - Define registry schema with Pydantic validation (in `__init__.py`)
+**Registry Classes** ✅
+- `ProgramSourceRepo`: Represents a program source repository with discovery and sync
+- `ProgramSourceConfig`: Configuration container with multi-source management
+- `DiscoveredProgramRegistry`: Discovery result dataclass
+- Nested `SyncResult` and `SyncStatus` classes for operation tracking
 
-3. **Registry Classes** (all in `__init__.py`)
-   - Implement `ProgramRegistry` Pydantic base class
-   - Create `ProgramSourceRepo` for discovery and sync
-   - Add installation tracking via `ProgramCache`
+**Discovery & Sync** ✅
+- Release asset discovery from GitHub releases
+- Local cache at `~/.cache/modflow-devtools/programs/registries/{source}/{ref}/`
+- Automatic sync on import (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
+- Manual sync via CLI or Python API
+- Force re-download support
 
-4. **Installation System**
-   - Implement binary distribution download and extraction
-   - Add platform detection and binary selection
-   - Implement bindir selection (adapted from get-modflow's `get_bindir_options()`)
-   - Create installation management (install/uninstall/select/list)
-   - Implement copy-based installation from cache to bindir
-   - Add `get_executable()` function for looking up installed executables
-   - Handle executable permissions on Unix systems (`chmod +x`)
-   - Add metadata tracking for all installations
-   - Add verification/validation of downloaded binaries (hash checking)
+**CLI Interface** ✅
+- `python -m modflow_devtools.programs sync` - Sync registries
+- `python -m modflow_devtools.programs info` - Show sync status
+- `python -m modflow_devtools.programs list` - List available programs
+- `python -m modflow_devtools.programs install` - Install a program
+- `python -m modflow_devtools.programs select` - Switch active version
+- `python -m modflow_devtools.programs uninstall` - Uninstall a program
+- `python -m modflow_devtools.programs which` - Show executable path
+- `python -m modflow_devtools.programs installed` - List installed programs
 
-5. **CLI & API**
-   - Create CLI commands (`modflow_devtools/programs/__main__.py` - sync, info, list, install, select, which, uninstall, clean)
-   - Update module-level API to use registries
+**Registry Generation Tool** ✅
+- `modflow_devtools/programs/make_registry.py` - Generate registry files
+- Auto-detects platform binaries (linux/mac/win64)
+- Optional SHA256 hash computation
+- Example usage:
+  ```bash
+  python -m modflow_devtools.programs.make_registry \
+    --repo MODFLOW-ORG/modflow6 \
+    --tag 6.6.3 \
+    --programs mf6 zbud6 libmf6 mf5to6 \
+    --compute-hashes \
+    --output programs.toml
+  ```
 
-6. **Registry Generation**
-   - Add registry generation utilities (`make_program_registry.py`)
-   - Document registry publication workflow for program maintainers
+**Testing & Code Quality** ✅
+- 20 tests passing (cache, config, sync, ProgramManager, installation metadata)
+- Full mypy type checking (clean)
+- Ruff code quality checks (clean)
 
-7. **Testing & Documentation**
-   - Comprehensive test suite (sync, network failures, multi-platform, registry merging)
-   - User documentation
-   - Migration guide for pymake users
+**Python API Examples**:
+```python
+from modflow_devtools.programs import (
+    _DEFAULT_CACHE,
+    ProgramSourceConfig,
+    ProgramSourceRepo,
+    ProgramRegistry,
+)
 
-**Upstream Integration** (concurrent with devtools development):
+# Load bootstrap configuration
+config = ProgramSourceConfig.load()
+
+# Access a specific source
+source = config.sources["modflow6"]
+
+# Sync a specific release
+result = source.sync(ref="6.6.3", verbose=True)
+
+# Check sync status
+status = config.status
+
+# Load cached registry
+registry = _DEFAULT_CACHE.load("modflow6", "6.6.3")
+programs = registry.programs  # dict[str, ProgramMetadata]
+```
+
+**Installation & Version Management** ✅
+- `ProgramManager` class: High-level manager for program operations
+- `InstallationMetadata`: JSON-based tracking of installed programs
+- Platform detection (linux/mac/win64)
+- Binary download with SHA256 verification
+- Archive extraction (zip/tar.gz)
+- Bindir selection (auto-detect or custom)
+- Copy-based installation from cache
+- Fast version switching via re-copy
+- Installation metadata at `~/.cache/modflow-devtools/programs/installations/{program}.json`
+- Archive cache at `~/.cache/modflow-devtools/programs/archives/`
+- Binary cache at `~/.cache/modflow-devtools/programs/binaries/{source}/{ref}/`
+- Methods: `install()`, `select()`, `uninstall()`, `get_executable()`, `list_installed()`
+- Convenience wrappers: `install_program()`, `select_version()`, etc.
+
+**Upstream Integration** (next steps):
 - Add registry generation to program repositories' CI (starting with modflow6)
 - Publish registries as release assets
 - Test discovery and installation with real releases
-
-**Future**: Once all programs publish registries and the system is mature, deprecate pymake's program database functionality
+- Eventually deprecate pymake's program database functionality
 
 ## Relationship to Models API
 
@@ -720,7 +957,7 @@ The Programs API deliberately mirrors the Models API architecture:
 | **Caching** | `~/.cache/modflow-devtools/models` | `~/.cache/modflow-devtools/programs` |
 | **Addressing** | `source@ref/path/to/model` | `program@version` |
 | **CLI** | `models sync/info/list` | `programs sync/info/list/install` |
-| **Registries** | `PoochRegistry`, `MergedRegistry` | `RemoteRegistry`, `MergedRegistry` |
+| **Key classes** | `ModelRegistry`, `ModelSourceRepo` | `ProgramRegistry`, `ProgramSourceRepo`, `ProgramManager` |
 
 **Key differences**:
 - Programs API adds installation capabilities (Models API just provides file access)

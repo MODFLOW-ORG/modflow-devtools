@@ -150,10 +150,21 @@ class ProgramCache:
         """
         self.root = root if root is not None else _CACHE_ROOT / "programs"
         self.registries_dir = self.root / "registries"
+        self.archives_dir = self.root / "archives"
+        self.binaries_dir = self.root / "binaries"
+        self.metadata_dir = self.root / "metadata"
 
     def get_registry_cache_dir(self, source: str, ref: str) -> Path:
         """Get cache directory for a specific source/ref combination."""
         return self.registries_dir / source / ref
+
+    def get_archive_dir(self, program: str, version: str, platform: str) -> Path:
+        """Get cache directory for program archives."""
+        return self.archives_dir / program / version / platform
+
+    def get_binary_dir(self, program: str, version: str, platform: str) -> Path:
+        """Get cache directory for extracted binaries."""
+        return self.binaries_dir / program / version / platform
 
     def save(self, registry: ProgramRegistry, source: str, ref: str) -> Path:
         """
@@ -545,6 +556,1325 @@ class ProgramSourceConfig(BaseModel):
         return cls(sources=merged_sources)
 
 
+# ============================================================================
+# Installation System
+# ============================================================================
+
+
+class ProgramInstallationError(Exception):
+    """Raised when program installation fails."""
+
+    pass
+
+
+def get_platform() -> str:
+    """
+    Detect current platform for binary selection.
+
+    Returns
+    -------
+    str
+        Platform identifier: 'linux', 'mac', or 'win64'
+
+    Raises
+    ------
+    ProgramInstallationError
+        If platform cannot be detected or is unsupported
+    """
+    import platform
+    import sys
+
+    system = platform.system().lower()
+
+    if system == "linux":
+        return "linux"
+    elif system == "darwin":
+        return "mac"
+    elif system == "windows":
+        # Determine if 32-bit or 64-bit
+        is_64bit = sys.maxsize > 2**32
+        if is_64bit:
+            return "win64"
+        else:
+            raise ProgramInstallationError(
+                "32-bit Windows is not supported. "
+                "Only 64-bit Windows (win64) binaries are available."
+            )
+    else:
+        raise ProgramInstallationError(
+            f"Unsupported platform: {system}. Supported platforms: linux, mac, win64"
+        )
+
+
+def _compute_file_hash(file_path: Path, algorithm: str = "sha256") -> str:
+    """
+    Compute hash of a file.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to file
+    algorithm : str
+        Hash algorithm (default: sha256)
+
+    Returns
+    -------
+    str
+        Hex digest of file hash
+    """
+    import hashlib
+
+    hash_obj = hashlib.new(algorithm)
+    with file_path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            hash_obj.update(chunk)
+    return hash_obj.hexdigest()
+
+
+def _verify_hash(file_path: Path, expected_hash: str) -> bool:
+    """
+    Verify file hash against expected value.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to file
+    expected_hash : str
+        Expected hash in format "algorithm:hexdigest" (e.g., "sha256:abc123...")
+
+    Returns
+    -------
+    bool
+        True if hash matches, False otherwise
+
+    Raises
+    ------
+    ValueError
+        If hash format is invalid
+    """
+    if ":" not in expected_hash:
+        raise ValueError(
+            f"Invalid hash format: {expected_hash}. Expected 'algorithm:hexdigest'"
+        )
+
+    algorithm, expected_digest = expected_hash.split(":", 1)
+    actual_digest = _compute_file_hash(file_path, algorithm)
+    return actual_digest.lower() == expected_digest.lower()
+
+
+def download_archive(
+    url: str,
+    dest: Path,
+    expected_hash: str | None = None,
+    force: bool = False,
+    verbose: bool = False,
+) -> Path:
+    """
+    Download archive to cache.
+
+    Parameters
+    ----------
+    url : str
+        Download URL
+    dest : Path
+        Destination file path
+    expected_hash : str, optional
+        Expected hash in format "algorithm:hexdigest"
+    force : bool
+        Force re-download even if cached and hash matches
+    verbose : bool
+        Print progress messages
+
+    Returns
+    -------
+    Path
+        Path to downloaded file
+
+    Raises
+    ------
+    ProgramInstallationError
+        If download fails or hash verification fails
+    """
+    # Check if already cached
+    if dest.exists() and not force:
+        if expected_hash is None:
+            if verbose:
+                print(f"Using cached archive: {dest}")
+            return dest
+
+        # Verify hash of cached file
+        if _verify_hash(dest, expected_hash):
+            if verbose:
+                print(f"Using cached archive (hash verified): {dest}")
+            return dest
+        else:
+            if verbose:
+                print(f"Cached archive hash mismatch, re-downloading: {dest}")
+
+    # Create parent directory
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Download
+    if verbose:
+        print(f"Downloading: {url}")
+
+    try:
+        # Support GitHub token authentication
+        headers = {}
+        github_token = os.environ.get("GITHUB_TOKEN")
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+
+        response = requests.get(url, headers=headers, stream=True, timeout=30)
+        response.raise_for_status()
+
+        # Write to temporary file first
+        temp_dest = dest.with_suffix(dest.suffix + ".tmp")
+        with temp_dest.open("wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        # Verify hash if provided
+        if expected_hash is not None:
+            if verbose:
+                print("Verifying hash...")
+            if not _verify_hash(temp_dest, expected_hash):
+                temp_dest.unlink()
+                raise ProgramInstallationError(
+                    f"Downloaded file hash does not match expected hash: "
+                    f"{expected_hash}"
+                )
+
+        # Move to final location
+        temp_dest.replace(dest)
+
+        if verbose:
+            print(f"Downloaded to: {dest}")
+
+        return dest
+
+    except requests.exceptions.RequestException as e:
+        if dest.exists():
+            dest.unlink()
+        raise ProgramInstallationError(f"Failed to download {url}: {e}") from e
+
+
+def extract_executables(
+    archive: Path,
+    dest_dir: Path,
+    exe_path: str,
+    verbose: bool = False,
+) -> list[Path]:
+    """
+    Extract executable(s) from archive.
+
+    Parameters
+    ----------
+    archive : Path
+        Path to archive file
+    dest_dir : Path
+        Destination directory for extraction
+    exe_path : str
+        Path to executable within archive (e.g., "bin/mf6")
+    verbose : bool
+        Print progress messages
+
+    Returns
+    -------
+    list[Path]
+        List of extracted executable paths
+
+    Raises
+    ------
+    ProgramInstallationError
+        If extraction fails
+    """
+    import stat
+    import tarfile
+    import zipfile
+
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        print(f"Extracting {archive.name} to {dest_dir}...")
+
+    try:
+        # Determine archive type and extract
+        if archive.suffix.lower() == ".zip":
+            with zipfile.ZipFile(archive, "r") as zf:
+                # Extract the entire archive to preserve directory structure
+                zf.extractall(dest_dir)
+        elif archive.suffix.lower() in [".gz", ".tgz"]:
+            with tarfile.open(archive, "r:gz") as tf:
+                tf.extractall(dest_dir)
+        elif archive.suffix.lower() == ".tar":
+            with tarfile.open(archive, "r") as tf:
+                tf.extractall(dest_dir)
+        else:
+            raise ProgramInstallationError(
+                f"Unsupported archive format: {archive.suffix}"
+            )
+
+        # Find the extracted executable
+        exe_file = dest_dir / exe_path
+        if not exe_file.exists():
+            raise ProgramInstallationError(
+                f"Executable not found in archive: {exe_path}"
+            )
+
+        # Apply executable permissions on Unix
+        if os.name != "nt":  # Unix-like systems
+            current_permissions = exe_file.stat().st_mode
+            exe_file.chmod(
+                current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+            )
+
+        if verbose:
+            print(f"Extracted: {exe_file}")
+
+        return [exe_file]
+
+    except (zipfile.BadZipFile, tarfile.TarError) as e:
+        raise ProgramInstallationError(f"Failed to extract {archive}: {e}") from e
+
+
+def get_bindir_options(program: str | None = None) -> list[Path]:
+    """
+    Get writable installation directories in priority order.
+
+    Adapted from flopy's get-modflow utility.
+
+    Parameters
+    ----------
+    program : str, optional
+        Program name to check for previous installation location
+
+    Returns
+    -------
+    list[Path]
+        List of writable directories in priority order
+    """
+    import sys
+    from pathlib import Path
+
+    candidates = []
+
+    # 1. Previous installation location (if program specified)
+    if program:
+        metadata = InstallationMetadata(program)
+        if metadata.load():
+            installations = metadata.list_installations()
+            if installations:
+                # Use most recent installation bindir
+                most_recent = max(installations, key=lambda i: i.installed_at)
+                candidates.append(most_recent.bindir)
+
+    # 2. Python's Scripts/bin directory
+    if hasattr(sys, "base_prefix"):
+        if os.name == "nt":
+            candidates.append(Path(sys.base_prefix) / "Scripts")
+        else:
+            candidates.append(Path(sys.base_prefix) / "bin")
+
+    # 3. User local bin
+    if os.name == "nt":
+        # Windows: %LOCALAPPDATA%\Microsoft\WindowsApps
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            candidates.append(Path(local_app_data) / "Microsoft" / "WindowsApps")
+    else:
+        # Unix: ~/.local/bin
+        candidates.append(Path.home() / ".local" / "bin")
+
+    # 4. System local bin (Unix only)
+    if os.name != "nt":
+        candidates.append(Path("/usr/local/bin"))
+
+    # Filter to writable directories
+    writable = []
+    for path in candidates:
+        if not path.exists():
+            # Try to create it
+            try:
+                path.mkdir(parents=True, exist_ok=True)
+                writable.append(path)
+            except (OSError, PermissionError):
+                continue
+        else:
+            # Check if writable
+            if os.access(path, os.W_OK):
+                writable.append(path)
+
+    # Remove duplicates while preserving order
+    seen = set()
+    result = []
+    for path in writable:
+        if path not in seen:
+            seen.add(path)
+            result.append(path)
+
+    return result
+
+
+@dataclass
+class ProgramInstallation:
+    """Represents a program installation."""
+
+    version: str
+    """Program version"""
+
+    platform: str
+    """Platform identifier"""
+
+    bindir: Path
+    """Installation directory"""
+
+    installed_at: datetime
+    """Installation timestamp"""
+
+    source: dict[str, str]
+    """Source information (repo, tag, asset_url, hash)"""
+
+    executables: list[str]
+    """List of installed executable names"""
+
+    active: bool
+    """Whether this is the active version in this bindir"""
+
+
+class InstallationMetadata:
+    """Manages installation metadata for a program."""
+
+    def __init__(self, program: str):
+        """
+        Initialize metadata manager.
+
+        Parameters
+        ----------
+        program : str
+            Program name
+        """
+        self.program = program
+        self.metadata_file = _DEFAULT_CACHE.metadata_dir / f"{program}.json"
+        self.installations: list[ProgramInstallation] = []
+
+    def load(self) -> bool:
+        """
+        Load metadata from file.
+
+        Returns
+        -------
+        bool
+            True if metadata was loaded, False if file doesn't exist
+        """
+        if not self.metadata_file.exists():
+            return False
+
+        try:
+            import json
+
+            with self.metadata_file.open("r") as f:
+                data = json.load(f)
+
+            self.installations = []
+            for inst_data in data.get("installations", []):
+                # Parse datetime
+                installed_at = datetime.fromisoformat(inst_data["installed_at"])
+
+                # Convert bindir to Path
+                bindir = Path(inst_data["bindir"])
+
+                installation = ProgramInstallation(
+                    version=inst_data["version"],
+                    platform=inst_data["platform"],
+                    bindir=bindir,
+                    installed_at=installed_at,
+                    source=inst_data["source"],
+                    executables=inst_data["executables"],
+                    active=inst_data.get("active", False),
+                )
+                self.installations.append(installation)
+
+            return True
+
+        except (json.JSONDecodeError, KeyError, ValueError):
+            # Corrupted metadata, start fresh
+            self.installations = []
+            return False
+
+    def save(self) -> None:
+        """Save metadata to file."""
+        import json
+
+        self.metadata_file.parent.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "program": self.program,
+            "installations": [
+                {
+                    "version": inst.version,
+                    "platform": inst.platform,
+                    "bindir": str(inst.bindir),
+                    "installed_at": inst.installed_at.isoformat(),
+                    "source": inst.source,
+                    "executables": inst.executables,
+                    "active": inst.active,
+                }
+                for inst in self.installations
+            ],
+        }
+
+        with self.metadata_file.open("w") as f:
+            json.dump(data, f, indent=2)
+
+    def add_installation(self, installation: ProgramInstallation) -> None:
+        """
+        Add or update an installation.
+
+        Parameters
+        ----------
+        installation : ProgramInstallation
+            Installation to add
+
+        Notes
+        -----
+        If installation marks this version as active in a bindir, all other
+        versions in that bindir are marked inactive.
+        """
+        # Remove existing installation for same version/bindir if present
+        self.installations = [
+            inst
+            for inst in self.installations
+            if not (
+                inst.version == installation.version
+                and inst.bindir == installation.bindir
+            )
+        ]
+
+        # If marking as active, deactivate others in same bindir
+        if installation.active:
+            for inst in self.installations:
+                if inst.bindir == installation.bindir:
+                    inst.active = False
+
+        self.installations.append(installation)
+        self.save()
+
+    def remove_installation(self, version: str, bindir: Path) -> None:
+        """
+        Remove an installation.
+
+        Parameters
+        ----------
+        version : str
+            Program version
+        bindir : Path
+            Installation directory
+        """
+        self.installations = [
+            inst
+            for inst in self.installations
+            if not (inst.version == version and inst.bindir == bindir)
+        ]
+        self.save()
+
+    def get_active_version(self, bindir: Path) -> str | None:
+        """
+        Get active version in a bindir.
+
+        Parameters
+        ----------
+        bindir : Path
+            Installation directory
+
+        Returns
+        -------
+        str | None
+            Active version, or None if no active installation
+        """
+        for inst in self.installations:
+            if inst.bindir == bindir and inst.active:
+                return inst.version
+        return None
+
+    def set_active_version(self, version: str, bindir: Path) -> None:
+        """
+        Set active version in a bindir.
+
+        Parameters
+        ----------
+        version : str
+            Program version
+        bindir : Path
+            Installation directory
+
+        Raises
+        ------
+        ValueError
+            If version is not installed in bindir
+        """
+        # Find the installation
+        found = False
+        for inst in self.installations:
+            if inst.version == version and inst.bindir == bindir:
+                inst.active = True
+                found = True
+            elif inst.bindir == bindir:
+                inst.active = False
+
+        if not found:
+            raise ValueError(f"Version {version} is not installed in {bindir}")
+
+        self.save()
+
+    def list_installations(self) -> list[ProgramInstallation]:
+        """
+        List all installations.
+
+        Returns
+        -------
+        list[ProgramInstallation]
+            List of installations
+        """
+        return self.installations.copy()
+
+
+class ProgramManager:
+    """High-level program installation manager."""
+
+    def __init__(self, cache: ProgramCache | None = None):
+        """
+        Initialize program manager.
+
+        Parameters
+        ----------
+        cache : ProgramCache, optional
+            Cache instance (default: use global cache)
+        """
+        self.cache = cache if cache is not None else _DEFAULT_CACHE
+        self._config: ProgramSourceConfig | None = None
+
+    @property
+    def config(self) -> ProgramSourceConfig:
+        """Lazily load configuration."""
+        if self._config is None:
+            self._config = ProgramSourceConfig.load()
+        return self._config
+
+    def install(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: str | Path | None = None,
+        platform: str | None = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> list[Path]:
+        """
+        Install a program binary.
+
+        Parameters
+        ----------
+        program : str
+            Program name
+        version : str, optional
+            Program version (default: latest configured version)
+        bindir : str | Path, optional
+            Installation directory (default: auto-select)
+        platform : str, optional
+            Platform identifier (default: auto-detect)
+        force : bool
+            Force reinstallation even if already installed
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        list[Path]
+            List of installed executable paths
+
+        Raises
+        ------
+        ProgramInstallationError
+            If installation fails
+        """
+        import shutil
+        from datetime import timezone
+
+        # 1. Load config and find program in registries
+        config = self.config
+
+        # Search all cached registries for the program
+        found_registry: ProgramRegistry | None = None
+        found_ref: str | None = None
+
+        for source_name, source in config.sources.items():
+            for ref in source.refs:
+                registry = self.cache.load(source_name, ref)
+                if registry and program in registry.programs:
+                    # If version specified, check if it matches
+                    prog_meta = registry.programs[program]
+                    if version is None or prog_meta.version == version:
+                        found_registry = registry
+                        found_ref = ref
+                        break
+            if found_registry:
+                break
+
+        if not found_registry:
+            # Try to sync and search again
+            if verbose:
+                print(f"Program '{program}' not found in cache, attempting sync...")
+            try:
+                config.sync(verbose=verbose)
+
+                # Search again
+                for source_name, source in config.sources.items():
+                    for ref in source.refs:
+                        registry = self.cache.load(source_name, ref)
+                        if registry and program in registry.programs:
+                            prog_meta = registry.programs[program]
+                            if version is None or prog_meta.version == version:
+                                found_registry = registry
+                                found_ref = ref
+                                break
+                    if found_registry:
+                        break
+            except Exception as e:
+                if verbose:
+                    print(f"Sync failed: {e}")
+
+        if not found_registry:
+            raise ProgramInstallationError(
+                f"Program '{program}' not found in any configured registry"
+            )
+
+        # 2. Get program metadata
+        program_meta = found_registry.programs[program]
+        version = program_meta.version  # Use actual version from registry
+
+        if verbose:
+            print(f"Installing {program} version {version}...")
+
+        # 3. Detect platform
+        if platform is None:
+            platform = get_platform()
+            if verbose:
+                print(f"Detected platform: {platform}")
+
+        # 4. Get binary metadata
+        if platform not in program_meta.binaries:
+            available = ", ".join(program_meta.binaries.keys())
+            raise ProgramInstallationError(
+                f"Binary not available for platform '{platform}'. "
+                f"Available platforms: {available}"
+            )
+
+        binary_meta = program_meta.binaries[platform]
+
+        # 5. Determine bindir
+        if bindir is None:
+            bindir_options = get_bindir_options(program)
+            if not bindir_options:
+                raise ProgramInstallationError(
+                    "No writable installation directories found"
+                )
+            bindir = bindir_options[0]  # Use first (highest priority)
+            if verbose:
+                print(f"Selected installation directory: {bindir}")
+        else:
+            bindir = Path(bindir)
+            bindir.mkdir(parents=True, exist_ok=True)
+
+        # 6. Check if already installed
+        metadata = InstallationMetadata(program)
+        metadata.load()
+
+        if not force:
+            active_version = metadata.get_active_version(bindir)
+            if active_version == version:
+                if verbose:
+                    print(f"{program} {version} is already installed in {bindir}")
+                # Return paths to existing executables
+                exe_name = Path(binary_meta.exe).name
+                return [bindir / exe_name]
+
+        # 7. Download archive (if not cached)
+        asset_url = f"https://github.com/{program_meta.repo}/releases/download/{found_ref}/{binary_meta.asset}"
+        archive_dir = self.cache.get_archive_dir(program, version, platform)
+        archive_path = archive_dir / binary_meta.asset
+
+        if verbose:
+            print(f"Downloading archive from {asset_url}...")
+
+        download_archive(
+            url=asset_url,
+            dest=archive_path,
+            expected_hash=binary_meta.hash,
+            force=force,
+            verbose=verbose,
+        )
+
+        # 8. Extract to binaries cache (if not already extracted)
+        binary_dir = self.cache.get_binary_dir(program, version, platform)
+        exe_in_cache = binary_dir / binary_meta.exe
+
+        if not exe_in_cache.exists() or force:
+            if verbose:
+                print(f"Extracting to cache: {binary_dir}")
+
+            extract_executables(
+                archive=archive_path,
+                dest_dir=binary_dir,
+                exe_path=binary_meta.exe,
+                verbose=verbose,
+            )
+
+        # 9. Copy executables to bindir
+        exe_name = Path(binary_meta.exe).name
+        dest_exe = bindir / exe_name
+
+        if verbose:
+            print(f"Installing to {dest_exe}...")
+
+        shutil.copy2(exe_in_cache, dest_exe)
+
+        # Apply executable permissions on Unix
+        if os.name != "nt":
+            import stat
+
+            current_permissions = dest_exe.stat().st_mode
+            dest_exe.chmod(
+                current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+            )
+
+        # 10. Update metadata
+        assert found_ref is not None  # Guaranteed by found_registry check above
+        source_info: dict[str, str] = {
+            "repo": program_meta.repo,
+            "tag": found_ref,
+            "asset_url": asset_url,
+            "hash": binary_meta.hash or "",
+        }
+        installation = ProgramInstallation(
+            version=version,
+            platform=platform,
+            bindir=bindir,
+            installed_at=datetime.now(timezone.utc),
+            source=source_info,
+            executables=[exe_name],
+            active=True,
+        )
+
+        metadata.add_installation(installation)
+
+        if verbose:
+            print(f"Successfully installed {program} {version} to {bindir}")
+
+        # 11. Return installed executable paths
+        return [dest_exe]
+
+    def select(
+        self,
+        program: str,
+        version: str,
+        bindir: str | Path | None = None,
+        verbose: bool = False,
+    ) -> list[Path]:
+        """
+        Switch active version in bindir (re-copy from cache).
+
+        Parameters
+        ----------
+        program : str
+            Program name
+        version : str
+            Program version
+        bindir : str | Path, optional
+            Installation directory (default: use previous installation location)
+        verbose : bool
+            Print progress messages
+
+        Returns
+        -------
+        list[Path]
+            List of executable paths
+
+        Raises
+        ------
+        ProgramInstallationError
+            If version is not cached or bindir cannot be determined
+        """
+        import shutil
+
+        # Load metadata
+        metadata = InstallationMetadata(program)
+        if not metadata.load():
+            raise ProgramInstallationError(
+                f"No installation metadata found for {program}"
+            )
+
+        # Determine bindir
+        if bindir is None:
+            bindir_options = get_bindir_options(program)
+            if not bindir_options:
+                raise ProgramInstallationError(
+                    "No installation directory found. Specify bindir explicitly."
+                )
+            bindir = bindir_options[0]
+        else:
+            bindir = Path(bindir)
+
+        # Find installation with this version
+        installation = None
+        for inst in metadata.list_installations():
+            if inst.version == version:
+                installation = inst
+                break
+
+        if not installation:
+            raise ProgramInstallationError(
+                f"{program} version {version} is not installed. Run install() first."
+            )
+
+        # Check that binaries are cached
+        binary_dir = self.cache.get_binary_dir(program, version, installation.platform)
+        if not binary_dir.exists():
+            raise ProgramInstallationError(
+                f"Binaries for {program} {version} not found in cache. "
+                f"Run install() to download and cache."
+            )
+
+        # Copy executables to bindir
+        dest_paths = []
+        for exe_name in installation.executables:
+            src_exe = binary_dir / "bin" / exe_name  # Assuming bin/ subdir
+            if not src_exe.exists():
+                # Try without bin/ prefix
+                src_exe = binary_dir / exe_name
+
+            if not src_exe.exists():
+                raise ProgramInstallationError(
+                    f"Executable {exe_name} not found in cache at {binary_dir}"
+                )
+
+            dest_exe = bindir / exe_name
+
+            if verbose:
+                print(f"Copying {src_exe} to {dest_exe}...")
+
+            shutil.copy2(src_exe, dest_exe)
+
+            # Apply executable permissions on Unix
+            if os.name != "nt":
+                import stat
+
+                current_permissions = dest_exe.stat().st_mode
+                dest_exe.chmod(
+                    current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+                )
+
+            dest_paths.append(dest_exe)
+
+        # Update metadata (mark this version as active)
+        metadata.set_active_version(version, bindir)
+
+        if verbose:
+            print(f"Activated {program} {version} in {bindir}")
+
+        return dest_paths
+
+    def uninstall(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: str | Path | None = None,
+        all_versions: bool = False,
+        remove_cache: bool = False,
+        verbose: bool = False,
+    ) -> None:
+        """
+        Uninstall program executable(s).
+
+        Parameters
+        ----------
+        program : str
+            Program name
+        version : str, optional
+            Program version (required unless all_versions=True)
+        bindir : str | Path, optional
+            Installation directory (default: all installations)
+        all_versions : bool
+            Uninstall all versions from all bindirs
+        remove_cache : bool
+            Also remove from binaries/archives cache
+        verbose : bool
+            Print progress messages
+
+        Raises
+        ------
+        ProgramInstallationError
+            If uninstallation fails
+        """
+        # Load metadata
+        metadata = InstallationMetadata(program)
+        if not metadata.load():
+            if verbose:
+                print(f"No installation metadata found for {program}")
+            return
+
+        # Determine what to uninstall
+        if all_versions:
+            to_uninstall = metadata.list_installations()
+        else:
+            if version is None:
+                raise ValueError("Must specify version or use all_versions=True")
+
+            to_uninstall = []
+            for inst in metadata.list_installations():
+                if inst.version == version:
+                    if bindir is None or inst.bindir == Path(bindir):
+                        to_uninstall.append(inst)
+
+        if not to_uninstall:
+            if verbose:
+                print("No installations found to uninstall")
+            return
+
+        # Uninstall each
+        for inst in to_uninstall:
+            if verbose:
+                print(f"Uninstalling {program} {inst.version} from {inst.bindir}...")
+
+            # Remove executables from bindir
+            for exe_name in inst.executables:
+                exe_path = inst.bindir / exe_name
+                if exe_path.exists():
+                    exe_path.unlink()
+                    if verbose:
+                        print(f"  Removed {exe_path}")
+
+            # Remove from metadata
+            metadata.remove_installation(inst.version, inst.bindir)
+
+        # Optionally remove from cache
+        if remove_cache:
+            if verbose:
+                print(f"Removing {program} from cache...")
+
+            # Remove archives
+            archives_base = self.cache.archives_dir / program
+            if archives_base.exists():
+                import shutil
+
+                shutil.rmtree(archives_base)
+
+            # Remove binaries
+            binaries_base = self.cache.binaries_dir / program
+            if binaries_base.exists():
+                import shutil
+
+                shutil.rmtree(binaries_base)
+
+        if verbose:
+            print(f"Successfully uninstalled {program}")
+
+    def get_executable(
+        self,
+        program: str,
+        version: str | None = None,
+        bindir: str | Path | None = None,
+    ) -> Path:
+        """
+        Get path to installed executable.
+
+        Parameters
+        ----------
+        program : str
+            Program name
+        version : str, optional
+            Program version (default: active version in bindir)
+        bindir : str | Path, optional
+            Installation directory (default: search in priority order)
+
+        Returns
+        -------
+        Path
+            Path to executable
+
+        Raises
+        ------
+        ProgramInstallationError
+            If executable not found
+        """
+        # Load metadata
+        metadata = InstallationMetadata(program)
+        if not metadata.load():
+            raise ProgramInstallationError(f"Program {program} is not installed")
+
+        # Determine bindir
+        if bindir is None:
+            bindir_options = get_bindir_options(program)
+            if bindir_options:
+                bindir = bindir_options[0]
+        else:
+            bindir = Path(bindir)
+
+        # Find installation
+        for inst in metadata.list_installations():
+            if bindir and inst.bindir != bindir:
+                continue
+            if version and inst.version != version:
+                continue
+            if bindir and not inst.active:
+                continue
+
+            # Return first executable
+            if inst.executables:
+                exe_path = inst.bindir / inst.executables[0]
+                if exe_path.exists():
+                    return exe_path
+
+        raise ProgramInstallationError(
+            f"Executable for {program}"
+            + (f" version {version}" if version else "")
+            + (f" in {bindir}" if bindir else "")
+            + " not found"
+        )
+
+    def list_installed(
+        self, program: str | None = None
+    ) -> dict[str, list[ProgramInstallation]]:
+        """
+        List installed programs.
+
+        Parameters
+        ----------
+        program : str, optional
+            Specific program to list (default: all programs)
+
+        Returns
+        -------
+        dict[str, list[ProgramInstallation]]
+            Map of program names to installations
+        """
+        result: dict[str, list[ProgramInstallation]] = {}
+
+        # Find all metadata files
+        metadata_dir = self.cache.metadata_dir
+        if not metadata_dir.exists():
+            return result
+
+        for metadata_file in metadata_dir.glob("*.json"):
+            program_name = metadata_file.stem
+
+            # Filter if specific program requested
+            if program and program_name != program:
+                continue
+
+            metadata = InstallationMetadata(program_name)
+            if metadata.load():
+                installations = metadata.list_installations()
+                if installations:
+                    result[program_name] = installations
+
+        return result
+
+
+# ============================================================================
+# Default Manager and Convenience Functions
+# ============================================================================
+
+_DEFAULT_MANAGER = ProgramManager()
+"""Default program manager instance"""
+
+
+def install_program(
+    program: str,
+    version: str | None = None,
+    bindir: str | Path | None = None,
+    platform: str | None = None,
+    force: bool = False,
+    verbose: bool = False,
+) -> list[Path]:
+    """
+    Install a program binary.
+
+    Convenience wrapper for ProgramManager.install().
+
+    Parameters
+    ----------
+    program : str
+        Program name
+    version : str, optional
+        Program version (default: latest configured version)
+    bindir : str | Path, optional
+        Installation directory (default: auto-select)
+    platform : str, optional
+        Platform identifier (default: auto-detect)
+    force : bool
+        Force reinstallation even if already installed
+    verbose : bool
+        Print progress messages
+
+    Returns
+    -------
+    list[Path]
+        List of installed executable paths
+
+    Raises
+    ------
+    ProgramInstallationError
+        If installation fails
+    """
+    return _DEFAULT_MANAGER.install(
+        program=program,
+        version=version,
+        bindir=bindir,
+        platform=platform,
+        force=force,
+        verbose=verbose,
+    )
+
+
+def select_version(
+    program: str,
+    version: str,
+    bindir: str | Path | None = None,
+    verbose: bool = False,
+) -> list[Path]:
+    """
+    Switch active version in bindir (re-copy from cache).
+
+    Convenience wrapper for ProgramManager.select().
+
+    Parameters
+    ----------
+    program : str
+        Program name
+    version : str
+        Program version
+    bindir : str | Path, optional
+        Installation directory (default: use previous installation location)
+    verbose : bool
+        Print progress messages
+
+    Returns
+    -------
+    list[Path]
+        List of executable paths
+
+    Raises
+    ------
+    ProgramInstallationError
+        If version is not cached or bindir cannot be determined
+    """
+    return _DEFAULT_MANAGER.select(
+        program=program,
+        version=version,
+        bindir=bindir,
+        verbose=verbose,
+    )
+
+
+def uninstall_program(
+    program: str,
+    version: str | None = None,
+    bindir: str | Path | None = None,
+    all_versions: bool = False,
+    remove_cache: bool = False,
+    verbose: bool = False,
+) -> None:
+    """
+    Uninstall program executable(s).
+
+    Convenience wrapper for ProgramManager.uninstall().
+
+    Parameters
+    ----------
+    program : str
+        Program name
+    version : str, optional
+        Program version (required unless all_versions=True)
+    bindir : str | Path, optional
+        Installation directory (default: all installations)
+    all_versions : bool
+        Uninstall all versions from all bindirs
+    remove_cache : bool
+        Also remove from binaries/archives cache
+    verbose : bool
+        Print progress messages
+
+    Raises
+    ------
+    ProgramInstallationError
+        If uninstallation fails
+    """
+    return _DEFAULT_MANAGER.uninstall(
+        program=program,
+        version=version,
+        bindir=bindir,
+        all_versions=all_versions,
+        remove_cache=remove_cache,
+        verbose=verbose,
+    )
+
+
+def get_executable(
+    program: str,
+    version: str | None = None,
+    bindir: str | Path | None = None,
+) -> Path:
+    """
+    Get path to installed executable.
+
+    Convenience wrapper for ProgramManager.get_executable().
+
+    Parameters
+    ----------
+    program : str
+        Program name
+    version : str, optional
+        Program version (default: active version in bindir)
+    bindir : str | Path, optional
+        Installation directory (default: search in priority order)
+
+    Returns
+    -------
+    Path
+        Path to executable
+
+    Raises
+    ------
+    ProgramInstallationError
+        If executable not found
+    """
+    return _DEFAULT_MANAGER.get_executable(
+        program=program,
+        version=version,
+        bindir=bindir,
+    )
+
+
+def list_installed(program: str | None = None) -> dict[str, list[ProgramInstallation]]:
+    """
+    List installed programs.
+
+    Convenience wrapper for ProgramManager.list_installed().
+
+    Parameters
+    ----------
+    program : str, optional
+        Specific program to list (default: all programs)
+
+    Returns
+    -------
+    dict[str, list[ProgramInstallation]]
+        Map of program names to installations
+    """
+    return _DEFAULT_MANAGER.list_installed(program=program)
+
+
 def _try_best_effort_sync():
     """Attempt to sync registries on first import (best-effort, fails silently)."""
     global _SYNC_ATTEMPTED
@@ -576,13 +1906,27 @@ if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
 
 __all__ = [
     "_DEFAULT_CACHE",
+    "_DEFAULT_MANAGER",
     "DiscoveredProgramRegistry",
+    "InstallationMetadata",
     "ProgramBinary",
     "ProgramCache",
+    "ProgramInstallation",
+    "ProgramInstallationError",
+    "ProgramManager",
     "ProgramMetadata",
     "ProgramRegistry",
     "ProgramRegistryDiscoveryError",
     "ProgramSourceConfig",
     "ProgramSourceRepo",
+    "download_archive",
+    "extract_executables",
+    "get_bindir_options",
+    "get_executable",
+    "get_platform",
     "get_user_config_path",
+    "install_program",
+    "list_installed",
+    "select_version",
+    "uninstall_program",
 ]
