@@ -1,0 +1,28 @@
+# Programs API Bootstrap Configuration
+#
+# This file tells modflow-devtools where to find program registries.
+# Programs are discovered from GitHub release assets.
+#
+# Each source provides one or more programs (e.g., modflow6 provides mf6, zbud6, libmf6).
+# Program names are globally unique across all sources.
+
+[sources.modflow6]
+repo = "MODFLOW-ORG/modflow6"
+refs = ["6.6.3", "6.5.0"]
+# Provides: mf6, zbud6, mf5to6, libmf6
+
+[sources.modpath7]
+repo = "MODFLOW-ORG/modpath7"
+refs = ["7.2.001"]
+# Provides: mp7
+
+[sources.mt3d-usgs]
+repo = "MODFLOW-ORG/mt3d-usgs"
+refs = ["1.1.0"]
+# Provides: mt3dusgs
+
+[sources.executables]
+repo = "MODFLOW-ORG/executables"
+refs = ["latest"]
+# Consolidated repo for legacy programs
+# Provides: mf2005, mf2000, mfnwt, mfusg, mt3dms, etc.
