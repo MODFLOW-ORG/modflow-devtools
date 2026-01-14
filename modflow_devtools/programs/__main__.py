@@ -295,9 +295,7 @@ def main():
     )
 
     # Select command
-    select_parser = subparsers.add_parser(
-        "select", help="Switch active program version"
-    )
+    select_parser = subparsers.add_parser("select", help="Switch active program version")
     select_parser.add_argument(
         "program",
         help="Program name with version (program@version)",
@@ -330,9 +328,7 @@ def main():
     )
 
     # Which command
-    which_parser = subparsers.add_parser(
-        "which", help="Show path to installed executable"
-    )
+    which_parser = subparsers.add_parser("which", help="Show path to installed executable")
     which_parser.add_argument(
         "program",
         help="Program name",
@@ -347,9 +343,7 @@ def main():
     )
 
     # Installed command (list installed programs)
-    installed_parser = subparsers.add_parser(
-        "installed", help="List installed programs"
-    )
+    installed_parser = subparsers.add_parser("installed", help="List installed programs")
     installed_parser.add_argument(
         "program",
         nargs="?",

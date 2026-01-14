@@ -109,12 +109,8 @@ class TestProgramSourceConfig:
         # Create base config
         base = ProgramSourceConfig(
             sources={
-                "source1": ProgramSourceRepo(
-                    repo="org/repo1", name="source1", refs=["v1"]
-                ),
-                "source2": ProgramSourceRepo(
-                    repo="org/repo2", name="source2", refs=["v2"]
-                ),
+                "source1": ProgramSourceRepo(repo="org/repo1", name="source1", refs=["v1"]),
+                "source2": ProgramSourceRepo(repo="org/repo2", name="source2", refs=["v2"]),
             }
         )
 

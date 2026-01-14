@@ -194,9 +194,7 @@ class ProgramCache:
             with cache_file.open("wb") as f:
                 data = registry.model_dump(mode="python", exclude_none=True)
                 # Convert datetime to ISO string if present
-                if "generated_at" in data and isinstance(
-                    data["generated_at"], datetime
-                ):
+                if "generated_at" in data and isinstance(data["generated_at"], datetime):
                     data["generated_at"] = data["generated_at"].isoformat()
                 tomli_w.dump(data, f)
 
@@ -279,15 +277,9 @@ class ProgramSourceRepo(BaseModel):
     class SyncResult:
         """Result of a sync operation."""
 
-        synced: list[tuple[str, str]] = field(
-            default_factory=list
-        )  # [(source, ref), ...]
-        skipped: list[tuple[str, str]] = field(
-            default_factory=list
-        )  # [(ref, reason), ...]
-        failed: list[tuple[str, str]] = field(
-            default_factory=list
-        )  # [(ref, error), ...]
+        synced: list[tuple[str, str]] = field(default_factory=list)  # [(source, ref), ...]
+        skipped: list[tuple[str, str]] = field(default_factory=list)  # [(ref, reason), ...]
+        failed: list[tuple[str, str]] = field(default_factory=list)  # [(ref, error), ...]
 
     @dataclass
     class SyncStatus:
@@ -653,9 +645,7 @@ def _verify_hash(file_path: Path, expected_hash: str) -> bool:
         If hash format is invalid
     """
     if ":" not in expected_hash:
-        raise ValueError(
-            f"Invalid hash format: {expected_hash}. Expected 'algorithm:hexdigest'"
-        )
+        raise ValueError(f"Invalid hash format: {expected_hash}. Expected 'algorithm:hexdigest'")
 
     algorithm, expected_digest = expected_hash.split(":", 1)
     actual_digest = _compute_file_hash(file_path, algorithm)
@@ -741,8 +731,7 @@ def download_archive(
             if not _verify_hash(temp_dest, expected_hash):
                 temp_dest.unlink()
                 raise ProgramInstallationError(
-                    f"Downloaded file hash does not match expected hash: "
-                    f"{expected_hash}"
+                    f"Downloaded file hash does not match expected hash: {expected_hash}"
                 )
 
         # Move to final location
@@ -811,23 +800,17 @@ def extract_executables(
             with tarfile.open(archive, "r") as tf:
                 tf.extractall(dest_dir)
         else:
-            raise ProgramInstallationError(
-                f"Unsupported archive format: {archive.suffix}"
-            )
+            raise ProgramInstallationError(f"Unsupported archive format: {archive.suffix}")
 
         # Find the extracted executable
         exe_file = dest_dir / exe_path
         if not exe_file.exists():
-            raise ProgramInstallationError(
-                f"Executable not found in archive: {exe_path}"
-            )
+            raise ProgramInstallationError(f"Executable not found in archive: {exe_path}")
 
         # Apply executable permissions on Unix
         if os.name != "nt":  # Unix-like systems
             current_permissions = exe_file.stat().st_mode
-            exe_file.chmod(
-                current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-            )
+            exe_file.chmod(current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
         if verbose:
             print(f"Extracted: {exe_file}")
@@ -1045,10 +1028,7 @@ class InstallationMetadata:
         self.installations = [
             inst
             for inst in self.installations
-            if not (
-                inst.version == installation.version
-                and inst.bindir == installation.bindir
-            )
+            if not (inst.version == installation.version and inst.bindir == installation.bindir)
         ]
 
         # If marking as active, deactivate others in same bindir
@@ -1266,8 +1246,7 @@ class ProgramManager:
         if platform not in program_meta.binaries:
             available = ", ".join(program_meta.binaries.keys())
             raise ProgramInstallationError(
-                f"Binary not available for platform '{platform}'. "
-                f"Available platforms: {available}"
+                f"Binary not available for platform '{platform}'. Available platforms: {available}"
             )
 
         binary_meta = program_meta.binaries[platform]
@@ -1276,9 +1255,7 @@ class ProgramManager:
         if bindir is None:
             bindir_options = get_bindir_options(program)
             if not bindir_options:
-                raise ProgramInstallationError(
-                    "No writable installation directories found"
-                )
+                raise ProgramInstallationError("No writable installation directories found")
             bindir = bindir_options[0]  # Use first (highest priority)
             if verbose:
                 print(f"Selected installation directory: {bindir}")
@@ -1344,9 +1321,7 @@ class ProgramManager:
             import stat
 
             current_permissions = dest_exe.stat().st_mode
-            dest_exe.chmod(
-                current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-            )
+            dest_exe.chmod(current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
         # 10. Update metadata
         assert found_ref is not None  # Guaranteed by found_registry check above
@@ -1410,9 +1385,7 @@ class ProgramManager:
         # Load metadata
         metadata = InstallationMetadata(program)
         if not metadata.load():
-            raise ProgramInstallationError(
-                f"No installation metadata found for {program}"
-            )
+            raise ProgramInstallationError(f"No installation metadata found for {program}")
 
         # Determine bindir
         if bindir is None:
@@ -1470,9 +1443,7 @@ class ProgramManager:
                 import stat
 
                 current_permissions = dest_exe.stat().st_mode
-                dest_exe.chmod(
-                    current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-                )
+                dest_exe.chmod(current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
             dest_paths.append(dest_exe)
 
@@ -1642,9 +1613,7 @@ class ProgramManager:
             + " not found"
         )
 
-    def list_installed(
-        self, program: str | None = None
-    ) -> dict[str, list[ProgramInstallation]]:
+    def list_installed(self, program: str | None = None) -> dict[str, list[ProgramInstallation]]:
         """
         List installed programs.
 
