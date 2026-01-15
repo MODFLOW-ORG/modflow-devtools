@@ -106,7 +106,7 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   # Version-controlled models - downloads from remote and indexes subdirectory
-  python -m modflow_devtools.make_registry \\
+  python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\
     --mode version \\
@@ -115,7 +115,7 @@ Examples:
     --output .registry
 
   # Release asset models - downloads from remote
-  python -m modflow_devtools.make_registry \\
+  python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-examples \\
     --ref current \\
     --mode release \\
@@ -125,7 +125,7 @@ Examples:
     --output .registry
 
   # No path - downloads and indexes entire repo root
-  python -m modflow_devtools.make_registry \\
+  python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\
     --mode version \\
@@ -133,7 +133,7 @@ Examples:
     --output .registry
 
   # Using local checkout (if /path/to/... exists locally)
-  python -m modflow_devtools.make_registry \\
+  python -m modflow_devtools.models.make_registry \\
     --path /path/to/modflow6-testmodels/mf6 \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\

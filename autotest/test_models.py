@@ -559,7 +559,7 @@ class TestMakeRegistry:
             cmd = [
                 sys.executable,
                 "-m",
-                "modflow_devtools.make_registry",
+                "modflow_devtools.models.make_registry",
                 "--mode",
                 mode,
                 "--repo",

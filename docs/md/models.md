@@ -99,7 +99,7 @@ The `make_registry.py` script is responsible for generating a registry text file
 
 The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
 
-The script can be executed with `python -m modflow_devtools.make_registry`. It accepts a single positional argument, specifying the base directory containing model directories. It accepts two named arguments:
+The script can be executed with `python -m modflow_devtools.models.make_registry`. It accepts a single positional argument, specifying the base directory containing model directories. It accepts two named arguments:
 
 - `--append` or `-a`: If specified, the script will append to the existing registry file instead of overwriting it.
 - `--url` or `-u`: Specifies the base URL for the registry file. If not provided, the default base URL is used.
@@ -109,10 +109,10 @@ The script can be executed with `python -m modflow_devtools.make_registry`. It a
 For example, to create the "default" registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
 
 ```shell
-python -m modflow_devtools.make_registry -p ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
-python -m modflow_devtools.make_registry -p ../modflow6-testmodels/mf6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
-python -m modflow_devtools.make_registry -p ../modflow6-largetestmodels --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
-python -m modflow_devtools.make_registry -p ../modflow6-testmodels/mf5to6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
+python -m modflow_devtools.models.make_registry -p ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
+python -m modflow_devtools.models.make_registry -p ../modflow6-testmodels/mf6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
+python -m modflow_devtools.models.make_registry -p ../modflow6-largetestmodels --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
+python -m modflow_devtools.models.make_registry -p ../modflow6-testmodels/mf5to6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
 ```
 
-As a shortcut to create the default registry, the script can be run with no arguments: `python -m modflow_devtools.make_registry`.
+As a shortcut to create the default registry, the script can be run with no arguments: `python -m modflow_devtools.models.make_registry`.

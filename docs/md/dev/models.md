@@ -390,7 +390,7 @@ Required steps in source model repositories include:
    **For version-controlled models** (files in git):
    ```bash
    # Downloads from remote and indexes subdirectory (recommended)
-   python -m modflow_devtools.make_registry \
+   python -m modflow_devtools.models.make_registry \
      --mode version \
      --repo MODFLOW-ORG/modflow6-testmodels \
      --ref master \
@@ -402,7 +402,7 @@ Required steps in source model repositories include:
    **For release asset models** (zip published with releases):
    ```bash
    # Downloads from remote and indexes subdirectory (recommended)
-   python -m modflow_devtools.make_registry \
+   python -m modflow_devtools.models.make_registry \
      --mode release \
      --repo MODFLOW-ORG/modflow6-examples \
      --ref current \
@@ -774,7 +774,7 @@ The `make_registry` tool uses a mode-based interface with **remote-first operati
 **Version-controlled models** (downloads from remote):
 ```bash
 # Downloads repo and indexes subdirectory
-python -m modflow_devtools.make_registry \
+python -m modflow_devtools.models.make_registry \
   --mode version \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
@@ -786,7 +786,7 @@ python -m modflow_devtools.make_registry \
 **Release asset models** (downloads from remote):
 ```bash
 # Downloads repo and indexes subdirectory
-python -m modflow_devtools.make_registry \
+python -m modflow_devtools.models.make_registry \
   --mode release \
   --repo MODFLOW-ORG/modflow6-examples \
   --ref current \
@@ -799,7 +799,7 @@ python -m modflow_devtools.make_registry \
 **No path - indexes entire repo**:
 ```bash
 # Downloads repo and indexes from root
-python -m modflow_devtools.make_registry \
+python -m modflow_devtools.models.make_registry \
   --mode version \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
@@ -810,7 +810,7 @@ python -m modflow_devtools.make_registry \
 **Local testing** (only if path exists locally):
 ```bash
 # Uses existing local checkout
-python -m modflow_devtools.make_registry \
+python -m modflow_devtools.models.make_registry \
   --mode version \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
@@ -855,7 +855,7 @@ This allows testing against forks without modifying the bundled config!
 ```yaml
 - name: Generate registry
   run: |
-    python -m modflow_devtools.make_registry \
+    python -m modflow_devtools.models.make_registry \
       --mode version \
       --repo MODFLOW-ORG/modflow6-testmodels \
       --ref ${{ github.ref_name }} \
@@ -874,7 +874,7 @@ This allows testing against forks without modifying the bundled config!
 ```yaml
 - name: Generate registry
   run: |
-    python -m modflow_devtools.make_registry \
+    python -m modflow_devtools.models.make_registry \
       --mode release \
       --repo MODFLOW-ORG/modflow6-examples \
       --ref ${{ github.ref_name }} \
