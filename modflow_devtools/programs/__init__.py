@@ -21,10 +21,8 @@ Example usage:
 """
 
 import hashlib
-import platform as pl
-import shutil
-from collections.abc import Callable
 import os
+import shutil
 from dataclasses import dataclass, field
 from datetime import datetime
 from os import PathLike
@@ -614,7 +612,6 @@ def _compute_file_hash(file_path: Path, algorithm: str = "sha256") -> str:
     str
         Hex digest of file hash
     """
-    import hashlib
 
     hash_obj = hashlib.new(algorithm)
     with file_path.open("rb") as f:
