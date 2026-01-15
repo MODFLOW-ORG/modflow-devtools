@@ -101,25 +101,13 @@ Make `modflow-devtools` responsible for:
 - Discovering remote registries at install time or on demand
 - Caching registry metadata locally
 - Exposing a synchronized view of available programs
-- Installing pre-built program binaries
+- Installing program binaries
 
-Program maintainers can publish metadata as release assets, either manually or in CI.
+Program maintainers can publish registries as release assets, either manually or in CI.
 
 ## Architecture
 
 The Programs API mirrors the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
-
-Following the [shared design patterns](patterns.md), the Programs API uses a **consolidated single-module implementation** in `modflow_devtools/programs/__init__.py`. This object-oriented approach keeps all related functionality together (cache management, registry classes, discovery, sync) for easier maintenance and comprehension.
-
-**Implementation approach**: Following the Models API's successful streamlined design, the Programs API should consolidate all code in a single `modflow_devtools/programs/__init__.py` file with clear class-based separation:
-- `ProgramCache`: Cache management (archives, binaries, metadata)
-- `ProgramSourceRepo`: Source repository with discovery/sync methods
-- `ProgramSourceConfig`: Configuration container from bootstrap file
-- `ProgramRegistry`: Pydantic data model for registry structure
-- `PoochProgramRegistry`: Remote fetching with Pooch
-- `DiscoveredProgramRegistry`: Discovery result
-
-This single-module OO design is easier to follow and maintain than splitting across separate cache/discovery/sync modules.
 
 ### Bootstrap file
 
