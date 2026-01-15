@@ -32,7 +32,7 @@ def pytest_generate_tests(metafunc):
         assert all(
             (TOML_DIR / f"{dfn.stem}.toml").is_file()
             for dfn in dfn_paths
-            if "common" not in dfn.stem
+            if dfn.stem not in ["common", "flopy"]
         )
         toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
