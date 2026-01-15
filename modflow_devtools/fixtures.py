@@ -44,9 +44,7 @@ def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 
 @pytest.fixture(scope="class")
 def class_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
-    assert request.cls is not None, (
-        "Class-scoped temp dir fixture must be used on class"
-    )
+    assert request.cls is not None, "Class-scoped temp dir fixture must be used on class"
     temp = Path(tmpdir_factory.mktemp(request.cls.__name__))
     yield temp
 
@@ -333,9 +331,7 @@ def pytest_generate_tests(metafunc):
 
         def group_examples(namefile_paths) -> dict[str, list[Path]]:
             d = OrderedDict()
-            for name, paths in groupby(
-                namefile_paths, key=example_name_from_namfile_path
-            ):
+            for name, paths in groupby(namefile_paths, key=example_name_from_namfile_path):
                 # sort alphabetically (gwf < gwt)
                 nfpaths = sorted(paths)
 
@@ -350,9 +346,7 @@ def pytest_generate_tests(metafunc):
         def get_examples():
             # find MODFLOW 6 namfiles
             examples_path = repo_path / "examples"
-            namfiles = (
-                list(examples_path.rglob("mfsim.nam")) if examples_path.is_dir() else []
-            )
+            namfiles = list(examples_path.rglob("mfsim.nam")) if examples_path.is_dir() else []
 
             # group by scenario
             examples = group_examples(namfiles)
@@ -380,15 +374,11 @@ def pytest_generate_tests(metafunc):
                             if pkg in ftypes:
                                 filtered.append(name)
                                 break
-                examples = {
-                    name: nfps for name, nfps in examples.items() if name in filtered
-                }
+                examples = {name: nfps for name, nfps in examples.items() if name in filtered}
 
             # exclude mf6gwf and mf6gwt subdirs
             examples = {
-                name: nfps
-                for name, nfps in examples.items()
-                if name not in ["mf6gwf", "mf6gwt"]
+                name: nfps for name, nfps in examples.items() if name not in ["mf6gwf", "mf6gwt"]
             }
 
             return examples

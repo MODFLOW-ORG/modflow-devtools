@@ -103,17 +103,40 @@ Program maintainers can publish metadata as release assets, either manually or i
 
 The Programs API will mirror the Models API architecture with adaptations for program-specific concerns like platform-specific binary distributions.
 
+**Implementation approach**: Following the Models API's successful streamlined design, the Programs API should consolidate all code in a single `modflow_devtools/programs/__init__.py` file with clear class-based separation:
+- `ProgramCache`: Cache management (archives, binaries, metadata)
+- `ProgramSourceRepo`: Source repository with discovery/sync methods
+- `ProgramSourceConfig`: Configuration container from bootstrap file
+- `ProgramRegistry`: Pydantic data model for registry structure
+- `PoochProgramRegistry`: Remote fetching with Pooch
+- `DiscoveredProgramRegistry`: Discovery result
+
+This single-module OO design is easier to follow and maintain than splitting across separate cache/discovery/sync modules.
+
 ### Bootstrap file
 
-The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/bootstrap.toml` and distributed with the package.
+The **bootstrap** file tells `modflow-devtools` where to look for programs. This file will be checked into the repository at `modflow_devtools/programs/programs.toml` and distributed with the package.
 
 #### Bootstrap file contents
 
-At the top level, the bootstrap file consists of a table of `sources`, each describing a repository distributing one or more programs. 
+At the top level, the bootstrap file consists of a table of `sources`, each describing a repository distributing one or more programs.
 
 Each source entry has:
 - `repo`: Repository identifier (owner/name)
 - `refs`: List of release tags to sync by default
+
+#### User config overlay
+
+Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
+- Linux/macOS: `~/.config/modflow-devtools/programs.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/programs.toml`
+
+The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config, allowing users to:
+- Add custom program repositories
+- Point to forks of existing repositories (useful for testing)
+- Override default refs for existing sources
+
+**Implementation note**: The user config path logic (`get_user_config_path("programs")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
 
 #### Sample bootstrap file
 
@@ -146,13 +169,13 @@ Each source repository must make a **program registry** file available. Program 
 
 #### Registry file format
 
-Registry files shall be named `registry.toml` and contain, at minimum, a dictionary `programs` enumerating programs provided by the source repository. For instance:
+Registry files shall be named **`programs.toml`** (not `registry.toml` - the specific naming distinguishes it from the Models and DFNs registries) and contain, at minimum, a dictionary `programs` enumerating programs provided by the source repository. For instance:
 
 ```toml
-# Metadata
+# Metadata (top-level)
+schema_version = "1.0"
 generated_at = "2025-12-29T10:30:00Z"
 devtools_version = "2.0.0"
-schema_version = "1.0"
 
 [programs.mf6]
 version = "6.6.3"
@@ -191,11 +214,13 @@ The top-level metadata is optional; if a `schema_version` is not provided it wil
 
 Platform identifiers are as defined in the [modflow-devtools OS tag specification](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html): `linux`, `mac`, `win64`.
 
-**Binary asset URLs**: The `asset` field contains just the filename. Full download URLs are constructed as:
+**Binary asset URLs**: The `asset` field contains just the filename (no full URL stored). Full download URLs are constructed dynamically at runtime from bootstrap metadata as:
 ```
 https://github.com/{repo}/releases/download/{tag}/{asset}
 ```
 For example: `https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/mf6.6.3_linux.zip`
+
+This dynamic URL construction allows users to test against forks by simply changing the bootstrap configuration.
 
 #### Registries vs. installation metadata
 
@@ -229,17 +254,17 @@ While registries are currently tied to GitHub releases (which is pragmatic and a
 
 ### Registry discovery
 
-Program registries are published as GitHub release assets alongside binary distributions. Registry files assets must be named `registry.toml`.
+Program registries are published as GitHub release assets alongside binary distributions. Registry file assets must be named **`programs.toml`**.
 
 Registry discovery URL pattern:
 ```
-https://github.com/{org}/{repo}/releases/download/{tag}/registry.toml
+https://github.com/{org}/{repo}/releases/download/{tag}/programs.toml
 ```
 
 Examples:
 ```
-https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/registry.toml
-https://github.com/MODFLOW-ORG/modpath7/releases/download/7.2.001/registry.toml
+https://github.com/MODFLOW-ORG/modflow6/releases/download/6.6.3/programs.toml
+https://github.com/MODFLOW-ORG/modpath7/releases/download/7.2.001/programs.toml
 ```
 
 #### Registry discovery procedure
@@ -247,7 +272,7 @@ https://github.com/MODFLOW-ORG/modpath7/releases/download/7.2.001/registry.toml
 At sync time, `modflow-devtools` discovers remote registries for each configured source and release tag:
 
 1. **Check for release tag**: Look for a GitHub release with the specified tag
-2. **Fetch registry asset**: Download `registry.toml` from the release assets
+2. **Fetch registry asset**: Download `programs.toml` from the release assets
 3. **Failure cases**:
    - If release tag doesn't exist:
      ```python
@@ -255,10 +280,10 @@ At sync time, `modflow-devtools` discovers remote registries for each configured
          f"Release tag '{tag}' not found for {repo}"
      )
      ```
-   - If release exists but lacks `registry.toml` asset:
+   - If release exists but lacks `programs.toml` asset:
      ```python
      ProgramRegistryDiscoveryError(
-         f"Program registry file 'registry.toml' not found as release asset "
+         f"Program registry file 'programs.toml' not found as release asset "
          f"for {repo}@{tag}"
      )
      ```
@@ -550,33 +575,21 @@ Examples:
 
 ### Registry classes
 
-#### ProgramRegistry (abstract base)
+The registry class hierarchy is based on a Pydantic `ProgramRegistry` base class:
 
-Similar to `ModelRegistry`, defines the contract:
+**`ProgramRegistry` (base class)**:
+- Pydantic model with `programs` field (dict of program metadata)
+- Optional `meta` field for registry metadata
+- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
+- Program names are globally unique across all sources
 
-```python
-class ProgramRegistry(ABC):
-    @property
-    @abstractmethod
-    def programs(self) -> dict[str, Program]:
-        """Get all programs in registry."""
-        pass
+**`RemoteRegistry(ProgramRegistry)`**:
+- Handles remote registry discovery and caching
+- Loads from cached registry files or syncs from remote
+- Associated with a single source and release tag
+- Constructs binary download URLs dynamically from bootstrap metadata (repo, tag) + asset filename
 
-    @abstractmethod
-    def get_program(self, name: str) -> Program:
-        """Get a specific program."""
-        pass
-
-    @abstractmethod
-    def install(self, name: str, **kwargs) -> Path:
-        """Install a program and return executable path."""
-        pass
-```
-
-#### RemoteRegistry
-
-Handles remote registry discovery and caching:
-
+Example:
 ```python
 class RemoteRegistry(ProgramRegistry):
     def __init__(self, source: str, ref: str):
@@ -592,24 +605,10 @@ class RemoteRegistry(ProgramRegistry):
         self._sync()
 ```
 
-#### MergedRegistry
-
-Compositor for multiple registries:
-
-```python
-class MergedRegistry(ProgramRegistry):
-    def __init__(self, registries: list[ProgramRegistry]):
-        self.registries = registries
-
-    @property
-    def programs(self) -> dict[str, Program]:
-        # Merge programs from all registries
-        # Later registries override earlier ones
-        merged = {}
-        for registry in self.registries:
-            merged.update(registry.programs)
-        return merged
-```
+**Design decisions**:
+- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
+- **Dynamic URL construction** - binary download URLs constructed at runtime, not stored in registry
+- **No `MergedRegistry`** - program names are globally unique, so merging is less critical than for Models API. Simple merge functions (like `get_all_programs()`) can be used instead if needed.
 
 ### Module-level API
 
@@ -659,19 +658,24 @@ Since programs will publish pre-built binaries, pymake is no longer needed for b
 
 Core components to implement:
 
-1. **Bootstrap & Schema**
-   - Create bootstrap file (`modflow_devtools/programs/bootstrap.toml`)
-   - Define registry schema with Pydantic validation (`modflow_devtools/programs/schema.py`)
+1. **Consolidated Module Design** (following Models API pattern)
+   - Single `modflow_devtools/programs/__init__.py` with all classes
+   - `ProgramCache` class for cache management
+   - `ProgramSourceRepo` class with discover/sync/is_synced methods
+   - `ProgramSourceConfig` class for bootstrap configuration
+   - `ProgramRegistry` Pydantic model for data
+   - `PoochProgramRegistry` for remote fetching
+   - `DiscoveredProgramRegistry` dataclass for discovery results
+   - Object-oriented API with methods on classes
 
-2. **Registry Classes**
-   - Implement `ProgramRegistry` abstract base class
-   - Create `RemoteRegistry` for remote discovery and caching
-   - Implement `MergedRegistry` compositor
+2. **Bootstrap & Schema**
+   - Create bootstrap file (`modflow_devtools/programs/programs.toml`)
+   - Define registry schema with Pydantic validation (in `__init__.py`)
 
-3. **Discovery & Sync**
-   - Implement cache directory utilities (`modflow_devtools/programs/cache.py`)
-   - Add release asset discovery logic (`modflow_devtools/programs/discovery.py`)
-   - Implement sync functionality (`modflow_devtools/programs/sync.py`)
+3. **Registry Classes** (all in `__init__.py`)
+   - Implement `ProgramRegistry` Pydantic base class
+   - Create `ProgramSourceRepo` for discovery and sync
+   - Add installation tracking via `ProgramCache`
 
 4. **Installation System**
    - Implement binary distribution download and extraction
@@ -710,7 +714,7 @@ The Programs API deliberately mirrors the Models API architecture:
 
 | Aspect | Models API | Programs API |
 |--------|-----------|--------------|
-| **Bootstrap file** | `models/bootstrap.toml` | `programs/bootstrap.toml` |
+| **Bootstrap file** | `models/models.toml` | `programs/programs.toml` |
 | **Registry format** | TOML with files/models/examples | TOML with programs/binaries |
 | **Discovery** | Release assets or version control | Release assets only |
 | **Caching** | `~/.cache/modflow-devtools/models` | `~/.cache/modflow-devtools/programs` |
@@ -865,6 +869,23 @@ Users of get-modflow should be able to migrate smoothly:
 1. **Compatible metadata**: Programs API can read get-modflow's JSON to discover existing installations
 3. **Import existing installations**: Detect executables installed by get-modflow and import metadata
 4. **Gradual transition**: Both tools can coexist during migration period
+
+## Cross-API Consistency
+
+The Programs API follows the same design patterns as the Models and DFNs APIs for consistency. See the **Cross-API Consistency** section in `models.md` for full details.
+
+**Key shared patterns**:
+- Pydantic-based registry classes (not ABCs)
+- Dynamic URL construction (URLs built at runtime, not stored in registries)
+- Bootstrap and user config files with identical naming (`programs.toml`), distinguished by location
+- Top-level `schema_version` metadata field
+- Distinctly named registry file (`programs.toml`)
+- Shared config utility: `get_user_config_path("programs")`
+
+**Unique to Programs API**:
+- Discovery via release assets only (not version control)
+- Installation capabilities (binary downloads, version management)
+- No `MergedRegistry` (program names globally unique)
 
 ## Design Decisions
 

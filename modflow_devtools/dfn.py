@@ -249,16 +249,11 @@ class Dfn(TypedDict):
                     subs = literal_eval(subs)
                     cmmn = common.get(key, None)
                     if cmmn is None:
-                        warn(
-                            "Can't substitute description text, "
-                            f"common variable not found: {key}"
-                        )
+                        warn(f"Can't substitute description text, common variable not found: {key}")
                     else:
                         descr = cmmn.get("description", "")
                         if any(subs):
-                            descr = descr.replace("\\", "").replace(
-                                "{#1}", subs["{#1}"]
-                            )
+                            descr = descr.replace("\\", "").replace("{#1}", subs["{#1}"])
                 field["description"] = descr
 
         # add the final parameter
@@ -331,8 +326,7 @@ class Dfn(TypedDict):
 
                     # explicit record
                     if n_item_names == 1 and (
-                        item_types[0].startswith("record")
-                        or item_types[0].startswith("keystring")
+                        item_types[0].startswith("record") or item_types[0].startswith("keystring")
                     ):
                         return _convert_field(next(iter(flat.getlist(item_names[0]))))
 
@@ -343,9 +337,7 @@ class Dfn(TypedDict):
                             type="record",
                             block=block,
                             fields=_fields(),
-                            description=description.replace(
-                                "is the list of", "is the record of"
-                            ),
+                            description=description.replace("is the list of", "is the record of"),
                             reader=reader,
                             **field,
                         )
@@ -358,19 +350,13 @@ class Dfn(TypedDict):
                     }
                     first = next(iter(fields.values()))
                     single = len(fields) == 1
-                    item_type = (
-                        "keystring"
-                        if single and "keystring" in first["type"]
-                        else "record"
-                    )
+                    item_type = "keystring" if single and "keystring" in first["type"] else "record"
                     return Field(
                         name=first["name"] if single else _name,
                         type=item_type,
                         block=block,
                         fields=first["fields"] if single else fields,
-                        description=description.replace(
-                            "is the list of", f"is the {item_type} of"
-                        ),
+                        description=description.replace("is the list of", f"is the {item_type} of"),
                         reader=reader,
                         **field,
                     )
@@ -390,11 +376,7 @@ class Dfn(TypedDict):
                     fields = {}
                     for name in names:
                         v = flat.get(name, None)
-                        if (
-                            not v
-                            or not v.get("in_record", False)
-                            or v["type"].startswith("record")
-                        ):
+                        if not v or not v.get("in_record", False) or v["type"].startswith("record"):
                             continue
                         fields[name] = v
                     return fields
@@ -490,11 +472,7 @@ class Dfn(TypedDict):
 
         def _sln() -> Sln | None:
             sln = next(
-                iter(
-                    m
-                    for m in meta
-                    if isinstance(m, str) and m.startswith("solution_package")
-                ),
+                iter(m for m in meta if isinstance(m, str) and m.startswith("solution_package")),
                 None,
             )
             if sln:
@@ -505,9 +483,7 @@ class Dfn(TypedDict):
         def _sub() -> Ref | None:
             def _parent():
                 line = next(
-                    iter(
-                        m for m in meta if isinstance(m, str) and m.startswith("parent")
-                    ),
+                    iter(m for m in meta if isinstance(m, str) and m.startswith("parent")),
                     None,
                 )
                 if not line:
@@ -517,9 +493,7 @@ class Dfn(TypedDict):
 
             def _rest():
                 line = next(
-                    iter(
-                        m for m in meta if isinstance(m, str) and m.startswith("subpac")
-                    ),
+                    iter(m for m in meta if isinstance(m, str) and m.startswith("subpac")),
                     None,
                 )
                 if not line:
@@ -586,9 +560,7 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v1(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [
-            p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
-        ]
+        paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]]
 
         # load common variables
         common_path: Path | None = dfndir / "common.dfn"
@@ -618,9 +590,7 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v2(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [
-            p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
-        ]
+        paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]]
         dfns: Dfns = {}
         for path in paths:
             with path.open(mode="rb") as f:
@@ -640,9 +610,7 @@ class Dfn(TypedDict):
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
 
-def get_dfns(
-    owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False
-):
+def get_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False):
     """Fetch definition files from the MODFLOW 6 repository."""
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
     if verbose:
@@ -655,6 +623,4 @@ def get_dfns(
             raise ValueError(f"Missing proj dir in {dl_path}, found {contents}")
         if verbose:
             print("Copying dfns from download dir to output dir")
-        shutil.copytree(
-            proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True
-        )
+        shutil.copytree(proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True)

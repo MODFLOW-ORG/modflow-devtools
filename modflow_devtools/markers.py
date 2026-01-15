@@ -25,8 +25,7 @@ def requires_exe(*exes):
     missing = {exe for exe in exes if not has_exe(exe)}
     return pytest.mark.skipif(
         missing,
-        reason=f"missing executable{'s' if len(missing) != 1 else ''}: "
-        + ", ".join(missing),
+        reason=f"missing executable{'s' if len(missing) != 1 else ''}: " + ", ".join(missing),
     )
 
 
@@ -42,17 +41,14 @@ def requires_python(version, bound="lower"):
     elif bound == "exact":
         return py_ver == py_tgt
     else:
-        return ValueError(
-            f"Invalid bound type: {bound} (use 'upper', 'lower', or 'exact')"
-        )
+        return ValueError(f"Invalid bound type: {bound} (use 'upper', 'lower', or 'exact')")
 
 
 def requires_package(*pkgs, name_map: dict[str, str] | None = None):
     missing = {pkg for pkg in pkgs if not has_pkg(pkg, strict=True, name_map=name_map)}
     return pytest.mark.skipif(
         missing,
-        reason=f"missing package{'s' if len(missing) != 1 else ''}: "
-        + ", ".join(missing),
+        reason=f"missing package{'s' if len(missing) != 1 else ''}: " + ", ".join(missing),
     )
 
 
@@ -77,9 +73,7 @@ def requires_branch(branch):
 
 def excludes_branch(branch):
     current = get_current_branch()
-    return pytest.mark.skipif(
-        current == branch, reason=f"can't run on branch: {branch}"
-    )
+    return pytest.mark.skipif(current == branch, reason=f"can't run on branch: {branch}")
 
 
 no_parallel = pytest.mark.skipif(

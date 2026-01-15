@@ -42,11 +42,7 @@ class Program:
             if extra_keys := dkeys - keys:
                 raise ValueError(f"Unrecognized keys in program data: {extra_keys}")
         return cls(
-            **{
-                k.strip(): try_literal_eval(v.strip())
-                for k, v in d.items()
-                if k.strip() in keys
-            }
+            **{k.strip(): try_literal_eval(v.strip()) for k, v in d.items() if k.strip() in keys}
         )
 
 

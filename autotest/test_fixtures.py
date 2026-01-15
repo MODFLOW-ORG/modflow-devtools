@@ -55,8 +55,7 @@ def test_function_scoped_tmpdir_slash_in_name(function_tmpdir, name):
     )
     assert (
         f"{inspect.currentframe().f_code.co_name}_{replaced1}_" in function_tmpdir.stem
-        or f"{inspect.currentframe().f_code.co_name}_{replaced2}_"
-        in function_tmpdir.stem
+        or f"{inspect.currentframe().f_code.co_name}_{replaced2}_" in function_tmpdir.stem
     )
 
 
@@ -157,9 +156,7 @@ def test_keep_class_scoped_tmpdir(tmp_path, arg):
         tmp_path,
     ]
     assert pytest.main(args) == ExitCode.OK
-    assert (
-        tmp_path / f"{TestKeepClassScopedTmpdirInner.__name__}0" / test_keep_fname
-    ).is_file()
+    assert (tmp_path / f"{TestKeepClassScopedTmpdirInner.__name__}0" / test_keep_fname).is_file()
 
 
 @pytest.mark.parametrize("arg", ["--keep", "-K"])

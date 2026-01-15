@@ -1,0 +1,34 @@
+# Bootstrap metadata for MODFLOW model repositories
+#
+# This file tells modflow-devtools where to find remote model repositories
+# and which refs to sync by default.
+#
+# The `refs` list indicates default refs to sync at install time. Users can
+# request synchronization to any valid git ref (branch, tag, or commit hash)
+# via the CLI or API.
+#
+# USER CONFIGURATION:
+# To add custom sources or override these defaults, create a user config at:
+#   Linux/macOS: ~/.config/modflow-devtools/models.toml
+#   Windows: %APPDATA%/modflow-devtools/models.toml
+#
+# User config sources will override/extend the bundled sources below.
+# Example user config:
+#   [sources.my-custom-models]
+#   repo = "username/my-models"
+#   refs = ["main"]
+
+[sources.modflow6-testmodels]
+repo = "MODFLOW-ORG/modflow6-testmodels"
+name = "mf6/test"
+refs = ["develop", "master"]
+
+[sources.modflow6-examples]
+repo = "MODFLOW-ORG/modflow6-examples"
+name = "mf6/example"
+refs = ["current"]
+
+[sources.modflow6-largetestmodels]
+repo = "MODFLOW-ORG/modflow6-largetestmodels"
+name = "mf6/large"
+refs = ["develop", "master"]

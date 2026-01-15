@@ -78,6 +78,7 @@ models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
@@ -123,6 +124,7 @@ models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
@@ -164,7 +166,7 @@ ignore-words-list = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 
 [tool.ruff.lint]
 select = [
