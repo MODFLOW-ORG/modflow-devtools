@@ -6,9 +6,7 @@ from tempfile import TemporaryDirectory
 from modflow_devtools.download import download_and_unzip
 
 
-def fetch_dfns(
-    owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False
-):
+def fetch_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False):
     """Fetch definition files from the MODFLOW 6 repository."""
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
     if verbose:
@@ -21,9 +19,7 @@ def fetch_dfns(
             raise ValueError(f"Missing proj dir in {dl_path}, found {contents}")
         if verbose:
             print("Copying dfns from download dir to output dir")
-        copytree(
-            proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True
-        )
+        copytree(proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True)
 
 
 get_dfns = fetch_dfns  # alias for backward compatibility

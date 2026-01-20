@@ -46,8 +46,7 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
         _convert(dfn, outdir / f"{inpath.stem}.toml")
     else:
         dfns = {
-            name: map(dfn, schema_version=schema_version)
-            for name, dfn in load_flat(inpath).items()
+            name: map(dfn, schema_version=schema_version) for name, dfn in load_flat(inpath).items()
         }
         tree = to_tree(dfns)
         flat = to_flat(tree)

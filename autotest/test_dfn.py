@@ -108,11 +108,7 @@ def test_convert(function_tmpdir):
 
     if gwf := models.get("gwf-nam", None):
         pkgs = gwf.children or {}
-        pkgs = {
-            k: v
-            for k, v in pkgs.items()
-            if k.startswith("gwf-") and isinstance(v, dict)
-        }
+        pkgs = {k: v for k, v in pkgs.items() if k.startswith("gwf-") and isinstance(v, dict)}
         assert len(pkgs) > 0
         if dis := pkgs.get("gwf-dis", None):
             assert dis.name == "gwf-dis"

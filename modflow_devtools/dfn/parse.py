@@ -158,10 +158,7 @@ def parse_dfn(f, common: dict | None = None) -> tuple[OMD, list[str]]:
                 subs = literal_eval(subs)
                 cmmn = common.get(key, None)
                 if cmmn is None:
-                    warn(
-                        "Can't substitute description text, "
-                        f"common variable not found: {key}"
-                    )
+                    warn(f"Can't substitute description text, common variable not found: {key}")
                 else:
                     descr = cmmn["description"]
                     if any(subs):

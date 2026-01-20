@@ -3,7 +3,8 @@ MODFLOW 6 definition file tools.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, replace
+from collections.abc import Iterator, Mapping
+from dataclasses import asdict, dataclass, field, replace
 from itertools import groupby
 from os import PathLike
 from pathlib import Path
@@ -33,15 +34,25 @@ from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
+    # Core data models
     "Block",
     "Blocks",
     "Dfn",
     "Dfns",
+    "DfnSpec",
     "Field",
     "FieldV1",
     "FieldV2",
     "Fields",
     "Ref",
+    # Registry classes
+    "DfnRegistry",
+    "DfnRegistryDiscoveryError",
+    "DfnRegistryError",
+    "DfnRegistryNotFoundError",
+    "LocalDfnRegistry",
+    "RemoteDfnRegistry",
+    # Loading and mapping functions
     "block_sort_key",
     "is_valid",
     "load",
@@ -50,6 +61,13 @@ __all__ = [
     "map",
     "to_flat",
     "to_tree",
+    # Registry functions
+    "get_dfn",
+    "get_dfn_path",
+    "get_registry",
+    "get_sync_status",
+    "list_components",
+    "sync_dfns",
 ]
 
 
@@ -145,6 +163,134 @@ class Dfn:
         return cls(**data)
 
 
+@dataclass
+class DfnSpec(Mapping):
+    """
+    Full MODFLOW 6 input specification with hierarchical structure and flat dict access.
+
+    The specification maintains a single canonical hierarchical representation via
+    the `root` property (simulation component with nested children), while also
+    providing flat dict-like access to any component by name via the Mapping protocol.
+
+    Parameters
+    ----------
+    schema_version : Version
+        The schema version of the specification (e.g., "1", "1.1", "2").
+    root : Dfn
+        The root component (simulation) with hierarchical children populated.
+
+    Examples
+    --------
+    >>> spec = DfnSpec.load("/path/to/dfns")
+    >>> spec.schema_version
+    Version('2')
+    >>> spec.root.name
+    'sim-nam'
+    >>> spec["gwf-chd"]  # Flat access by component name
+    Dfn(name='gwf-chd', ...)
+    >>> list(spec.keys())[:3]
+    ['sim-nam', 'sim-tdis', 'gwf-nam']
+    """
+
+    schema_version: Version
+    root: "Dfn"
+    _flat: Dfns = field(default_factory=dict, repr=False, compare=False)
+
+    def __post_init__(self):
+        if not isinstance(self.schema_version, Version):
+            self.schema_version = Version(str(self.schema_version))
+        # Build flat index if not already populated
+        if not self._flat:
+            self._flat = to_flat(self.root)
+
+    def __getitem__(self, name: str) -> "Dfn":
+        """Get a component by name (flattened lookup)."""
+        if name not in self._flat:
+            raise KeyError(f"Component '{name}' not found in specification")
+        return self._flat[name]
+
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over all component names."""
+        return iter(self._flat)
+
+    def __len__(self) -> int:
+        """Total number of components in the specification."""
+        return len(self._flat)
+
+    def __contains__(self, name: object) -> bool:
+        """Check if a component exists by name."""
+        return name in self._flat
+
+    @classmethod
+    def load(
+        cls,
+        path: str | PathLike,
+        schema_version: str | Version | None = None,
+    ) -> "DfnSpec":
+        """
+        Load a specification from a directory of DFN files.
+
+        The specification is always loaded as a hierarchical tree,
+        with flat access available via the Mapping protocol.
+
+        Parameters
+        ----------
+        path : str or PathLike
+            Path to directory containing DFN files.
+        schema_version : str or Version, optional
+            Target schema version. If provided and different from the native
+            schema version, DFNs will be mapped to the target version.
+            If not provided, uses the native schema version from the files.
+
+        Returns
+        -------
+        DfnSpec
+            The loaded specification with hierarchical structure.
+
+        Examples
+        --------
+        >>> spec = DfnSpec.load("/path/to/dfns")
+        >>> spec.root.name
+        'sim-nam'
+        >>> spec["gwf-dis"]
+        Dfn(name='gwf-dis', ...)
+        """
+        path = Path(path).expanduser().resolve()
+
+        # Load flat DFNs from directory
+        dfns = load_flat(path)
+
+        if not dfns:
+            raise ValueError(f"No DFN files found in {path}")
+
+        # Determine native schema version from first DFN
+        first_dfn = next(iter(dfns.values()))
+        native_version = first_dfn.schema_version
+
+        # Determine target version:
+        # - If explicitly specified, use that
+        # - If native is v1, default to v2 (since to_tree only works with v2)
+        # - Otherwise use native version
+        if schema_version:
+            target_version = Version(str(schema_version))
+        elif native_version == Version("1"):
+            target_version = Version("2")
+        else:
+            target_version = native_version
+
+        if target_version != native_version:
+            # Map DFNs to target schema version
+            dfns = {name: map(dfn, target_version) for name, dfn in dfns.items()}
+
+        # Build hierarchical tree
+        root = to_tree(dfns)
+
+        return cls(
+            schema_version=target_version,
+            root=root,
+        )
+
+
 class SchemaMap(ABC):
     @abstractmethod
     def map(self, dfn: Dfn) -> Dfn: ...
@@ -234,12 +380,9 @@ class MapV1To2(SchemaMap):
 
                 # explicit record or keystring
                 if n_item_names == 1 and (
-                    item_types[0].startswith("record")
-                    or item_types[0].startswith("keystring")
+                    item_types[0].startswith("record") or item_types[0].startswith("keystring")
                 ):
-                    return MapV1To2.map_field(
-                        dfn, next(iter(fields.getlist(item_names[0])))
-                    )
+                    return MapV1To2.map_field(dfn, next(iter(fields.getlist(item_names[0]))))
 
                 # implicit record with all scalar fields
                 if all(t in V1_SCALAR_TYPES for t in item_types):
@@ -267,9 +410,7 @@ class MapV1To2(SchemaMap):
                 if not first.type:
                     raise ValueError(f"Missing type for field: {first.name}")
                 single = len(children) == 1
-                item_type = (
-                    "keystring" if single and "keystring" in first.type else "record"
-                )
+                item_type = "keystring" if single and "keystring" in first.type else "record"
                 return FieldV2.from_dict(
                     {
                         "name": first.name if single else _name,
@@ -300,9 +441,7 @@ class MapV1To2(SchemaMap):
                     matching = [
                         f
                         for f in fields.values(multi=True)
-                        if f.name == name
-                        and f.in_record
-                        and not f.type.startswith("record")
+                        if f.name == name and f.in_record and not f.type.startswith("record")
                     ]
                     if matching:
                         result[name] = _map_field(matching[0])
@@ -414,9 +553,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
         fields, meta = parse_dfn(f, **kwargs)
         blocks = {
             block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
-            for block_name, block in groupby(
-                fields.values(), lambda field: field["block"]
-            )
+            for block_name, block in groupby(fields.values(), lambda field: field["block"])
         }
         return Dfn(
             name=name,
@@ -441,9 +578,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
 
         if (expected_name := kwargs.pop("name", None)) is not None:
             if dfn_fields["name"] != expected_name:
-                raise ValueError(
-                    f"DFN name mismatch: {expected_name} != {dfn_fields['name']}"
-                )
+                raise ValueError(f"DFN name mismatch: {expected_name} != {dfn_fields['name']}")
 
         blocks = {}
         for section_name, section_data in data.items():
@@ -536,37 +671,27 @@ def to_tree(dfns: Dfns) -> Dfn:
 
     dfns = {name: set_parent(dfn) for name, dfn in dfns.items()}
     first_dfn = next(iter(dfns.values()), None)
-    match schema_version := str(
-        first_dfn.schema_version if first_dfn else Version("1")
-    ):
+    match schema_version := str(first_dfn.schema_version if first_dfn else Version("1")):
         case "1":
             raise NotImplementedError("Tree inference from v1 schema not implemented")
         case "2":
             if (
                 nroots := len(
-                    roots := {
-                        name: dfn for name, dfn in dfns.items() if dfn.parent is None
-                    }
+                    roots := {name: dfn for name, dfn in dfns.items() if dfn.parent is None}
                 )
             ) != 1:
                 raise ValueError(f"Expected one root component, found {nroots}")
 
             def _build_tree(node_name: str) -> Dfn:
                 node = dfns[node_name]
-                children = {
-                    name: dfn for name, dfn in dfns.items() if dfn.parent == node_name
-                }
+                children = {name: dfn for name, dfn in dfns.items() if dfn.parent == node_name}
                 if any(children):
-                    node.children = {
-                        name: _build_tree(name) for name in children.keys()
-                    }
+                    node.children = {name: _build_tree(name) for name in children.keys()}
                 return node
 
             return _build_tree(next(iter(roots.keys())))
         case _:
-            raise ValueError(
-                f"Unsupported schema version: {schema_version}. Expected 1 or 2."
-            )
+            raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
 
 def to_flat(dfn: Dfn) -> Dfns:
@@ -609,3 +734,139 @@ def is_valid(path: str | PathLike, format: str = "dfn", verbose: bool = False) -
         if verbose:
             print(f"Validation failed: {e}")
         return False
+
+
+# =============================================================================
+# Registry imports and convenience functions
+# =============================================================================
+
+# Import registry classes and functions (lazy to avoid circular imports)
+# These are re-exported for convenience
+
+
+def _get_registry_module():
+    """Lazy import of registry module to avoid circular imports."""
+    from modflow_devtools.dfn import registry
+
+    return registry
+
+
+# Re-export registry classes
+def __getattr__(name: str):
+    """Lazy attribute access for registry classes."""
+    registry_exports = {
+        "DfnRegistry",
+        "DfnRegistryDiscoveryError",
+        "DfnRegistryError",
+        "DfnRegistryNotFoundError",
+        "LocalDfnRegistry",
+        "RemoteDfnRegistry",
+        "get_registry",
+        "get_sync_status",
+        "sync_dfns",
+    }
+    if name in registry_exports:
+        registry = _get_registry_module()
+        return getattr(registry, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+# =============================================================================
+# Module-level convenience functions
+# =============================================================================
+
+
+def get_dfn(
+    component: str,
+    ref: str = "develop",
+    source: str = "modflow6",
+) -> "Dfn":
+    """
+    Get a DFN by component name from the registry.
+
+    This is a convenience function that gets the registry and retrieves
+    the specified component.
+
+    Parameters
+    ----------
+    component : str
+        Component name (e.g., "gwf-chd", "sim-nam").
+    ref : str, optional
+        Git ref (branch, tag, or commit hash). Default is "develop".
+    source : str, optional
+        Source repository name. Default is "modflow6".
+
+    Returns
+    -------
+    Dfn
+        The requested component definition.
+
+    Examples
+    --------
+    >>> dfn = get_dfn("gwf-chd")
+    >>> dfn = get_dfn("gwf-chd", ref="6.6.0")
+    """
+    registry = _get_registry_module()
+    reg = registry.get_registry(source=source, ref=ref)
+    return reg.get_dfn(component)
+
+
+def get_dfn_path(
+    component: str,
+    ref: str = "develop",
+    source: str = "modflow6",
+) -> Path:
+    """
+    Get the local cached file path for a DFN component.
+
+    Parameters
+    ----------
+    component : str
+        Component name (e.g., "gwf-chd", "sim-nam").
+    ref : str, optional
+        Git ref (branch, tag, or commit hash). Default is "develop".
+    source : str, optional
+        Source repository name. Default is "modflow6".
+
+    Returns
+    -------
+    Path
+        Path to the local cached DFN file.
+
+    Examples
+    --------
+    >>> path = get_dfn_path("gwf-chd", ref="6.6.0")
+    """
+    registry = _get_registry_module()
+    reg = registry.get_registry(source=source, ref=ref)
+    return reg.get_dfn_path(component)
+
+
+def list_components(
+    ref: str = "develop",
+    source: str = "modflow6",
+) -> list[str]:
+    """
+    List available components for a registry.
+
+    Parameters
+    ----------
+    ref : str, optional
+        Git ref (branch, tag, or commit hash). Default is "develop".
+    source : str, optional
+        Source repository name. Default is "modflow6".
+
+    Returns
+    -------
+    list[str]
+        List of component names available in the registry.
+
+    Examples
+    --------
+    >>> components = list_components(ref="6.6.0")
+    >>> "gwf-chd" in components
+    True
+    """
+    registry = _get_registry_module()
+    reg = registry.get_registry(source=source, ref=ref)
+    return list(reg.spec.keys())

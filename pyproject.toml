@@ -72,6 +72,8 @@ docs = [
 # deprecated
 dfn = [
     "boltons",
+    "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
@@ -122,6 +124,8 @@ docs = [
 # deprecated
 dfn = [
     "boltons",
+    "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
@@ -164,6 +168,7 @@ packages = ["modflow_devtools"]
 
 [tool.hatch.build]
 include = [
+    "modflow_devtools/dfn/*.toml",
     "modflow_devtools/registry/*"
 ]
 
