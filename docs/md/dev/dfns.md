@@ -1062,79 +1062,109 @@ def _detect_schema_version(self) -> Version:
 
 ### API compatibility
 
-**Backwards compatible API design**:
+**Breaking changes in current implementation**:
+
+The `dfn` branch introduces fundamental breaking changes that make it incompatible with a 1.x release:
+
+1. **Core types changed from TypedDict to dataclass**:
+   ```python
+   # Old (develop) - dict-like access
+   dfn["name"]
+   field.get("type")
+
+   # New (dfn branch) - attribute access
+   dfn.name
+   field.type
+   ```
+
+2. **`Dfn` structure changed**:
+   - Removed: `sln`, `fkeys`
+   - Added: `schema_version`, `parent`, `blocks`
+   - Renamed: `fkeys` → `children`
+
+3. **Removed exports**:
+   - `get_dfns()` - now `fetch_dfns()` in submodule, not re-exported from main module
+   - `FormatVersion`, `Sln`, `FieldType`, `Reader` type aliases
+
+4. **`Field` structure changed** - different attributes and semantics between v1/v2
+
+**Why aliasing is not feasible**:
+
+The TypedDict → dataclass change is fundamental and cannot be cleanly aliased:
+- Code using `dfn["name"]` syntax would break immediately
+- Making a dataclass behave like a dict requires implementing `__getitem__`, `get()`, `keys()`, `values()`, `items()`, etc.
+- Even with these methods, isinstance checks and type hints would behave differently
+- The complexity and maintenance burden outweigh the benefits
+
+**Recommendation**: Release as **devtools 2.0**, not 1.x.
+
+**New API (devtools 2.x)**:
 
 ```python
-# Existing dfn branch API (continue to work)
-from modflow_devtools.dfn import load, fetch_dfns
-
-# Works exactly as before
-dfn = load("/path/to/dfn/file.dfn")
-fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
-
-# New DFNs API (additive, doesn't break existing)
+# DFNs API
 from modflow_devtools.dfn import DfnSpec, get_dfn, get_registry, sync_dfns
 
-# New functionality
+# Sync and access DFNs
 sync_dfns(ref="6.6.0")
 dfn = get_dfn("gwf-chd", ref="6.6.0")
 registry = get_registry(ref="6.6.0")
-spec = registry.spec  # Registry wraps a DfnSpec
+spec = registry.spec
+
+# Attribute access (dataclass style)
+print(dfn.name)  # "gwf-chd"
+print(dfn.blocks["options"])
+
+# fetch_dfns() still available for manual downloads
+from modflow_devtools.dfn.fetch import fetch_dfns
+fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
 ```
-
-**No breaking changes to existing classes**:
-- `Dfn`, `Block`, `Field` dataclasses remain compatible
-- `FieldV1`, `FieldV2` continue to work
-- `MapV1To2` schema mapping continues to work
-- Add `MapV1To11` and `MapV11To2` as needed
-- `load()` function continues to work (loads individual DFN files)
-- New `DfnSpec` class is additive (doesn't break existing code)
-
-**Deprecation strategy**:
-- Mark old APIs as deprecated with clear migration path
-- Deprecation warnings point to new equivalent functionality
-- Keep deprecated APIs working for at least one major version
-- Document migration in release notes and migration guide
 
 ### Migration timeline
 
-**devtools 1.x** (current):
-- ✅ Merge dfn branch with v1.1 schema (stable, no breaking changes)
-- ✅ Implement DFNs API with v1/v1.1 support
-- ✅ FloPy 3 continues using v1.1 schema from mainline
-- ✅ All existing APIs remain unchanged and supported
-- ⚠️ Deprecate `fetch_dfns()` in favor of DFNs API (but keep working)
+**devtools 1.x** (current stable):
+- Existing `modflow_devtools/dfn.py` with TypedDict-based API
+- `get_dfns()` function for manual downloads
+- No registry infrastructure
+- **No changes** - maintain stability for existing users
 
-**devtools 2.0** (future):
-- ✅ Add v2 schema support (v1, v1.1, and v2 all work)
-- ✅ Merge dfn-v2 branch to mainline
-- ✅ FloPy 4 begins using v2 schema
-- ✅ FloPy 3 continues using v1.1 schema (no changes needed)
-- ⚠️ Deprecate v1 schema support (but keep working for one more major version)
+**devtools 2.0** (this work):
+- ❌ Breaking: `Dfn`, `Field` change from TypedDict to dataclass
+- ❌ Breaking: `get_dfns()` renamed to `fetch_dfns()` (in submodule)
+- ❌ Breaking: Several type aliases removed or moved
+- ✅ New: Full DFNs API with registry infrastructure
+- ✅ New: `DfnSpec` class with hierarchical and flat access
+- ✅ New: `RemoteDfnRegistry`, `LocalDfnRegistry` classes
+- ✅ New: CLI commands (sync, info, list, clean)
+- ✅ New: Schema versioning and mapping (v1 ↔ v2)
+- ✅ New: Pydantic-based configuration and validation
+
+**devtools 2.x** (future minor releases):
+- Add v2 DFN schema support when MODFLOW 6 adopts it
+- Schema mapping between all versions (v1, v1.1, v2)
+- Additional CLI commands and features
+- Performance improvements
 
 **devtools 3.0** (distant future):
-- ✅ v1.1 and v2 schema both fully supported
-- ❌ Remove v1 schema support (deprecated in 2.0)
-- ⚠️ Final deprecation warnings for any legacy APIs
+- Consider removing v1 schema support (with deprecation warnings in 2.x)
+- Potential further API refinements
 
 **Key principles**:
-1. **Additive changes only** on mainline during 1.x
-2. **Multi-version support** - DFNs API works with v1, v1.1, and v2 simultaneously
-3. **No forced upgrades** - FloPy 3 never has to migrate off v1.1
-4. **Explicit migration** - Users opt-in to v2 via schema mapping
-5. **Long deprecation** - At least one major version warning before removal
+1. **Clean break at 2.0** - no half-measures with aliasing
+2. **Multi-version schema support** - DFNs API works with v1, v1.1, and v2 simultaneously
+3. **Clear migration path** - document all breaking changes in release notes
+4. **Semantic versioning** - breaking changes require major version bump
 
 **Testing strategy**:
 - Test suite covers all schema versions (v1, v1.1, v2)
 - Test schema mapping in all directions (v1↔v1.1↔v2)
-- Test FloPy 3 integration continuously (don't break existing consumers)
 - Test mixed-version scenarios (different refs with different schemas)
+- Integration tests with real MODFLOW 6 repository
 
 **Documentation**:
-- Clear migration guides for each transition
+- Clear migration guide from 1.x to 2.x
+- Document all breaking changes with before/after examples
 - Document which MODFLOW 6 versions use which schema versions
 - Examples showing multi-version usage
-- Deprecation timeline clearly communicated
 
 ## Implementation Dependencies
 
@@ -1220,34 +1250,33 @@ Merge sequence:
    - Adds substantial new functionality (schema classes, parsers, etc.)
 3. **Finally**: Implement DFNs API features on `develop` (registries, sync, CLI, `DfnSpec`)
 
-API compatibility during merge:
+API changes during merge:
 ```python
 # Old dfn.py API (on develop now) - uses TypedDicts
 from modflow_devtools.dfn import get_dfns, Field, Dfn
+dfn["name"]  # dict-like access
 
-# New dfn/ package API (after dfn branch merge) - upgrades to dataclasses
-from modflow_devtools.dfn import get_dfns  # Aliased to fetch_dfns, still works
-from modflow_devtools.dfn import fetch_dfns  # New preferred name
-from modflow_devtools.dfn import load, Dfn, Block, Field  # Upgraded to dataclasses
+# New dfn/ package API (after dfn branch merge) - dataclasses
+from modflow_devtools.dfn import Dfn, Block, Field  # Now dataclasses
+from modflow_devtools.dfn.fetch import fetch_dfns  # Renamed, moved to submodule
 from modflow_devtools.dfn import DfnSpec, get_registry, sync_dfns  # New additions
-
-# The import path stays the same, functionality expands
-# get_dfns() kept as alias for backwards compatibility
+dfn.name  # attribute access
 ```
 
-Breaking changes (justified):
-- `Field`, `Dfn`, etc. change from `TypedDict` to `dataclass` - more powerful, better typing
-- This is acceptable since only internal dogfooding currently (FloPy uses schema, not these classes directly)
+**Breaking changes** (see [API compatibility](#api-compatibility) section for full details):
+- `Field`, `Dfn`, etc. change from `TypedDict` to `dataclass` - **requires 2.0 release**
+- `get_dfns()` renamed to `fetch_dfns()` and moved to submodule
+- Several type aliases removed or moved to schema submodules
 
-**Needed for DFNs API**:
-- ❌ Bootstrap file and registry schema
-- ❌ Registry discovery and synchronization
-- ❌ Pooch integration for file caching
-- ❌ Registry classes (`DfnRegistry`, `RemoteDfnRegistry`, `LocalDfnRegistry`)
-- ❌ CLI commands (sync, info, list, clean)
-- ❌ Module-level convenience API
-- ❌ Registry generation tool (`make_registry.py`)
-- ❌ Integration with MODFLOW 6 CI
+**Implementation status** (DFNs API):
+- ✅ Bootstrap file and registry schema
+- ✅ Registry discovery and synchronization
+- ✅ Pooch integration for file caching
+- ✅ Registry classes (`DfnRegistry`, `RemoteDfnRegistry`, `LocalDfnRegistry`)
+- ✅ CLI commands (sync, info, list, clean)
+- ✅ Module-level convenience API
+- ✅ Registry generation tool (`make_registry.py`)
+- ⚠️ Integration with MODFLOW 6 CI (requires registry branch merge in MF6 repo)
 
 ### Core components
 
