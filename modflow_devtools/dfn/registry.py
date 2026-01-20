@@ -20,6 +20,8 @@ from packaging.version import Version
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
+    import pooch
+
     from modflow_devtools.dfn import Dfn, DfnSpec
 
 __all__ = [
@@ -358,9 +360,7 @@ class LocalDfnRegistry(DfnRegistry):
 
     def model_post_init(self, __context) -> None:
         """Validate and resolve path after initialization."""
-        if isinstance(self.path, str):
-            object.__setattr__(self, "path", Path(self.path))
-        object.__setattr__(self, "path", self.path.expanduser().resolve())
+        object.__setattr__(self, "path", Path(self.path).expanduser().resolve())
 
     @property
     def spec(self) -> DfnSpec:

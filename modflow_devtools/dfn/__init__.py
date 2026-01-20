@@ -34,40 +34,36 @@ from modflow_devtools.dfn.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
-    # Core data models
     "Block",
     "Blocks",
     "Dfn",
-    "Dfns",
-    "DfnSpec",
-    "Field",
-    "FieldV1",
-    "FieldV2",
-    "Fields",
-    "Ref",
-    # Registry classes
     "DfnRegistry",
     "DfnRegistryDiscoveryError",
     "DfnRegistryError",
     "DfnRegistryNotFoundError",
+    "DfnSpec",
+    "Dfns",
+    "Field",
+    "FieldV1",
+    "FieldV2",
+    "Fields",
     "LocalDfnRegistry",
+    "Ref",
     "RemoteDfnRegistry",
-    # Loading and mapping functions
     "block_sort_key",
-    "is_valid",
-    "load",
-    "load_flat",
-    "load_tree",
-    "map",
-    "to_flat",
-    "to_tree",
-    # Registry functions
     "get_dfn",
     "get_dfn_path",
     "get_registry",
     "get_sync_status",
+    "is_valid",
     "list_components",
+    "load",
+    "load_flat",
+    "load_tree",
+    "map",
     "sync_dfns",
+    "to_flat",
+    "to_tree",
 ]
 
 
@@ -103,8 +99,8 @@ class Dfn:
         """
         fields = []
         for block in (self.blocks or {}).values():
-            for field in block.values():
-                fields.append((field.name, field))
+            for f in block.values():
+                fields.append((f.name, f))
 
         # for now return a multidict to support duplicate field names.
         # TODO: change to normal dict after deprecating v1 schema
