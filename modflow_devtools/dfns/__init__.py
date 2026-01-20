@@ -2,6 +2,7 @@
 MODFLOW 6 definition file tools.
 """
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping
 from dataclasses import asdict, dataclass, field, replace
@@ -18,19 +19,30 @@ from boltons.dictutils import OMD
 from boltons.iterutils import remap
 from packaging.version import Version
 
-from modflow_devtools.dfn.parse import (
+# Experimental API warning
+warnings.warn(
+    "The modflow_devtools.dfns API is experimental and may change or be "
+    "removed in future versions without following normal deprecation procedures. "
+    "Use at your own risk. To suppress this warning, use:\n"
+    "  warnings.filterwarnings('ignore', "
+    "message='.*modflow_devtools.dfns.*experimental.*')",
+    FutureWarning,
+    stacklevel=2,
+)
+
+from modflow_devtools.dfns.parse import (
     is_advanced_package,
     is_multi_package,
     parse_dfn,
     try_parse_bool,
     try_parse_parent,
 )
-from modflow_devtools.dfn.schema.block import Block, Blocks, block_sort_key
-from modflow_devtools.dfn.schema.field import Field, Fields
-from modflow_devtools.dfn.schema.ref import Ref
-from modflow_devtools.dfn.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
-from modflow_devtools.dfn.schema.v1 import FieldV1
-from modflow_devtools.dfn.schema.v2 import FieldV2
+from modflow_devtools.dfns.schema.block import Block, Blocks, block_sort_key
+from modflow_devtools.dfns.schema.field import Field, Fields
+from modflow_devtools.dfns.schema.ref import Ref
+from modflow_devtools.dfns.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
+from modflow_devtools.dfns.schema.v1 import FieldV1
+from modflow_devtools.dfns.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
 
 __all__ = [
@@ -742,7 +754,7 @@ def is_valid(path: str | PathLike, format: str = "dfn", verbose: bool = False) -
 
 def _get_registry_module():
     """Lazy import of registry module to avoid circular imports."""
-    from modflow_devtools.dfn import registry
+    from modflow_devtools.dfns import registry
 
     return registry
 

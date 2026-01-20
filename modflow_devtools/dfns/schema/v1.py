@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from modflow_devtools.dfn.schema.field import Field
+from modflow_devtools.dfns.schema.field import Field
 
 FieldType = Literal[
     "keyword",

@@ -21,16 +21,10 @@ from modflow_devtools.models import (
     get_user_config_path,
 )
 
-# Test configuration (loaded from .env file via pytest-dotenv plugin)
-TEST_REPO = os.getenv("TEST_REPO", "wpbonelli/modflow6-testmodels")
-TEST_REF = os.getenv("TEST_REF", "registry")
-TEST_SOURCE = os.getenv("TEST_SOURCE", "modflow6-testmodels")
-TEST_SOURCE_NAME = os.getenv("TEST_SOURCE_NAME", "mf6/test")
-
-
-# ============================================================================
-# Tests (Dynamic Registry)
-# ============================================================================
+TEST_MODELS_REPO = os.getenv("TEST_MODELS_REPO", "wpbonelli/modflow6-testmodels")
+TEST_MODELS_REF = os.getenv("TEST_MODELS_REF", "registry")
+TEST_MODELS_SOURCE = os.getenv("TEST_MODELS_SOURCE", "modflow6-testmodels")
+TEST_MODELS_SOURCE_NAME = os.getenv("TEST_MODELS_SOURCE_NAME", "mf6/test")
 
 
 class TestBootstrap:
@@ -45,15 +39,14 @@ class TestBootstrap:
     def test_bootstrap_has_testmodels(self):
         """Test that testmodels is configured."""
         bootstrap = ModelSourceConfig.load()
-        assert TEST_SOURCE in bootstrap.sources
+        assert TEST_MODELS_SOURCE in bootstrap.sources
 
     def test_bootstrap_testmodels_config(self):
         """Test testmodels configuration in bundled config (without user overlay)."""
-        # Load bundled config explicitly (no user config overlay)
         bundled_path = Path(__file__).parent.parent / "modflow_devtools" / "models" / "models.toml"
         bootstrap = ModelSourceConfig.load(bootstrap_path=bundled_path)
-        testmodels = bootstrap.sources[TEST_SOURCE]
-        # Bundled config should point to MODFLOW-ORG
+        testmodels = bootstrap.sources[TEST_MODELS_SOURCE]
+
         assert "MODFLOW-ORG/modflow6-testmodels" in testmodels.repo
         assert "develop" in testmodels.refs or "master" in testmodels.refs
 
@@ -134,8 +127,8 @@ refs = ["custom-branch"]
         assert bootstrap.sources["custom-models"].repo == "user/custom-models"
 
         # Check that user config overrode bundled config for testmodels
-        if TEST_SOURCE in bootstrap.sources:
-            assert bootstrap.sources[TEST_SOURCE].repo == "user/modflow6-testmodels-fork"
+        if TEST_MODELS_SOURCE in bootstrap.sources:
+            assert bootstrap.sources[TEST_MODELS_SOURCE].repo == "user/modflow6-testmodels-fork"
 
     def test_load_bootstrap_explicit_path_no_overlay(self, tmp_path):
         """Test that explicit bootstrap path doesn't default to user config overlay."""
@@ -206,7 +199,7 @@ class TestBootstrapSourceMethods:
     def test_source_has_sync_method(self):
         """Test that ModelSourceRepo has sync method."""
         bootstrap = ModelSourceConfig.load()
-        source = bootstrap.sources[TEST_SOURCE]
+        source = bootstrap.sources[TEST_MODELS_SOURCE]
         assert hasattr(source, "sync")
         assert callable(source.sync)
 
@@ -224,13 +217,14 @@ class TestCache:
 
     def test_get_registry_cache_dir(self):
         """Test getting registry cache directory for a source/ref."""
-        cache_dir = _DEFAULT_CACHE.get_registry_cache_dir(TEST_SOURCE_NAME, TEST_REF)
+        cache_dir = _DEFAULT_CACHE.get_registry_cache_dir(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
         # Normalize path separators for comparison (Windows uses \, Unix uses /)
         cache_dir_str = str(cache_dir).replace("\\", "/")
         assert (
-            TEST_SOURCE_NAME in cache_dir_str or TEST_SOURCE_NAME.replace("/", "-") in cache_dir_str
+            TEST_MODELS_SOURCE_NAME in cache_dir_str
+            or TEST_MODELS_SOURCE_NAME.replace("/", "-") in cache_dir_str
         )
-        assert TEST_REF in str(cache_dir)
+        assert TEST_MODELS_REF in str(cache_dir)
         assert "registries" in str(cache_dir)
 
 
@@ -241,24 +235,24 @@ class TestDiscovery:
         """Test discovering registry for test repo."""
         # Use test repo/ref from environment
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
-        discovered = source.discover(ref=TEST_REF)
+        discovered = source.discover(ref=TEST_MODELS_REF)
 
         assert isinstance(discovered, DiscoveredModelRegistry)
-        assert discovered.source == TEST_SOURCE_NAME
-        assert discovered.ref == TEST_REF
+        assert discovered.source == TEST_MODELS_SOURCE_NAME
+        assert discovered.ref == TEST_MODELS_REF
         assert discovered.mode == "version_controlled"
         assert isinstance(discovered.registry, ModelRegistry)
 
     def test_discover_registry_nonexistent_ref(self):
         """Test that discovery fails gracefully for nonexistent ref."""
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
             refs=["nonexistent-branch-12345"],
         )
 
@@ -272,125 +266,115 @@ class TestSync:
 
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
+            verbose=True,
         )
-        result = source.sync(ref=TEST_REF, verbose=True)
+        result = source.sync(ref=TEST_MODELS_REF, verbose=True)
 
         assert len(result.synced) == 1
         assert len(result.failed) == 0
-        assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
+        assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in result.synced
 
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
-        assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
+        assert not _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
-        source.sync(ref=TEST_REF)
-
-        assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+        source.sync(ref=TEST_MODELS_REF)
+        assert _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
         # First sync
-        result1 = source.sync(ref=TEST_REF)
+        result1 = source.sync(ref=TEST_MODELS_REF)
         assert len(result1.synced) == 1
 
         # Second sync should skip
-        result2 = source.sync(ref=TEST_REF)
+        result2 = source.sync(ref=TEST_MODELS_REF)
         assert len(result2.synced) == 0
         assert len(result2.skipped) == 1
 
     def test_sync_force(self):
         """Test that force flag re-syncs cached registries."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
         # First sync
-        result_initial = source.sync(ref=TEST_REF)
+        result_initial = source.sync(ref=TEST_MODELS_REF)
         assert len(result_initial.failed) == 0, f"Initial sync failed: {result_initial.failed}"
 
         # Force sync
-        result = source.sync(ref=TEST_REF, force=True)
+        result = source.sync(ref=TEST_MODELS_REF, force=True)
         assert len(result.synced) == 1
         assert len(result.skipped) == 0
 
     def test_sync_via_source_method(self):
         """Test syncing via ModelSourceRepo.sync() method."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         # Create source with test repo override
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
         # Sync via source method
-        result = source.sync(ref=TEST_REF, verbose=True)
+        result = source.sync(ref=TEST_MODELS_REF, verbose=True)
 
         assert len(result.synced) == 1
-        assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
+        assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in result.synced
 
     def test_source_is_synced_method(self):
         """Test ModelSourceRepo.is_synced() method."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
-        # Should not be synced initially
-        assert not source.is_synced(TEST_REF)
-
-        # Sync
-        source.sync(ref=TEST_REF)
-
-        # Should be synced now
-        assert source.is_synced(TEST_REF)
+        assert not source.is_synced(TEST_MODELS_REF)
+        source.sync(ref=TEST_MODELS_REF)
+        assert source.is_synced(TEST_MODELS_REF)
 
     def test_source_list_synced_refs_method(self):
         """Test ModelSourceRepo.list_synced_refs() method."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
-        # Should have no synced refs initially
-        assert TEST_REF not in source.list_synced_refs()
-
-        # Sync
-        source.sync(ref=TEST_REF)
-
-        # Should show in synced refs
-        assert TEST_REF in source.list_synced_refs()
+        assert TEST_MODELS_REF not in source.list_synced_refs()
+        source.sync(ref=TEST_MODELS_REF)
+        assert TEST_MODELS_REF in source.list_synced_refs()
 
 
 @pytest.mark.xdist_group("registry_cache")
@@ -400,15 +384,15 @@ class TestRegistry:
     @pytest.fixture(scope="class")
     def synced_registry(self):
         """Fixture that syncs and loads a registry once for all tests."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
-        result = source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.failed) == 0, f"Fixture sync failed: {result.failed}"
-        registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
+        registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
         return registry
 
     def test_registry_has_metadata(self, synced_registry):
@@ -419,15 +403,12 @@ class TestRegistry:
     def test_registry_has_files(self, synced_registry):
         """Test that registry has files."""
         assert len(synced_registry.files) > 0
-        # Check file structure
         first_file = next(iter(synced_registry.files.values()))
         assert hasattr(first_file, "hash")
-        # Note: url field removed in v2 (dynamic URL construction)
 
     def test_registry_has_models(self, synced_registry):
         """Test that registry has models."""
         assert len(synced_registry.models) > 0
-        # Check model structure
         first_model_files = next(iter(synced_registry.models.values()))
         assert isinstance(first_model_files, list)
         assert len(first_model_files) > 0
@@ -452,7 +433,7 @@ class TestCLI:
         cmd_info(args)
 
         captured = capsys.readouterr()
-        assert TEST_SOURCE in captured.out or TEST_SOURCE_NAME in captured.out
+        assert TEST_MODELS_SOURCE in captured.out or TEST_MODELS_SOURCE_NAME in captured.out
 
     def test_cli_list_empty(self, capsys):
         """Test 'list' command with no cached registries."""
@@ -470,18 +451,18 @@ class TestCLI:
 
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
-        result = source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_MODELS_REF)
 
         # Verify sync succeeded before testing list command
         assert len(result.failed) == 0, f"Sync failed: {result.failed}"
         assert len(result.synced) == 1, f"Expected 1 synced registry, got {len(result.synced)}"
-        assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
+        assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in result.synced
 
         import argparse
 
@@ -491,7 +472,7 @@ class TestCLI:
         cmd_list(args)
 
         captured = capsys.readouterr()
-        assert f"{TEST_SOURCE_NAME}@{TEST_REF}" in captured.out
+        assert f"{TEST_MODELS_SOURCE_NAME}@{TEST_MODELS_REF}" in captured.out
         assert "Models:" in captured.out
 
     def test_cli_clear(self, capsys):
@@ -530,49 +511,43 @@ class TestIntegration:
 
     def test_full_workflow(self):
         """Test complete workflow: discover -> cache -> load."""
-        # Clear cache
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        # Create test source
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
 
-        # Discover registry
-        discovered = source.discover(ref=TEST_REF)
+        discovered = source.discover(ref=TEST_MODELS_REF)
         assert isinstance(discovered.registry, ModelRegistry)
 
-        # Cache registry
-        cache_path = _DEFAULT_CACHE.save(discovered.registry, TEST_SOURCE_NAME, TEST_REF)
+        cache_path = _DEFAULT_CACHE.save(
+            discovered.registry, TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF
+        )
         assert cache_path.exists()
 
-        # Load from cache
-        loaded = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
+        loaded = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
         assert loaded is not None
         assert len(loaded.models) == len(discovered.registry.models)
 
     def test_sync_and_list_models(self):
         """Test syncing and listing available models."""
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
 
-        # Sync
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
-        result = source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
 
-        # List cached registries
         cached = _DEFAULT_CACHE.list()
         assert len(cached) >= 1
-        assert (TEST_SOURCE_NAME, TEST_REF) in cached
+        assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in cached
 
-        # Load and check models
-        registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
+        registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
         assert len(registry.models) > 0
 
 

@@ -2,10 +2,10 @@
 Command-line interface for the DFNs API.
 
 Usage:
-    python -m modflow_devtools.dfn sync [--ref REF] [--force]
-    python -m modflow_devtools.dfn info
-    python -m modflow_devtools.dfn list [--ref REF]
-    python -m modflow_devtools.dfn clean [--all]
+    python -m modflow_devtools.dfns sync [--ref REF] [--force]
+    python -m modflow_devtools.dfns info
+    python -m modflow_devtools.dfns list [--ref REF]
+    python -m modflow_devtools.dfns clean [--all]
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import argparse
 import shutil
 import sys
 
-from modflow_devtools.dfn.registry import (
+from modflow_devtools.dfns.registry import (
     DfnRegistryDiscoveryError,
     DfnRegistryNotFoundError,
     get_bootstrap_config,

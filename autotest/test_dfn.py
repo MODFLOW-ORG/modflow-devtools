@@ -4,10 +4,10 @@ from pathlib import Path
 import pytest
 from packaging.version import Version
 
-from modflow_devtools.dfn import Dfn, _load_common, load, load_flat
-from modflow_devtools.dfn.fetch import fetch_dfns
-from modflow_devtools.dfn.schema.v1 import FieldV1
-from modflow_devtools.dfn.schema.v2 import FieldV2
+from modflow_devtools.dfns import Dfn, _load_common, load, load_flat
+from modflow_devtools.dfns.fetch import fetch_dfns
+from modflow_devtools.dfns.schema.v1 import FieldV1
+from modflow_devtools.dfns.schema.v2 import FieldV2
 from modflow_devtools.dfn2toml import convert, is_valid
 from modflow_devtools.markers import requires_pkg
 
@@ -384,7 +384,7 @@ def test_validate_nonexistent_file(function_tmpdir):
 
 def test_fieldv1_to_fieldv2_conversion():
     """Test that FieldV1 instances are properly converted to FieldV2."""
-    from modflow_devtools.dfn import map
+    from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
         schema_version=Version("1"),
@@ -436,7 +436,7 @@ def test_fieldv1_to_fieldv2_conversion():
 
 def test_fieldv1_to_fieldv2_conversion_with_children():
     """Test that FieldV1 with nested children are properly converted to FieldV2."""
-    from modflow_devtools.dfn import map
+    from modflow_devtools.dfns import map
 
     # Create nested fields for a record
     child_field_v1 = FieldV1(
@@ -483,7 +483,7 @@ def test_fieldv1_to_fieldv2_conversion_with_children():
 
 def test_period_block_conversion():
     """Test period block recarray conversion to individual arrays."""
-    from modflow_devtools.dfn import map
+    from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
         schema_version=Version("1"),
@@ -528,7 +528,7 @@ def test_period_block_conversion():
 
 def test_record_type_conversion():
     """Test record type with multiple scalar fields."""
-    from modflow_devtools.dfn import map
+    from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
         schema_version=Version("1"),
@@ -571,7 +571,7 @@ def test_record_type_conversion():
 
 def test_keystring_type_conversion():
     """Test keystring type conversion."""
-    from modflow_devtools.dfn import map
+    from modflow_devtools.dfns import map
 
     dfn_v1 = Dfn(
         schema_version=Version("1"),
