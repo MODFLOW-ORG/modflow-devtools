@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     import pooch
 
-    from modflow_devtools.dfn import Dfn, DfnSpec
+    from modflow_devtools.dfns import Dfn, DfnSpec
 
 __all__ = [
     "BootstrapConfig",
@@ -366,7 +366,7 @@ class LocalDfnRegistry(DfnRegistry):
     def spec(self) -> DfnSpec:
         """Load and return the DFN specification from local files."""
         if self._spec is None:
-            from modflow_devtools.dfn import DfnSpec
+            from modflow_devtools.dfns import DfnSpec
 
             self._spec = DfnSpec.load(self.path)
         return self._spec
@@ -386,14 +386,36 @@ class RemoteDfnRegistry(DfnRegistry):
     Registry for remote DFN files with Pooch-based caching.
 
     Handles remote registry discovery, caching, and DFN file fetching.
-    URLs are constructed dynamically from bootstrap metadata.
+    URLs are constructed dynamically from bootstrap metadata, or can be
+    overridden by providing explicit repo/dfn_path/registry_path values.
 
     Examples
     --------
+    >>> # Use bootstrap config
     >>> registry = RemoteDfnRegistry(source="modflow6", ref="6.6.0")
     >>> dfn = registry.get_dfn("gwf-chd")
-    >>> path = registry.get_dfn_path("gwf-chd")
+
+    >>> # Override repo directly (useful for testing)
+    >>> registry = RemoteDfnRegistry(
+    ...     source="modflow6",
+    ...     ref="registry",
+    ...     repo="wpbonelli/modflow6",
+    ... )
     """
+
+    # Optional overrides (bypass bootstrap config when provided)
+    repo: str | None = Field(
+        default=None,
+        description="GitHub repository (owner/repo). Overrides bootstrap config.",
+    )
+    dfn_path: str | None = Field(
+        default=None,
+        description="Path to DFN files in repo. Overrides bootstrap config.",
+    )
+    registry_path: str | None = Field(
+        default=None,
+        description="Path to registry file in repo. Overrides bootstrap config.",
+    )
 
     _registry_meta: DfnRegistryMeta | None = None
     _source_config: SourceConfig | None = None
@@ -405,15 +427,25 @@ class RemoteDfnRegistry(DfnRegistry):
         self._ensure_source_config()
 
     def _ensure_source_config(self) -> SourceConfig:
-        """Load and cache source configuration from bootstrap."""
+        """Load and cache source configuration from bootstrap or overrides."""
         if self._source_config is None:
-            config = get_bootstrap_config()
-            if self.source not in config.sources:
-                raise ValueError(
-                    f"Unknown source '{self.source}'. "
-                    f"Available sources: {list(config.sources.keys())}"
+            # If repo is provided, construct config from overrides
+            if self.repo is not None:
+                self._source_config = SourceConfig(
+                    repo=self.repo,
+                    dfn_path=self.dfn_path or "doc/mf6io/mf6ivar/dfn",
+                    registry_path=self.registry_path or ".registry/dfns.toml",
+                    refs=[self.ref],
                 )
-            self._source_config = config.sources[self.source]
+            else:
+                # Load from bootstrap config
+                config = get_bootstrap_config()
+                if self.source not in config.sources:
+                    raise ValueError(
+                        f"Unknown source '{self.source}'. "
+                        f"Available sources: {list(config.sources.keys())}"
+                    )
+                self._source_config = config.sources[self.source]
         return self._source_config
 
     def _get_registry_cache_path(self) -> Path:
@@ -550,7 +582,7 @@ class RemoteDfnRegistry(DfnRegistry):
     def spec(self) -> DfnSpec:
         """Load and return the DFN specification from cached files."""
         if self._spec is None:
-            from modflow_devtools.dfn import DfnSpec
+            from modflow_devtools.dfns import DfnSpec
 
             # Ensure all files are fetched
             self._fetch_all_files()

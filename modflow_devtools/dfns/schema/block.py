@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from modflow_devtools.dfn.schema.field import Fields
+from modflow_devtools.dfns.schema.field import Fields
 
 Block = Fields
 Blocks = Mapping[str, Block]

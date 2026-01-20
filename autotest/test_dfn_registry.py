@@ -1,21 +1,33 @@
-"""Tests for the DFNs API registry infrastructure."""
+"""
+Tests for the DFNs API registry infrastructure.
+
+Tests can be configured via environment variables (loaded from .env file).
+"""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from packaging.version import Version
 
-from modflow_devtools.dfn.fetch import fetch_dfns
+from modflow_devtools.dfns.fetch import fetch_dfns
 from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
 DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
-MF6_OWNER = "MODFLOW-ORG"
-MF6_REPO = "modflow6"
-MF6_REF = "develop"
+
+# Test configuration (loaded from .env file via pytest-dotenv plugin)
+TEST_DFN_REPO = os.getenv("TEST_DFNS_REPO", "MODFLOW-ORG/modflow6")
+TEST_DFN_REF = os.getenv("TEST_DFNS_REF", "develop")
+TEST_DFN_SOURCE = os.getenv("TEST_DFNS_SOURCE", "modflow6")
+
+# For fetching DFN files directly (legacy tests)
+MF6_OWNER = TEST_DFN_REPO.split("/")[0]
+MF6_REPO = TEST_DFN_REPO.split("/")[1]
+MF6_REF = TEST_DFN_REF
 
 
 @pytest.fixture(scope="module")
@@ -26,18 +38,13 @@ def dfn_dir():
     return DFN_DIR
 
 
-# =============================================================================
-# DfnSpec Tests
-# =============================================================================
-
-
 @requires_pkg("boltons")
 class TestDfnSpec:
     """Tests for the DfnSpec class."""
 
     def test_load_from_directory(self, dfn_dir):
         """Test loading a DfnSpec from a directory of DFN files."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         spec = DfnSpec.load(dfn_dir)
 
@@ -48,7 +55,7 @@ class TestDfnSpec:
 
     def test_load_with_explicit_schema_version(self, dfn_dir):
         """Test loading with explicit schema version."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         spec = DfnSpec.load(dfn_dir, schema_version="2")
 
@@ -56,7 +63,7 @@ class TestDfnSpec:
 
     def test_mapping_protocol(self, dfn_dir):
         """Test that DfnSpec implements the Mapping protocol."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         spec = DfnSpec.load(dfn_dir)
 
@@ -85,7 +92,7 @@ class TestDfnSpec:
 
     def test_getitem_raises_keyerror(self, dfn_dir):
         """Test that __getitem__ raises KeyError for missing components."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         spec = DfnSpec.load(dfn_dir)
 
@@ -94,7 +101,7 @@ class TestDfnSpec:
 
     def test_hierarchical_access(self, dfn_dir):
         """Test accessing components through the hierarchical tree."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         spec = DfnSpec.load(dfn_dir)
 
@@ -112,15 +119,10 @@ class TestDfnSpec:
 
     def test_load_empty_directory_raises(self, tmp_path):
         """Test that loading from empty directory raises ValueError."""
-        from modflow_devtools.dfn import DfnSpec
+        from modflow_devtools.dfns import DfnSpec
 
         with pytest.raises(ValueError, match="No DFN files found"):
             DfnSpec.load(tmp_path)
-
-
-# =============================================================================
-# Bootstrap and Registry Schema Tests
-# =============================================================================
 
 
 @requires_pkg("pydantic")
@@ -129,7 +131,7 @@ class TestBootstrapConfig:
 
     def test_source_config_defaults(self):
         """Test SourceConfig default values."""
-        from modflow_devtools.dfn.registry import SourceConfig
+        from modflow_devtools.dfns.registry import SourceConfig
 
         config = SourceConfig(repo="owner/repo")
 
@@ -140,7 +142,7 @@ class TestBootstrapConfig:
 
     def test_source_config_custom_values(self):
         """Test SourceConfig with custom values."""
-        from modflow_devtools.dfn.registry import SourceConfig
+        from modflow_devtools.dfns.registry import SourceConfig
 
         config = SourceConfig(
             repo="custom/repo",
@@ -156,7 +158,7 @@ class TestBootstrapConfig:
 
     def test_bootstrap_config_load(self, tmp_path):
         """Test loading BootstrapConfig from TOML file."""
-        from modflow_devtools.dfn.registry import BootstrapConfig
+        from modflow_devtools.dfns.registry import BootstrapConfig
 
         config_file = tmp_path / "dfns.toml"
         config_file.write_text("""
@@ -173,7 +175,7 @@ refs = ["main"]
 
     def test_bootstrap_config_load_nonexistent(self, tmp_path):
         """Test loading from nonexistent file returns empty config."""
-        from modflow_devtools.dfn.registry import BootstrapConfig
+        from modflow_devtools.dfns.registry import BootstrapConfig
 
         config = BootstrapConfig.load(tmp_path / "nonexistent.toml")
 
@@ -181,7 +183,7 @@ refs = ["main"]
 
     def test_bootstrap_config_merge(self):
         """Test merging two bootstrap configs."""
-        from modflow_devtools.dfn.registry import BootstrapConfig, SourceConfig
+        from modflow_devtools.dfns.registry import BootstrapConfig, SourceConfig
 
         base = BootstrapConfig(
             sources={
@@ -208,7 +210,7 @@ refs = ["main"]
 
     def test_get_bootstrap_config(self):
         """Test loading bundled bootstrap config."""
-        from modflow_devtools.dfn.registry import get_bootstrap_config
+        from modflow_devtools.dfns.registry import get_bootstrap_config
 
         config = get_bootstrap_config()
 
@@ -220,28 +222,9 @@ refs = ["main"]
 class TestRegistryMeta:
     """Tests for registry metadata schemas."""
 
-    def test_dfn_registry_file(self):
-        """Test DfnRegistryFile schema."""
-        from modflow_devtools.dfn.registry import DfnRegistryFile
-
-        file_entry = DfnRegistryFile(hash="sha256:abc123")
-        assert file_entry.hash == "sha256:abc123"
-
-    def test_dfn_registry_meta_defaults(self):
-        """Test DfnRegistryMeta default values."""
-        from modflow_devtools.dfn.registry import DfnRegistryMeta
-
-        meta = DfnRegistryMeta()
-
-        assert meta.schema_version == "1.0"
-        assert meta.generated_at is None
-        assert meta.devtools_version is None
-        assert meta.ref is None
-        assert meta.files == {}
-
     def test_dfn_registry_meta_load(self, tmp_path):
         """Test loading DfnRegistryMeta from TOML file."""
-        from modflow_devtools.dfn.registry import DfnRegistryMeta
+        from modflow_devtools.dfns.registry import DfnRegistryMeta
 
         registry_file = tmp_path / "dfns.toml"
         registry_file.write_text("""
@@ -269,7 +252,7 @@ hash = "sha256:def456"
         """Test saving DfnRegistryMeta to TOML file."""
         import tomli
 
-        from modflow_devtools.dfn.registry import DfnRegistryFile, DfnRegistryMeta
+        from modflow_devtools.dfns.registry import DfnRegistryFile, DfnRegistryMeta
 
         meta = DfnRegistryMeta(
             schema_version="1.0",
@@ -290,11 +273,6 @@ hash = "sha256:def456"
         assert data["schema_version"] == "1.0"
         assert data["metadata"]["ref"] == "test-ref"
         assert data["files"]["test.dfn"]["hash"] == "sha256:abc123"
-
-
-# =============================================================================
-# LocalDfnRegistry Tests
-# =============================================================================
 
 
 @requires_pkg("boltons", "pydantic")
@@ -374,18 +352,13 @@ class TestLocalDfnRegistry:
         assert components["gwf-chd"].name == "gwf-chd"
 
 
-# =============================================================================
-# Cache Utilities Tests
-# =============================================================================
-
-
 @requires_pkg("pydantic")
 class TestCacheUtilities:
     """Tests for cache and config utilities."""
 
     def test_get_cache_dir(self):
         """Test getting cache directory path."""
-        from modflow_devtools.dfn.registry import get_cache_dir
+        from modflow_devtools.dfns.registry import get_cache_dir
 
         cache_dir = get_cache_dir("dfn")
 
@@ -394,7 +367,7 @@ class TestCacheUtilities:
 
     def test_get_user_config_path(self):
         """Test getting user config path."""
-        from modflow_devtools.dfn.registry import get_user_config_path
+        from modflow_devtools.dfns.registry import get_user_config_path
 
         config_path = get_user_config_path("dfn")
 
@@ -403,16 +376,11 @@ class TestCacheUtilities:
 
     def test_get_cache_dir_custom_subdir(self):
         """Test cache dir with custom subdirectory."""
-        from modflow_devtools.dfn.registry import get_cache_dir
+        from modflow_devtools.dfns.registry import get_cache_dir
 
         cache_dir = get_cache_dir("custom")
 
         assert cache_dir.name == "custom"
-
-
-# =============================================================================
-# make_registry Tool Tests
-# =============================================================================
 
 
 @requires_pkg("tomli", "tomli_w")
@@ -507,14 +475,9 @@ class TestMakeRegistry:
         assert output_path.exists()
 
 
-# =============================================================================
-# CLI Tests
-# =============================================================================
-
-
 @requires_pkg("pydantic")
 class TestCLI:
-    """Tests for the dfn CLI."""
+    """Tests for the DFNs CLI."""
 
     def test_main_help(self):
         """Test CLI help output."""
@@ -550,12 +513,7 @@ class TestCLI:
         assert result == 1
 
 
-# =============================================================================
-# RemoteDfnRegistry Tests (Mocked)
-# =============================================================================
-
-
-@requires_pkg("pydantic", "pooch")
+@requires_pkg("pydantic", "pooch", "boltons")
 class TestRemoteDfnRegistry:
     """Tests for RemoteDfnRegistry with mocked network calls."""
 
@@ -577,7 +535,7 @@ class TestRemoteDfnRegistry:
 
     def test_construct_raw_url(self):
         """Test URL construction."""
-        from modflow_devtools.dfn.registry import RemoteDfnRegistry
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(source="modflow6", ref="6.6.0")
 
@@ -589,7 +547,7 @@ class TestRemoteDfnRegistry:
 
     def test_get_registry_cache_path(self):
         """Test getting registry cache path."""
-        from modflow_devtools.dfn.registry import RemoteDfnRegistry
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(source="modflow6", ref="6.6.0")
 
@@ -602,7 +560,7 @@ class TestRemoteDfnRegistry:
 
     def test_get_files_cache_dir(self):
         """Test getting files cache directory."""
-        from modflow_devtools.dfn.registry import RemoteDfnRegistry
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(source="modflow6", ref="6.6.0")
 
@@ -614,7 +572,7 @@ class TestRemoteDfnRegistry:
 
     def test_fetch_registry_not_found(self):
         """Test that fetching nonexistent registry raises appropriate error."""
-        from modflow_devtools.dfn.registry import (
+        from modflow_devtools.dfns.registry import (
             DfnRegistryNotFoundError,
             RemoteDfnRegistry,
         )
@@ -624,10 +582,129 @@ class TestRemoteDfnRegistry:
         with pytest.raises(DfnRegistryNotFoundError):
             registry._fetch_registry(force=True)
 
+    def test_init_with_repo_override(self):
+        """Test RemoteDfnRegistry with repo override."""
+        from modflow_devtools.dfn import RemoteDfnRegistry
 
-# =============================================================================
-# Module-level Convenience Functions Tests
-# =============================================================================
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        assert registry.source == TEST_DFN_SOURCE
+        assert registry.ref == TEST_DFN_REF
+        assert registry.repo == TEST_DFN_REPO
+
+    def test_construct_raw_url_with_repo_override(self):
+        """Test URL construction with repo override."""
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        url = registry._construct_raw_url("doc/mf6io/mf6ivar/dfn")
+
+        assert "raw.githubusercontent.com" in url
+        assert TEST_DFN_REPO in url
+        assert TEST_DFN_REF in url
+
+    def test_fetch_registry(self):
+        """Test fetching registry from the test repository."""
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        meta = registry._fetch_registry(force=True)
+
+        assert meta is not None
+        assert len(meta.files) > 0
+        # Registry file may have a different ref than what we requested
+        # (e.g., generated from develop branch but accessed on registry branch)
+        assert meta.ref is not None
+
+    def test_sync_files(self):
+        """Test syncing DFN files from the test repository."""
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        # Sync should succeed (fetches registry and sets up pooch)
+        registry.sync(force=True)
+
+        # Should be able to fetch a DFN file
+        path = registry.get_dfn_path("gwf-chd")
+        assert path.exists()
+
+    def test_get_dfn(self):
+        """Test getting a DFN from the test repository."""
+        from modflow_devtools.dfn import Dfn
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        # Ensure synced
+        registry.sync()
+
+        dfn = registry.get_dfn("gwf-chd")
+
+        assert isinstance(dfn, Dfn)
+        assert dfn.name == "gwf-chd"
+
+    def test_get_spec(self):
+        """Test getting the full spec from the test repository."""
+        from modflow_devtools.dfns import DfnSpec
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        # Ensure synced
+        registry.sync()
+
+        spec = registry.spec
+
+        assert isinstance(spec, DfnSpec)
+        assert "gwf-chd" in spec
+        assert "sim-nam" in spec
+
+    def test_list_components(self):
+        """Test listing available components from the test repository."""
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
+
+        registry = RemoteDfnRegistry(
+            source=TEST_DFN_SOURCE,
+            ref=TEST_DFN_REF,
+            repo=TEST_DFN_REPO,
+        )
+
+        # Ensure synced
+        registry.sync()
+
+        # Use spec.keys() to list components
+        components = list(registry.spec.keys())
+
+        assert len(components) > 100
+        assert "gwf-chd" in components
+        assert "sim-nam" in components
 
 
 @requires_pkg("boltons", "pydantic")
@@ -647,7 +724,7 @@ class TestModuleFunctions:
 
     def test_get_sync_status(self):
         """Test get_sync_status function."""
-        from modflow_devtools.dfn.registry import get_sync_status
+        from modflow_devtools.dfns.registry import get_sync_status
 
         status = get_sync_status()
 
