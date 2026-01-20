@@ -43,7 +43,12 @@ _DEFAULT_REGISTRY_FILE_NAME = "registry.toml"
 
 
 class ModelInputFile(BaseModel):
-    """A single file entry in the registry. Can be local or remote."""
+    """
+    A single file entry in the registry. Can be local or remote.
+
+    Implements dict-like access for backwards compatibility:
+    file_entry["hash"], file_entry["path"], file_entry["url"]
+    """
 
     url: str | None = Field(None, description="URL (for remote files)")
     path: Path | None = Field(None, description="Local file path (original or cached)")
@@ -60,6 +65,36 @@ class ModelInputFile(BaseModel):
         if not self.url and not self.path:
             raise ValueError("FileEntry must have either url or path")
         return self
+
+    # Backwards compatibility: dict-like access
+    def __getitem__(self, key: str):
+        """Allow dict-like access for backwards compatibility."""
+        if key == "url":
+            return self.url
+        elif key == "path":
+            return self.path
+        elif key == "hash":
+            return self.hash
+        raise KeyError(key)
+
+    def get(self, key: str, default=None):
+        """Allow dict-like .get() for backwards compatibility."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def keys(self):
+        """Return available keys for backwards compatibility."""
+        return ["url", "path", "hash"]
+
+    def values(self):
+        """Return values for backwards compatibility."""
+        return [self.url, self.path, self.hash]
+
+    def items(self):
+        """Return items for backwards compatibility."""
+        return [("url", self.url), ("path", self.path), ("hash", self.hash)]
 
 
 class ModelRegistry(BaseModel):
@@ -1311,3 +1346,14 @@ def copy_to(workspace: str | PathLike, model_name: str, verbose: bool = False) -
     The workspace will be created if it does not exist.
     """
     return get_default_registry().copy_to(workspace, model_name, verbose=verbose)
+
+
+def __getattr__(name: str):
+    """
+    Lazy module attribute access for backwards compatibility.
+
+    Provides DEFAULT_REGISTRY as a lazily-initialized module attribute.
+    """
+    if name == "DEFAULT_REGISTRY":
+        return get_default_registry()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
