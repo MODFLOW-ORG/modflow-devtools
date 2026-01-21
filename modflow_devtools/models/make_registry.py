@@ -301,7 +301,7 @@ Examples:
 
             # Construct raw GitHub URL for version-controlled files
             path_suffix = f"/{path_in_repo}" if path_in_repo else ""
-            url = f"https://github.com/{args.repo}/raw/{args.ref}{path_suffix}"
+            url = f"https://raw.githubusercontent.com/{args.repo}/{args.ref}{path_suffix}"
             if args.verbose:
                 print("Mode: version (version-controlled)")
                 print(f"Constructed URL: {url}")

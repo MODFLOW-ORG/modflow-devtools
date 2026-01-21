@@ -13,29 +13,66 @@ import sys
 from . import (
     _DEFAULT_CACHE,
     ModelSourceConfig,
-    sync_registry,
 )
 
 
 def cmd_sync(args):
     """Sync command handler."""
-    result = sync_registry(
-        source=args.source,
-        ref=args.ref,
-        repo=getattr(args, "repo", None),
-        force=args.force,
-        verbose=True,
-    )
+    config = ModelSourceConfig.load()
+
+    # If a specific source is provided, sync just that source
+    if args.source:
+        # Look up source by key or by name field
+        source_obj = None
+        if args.source in config.sources:
+            source_obj = config.sources[args.source]
+        else:
+            # Try to find by name field
+            for src in config.sources.values():
+                if src.name == args.source:
+                    source_obj = src
+                    break
+
+        if source_obj is None:
+            # If --repo is provided, create an ad-hoc source
+            if args.repo:
+                from . import ModelSourceRepo
+
+                source_obj = ModelSourceRepo(
+                    repo=args.repo,
+                    name=args.source,
+                    refs=[args.ref] if args.ref else [],
+                )
+                result = source_obj.sync(ref=args.ref, force=args.force, verbose=True)
+                results = {args.source: result}
+            else:
+                available = [f"{k} ({v.name})" for k, v in config.sources.items()]
+                print(f"Error: Source '{args.source}' not found in config.", file=sys.stderr)
+                print("Available sources:", ", ".join(available), file=sys.stderr)
+                sys.exit(1)
+        else:
+            # Sync the configured source
+            result = source_obj.sync(ref=args.ref, force=args.force, verbose=True)
+            results = {source_obj.name: result}
+    else:
+        # Sync all configured sources
+        results = config.sync(force=args.force, verbose=True)
+
+    # Summarize results
+    total_synced = sum(len(r.synced) for r in results.values())
+    total_skipped = sum(len(r.skipped) for r in results.values())
+    total_failed = sum(len(r.failed) for r in results.values())
 
     print("\nSync complete:")
-    print(f"  Synced: {len(result.synced)}")
-    print(f"  Skipped: {len(result.skipped)}")
-    print(f"  Failed: {len(result.failed)}")
+    print(f"  Synced: {total_synced}")
+    print(f"  Skipped: {total_skipped}")
+    print(f"  Failed: {total_failed}")
 
-    if result.failed:
+    if total_failed:
         print("\nFailed syncs:")
-        for source, ref, error in result.failed:
-            print(f"  {source}@{ref}: {error}")
+        for source_name, result in results.items():
+            for ref, error in result.failed:
+                print(f"  {source_name}@{ref}: {error}")
         sys.exit(1)
 
 

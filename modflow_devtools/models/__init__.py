@@ -1017,7 +1017,7 @@ class PoochRegistry(ModelRegistry):
             raise RuntimeError(
                 "No model registries found in cache. "
                 "Run 'python -m modflow_devtools.models sync' to download registries, "
-                "or use sync_registry() programmatically."
+                "or use ModelSourceConfig.load().sync() programmatically."
             )
 
     def _try_load_from_cache(self) -> bool:
@@ -1130,7 +1130,6 @@ class PoochRegistry(ModelRegistry):
         examples: dict[str, list[str]] = {}
         exclude = [".DS_Store", "compare"]
         is_zip = url.endswith((".zip", ".tar")) if url else False
-        # Note: Don't store URL in registry - URLs are constructed dynamically at runtime
 
         model_paths = get_model_paths(path, namefile=namefile)
         for model_path in model_paths:
@@ -1153,8 +1152,10 @@ class PoochRegistry(ModelRegistry):
                 # Compute hash (None for zip-based registries)
                 hash = None if is_zip else _sha256(p)
 
-                # Don't store URL - it will be constructed dynamically at runtime
-                files[name] = {"hash": hash}
+                # For zip-based registries, all files share the zip URL
+                # For version-controlled, construct per-file URL from base + path
+                file_url = url if is_zip else f"{url}/{name}"
+                files[name] = {"url": file_url, "hash": hash}
                 models[model_name].append(name)
 
         for example_name in examples.keys():
@@ -1282,41 +1283,6 @@ def get_default_registry():
     if _default_registry_cache is None:
         _default_registry_cache = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
     return _default_registry_cache
-
-
-def sync_registry(
-    source: str,
-    ref: str,
-    repo: str,
-    force: bool = False,
-    verbose: bool = False,
-) -> ModelSourceRepo.SyncResult:
-    """
-    Sync a specific registry from a model source repository.
-
-    This is a convenience function for testing and scripting.
-
-    Parameters
-    ----------
-    source : str
-        Source name
-    ref : str
-        Git ref (tag, branch, or commit)
-    repo : str
-        Repository in format 'owner/name'
-    force : bool
-        Force re-download even if cached
-    verbose : bool
-        Print progress messages
-
-    Returns
-    -------
-    SyncResult
-        Results of the sync operation
-    """
-    # Extract source name from repo if not provided
-    source_obj = ModelSourceRepo(repo=repo, name=source, refs=[ref])
-    return source_obj.sync(ref=ref, force=force, verbose=verbose)
 
 
 def get_examples() -> dict[str, list[str]]:
