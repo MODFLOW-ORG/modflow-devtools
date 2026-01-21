@@ -1130,7 +1130,6 @@ class PoochRegistry(ModelRegistry):
         examples: dict[str, list[str]] = {}
         exclude = [".DS_Store", "compare"]
         is_zip = url.endswith((".zip", ".tar")) if url else False
-        # Note: Don't store URL in registry - URLs are constructed dynamically at runtime
 
         model_paths = get_model_paths(path, namefile=namefile)
         for model_path in model_paths:
@@ -1153,8 +1152,10 @@ class PoochRegistry(ModelRegistry):
                 # Compute hash (None for zip-based registries)
                 hash = None if is_zip else _sha256(p)
 
-                # Don't store URL - it will be constructed dynamically at runtime
-                files[name] = {"hash": hash}
+                # For zip-based registries, all files share the zip URL
+                # For version-controlled, construct per-file URL from base + path
+                file_url = url if is_zip else f"{url}/{name}"
+                files[name] = {"url": file_url, "hash": hash}
                 models[model_name].append(name)
 
         for example_name in examples.keys():
