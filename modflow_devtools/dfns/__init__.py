@@ -97,6 +97,7 @@ class Dfn:
     parent: str | None = None
     advanced: bool = False
     multi: bool = False
+    ftype: str | None = None
     ref: Ref | None = None
     blocks: Blocks | None = None
     children: Dfns | None = None
@@ -533,6 +534,7 @@ class MapV1To2(SchemaMap):
             name=dfn.name,
             advanced=dfn.advanced,
             multi=dfn.multi,
+            ftype=dfn.ftype or (dfn.name.split("-", 1)[1].upper() if "-" in dfn.name else None),
             ref=dfn.ref,
             blocks=MapV1To2.map_blocks(dfn),
             schema_version=v2,
@@ -569,18 +571,22 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
             parent=try_parse_parent(meta),
             advanced=is_advanced_package(meta),
             multi=is_multi_package(meta),
+            ftype=name.split("-", 1)[1].upper() if "-" in name else None,
             blocks=blocks,
         )
 
     elif format == "toml":
         data = tomli.load(f)
+        dfn_name = data.pop("name", kwargs.pop("name", None))
 
         dfn_fields = {
-            "name": data.pop("name", kwargs.pop("name", None)),
+            "name": dfn_name,
             "schema_version": Version(str(data.pop("schema_version", "2"))),
             "parent": data.pop("parent", None),
             "advanced": data.pop("advanced", False),
             "multi": data.pop("multi", False),
+            "ftype": data.pop("ftype", None)
+            or (dfn_name.split("-", 1)[1].upper() if dfn_name and "-" in dfn_name else None),
             "ref": data.pop("ref", None),
         }
 
