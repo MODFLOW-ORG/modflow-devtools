@@ -1017,7 +1017,7 @@ class PoochRegistry(ModelRegistry):
             raise RuntimeError(
                 "No model registries found in cache. "
                 "Run 'python -m modflow_devtools.models sync' to download registries, "
-                "or use sync_registry() programmatically."
+                "or use ModelSourceConfig.load().sync() programmatically."
             )
 
     def _try_load_from_cache(self) -> bool:
@@ -1283,41 +1283,6 @@ def get_default_registry():
     if _default_registry_cache is None:
         _default_registry_cache = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
     return _default_registry_cache
-
-
-def sync_registry(
-    source: str,
-    ref: str,
-    repo: str,
-    force: bool = False,
-    verbose: bool = False,
-) -> ModelSourceRepo.SyncResult:
-    """
-    Sync a specific registry from a model source repository.
-
-    This is a convenience function for testing and scripting.
-
-    Parameters
-    ----------
-    source : str
-        Source name
-    ref : str
-        Git ref (tag, branch, or commit)
-    repo : str
-        Repository in format 'owner/name'
-    force : bool
-        Force re-download even if cached
-    verbose : bool
-        Print progress messages
-
-    Returns
-    -------
-    SyncResult
-        Results of the sync operation
-    """
-    # Extract source name from repo if not provided
-    source_obj = ModelSourceRepo(repo=repo, name=source, refs=[ref])
-    return source_obj.sync(ref=ref, force=force, verbose=verbose)
 
 
 def get_examples() -> dict[str, list[str]]:

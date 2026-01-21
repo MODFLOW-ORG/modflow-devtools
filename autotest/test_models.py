@@ -19,7 +19,6 @@ from modflow_devtools.models import (
     ModelSourceConfig,
     ModelSourceRepo,
     get_user_config_path,
-    sync_registry,
 )
 
 # Test configuration (loaded from .env file via pytest-dotenv plugin)
@@ -275,12 +274,12 @@ class TestSync:
         """Test syncing a single source/ref."""
         _DEFAULT_CACHE.clear()
 
-        result = sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
-            verbose=True,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+        result = source.sync(ref=TEST_REF, verbose=True)
 
         assert len(result.synced) == 1
         assert len(result.failed) == 0
@@ -291,11 +290,12 @@ class TestSync:
         _DEFAULT_CACHE.clear()
         assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
 
-        sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+        source.sync(ref=TEST_REF)
 
         assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
 
@@ -303,20 +303,18 @@ class TestSync:
         """Test that sync skips already-cached registries."""
         _DEFAULT_CACHE.clear()
 
-        # First sync
-        result1 = sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+
+        # First sync
+        result1 = source.sync(ref=TEST_REF)
         assert len(result1.synced) == 1
 
         # Second sync should skip
-        result2 = sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
-            repo=TEST_REPO,
-        )
+        result2 = source.sync(ref=TEST_REF)
         assert len(result2.synced) == 0
         assert len(result2.skipped) == 1
 
@@ -324,20 +322,17 @@ class TestSync:
         """Test that force flag re-syncs cached registries."""
         _DEFAULT_CACHE.clear()
 
-        # First sync
-        sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
 
+        # First sync
+        source.sync(ref=TEST_REF)
+
         # Force sync
-        result = sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
-            repo=TEST_REPO,
-            force=True,
-        )
+        result = source.sync(ref=TEST_REF, force=True)
         assert len(result.synced) == 1
         assert len(result.skipped) == 0
 
@@ -405,11 +400,12 @@ class TestRegistry:
     def synced_registry(self):
         """Fixture that syncs and loads a registry once for all tests."""
         _DEFAULT_CACHE.clear()
-        sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+        source.sync(ref=TEST_REF)
         registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
         return registry
 
@@ -477,11 +473,12 @@ class TestCLI:
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
         _DEFAULT_CACHE.clear()
-        sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+        source.sync(ref=TEST_REF)
 
         import argparse
 
@@ -529,11 +526,12 @@ class TestIntegration:
         _DEFAULT_CACHE.clear()
 
         # Sync
-        result = sync_registry(
-            source=TEST_SOURCE_NAME,
-            ref=TEST_REF,
+        source = ModelSourceRepo(
             repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
         )
+        result = source.sync(ref=TEST_REF)
         assert len(result.synced) == 1
 
         # List cached registries
