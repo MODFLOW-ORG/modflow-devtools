@@ -590,7 +590,7 @@ class TestMakeRegistry:
             name="mf6/test",
         )
         # Should be repo root (no path, or auto-detected)
-        assert url.startswith("https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master")
+        assert url.startswith("https://raw.githubusercontent.com/MODFLOW-ORG/modflow6-testmodels/master")
 
     def test_url_construction_version_different_ref(self):
         """Test URL construction for version mode with different ref."""
@@ -600,7 +600,7 @@ class TestMakeRegistry:
             ref="develop",
             name="mf6/large",
         )
-        assert url.startswith("https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/develop")
+        assert url.startswith("https://raw.githubusercontent.com/MODFLOW-ORG/modflow6-largetestmodels/develop")
 
     def test_url_construction_release(self):
         """Test URL construction for release mode."""
