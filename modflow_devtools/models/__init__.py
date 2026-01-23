@@ -211,8 +211,13 @@ class ModelCache:
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
+
+        # Convert registry to dict and clean None/empty values before serializing to TOML
+        registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
+        registry_dict = remap(registry_dict, visit=drop_none_or_empty)
+
         with registry_file.open("wb") as f:
-            tomli_w.dump(registry.model_dump(mode="json", by_alias=True, exclude_none=True), f)
+            tomli_w.dump(registry_dict, f)
 
         return registry_file
 
