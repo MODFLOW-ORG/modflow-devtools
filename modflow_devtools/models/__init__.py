@@ -259,77 +259,23 @@ class ModelCache:
         lock_file = self.root / ".cache_operation.lock"
         lock_file.parent.mkdir(parents=True, exist_ok=True)
 
-        print(f"[DEBUG] Cache directory path: {cache_dir}")
-        print(f"[DEBUG] Using lock file: {lock_file}")
-
         with FileLock(str(lock_file), timeout=30):
-            print(f"[DEBUG] Acquired lock, cache directory exists: {cache_dir.exists()}")
-
-            try:
-                cache_dir.mkdir(parents=True, exist_ok=True)
-                print(f"[DEBUG] Cache directory exists after mkdir: {cache_dir.exists()}")
-            except Exception as e:
-                print(
-                    f"[ERROR] Failed to create cache directory {cache_dir}: {type(e).__name__}: {e}"
-                )
-                raise
-
-            print(f"[DEBUG] Registry file path: {registry_file}")
+            cache_dir.mkdir(parents=True, exist_ok=True)
 
             # Convert registry to dict and clean None/empty values before serializing to TOML
-            try:
-                registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
-                print(
-                    f"[DEBUG] Registry: {len(registry.files)} files, {len(registry.models)} models"
-                )
+            registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
 
-                # Use remap to recursively filter out None and empty values
-                # This is essential for TOML serialization which cannot handle None
-                registry_dict = remap(registry_dict, visit=drop_none_or_empty)
+            # Use remap to recursively filter out None and empty values
+            # This is essential for TOML serialization which cannot handle None
+            registry_dict = remap(registry_dict, visit=drop_none_or_empty)
 
-                # Validate that the TOML can be serialized and parsed back
-                toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
-                print(
-                    f"[DEBUG] Generated TOML: {len(toml_bytes)} bytes, "
-                    + str(toml_bytes.count(b"\n"))
-                    + " lines"
-                )
+            # Serialize and validate TOML before writing
+            toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
+            tomli.loads(toml_bytes.decode("utf-8"))  # Validate can be parsed back
 
-                # Test parse to catch any serialization issues before writing to file
-                tomli.loads(toml_bytes.decode("utf-8"))
-                print("[DEBUG] TOML validation successful")
-
-                # If validation passed, write to file
-                print(f"[DEBUG] About to write to {registry_file}")
-                print(f"[DEBUG] Cache directory exists before write: {cache_dir.exists()}")
-                print(f"[DEBUG] Parent directory exists: {registry_file.parent.exists()}")
-                with registry_file.open("wb") as f:
-                    f.write(toml_bytes)
-                print(f"[DEBUG] Saved registry to {registry_file}")
-            except tomli.TOMLDecodeError as e:
-                # TOML parse error - show context around the error
-                print(f"[ERROR] TOML validation failed: {e}")
-                if hasattr(e, "lineno"):
-                    lines = toml_bytes.decode("utf-8").split("\n")
-                    start = max(0, e.lineno - 5)
-                    end = min(len(lines), e.lineno + 5)
-                    print(f"[ERROR] Context around line {e.lineno}:")
-                    for i in range(start, end):
-                        marker = " >>> " if i == e.lineno - 1 else "     "
-                        print(f"{marker}{i + 1:5d}: {lines[i][:100]}")
-                raise RuntimeError(
-                    f"Generated invalid TOML for {registry_file}. "
-                    f"Parse error at line {getattr(e, 'lineno', '?')}: {e}"
-                ) from e
-            except Exception as e:
-                # Provide detailed error message for debugging
-                print(f"[ERROR] Failed to save registry: {type(e).__name__}: {e}")
-                raise RuntimeError(
-                    f"Failed to save registry to {registry_file}. "
-                    f"Cache dir exists: {cache_dir.exists()}, "
-                    f"Registry has {len(registry.files)} files, {len(registry.models)} models. "
-                    f"Error: {type(e).__name__}: {e}"
-                ) from e
+            # Write to file
+            with registry_file.open("wb") as f:
+                f.write(toml_bytes)
 
         return registry_file
 
