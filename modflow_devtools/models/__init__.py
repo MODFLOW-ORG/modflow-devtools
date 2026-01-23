@@ -252,15 +252,25 @@ class ModelCache:
         Path
             Path to cached registry file
         """
-        cache_dir = self.get_registry_cache_dir(source, ref)
-        cache_dir.mkdir(parents=True, exist_ok=True)
-
-        registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
-
-        # Convert registry to dict and clean None/empty values before serializing to TOML
         import logging
 
         logger = logging.getLogger(__name__)
+
+        cache_dir = self.get_registry_cache_dir(source, ref)
+        logger.debug(f"Cache directory path: {cache_dir}")
+        logger.debug(f"Cache directory exists before mkdir: {cache_dir.exists()}")
+
+        try:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Cache directory exists after mkdir: {cache_dir.exists()}")
+        except Exception as e:
+            logger.error(f"Failed to create cache directory {cache_dir}: {type(e).__name__}: {e}")
+            raise
+
+        registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
+        logger.debug(f"Registry file path: {registry_file}")
+
+        # Convert registry to dict and clean None/empty values before serializing to TOML
 
         try:
             registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
@@ -292,6 +302,9 @@ class ModelCache:
             logger.debug("TOML validation successful")
 
             # If validation passed, write to file
+            logger.debug(f"About to write to {registry_file}")
+            logger.debug(f"Cache directory exists before write: {cache_dir.exists()}")
+            logger.debug(f"Parent directory exists: {registry_file.parent.exists()}")
             with registry_file.open("wb") as f:
                 f.write(toml_bytes)
             logger.debug(f"Saved registry to {registry_file}")
