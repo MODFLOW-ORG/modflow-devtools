@@ -269,13 +269,9 @@ class ModelCache:
             # This is essential for TOML serialization which cannot handle None
             registry_dict = remap(registry_dict, visit=drop_none_or_empty)
 
-            # Serialize and validate TOML before writing
-            toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
-            tomli.loads(toml_bytes.decode("utf-8"))  # Validate can be parsed back
-
             # Write to file
             with registry_file.open("wb") as f:
-                f.write(toml_bytes)
+                tomli_w.dump(registry_dict, f)
 
         return registry_file
 
