@@ -272,7 +272,7 @@ class TestSync:
 
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -287,7 +287,7 @@ class TestSync:
 
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
         assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
 
         source = ModelSourceRepo(
@@ -301,7 +301,7 @@ class TestSync:
 
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -320,7 +320,7 @@ class TestSync:
 
     def test_sync_force(self):
         """Test that force flag re-syncs cached registries."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -339,7 +339,7 @@ class TestSync:
 
     def test_sync_via_source_method(self):
         """Test syncing via ModelSourceRepo.sync() method."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         # Create source with test repo override
         source = ModelSourceRepo(
@@ -356,7 +356,7 @@ class TestSync:
 
     def test_source_is_synced_method(self):
         """Test ModelSourceRepo.is_synced() method."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -375,7 +375,7 @@ class TestSync:
 
     def test_source_list_synced_refs_method(self):
         """Test ModelSourceRepo.list_synced_refs() method."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         source = ModelSourceRepo(
             repo=TEST_REPO,
@@ -400,7 +400,7 @@ class TestRegistry:
     @pytest.fixture(scope="class")
     def synced_registry(self):
         """Fixture that syncs and loads a registry once for all tests."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
         source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
@@ -474,7 +474,7 @@ class TestCLI:
 
     def test_cli_list_with_cache(self, capsys):
         """Test 'list' command with cached registries."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
         source = ModelSourceRepo(
             repo=TEST_REPO,
             name=TEST_SOURCE_NAME,
@@ -506,7 +506,7 @@ class TestIntegration:
     def test_full_workflow(self):
         """Test complete workflow: discover -> cache -> load."""
         # Clear cache
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         # Create test source
         source = ModelSourceRepo(
@@ -530,7 +530,7 @@ class TestIntegration:
 
     def test_sync_and_list_models(self):
         """Test syncing and listing available models."""
-        _DEFAULT_CACHE.clear()
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
 
         # Sync
         source = ModelSourceRepo(
