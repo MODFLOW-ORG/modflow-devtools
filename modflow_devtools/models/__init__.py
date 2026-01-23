@@ -281,7 +281,9 @@ class ModelCache:
             logger.debug("Serializing to TOML...")
             toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
             logger.debug(
-                f"Generated TOML: {len(toml_bytes)} bytes, " + toml_bytes.count(b"\n") + " lines"
+                f"Generated TOML: {len(toml_bytes)} bytes, "
+                + str(toml_bytes.count(b"\n"))
+                + " lines"
             )
 
             # Test parse to catch any serialization issues before writing to file
