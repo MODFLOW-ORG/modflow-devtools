@@ -258,11 +258,65 @@ class ModelCache:
         registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
 
         # Convert registry to dict and clean None/empty values before serializing to TOML
-        registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
-        registry_dict = remap(registry_dict, visit=drop_none_or_empty)
+        import logging
 
-        with registry_file.open("wb") as f:
-            tomli_w.dump(registry_dict, f)
+        logger = logging.getLogger(__name__)
+
+        try:
+            registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
+            logger.debug(
+                f"Registry dict after model_dump: {len(registry.files)} files, "
+                f"{len(registry.models)} models, {len(registry.examples)} examples"
+            )
+
+            # Use remap to recursively filter out None and empty values
+            # This is essential for TOML serialization which cannot handle None
+            registry_dict = remap(registry_dict, visit=drop_none_or_empty)
+            logger.debug(
+                f"Registry dict after remap: {len(registry_dict.get('files', {}))} files, "
+                f"{len(registry_dict.get('models', {}))} models"
+            )
+
+            # Validate that the TOML can be serialized and parsed back
+            logger.debug("Serializing to TOML...")
+            toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
+            logger.debug(
+                f"Generated TOML: {len(toml_bytes)} bytes, " + toml_bytes.count(b"\n") + " lines"
+            )
+
+            # Test parse to catch any serialization issues before writing to file
+            logger.debug("Validating TOML can be parsed back...")
+            tomli.loads(toml_bytes.decode("utf-8"))
+            logger.debug("TOML validation successful")
+
+            # If validation passed, write to file
+            with registry_file.open("wb") as f:
+                f.write(toml_bytes)
+            logger.debug(f"Saved registry to {registry_file}")
+        except tomli.TOMLDecodeError as e:
+            # TOML parse error - show context around the error
+            logger.error(f"TOML validation failed: {e}")
+            if hasattr(e, "lineno"):
+                lines = toml_bytes.decode("utf-8").split("\n")
+                start = max(0, e.lineno - 5)
+                end = min(len(lines), e.lineno + 5)
+                logger.error(f"Context around line {e.lineno}:")
+                for i in range(start, end):
+                    marker = " >>> " if i == e.lineno - 1 else "     "
+                    logger.error(f"{marker}{i + 1:5d}: {lines[i][:100]}")
+            raise RuntimeError(
+                f"Generated invalid TOML for {registry_file}. "
+                f"Parse error at line {getattr(e, 'lineno', '?')}: {e}"
+            ) from e
+        except Exception as e:
+            # Provide detailed error message for debugging
+            logger.error(f"Failed to save registry: {type(e).__name__}: {e}")
+            raise RuntimeError(
+                f"Failed to save registry to {registry_file}. "
+                f"Cache dir exists: {cache_dir.exists()}, "
+                f"Registry has {len(registry.files)} files, {len(registry.models)} models. "
+                f"Error: {type(e).__name__}: {e}"
+            ) from e
 
         return registry_file
 
