@@ -104,6 +104,7 @@ jobs:
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}
+          MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
         run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py
       
@@ -120,6 +121,7 @@ jobs:
           TEST_REF: registry
           TEST_SOURCE: modflow6-testmodels
           TEST_SOURCE_NAME: mf6/test
+          MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
         run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py
   
   rtd:
