@@ -41,6 +41,51 @@ Uses Pooch's os_cache() for platform-appropriate location:
 _DEFAULT_REGISTRY_FILE_NAME = "registry.toml"
 """The default registry file name"""
 
+_EXCLUDED_PATTERNS = [".DS_Store", "compare"]
+"""Filename patterns to exclude from registry (substring match)"""
+
+_OUTPUT_FILE_EXTENSIONS = [
+    ".lst",  # list file
+    ".hds",  # head file
+    ".hed",  # head file
+    ".cbb",  # budget file
+    ".cbc",  # budget file
+    ".bud",  # budget file
+    ".ddn",  # drawdown file
+    ".ucn",  # concentration file
+    ".obs",  # observation file
+    ".glo",  # global listing file
+]
+"""Output file extensions to exclude from model input registry"""
+
+
+def _should_exclude_file(path: Path) -> bool:
+    """
+    Check if a file should be excluded from the registry.
+
+    Excludes files matching patterns in _EXCLUDED_PATTERNS (substring match)
+    or with extensions in _OUTPUT_FILE_EXTENSIONS.
+
+    Parameters
+    ----------
+    path : Path
+        File path to check
+
+    Returns
+    -------
+    bool
+        True if file should be excluded, False otherwise
+    """
+    # Check filename patterns (substring match)
+    if any(pattern in path.name for pattern in _EXCLUDED_PATTERNS):
+        return True
+
+    # Check output file extensions (exact suffix match)
+    if path.suffix.lower() in _OUTPUT_FILE_EXTENSIONS:
+        return True
+
+    return False
+
 
 class ModelInputFile(BaseModel):
     """
@@ -803,7 +848,7 @@ class LocalRegistry(ModelRegistry):
     presence of a namefile) and registers corresponding input files.
     """
 
-    exclude: ClassVar = [".DS_Store", "compare"]
+    exclude: ClassVar = _EXCLUDED_PATTERNS  # For backwards compatibility
 
     # Non-Pydantic instance variable for tracking indexed paths
     _paths: set[Path]
@@ -870,7 +915,7 @@ class LocalRegistry(ModelRegistry):
                     self.examples[name] = []
                 self.examples[name].append(model_name)
             for p in model_path.rglob("*"):
-                if not p.is_file() or any(e in p.name for e in LocalRegistry.exclude):
+                if not p.is_file() or _should_exclude_file(p):
                     continue
                 relpath = p.expanduser().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
@@ -1133,7 +1178,6 @@ class PoochRegistry(ModelRegistry):
         files: dict[str, dict[str, str | None]] = {}
         models: dict[str, list[str]] = {}
         examples: dict[str, list[str]] = {}
-        exclude = [".DS_Store", "compare"]
         is_zip = url.endswith((".zip", ".tar")) if url else False
 
         model_paths = get_model_paths(path, namefile=namefile)
@@ -1149,7 +1193,7 @@ class PoochRegistry(ModelRegistry):
                     examples[name] = []
                 examples[name].append(model_name)
             for p in model_path.rglob("*"):
-                if not p.is_file() or any(e in p.name for e in exclude):
+                if not p.is_file() or _should_exclude_file(p):
                     continue
                 relpath = p.expanduser().resolve().absolute().relative_to(path)
                 name = "/".join(relpath.parts)
