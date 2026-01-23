@@ -252,80 +252,66 @@ class ModelCache:
         Path
             Path to cached registry file
         """
-        import logging
-
-        logger = logging.getLogger(__name__)
-
         cache_dir = self.get_registry_cache_dir(source, ref)
-        logger.debug(f"Cache directory path: {cache_dir}")
-        logger.debug(f"Cache directory exists before mkdir: {cache_dir.exists()}")
+        print(f"[DEBUG] Cache directory path: {cache_dir}")
+        print(f"[DEBUG] Cache directory exists before mkdir: {cache_dir.exists()}")
 
         try:
             cache_dir.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"Cache directory exists after mkdir: {cache_dir.exists()}")
+            print(f"[DEBUG] Cache directory exists after mkdir: {cache_dir.exists()}")
         except Exception as e:
-            logger.error(f"Failed to create cache directory {cache_dir}: {type(e).__name__}: {e}")
+            print(f"[ERROR] Failed to create cache directory {cache_dir}: {type(e).__name__}: {e}")
             raise
 
         registry_file = cache_dir / _DEFAULT_REGISTRY_FILE_NAME
-        logger.debug(f"Registry file path: {registry_file}")
+        print(f"[DEBUG] Registry file path: {registry_file}")
 
         # Convert registry to dict and clean None/empty values before serializing to TOML
-
         try:
             registry_dict = registry.model_dump(mode="json", by_alias=True, exclude_none=True)
-            logger.debug(
-                f"Registry dict after model_dump: {len(registry.files)} files, "
-                f"{len(registry.models)} models, {len(registry.examples)} examples"
-            )
+            print(f"[DEBUG] Registry: {len(registry.files)} files, {len(registry.models)} models")
 
             # Use remap to recursively filter out None and empty values
             # This is essential for TOML serialization which cannot handle None
             registry_dict = remap(registry_dict, visit=drop_none_or_empty)
-            logger.debug(
-                f"Registry dict after remap: {len(registry_dict.get('files', {}))} files, "
-                f"{len(registry_dict.get('models', {}))} models"
-            )
 
             # Validate that the TOML can be serialized and parsed back
-            logger.debug("Serializing to TOML...")
             toml_bytes = tomli_w.dumps(registry_dict).encode("utf-8")
-            logger.debug(
-                f"Generated TOML: {len(toml_bytes)} bytes, "
+            print(
+                f"[DEBUG] Generated TOML: {len(toml_bytes)} bytes, "
                 + str(toml_bytes.count(b"\n"))
                 + " lines"
             )
 
             # Test parse to catch any serialization issues before writing to file
-            logger.debug("Validating TOML can be parsed back...")
             tomli.loads(toml_bytes.decode("utf-8"))
-            logger.debug("TOML validation successful")
+            print("[DEBUG] TOML validation successful")
 
             # If validation passed, write to file
-            logger.debug(f"About to write to {registry_file}")
-            logger.debug(f"Cache directory exists before write: {cache_dir.exists()}")
-            logger.debug(f"Parent directory exists: {registry_file.parent.exists()}")
+            print(f"[DEBUG] About to write to {registry_file}")
+            print(f"[DEBUG] Cache directory exists before write: {cache_dir.exists()}")
+            print(f"[DEBUG] Parent directory exists: {registry_file.parent.exists()}")
             with registry_file.open("wb") as f:
                 f.write(toml_bytes)
-            logger.debug(f"Saved registry to {registry_file}")
+            print(f"[DEBUG] Saved registry to {registry_file}")
         except tomli.TOMLDecodeError as e:
             # TOML parse error - show context around the error
-            logger.error(f"TOML validation failed: {e}")
+            print(f"[ERROR] TOML validation failed: {e}")
             if hasattr(e, "lineno"):
                 lines = toml_bytes.decode("utf-8").split("\n")
                 start = max(0, e.lineno - 5)
                 end = min(len(lines), e.lineno + 5)
-                logger.error(f"Context around line {e.lineno}:")
+                print(f"[ERROR] Context around line {e.lineno}:")
                 for i in range(start, end):
                     marker = " >>> " if i == e.lineno - 1 else "     "
-                    logger.error(f"{marker}{i + 1:5d}: {lines[i][:100]}")
+                    print(f"{marker}{i + 1:5d}: {lines[i][:100]}")
             raise RuntimeError(
                 f"Generated invalid TOML for {registry_file}. "
                 f"Parse error at line {getattr(e, 'lineno', '?')}: {e}"
             ) from e
         except Exception as e:
             # Provide detailed error message for debugging
-            logger.error(f"Failed to save registry: {type(e).__name__}: {e}")
+            print(f"[ERROR] Failed to save registry: {type(e).__name__}: {e}")
             raise RuntimeError(
                 f"Failed to save registry to {registry_file}. "
                 f"Cache dir exists: {cache_dir.exists()}, "
