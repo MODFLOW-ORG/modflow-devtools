@@ -1260,8 +1260,9 @@ def _try_best_effort_sync():
         pass
 
 
-# Try to sync on first import
-_try_best_effort_sync()
+# Try to sync on first import (unless disabled)
+if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    _try_best_effort_sync()
 
 # Lazy initialization of default registry
 _default_registry_cache = None

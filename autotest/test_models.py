@@ -329,7 +329,8 @@ class TestSync:
         )
 
         # First sync
-        source.sync(ref=TEST_REF)
+        result_initial = source.sync(ref=TEST_REF)
+        assert len(result_initial.failed) == 0, f"Initial sync failed: {result_initial.failed}"
 
         # Force sync
         result = source.sync(ref=TEST_REF, force=True)
@@ -405,7 +406,8 @@ class TestRegistry:
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
         )
-        source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_REF)
+        assert len(result.failed) == 0, f"Fixture sync failed: {result.failed}"
         registry = _DEFAULT_CACHE.load(TEST_SOURCE_NAME, TEST_REF)
         return registry
 
@@ -478,7 +480,12 @@ class TestCLI:
             name=TEST_SOURCE_NAME,
             refs=[TEST_REF],
         )
-        source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_REF)
+
+        # Verify sync succeeded before testing list command
+        assert len(result.failed) == 0, f"Sync failed: {result.failed}"
+        assert len(result.synced) == 1, f"Expected 1 synced registry, got {len(result.synced)}"
+        assert (TEST_SOURCE_NAME, TEST_REF) in result.synced
 
         import argparse
 
