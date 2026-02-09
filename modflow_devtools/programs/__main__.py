@@ -12,11 +12,13 @@ Commands:
 """
 
 import argparse
+import os
 import sys
 
 from . import (
     _DEFAULT_CACHE,
     ProgramSourceConfig,
+    _try_best_effort_sync,
     get_executable,
     install_program,
     list_installed,
@@ -68,6 +70,10 @@ def cmd_info(args):
 
 def cmd_list(args):
     """List command handler."""
+    # Attempt auto-sync before listing (unless disabled)
+    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+        _try_best_effort_sync()
+
     cached = _DEFAULT_CACHE.list()
 
     if not cached:
@@ -106,10 +112,10 @@ def cmd_list(args):
                     # Show all programs in verbose mode
                     for program_name, metadata in sorted(programs.items()):
                         version = metadata.version
-                        platforms = (
-                            ", ".join(metadata.binaries.keys()) if metadata.binaries else "none"
+                        dist_names = (
+                            ", ".join(d.name for d in metadata.dists) if metadata.dists else "none"
                         )
-                        print(f"    - {program_name} ({version}) [{platforms}]")
+                        print(f"    - {program_name} ({version}) [{dist_names}]")
             else:
                 print("  No programs")
             print()
@@ -117,6 +123,10 @@ def cmd_list(args):
 
 def cmd_install(args):
     """Install command handler."""
+    # Attempt auto-sync before installation (unless disabled)
+    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+        _try_best_effort_sync()
+
     try:
         paths = install_program(
             program=args.program,

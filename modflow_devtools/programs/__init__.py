@@ -75,12 +75,14 @@ class ProgramRegistryDiscoveryError(Exception):
     pass
 
 
-class ProgramBinary(BaseModel):
-    """Platform-specific binary information."""
+class ProgramDistribution(BaseModel):
+    """Distribution-specific information."""
 
+    name: str = Field(
+        ..., description="Distribution name (e.g., linux, mac, macarm, win64, win64ext)"
+    )
     asset: str = Field(..., description="Release asset filename")
     hash: str | None = Field(None, description="SHA256 hash")
-    exe: str = Field(..., description="Executable path within archive")
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -92,8 +94,9 @@ class ProgramMetadata(BaseModel):
     description: str | None = Field(None, description="Program description")
     repo: str = Field(..., description="Source repository (owner/name)")
     license: str | None = Field(None, description="License identifier")
-    binaries: dict[str, ProgramBinary] = Field(
-        default_factory=dict, description="Platform-specific binaries (linux/mac/win64)"
+    exe: str = Field(..., description="Executable path within archive (e.g., bin/mf6)")
+    dists: list[ProgramDistribution] = Field(
+        default_factory=list, description="Available distributions"
     )
 
     model_config = {"arbitrary_types_allowed": True}
@@ -1239,14 +1242,18 @@ class ProgramManager:
             if verbose:
                 print(f"Detected platform: {platform}")
 
-        # 4. Get binary metadata
-        if platform not in program_meta.binaries:
-            available = ", ".join(program_meta.binaries.keys())
-            raise ProgramInstallationError(
-                f"Binary not available for platform '{platform}'. Available platforms: {available}"
-            )
+        # 4. Get distribution metadata
+        dist_meta = None
+        for dist in program_meta.dists:
+            if dist.name == platform:
+                dist_meta = dist
+                break
 
-        binary_meta = program_meta.binaries[platform]
+        if dist_meta is None:
+            available = ", ".join(d.name for d in program_meta.dists)
+            raise ProgramInstallationError(
+                f"Distribution not available for platform '{platform}'. Available: {available}"
+            )
 
         # 5. Determine bindir
         if bindir is None:
@@ -1270,13 +1277,16 @@ class ProgramManager:
                 if verbose:
                     print(f"{program} {version} is already installed in {bindir}")
                 # Return paths to existing executables
-                exe_name = Path(binary_meta.exe).name
+                exe_name = Path(program_meta.exe).name
+                # Add .exe extension on Windows
+                if platform.startswith("win") and not exe_name.endswith(".exe"):
+                    exe_name += ".exe"
                 return [bindir / exe_name]
 
         # 7. Download archive (if not cached)
-        asset_url = f"https://github.com/{program_meta.repo}/releases/download/{found_ref}/{binary_meta.asset}"
+        asset_url = f"https://github.com/{program_meta.repo}/releases/download/{found_ref}/{dist_meta.asset}"
         archive_dir = self.cache.get_archive_dir(program, version, platform)
-        archive_path = archive_dir / binary_meta.asset
+        archive_path = archive_dir / dist_meta.asset
 
         if verbose:
             print(f"Downloading archive from {asset_url}...")
@@ -1284,14 +1294,18 @@ class ProgramManager:
         download_archive(
             url=asset_url,
             dest=archive_path,
-            expected_hash=binary_meta.hash,
+            expected_hash=dist_meta.hash,
             force=force,
             verbose=verbose,
         )
 
         # 8. Extract to binaries cache (if not already extracted)
         binary_dir = self.cache.get_binary_dir(program, version, platform)
-        exe_in_cache = binary_dir / binary_meta.exe
+        exe_path = program_meta.exe
+        # Add .exe extension on Windows for extraction path
+        if platform.startswith("win") and not exe_path.endswith(".exe"):
+            exe_path += ".exe"
+        exe_in_cache = binary_dir / exe_path
 
         if not exe_in_cache.exists() or force:
             if verbose:
@@ -1300,12 +1314,15 @@ class ProgramManager:
             extract_executables(
                 archive=archive_path,
                 dest_dir=binary_dir,
-                exe_path=binary_meta.exe,
+                exe_path=exe_path,
                 verbose=verbose,
             )
 
         # 9. Copy executables to bindir
-        exe_name = Path(binary_meta.exe).name
+        exe_name = Path(program_meta.exe).name
+        # Add .exe extension on Windows
+        if platform.startswith("win") and not exe_name.endswith(".exe"):
+            exe_name += ".exe"
         dest_exe = bindir / exe_name
 
         if verbose:
@@ -1326,7 +1343,7 @@ class ProgramManager:
             "repo": program_meta.repo,
             "tag": found_ref,
             "asset_url": asset_url,
-            "hash": binary_meta.hash or "",
+            "hash": dist_meta.hash or "",
         }
         installation = ProgramInstallation(
             version=version,
@@ -1842,7 +1859,11 @@ def list_installed(program: str | None = None) -> dict[str, list[ProgramInstalla
 
 
 def _try_best_effort_sync():
-    """Attempt to sync registries on first import (best-effort, fails silently)."""
+    """
+    Attempt to sync registries (best-effort, fails silently).
+
+    Called by consumer commands before accessing program registries.
+    """
     global _SYNC_ATTEMPTED
 
     if _SYNC_ATTEMPTED:
@@ -1861,10 +1882,6 @@ def _try_best_effort_sync():
 _SYNC_ATTEMPTED = False
 """Track whether auto-sync has been attempted"""
 
-# Attempt best-effort sync on import (unless disabled)
-if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
-    _try_best_effort_sync()
-
 
 # ============================================================================
 # Public API
@@ -1875,8 +1892,8 @@ __all__ = [
     "_DEFAULT_MANAGER",
     "DiscoveredProgramRegistry",
     "InstallationMetadata",
-    "ProgramBinary",
     "ProgramCache",
+    "ProgramDistribution",
     "ProgramInstallation",
     "ProgramInstallationError",
     "ProgramManager",
@@ -1885,6 +1902,7 @@ __all__ = [
     "ProgramRegistryDiscoveryError",
     "ProgramSourceConfig",
     "ProgramSourceRepo",
+    "_try_best_effort_sync",
     "download_archive",
     "extract_executables",
     "get_bindir_options",
