@@ -69,50 +69,58 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Generate registry for MODFLOW 6 release
+  # Generate registry from local distribution files (for CI)
+  python -m modflow_devtools.programs.make_registry \\
+    --dists *.zip \\
+    --programs mf6 zbud6 libmf6 mf5to6 \\
+    --version 6.6.3 \\
+    --repo MODFLOW-ORG/modflow6 \\
+    --compute-hashes \\
+    --output programs.toml
+
+  # Generate registry from existing GitHub release (for testing)
   python -m modflow_devtools.programs.make_registry \\
     --repo MODFLOW-ORG/modflow6 \\
     --tag 6.6.3 \\
     --programs mf6 zbud6 libmf6 mf5to6 \\
     --output programs.toml
 
-  # Generate with manual program metadata
+  # With custom exe paths
   python -m modflow_devtools.programs.make_registry \\
-    --repo MODFLOW-ORG/modflow6 \\
-    --tag 6.6.3 \\
-    --program mf6 --version 6.6.3 --description "MODFLOW 6" \\
-    --output programs.toml
-
-  # Include hashes for verification
-  python -m modflow_devtools.programs.make_registry \\
-    --repo MODFLOW-ORG/modflow6 \\
-    --tag 6.6.3 \\
-    --programs mf6 zbud6 \\
-    --compute-hashes \\
-    --output programs.toml
+    --dists *.zip \\
+    --program mf6:bin/mf6 \\
+    --program zbud6:bin/zbud6 \\
+    --version 6.6.3 \\
+    --repo MODFLOW-ORG/modflow6
 """,
     )
     parser.add_argument(
         "--repo",
-        required=True,
+        required=False,
         type=str,
-        help='Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6)',
+        help='Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6) [required]',
     )
     parser.add_argument(
         "--tag",
-        required=True,
+        required=False,
         type=str,
-        help="Release tag (e.g., 6.6.3)",
+        help="Release tag (e.g., 6.6.3) [required when scanning GitHub release]",
+    )
+    parser.add_argument(
+        "--dists",
+        type=str,
+        help="Glob pattern for local distribution files (e.g., *.zip) [for CI mode]",
     )
     parser.add_argument(
         "--programs",
         nargs="+",
         required=True,
-        help="Program names to include in registry",
+        help="Program names to include (optionally with custom exe path: name:path)",
     )
     parser.add_argument(
         "--version",
-        help="Program version (defaults to tag)",
+        required=False,
+        help="Program version [required when using --dists, defaults to --tag otherwise]",
     )
     parser.add_argument(
         "--description",
@@ -142,22 +150,68 @@ Examples:
     )
     args = parser.parse_args()
 
-    # Get release assets
-    if args.verbose:
-        print(f"Fetching release assets for {args.repo}@{args.tag}...")
+    # Validate arguments
+    if args.dists:
+        # Local files mode
+        if not args.repo:
+            print("Error: --repo is required", file=sys.stderr)
+            sys.exit(1)
+        if not args.version:
+            print("Error: --version is required when using --dists", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # GitHub release mode
+        if not args.repo or not args.tag:
+            print("Error: --repo and --tag are required when not using --dists", file=sys.stderr)
+            sys.exit(1)
 
-    try:
-        assets = get_release_assets(args.repo, args.tag)
-    except Exception as e:
-        print(f"Error fetching release assets: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Parse programs (support name:path syntax)
+    program_exes = {}
+    for prog_spec in args.programs:
+        if ":" in prog_spec:
+            name, exe = prog_spec.split(":", 1)
+            program_exes[name] = exe
+        else:
+            program_exes[prog_spec] = f"bin/{prog_spec}"  # Default path
 
-    if not assets:
-        print(f"No assets found for release {args.tag}", file=sys.stderr)
-        sys.exit(1)
+    # Get distribution files
+    if args.dists:
+        # Local files mode: scan for files matching pattern
 
-    if args.verbose:
-        print(f"Found {len(assets)} release assets")
+        dist_files = Path.glob(args.dists)
+        if not dist_files:
+            print(f"No files found matching pattern: {args.dists}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.verbose:
+            print(f"Found {len(dist_files)} distribution file(s)")
+
+        # Convert to asset-like structure
+        assets = []
+        for file_path in dist_files:
+            assets.append(
+                {
+                    "name": Path(file_path).name,
+                    "local_path": file_path,
+                }
+            )
+    else:
+        # GitHub release mode: fetch from GitHub API
+        if args.verbose:
+            print(f"Fetching release assets for {args.repo}@{args.tag}...")
+
+        try:
+            assets = get_release_assets(args.repo, args.tag)
+        except Exception as e:
+            print(f"Error fetching release assets: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        if not assets:
+            print(f"No assets found for release {args.tag}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.verbose:
+            print(f"Found {len(assets)} release assets")
 
     # Build registry structure
     registry = {
@@ -170,11 +224,14 @@ Examples:
     # Use tag as version if not specified
     version = args.version or args.tag
 
-    # Platform mappings for common names
-    platform_map = {
+    # Distribution name mappings for filenames
+    dist_map = {
         "linux": ["linux", "ubuntu"],
         "mac": ["mac", "osx", "darwin"],
-        "win64": ["win64", "win"],
+        "macarm": ["macarm", "mac_arm", "mac-arm"],
+        "win64": ["win64"],
+        "win64ext": ["win64ext"],
+        "win32": ["win32"],
     }
 
     temp_dir = None
@@ -183,13 +240,14 @@ Examples:
 
     try:
         # Process each program
-        for program_name in args.programs:
+        for program_name in program_exes.keys():
             if args.verbose:
                 print(f"\nProcessing program: {program_name}")
 
             program_meta = {
                 "version": version,
                 "repo": args.repo,
+                "exe": program_exes[program_name],  # Get exe path for this program
             }
 
             if args.description:
@@ -197,60 +255,71 @@ Examples:
             if args.license:
                 program_meta["license"] = args.license
 
-            # Find binaries for this program
-            binaries = {}
+            # Find distributions for this program
+            dists = []
 
             for asset in assets:
                 asset_name = asset["name"]
-                asset_url = asset["browser_download_url"]
 
-                # Try to match asset to platform
+                # Try to match asset to distribution name
                 asset_lower = asset_name.lower()
-                matched_platform = None
+                matched_dist = None
 
-                for platform, keywords in platform_map.items():
+                # Try to match distribution name from filename
+                # Check longest names first to match win64ext before win64
+                for dist_name in sorted(dist_map.keys(), key=len, reverse=True):
+                    keywords = dist_map[dist_name]
                     if any(keyword in asset_lower for keyword in keywords):
-                        matched_platform = platform
+                        matched_dist = dist_name
                         break
 
-                if not matched_platform:
+                if not matched_dist:
                     if args.verbose:
-                        print(f"  Skipping asset (no platform match): {asset_name}")
+                        print(f"  Skipping asset (no distribution match): {asset_name}")
                     continue
 
                 if args.verbose:
-                    print(f"  Found {matched_platform} asset: {asset_name}")
+                    print(f"  Found {matched_dist} distribution: {asset_name}")
 
-                # Create binary entry
-                binary = {
+                # Create distribution entry
+                dist = {
+                    "name": matched_dist,
                     "asset": asset_name,
-                    "exe": f"bin/{program_name}",  # Default executable path
                 }
 
                 # Compute hash if requested
                 if args.compute_hashes:
                     if args.verbose:
-                        print("    Downloading to compute hash...")
+                        print("    Computing hash...")
 
-                    asset_path = temp_dir / asset_name
-                    download_asset(asset_url, asset_path)
+                    if args.dists:
+                        # Local file - use local_path
+                        asset_path = Path(asset["local_path"])
+                    else:
+                        # GitHub release - download first
+                        if args.verbose:
+                            print("    Downloading to compute hash...")
+                        asset_url = asset["browser_download_url"]
+                        asset_path = temp_dir / asset_name
+                        download_asset(asset_url, asset_path)
+
                     hash_value = compute_sha256(asset_path)
-                    binary["hash"] = f"sha256:{hash_value}"
+                    dist["hash"] = f"sha256:{hash_value}"
 
                     if args.verbose:
                         print(f"    SHA256: {hash_value}")
 
-                binaries[matched_platform] = binary
+                dists.append(dist)
 
-            if binaries:
-                program_meta["binaries"] = binaries
+            if dists:
+                program_meta["dists"] = dists
                 registry["programs"][program_name] = program_meta
 
                 if args.verbose:
-                    print(f"  Added {program_name} with {len(binaries)} platform(s)")
+                    print(f"  Added {program_name} with {len(dists)} distribution(s)")
             else:
                 if args.verbose:
-                    print(f"  Warning: No binaries found for {program_name}")
+                    print(f"  Warning: No distributions found for {program_name}")
 
         # Write registry to file
         output_path = Path(args.output)

@@ -7,22 +7,57 @@
 # Program names are globally unique across all sources.
 
 [sources.modflow6]
-repo = "MODFLOW-ORG/modflow6"
-refs = ["6.6.3", "6.5.0"]
+repo = "MODFLOW-USGS/modflow6"
+refs = ["6.7.0", "6.6.3"]
 # Provides: mf6, zbud6, mf5to6, libmf6
 
-[sources.modpath7]
-repo = "MODFLOW-ORG/modpath7"
+[sources.gridgen]
+repo = "MODFLOW-ORG/gridgen"
+refs = ["v1.0.02"]
+# Provides: gridgen
+
+[sources.triangle]
+repo = "MODFLOW-ORG/triangle"
+refs = ["v1.6"]
+# Provides: triangle
+
+[sources.mfusg]
+repo = "MODFLOW-ORG/mfusg"
+refs = ["v1.5.00"]
+# Provides: mfusg
+
+[sources.mfusgt]
+repo = "MODFLOW-ORG/mfusgt"
+refs = ["v2.6.0"]
+# Provides: mfusg_gsi
+
+[sources.modpath-v7]
+repo = "MODFLOW-ORG/modpath-v7"
 refs = ["7.2.001"]
 # Provides: mp7
 
 [sources.mt3d-usgs]
 repo = "MODFLOW-ORG/mt3d-usgs"
-refs = ["1.1.0"]
+refs = ["v1.0.0"]
 # Provides: mt3dusgs
+
+[sources.mt3dms]
+repo = "MODFLOW-ORG/mt3dms"
+refs = ["2.0"]
+# Provides: mt3dms
+
+[sources.zonbud]
+repo = "MODFLOW-ORG/zonbud"
+refs = ["v3.01"]
+# Provides: zonbud
+
+[sources.zonbudusg]
+repo = "MODFLOW-ORG/zonbudusg"
+refs = ["v1.01"]
+# Provides: zonbudusg
 
 [sources.executables]
 repo = "MODFLOW-ORG/executables"
 refs = ["latest"]
 # Consolidated repo for legacy programs
-# Provides: mf2005, mf2000, mfnwt, mfusg, mt3dms, etc.
+# Provides: mf2005, mf2000, mfnwt, etc.
