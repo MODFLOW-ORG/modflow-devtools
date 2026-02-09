@@ -178,7 +178,6 @@ Examples:
     if args.dists:
         # Local files mode: scan for files matching pattern
 
-
         dist_files = Path.glob(args.dists)
         if not dist_files:
             print(f"No files found matching pattern: {args.dists}", file=sys.stderr)
