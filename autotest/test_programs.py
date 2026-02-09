@@ -32,6 +32,7 @@ class TestProgramCache:
                 "test-program": {
                     "version": "1.0.0",
                     "repo": "test/repo",
+                    "exe": "bin/test-program",
                     "binaries": {},
                 }
             },
@@ -272,6 +273,13 @@ class TestProgramManager:
         # Use fresh cache
         cache = ProgramCache()
         cache.clear()
+
+        # Also clear metadata directory to ensure no leftover installation data
+        if cache.metadata_dir.exists():
+            import shutil
+
+            shutil.rmtree(cache.metadata_dir)
+
         manager = ProgramManager(cache=cache)
 
         installed = manager.list_installed()
