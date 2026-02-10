@@ -28,13 +28,14 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :maxdepth: 2
    :caption: Miscellaneous
 
-   md/dfn.md
+   md/dfns.md
    md/download.md
    md/latex.md
    md/models.md
    md/ostags.md
-   md/zip.md
+   md/programs.md
    md/timed.md
+   md/zip.md
 
 
 .. toctree::
@@ -43,3 +44,11 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/act.md
    md/doctoc.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer docs
+
+   md/dev/dfns.md
+   md/dev/models.md
+   md/dev/programs.md
