@@ -1,104 +1,60 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 (and other) model input files from official test and example repositories.
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 (and other) model input files from official test and example repositories. It can also be used with local model repositories.
 
-**Note**: This API uses a dynamic registry system that decouples model repository releases from `modflow-devtools` releases. Model registries are synchronized from remote sources on demand.
+This module builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
+
+- Registration, discovery and synchronization
+- Support for multiple sources and refs
+- Hierarchical model addressing
+
+Model registries can be synchronized from remote sources on demand. The user or developer can inspect and load models published by the MODFLOW organization, from a personal fork, or from the local filesystem.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Overview](#overview)
+- [Usage](#usage)
+  - [Syncing registries](#syncing-registries)
+  - [Inspecting available models](#inspecting-available-models)
+  - [Copying models to a workspace](#copying-models-to-a-workspace)
+  - [Using the default registry](#using-the-default-registry)
+  - [Customizing model sources](#customizing-model-sources)
+  - [Working with specific sources](#working-with-specific-sources)
+- [Model Names](#model-names)
+- [Local Registries](#local-registries)
+- [Cache Management](#cache-management)
+- [Automatic Synchronization](#automatic-synchronization)
+- [Repository Integration](#repository-integration)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
 The Models API provides:
 
+- **Model registration**: Index local or remote model repositories
 - **Model discovery**: Browse available models from multiple repositories
-- **Registry synchronization**: Download model metadata from remote sources
 - **Model retrieval**: Copy model input files to local workspaces
-- **Local registries**: Index custom model collections
 
-## Basic Usage
+Model metadata is provided by **registries** which are published by model repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
 
-### Listing available models
+A model registry contains three main components:
 
-```python
-from modflow_devtools.models import get_models, get_examples
+- **`files`**: Map of model input files to metadata (hash, path/URL)
+- **`models`**: Map of model names to lists of their input files
+- **`examples`**: Map of example scenarios to lists of models
 
-# List all available models
-models = get_models()
-print(f"Available models: {len(models)}")
+An **example** is an ordered set of models which together form a complete example scenario.
 
-# Show first few model names
-for name in list(models.keys())[:5]:
-    print(f"  {name}")
+The MODFLOW organization publishes a set of models for demonstration and testing, some of which are grouped into example scenarios, from the following repositories:
 
-# List example scenarios
-examples = get_examples()
-for example_name, model_list in list(examples.items())[:3]:
-    print(f"{example_name}: {len(model_list)} models")
-```
+- `MODFLOW-ORG/modflow6-examples`
+- `MODFLOW-ORG/modflow6-testmodels`
+- `MODFLOW-ORG/modflow6-largetestmodels`
 
-### Copying models to a workspace
-
-The simplest way to use a model:
-
-```python
-from tempfile import TemporaryDirectory
-from modflow_devtools.models import copy_to
-
-# Copy model to a temporary directory
-with TemporaryDirectory() as workspace:
-    model_path = copy_to(workspace, "mf6/example/ex-gwf-twri01", verbose=True)
-    print(f"Model copied to: {model_path}")
-```
-
-Or copy to a specific directory:
-
-```python
-from pathlib import Path
-from modflow_devtools.models import copy_to
-
-# Copy to specific workspace
-workspace = Path("./my_workspace")
-workspace.mkdir(exist_ok=True)
-model_path = copy_to(workspace, "mf6/example/ex-gwf-twri01")
-```
-
-### Using the default registry
-
-The module provides a default registry for convenient access:
-
-```python
-from modflow_devtools.models import DEFAULT_REGISTRY
-
-# Access registry properties
-models = DEFAULT_REGISTRY.models
-files = DEFAULT_REGISTRY.files
-examples = DEFAULT_REGISTRY.examples
-
-# Copy using the registry directly
-workspace = DEFAULT_REGISTRY.copy_to("./workspace", "mf6/example/ex-gwf-twri01")
-```
-
-## Model Names
-
-Model names follow a hierarchical addressing scheme: `{source}@{ref}/{path/to/model}`
-
-Currently available model prefixes:
-
-- **`mf6/example/...`**: MODFLOW 6 example models from [modflow6-examples](https://github.com/MODFLOW-ORG/modflow6-examples)
-- **`mf6/test/...`**: MODFLOW 6 test models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
-- **`mf6/large/...`**: Large MODFLOW 6 test models from [modflow6-largetestmodels](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
-- **`mf2005/...`**: MODFLOW-2005 models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
-
-The path component reflects the relative location of the model within its source repository.
-
-Example model names:
-```
-mf6/example/ex-gwf-twri01
-mf6/test/test001a_Tharmonic
-mf6/large/prudic2004t2
-```
-
-## Model Registries
-
-Model metadata is provided by remote registries published by model repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
+## Usage
 
 ### Syncing registries
 
@@ -107,7 +63,6 @@ Registries can be manually synchronized:
 ```python
 from modflow_devtools.models import ModelSourceConfig
 
-# Load configuration
 config = ModelSourceConfig.load()
 
 # Sync all configured sources
@@ -125,86 +80,80 @@ for source_name, source_status in status.items():
 Or via CLI:
 
 ```bash
-# Sync all sources
 python -m modflow_devtools.models sync
-
-# Sync specific source
 python -m modflow_devtools.models sync --source modflow6-testmodels
-
-# Sync specific ref
 python -m modflow_devtools.models sync --source modflow6-testmodels --ref develop
-
-# Force re-download
 python -m modflow_devtools.models sync --force
 ```
 
-### Viewing available models
+### Inspecting available models
+
+```python
+from modflow_devtools.models import get_models, get_examples
+
+models = get_models()
+print(f"Available models: {len(models)}")
+for name in list(models.keys())[:5]:
+    print(f"  {name}")
+
+examples = get_examples()
+for example_name, model_list in list(examples.items())[:3]:
+    print(f"{example_name}: {len(model_list)} models")
+```
+
+Or by CLI:
 
 ```bash
-# Show sync status
-python -m modflow_devtools.models info
 
-# List available models (summary)
-python -m modflow_devtools.models list
-
-# List with details
-python -m modflow_devtools.models list --verbose
-
+python -m modflow_devtools.models info  # Show sync status
+python -m modflow_devtools.models list  # Show model summary...
+python -m modflow_devtools.models list --verbose  # ..or full list
 # Filter by source
 python -m modflow_devtools.models list --source mf6/test --verbose
 ```
 
-## Registry Structure
-
-Each model registry contains three main components:
-
-- **`files`**: Map of model input files to metadata (hash, path/URL)
-- **`models`**: Map of model names to lists of their input files
-- **`examples`**: Map of example scenarios to lists of models that run together
-
-Access registry data directly:
+### Copying models to a workspace
 
 ```python
-from modflow_devtools.models import get_files, get_models, get_examples
+from tempfile import TemporaryDirectory
+from modflow_devtools.models import copy_to
 
-# Get all files
-files = get_files()
-for filename, file_info in list(files.items())[:3]:
-    print(f"{filename}: {file_info.hash}")
-
-# Get all models
-models = get_models()
-for model_name, file_list in list(models.items())[:3]:
-    print(f"{model_name}: {len(file_list)} files")
-
-# Get examples
-examples = get_examples()
-for example_name, model_list in examples.items():
-    print(f"{example_name}: {model_list}")
+with TemporaryDirectory() as workspace:
+    model_path = copy_to(workspace, "mf6/example/ex-gwf-twri01", verbose=True)
 ```
 
-## Local Registries
+### Using the default registry
 
-For development or testing with local models, create a local registry:
+The module provides explicit access to the default registry used by `get_models()` etc.
 
 ```python
-from modflow_devtools.models import LocalRegistry
+from modflow_devtools.models import DEFAULT_REGISTRY
 
-# Create and index a local registry
-registry = LocalRegistry()
-registry.index("path/to/models")
+models = DEFAULT_REGISTRY.models
+files = DEFAULT_REGISTRY.files
+examples = DEFAULT_REGISTRY.examples
 
-# Index with custom namefile pattern (e.g., for MODFLOW-2005)
-registry.index("path/to/mf2005/models", namefile_pattern="*.nam")
-
-# Use the local registry
-models = registry.models
-workspace = registry.copy_to("./workspace", "my-model-name")
+workspace = DEFAULT_REGISTRY.copy_to("./workspace", "mf6/example/ex-gwf-twri01")
 ```
 
-Model subdirectories are identified by the presence of a namefile. By default, only MODFLOW 6 models are indexed (`mfsim.nam`). Use `namefile_pattern` to include other model types.
+### Customizing model sources
 
-## Advanced Usage
+Create a user config file to add custom sources or override defaults:
+
+- **Windows**: `%APPDATA%/modflow-devtools/models.toml`
+- **macOS**: `~/Library/Application Support/modflow-devtools/models.toml`
+- **Linux**: `~/.config/modflow-devtools/models.toml`
+
+Example user config:
+
+```toml
+[sources.modflow6-testmodels]
+repo = "myusername/modflow6-testmodels"  # Use a fork for testing
+name = "mf6/test"
+refs = ["feature-branch"]
+```
+
+The user config is automatically merged with the bundled config, allowing you to test against forks or add private repositories.
 
 ### Working with specific sources
 
@@ -236,24 +185,44 @@ if registry:
     print(f"Files: {len(registry.files)}")
 ```
 
-### Customizing model sources
+## Model Names
 
-Create a user config file to add custom sources or override defaults:
+Model names follow a hierarchical addressing scheme: `{source}@{ref}/{path/to/model}`.
 
-- **Windows**: `%APPDATA%/modflow-devtools/models.toml`
-- **macOS**: `~/Library/Application Support/modflow-devtools/models.toml`
-- **Linux**: `~/.config/modflow-devtools/models.toml`
+The `path/to/` part is referred to as the **prefix**. Valid prefixes include:
 
-Example user config:
+- **`mf6/example/...`**: MODFLOW 6 example models from [modflow6-examples](https://github.com/MODFLOW-ORG/modflow6-examples)
+- **`mf6/test/...`**: MODFLOW 6 test models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
+- **`mf6/large/...`**: Large MODFLOW 6 test models from [modflow6-largetestmodels](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
+- **`mf2005/...`**: MODFLOW-2005 models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
 
-```toml
-[sources.modflow6-testmodels]
-repo = "myusername/modflow6-testmodels"  # Use a fork for testing
-name = "mf6/test"
-refs = ["feature-branch"]
+Example model names:
+```
+mf6/example/ex-gwf-twri01
+mf6/test/test001a_Tharmonic
+mf6/large/prudic2004t2
 ```
 
-The user config is automatically merged with the bundled config, allowing you to test against forks or add private repositories.
+## Local Registries
+
+For development or testing with local models, create a local registry:
+
+```python
+from modflow_devtools.models import LocalRegistry
+
+# Create and index a local registry
+registry = LocalRegistry()
+registry.index("path/to/models")
+
+# Index with custom namefile pattern (e.g., for MODFLOW-2005)
+registry.index("path/to/mf2005/models", namefile_pattern="*.nam")
+
+# Use the local registry
+models = registry.models
+workspace = registry.copy_to("./workspace", "my-model-name")
+```
+
+Model subdirectories are identified by the presence of a namefile. By default, only MODFLOW 6 models are indexed (`mfsim.nam`). Use `namefile_pattern` to include other model types.
 
 ## Cache Management
 
@@ -284,7 +253,7 @@ is_cached = _DEFAULT_CACHE.has("mf6/test", "develop")
 _DEFAULT_CACHE.clear()
 ```
 
-## Auto-sync Behavior
+## Automatic Synchronization
 
 By default, `modflow-devtools` attempts to sync registries:
 - On first import (best-effort, fails silently on network errors)
@@ -302,29 +271,7 @@ Then manually sync when needed:
 python -m modflow_devtools.models sync
 ```
 
-## Complete CLI Reference
-
-```bash
-# Sync registries
-python -m modflow_devtools.models sync [--source SOURCE] [--ref REF] [--force]
-
-# Show sync status
-python -m modflow_devtools.models info
-
-# List available models
-python -m modflow_devtools.models list [--source SOURCE] [--ref REF] [--verbose]
-```
-
-## Integration with Pooch
-
-The Models API builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
-
-- Dynamic registry discovery and synchronization
-- Multi-source and multi-ref support
-- Hierarchical model naming
-- Integration with MODFLOW ecosystem conventions
-
-## Model Repository Integration
+## Repository Integration
 
 For model repository maintainers who want to publish their models:
 
