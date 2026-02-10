@@ -13,6 +13,7 @@ import hashlib
 import sys
 import tempfile
 from datetime import datetime, timezone
+from glob import glob
 from pathlib import Path
 
 import requests  # type: ignore[import-untyped]
@@ -178,7 +179,7 @@ Examples:
     if args.dists:
         # Local files mode: scan for files matching pattern
 
-        dist_files = Path.glob(args.dists)
+        dist_files = glob(args.dists)  # noqa: PTH207
         if not dist_files:
             print(f"No files found matching pattern: {args.dists}", file=sys.stderr)
             sys.exit(1)

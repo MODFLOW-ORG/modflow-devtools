@@ -1,118 +1,287 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 (and other) models.
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 (and other) model input files from official test and example repositories. It can also be used with local model repositories.
 
-**Note**: While this module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), it is an independent layer with opinions about how to train (configure) it.
+This module builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
 
-## `ModelRegistry`
+- Registration, discovery and synchronization
+- Support for multiple sources and refs
+- Hierarchical model addressing
 
-The `ModelRegistry` base class represents a set of models living in a GitHub repository or on the local filesystem. This package provides an "official" GitHub-backed registry. Local registries may be created as needed.
+Model registries can be synchronized from remote sources on demand. The user or developer can inspect and load models published by the MODFLOW organization, from a personal fork, or from the local filesystem.
 
-All `ModelRegistry` subclasses expose the following properties:
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-- `files`: a map of model input files to file-scoped info
-- `models`: a map of model names to model input files
-- `examples`: a map of example scenarios to models
 
-An *example* is a set of related models which run in a particular order.
+- [Overview](#overview)
+- [Usage](#usage)
+  - [Syncing registries](#syncing-registries)
+  - [Inspecting available models](#inspecting-available-models)
+  - [Copying models to a workspace](#copying-models-to-a-workspace)
+  - [Using the default registry](#using-the-default-registry)
+  - [Customizing model sources](#customizing-model-sources)
+  - [Working with specific sources](#working-with-specific-sources)
+- [Model Names](#model-names)
+- [Local Registries](#local-registries)
+- [Cache Management](#cache-management)
+- [Automatic Synchronization](#automatic-synchronization)
+- [Repository Integration](#repository-integration)
 
-Dictionary keys are consistently strings. Dictionary values may vary depending on the type of registry. For instance, values in `PoochRegistry.files` are dictionaries including a hash and url.
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-### Subclasses
+## Overview
 
-A registry backed by a remote repository is called a `PoochRegistry`. A `PoochRegistry` maintains a persistent index on disk. 
+The Models API provides:
 
-A `LocalRegistry` lives in-memory only. Its purpose is simply to store some knowledge about where model files are on disk, and provide an identical API for accessing them as the official `PoochRegistry`.
+- **Model registration**: Index local or remote model repositories
+- **Model discovery**: Browse available models from multiple repositories
+- **Model retrieval**: Copy model input files to local workspaces
 
-Most users will interact only with the default `PoochRegistry`, available at `modflow_devtools.models.DEFAULT_REGISTRY`. A `LocalRegistry` can be useful for developing and debugging MODFLOW and/or MODFLOW models alongside one another.
+Model metadata is provided by **registries** which are published by model repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
 
-### Listing models
+A model registry contains three main components:
 
-This module provides convenience functions to access the default registry.
+- **`files`**: Map of model input files to metadata (hash, path/URL)
+- **`models`**: Map of model names to lists of their input files
+- **`examples`**: Map of example scenarios to lists of models
 
-For instance, the `get_models()` function aliases `DEFAULT_REGISTRY.models`.
+An **example** is an ordered set of models which together form a complete example scenario.
+
+The MODFLOW organization publishes a set of models for demonstration and testing, some of which are grouped into example scenarios, from the following repositories:
+
+- `MODFLOW-ORG/modflow6-examples`
+- `MODFLOW-ORG/modflow6-testmodels`
+- `MODFLOW-ORG/modflow6-largetestmodels`
+
+## Usage
+
+### Syncing registries
+
+Registries can be manually synchronized:
 
 ```python
-from pprint import pprint
-from modflow_devtools.models import DEFAULT_REGISTRY, get_models
+from modflow_devtools.models import ModelSourceConfig
 
-pprint(list(get_models())[:5])
+config = ModelSourceConfig.load()
+
+# Sync all configured sources
+results = config.sync(verbose=True)
+
+# Sync specific source
+results = config.sync(source="modflow6-testmodels", verbose=True)
+
+# Check sync status
+status = config.status
+for source_name, source_status in status.items():
+    print(f"{source_name}: {source_status.cached_refs}")
 ```
 
+Or via CLI:
+
+```bash
+python -m modflow_devtools.models sync
+python -m modflow_devtools.models sync --source modflow6-testmodels
+python -m modflow_devtools.models sync --source modflow6-testmodels --ref develop
+python -m modflow_devtools.models sync --force
 ```
-['mf6/example/ex-gwe-ates',
- 'mf6/example/ex-gwe-barends/mf6gwe',
- 'mf6/example/ex-gwe-barends/mf6gwf',
- 'mf6/example/ex-gwe-danckwerts',
- 'mf6/example/ex-gwe-geotherm/mf6gwe']
+
+### Inspecting available models
+
+```python
+from modflow_devtools.models import get_models, get_examples
+
+models = get_models()
+print(f"Available models: {len(models)}")
+for name in list(models.keys())[:5]:
+    print(f"  {name}")
+
+examples = get_examples()
+for example_name, model_list in list(examples.items())[:3]:
+    print(f"{example_name}: {len(model_list)} models")
 ```
 
-#### Model names
+Or by CLI:
 
-Model names follow a hierarchical addressing scheme.
+```bash
 
-The leading part identifies the kind of model, e.g. `mf6`, `mf2005`, etc. Subsequent parts may be used to classify the model.
+python -m modflow_devtools.models info  # Show sync status
+python -m modflow_devtools.models list  # Show model summary...
+python -m modflow_devtools.models list --verbose  # ..or full list
+# Filter by source
+python -m modflow_devtools.models list --source mf6/test --verbose
+```
 
-Currently the following prefixes are in use:
-
-- `mf6/example/...`: mf6 example models in https://github.com/MODFLOW-ORG/modflow6-examples
-- `mf6/test/...`: mf6 test models in https://github.com/MODFLOW-ORG/modflow6-testmodels
-- `mf6/large/...`: large mf6 test models in https://github.com/MODFLOW-ORG/modflow6-largetestmodels
-- `mf2005/...`: mf2005 models in https://github.com/MODFLOW-ORG/modflow6-testmodels
-
-The remaining parts may reflect the relative location of the model within the source repository.
-
-**Note**: Until this module stabilizes, model naming conventions may change without notice.
-
-### Using models
-
-To copy model input files to a workspace of your choosing, call `copy_to` on the registry.
+### Copying models to a workspace
 
 ```python
 from tempfile import TemporaryDirectory
 from modflow_devtools.models import copy_to
 
-with TemporaryDirectory() as td:
-    workspace = DEFAULT_REGISTRY.copy_to(td, "example/ex-gwe-ates", verbose=True)
-    # or, the module provides a shortcut for this too
-    workspace = copy_to(td, "example/ex-gwe-ates", verbose=True)
+with TemporaryDirectory() as workspace:
+    model_path = copy_to(workspace, "mf6/example/ex-gwf-twri01", verbose=True)
 ```
 
-If the target directory doesn't exist, it will be created.
+### Using the default registry
 
-## Creating a registry
-
-### Local registries
-
-To prepare a local registry, just create it and call `index` once or more. The `path` to index must be a directory containing model subdirectories at arbitrary depth. Model subdirectories are identified by the presence of a namefile matching `namefile_pattern`. By default `namefile_pattern="mfsim.nam"`, causing only MODFLOW 6 models to be returned.
-
-For instance, to load all MODFLOW models (pre-MF6 as well):
+The module provides explicit access to the default registry used by `get_models()` etc.
 
 ```python
+from modflow_devtools.models import DEFAULT_REGISTRY
+
+models = DEFAULT_REGISTRY.models
+files = DEFAULT_REGISTRY.files
+examples = DEFAULT_REGISTRY.examples
+
+workspace = DEFAULT_REGISTRY.copy_to("./workspace", "mf6/example/ex-gwf-twri01")
+```
+
+### Customizing model sources
+
+Create a user config file to add custom sources or override defaults:
+
+- **Windows**: `%APPDATA%/modflow-devtools/models.toml`
+- **macOS**: `~/Library/Application Support/modflow-devtools/models.toml`
+- **Linux**: `~/.config/modflow-devtools/models.toml`
+
+Example user config:
+
+```toml
+[sources.modflow6-testmodels]
+repo = "myusername/modflow6-testmodels"  # Use a fork for testing
+name = "mf6/test"
+refs = ["feature-branch"]
+```
+
+The user config is automatically merged with the bundled config, allowing you to test against forks or add private repositories.
+
+### Working with specific sources
+
+Access individual model sources:
+
+```python
+from modflow_devtools.models import ModelSourceConfig, _DEFAULT_CACHE
+
+# Load configuration
+config = ModelSourceConfig.load()
+
+# Work with specific source
+source = config.sources["modflow6-testmodels"]
+
+# Check if synced
+if source.is_synced("develop"):
+    print("Already cached!")
+
+# List synced refs
+synced_refs = source.list_synced_refs()
+
+# Sync specific ref
+result = source.sync(ref="develop", verbose=True)
+
+# Load cached registry
+registry = _DEFAULT_CACHE.load("mf6/test", "develop")
+if registry:
+    print(f"Models: {len(registry.models)}")
+    print(f"Files: {len(registry.files)}")
+```
+
+## Model Names
+
+Model names follow a hierarchical addressing scheme: `{source}@{ref}/{path/to/model}`.
+
+The `path/to/` part is referred to as the **prefix**. Valid prefixes include:
+
+- **`mf6/example/...`**: MODFLOW 6 example models from [modflow6-examples](https://github.com/MODFLOW-ORG/modflow6-examples)
+- **`mf6/test/...`**: MODFLOW 6 test models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
+- **`mf6/large/...`**: Large MODFLOW 6 test models from [modflow6-largetestmodels](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
+- **`mf2005/...`**: MODFLOW-2005 models from [modflow6-testmodels](https://github.com/MODFLOW-ORG/modflow6-testmodels)
+
+Example model names:
+```
+mf6/example/ex-gwf-twri01
+mf6/test/test001a_Tharmonic
+mf6/large/prudic2004t2
+```
+
+## Local Registries
+
+For development or testing with local models, create a local registry:
+
+```python
+from modflow_devtools.models import LocalRegistry
+
+# Create and index a local registry
 registry = LocalRegistry()
-registry.index("path/to/models", namefile_pattern="*.nam")
+registry.index("path/to/models")
+
+# Index with custom namefile pattern (e.g., for MODFLOW-2005)
+registry.index("path/to/mf2005/models", namefile_pattern="*.nam")
+
+# Use the local registry
+models = registry.models
+workspace = registry.copy_to("./workspace", "my-model-name")
 ```
 
-### Pooch registry
+Model subdirectories are identified by the presence of a namefile. By default, only MODFLOW 6 models are indexed (`mfsim.nam`). Use `namefile_pattern` to include other model types.
 
-The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models.
+## Cache Management
 
-The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
+Model registries and files are cached locally for fast access:
 
-The script can be executed with `python -m modflow_devtools.models.make_registry`. It accepts a single positional argument, specifying the base directory containing model directories. It accepts two named arguments:
+- **Registries**: `~/.cache/modflow-devtools/models/registries/{source}/{ref}/`
+- **Model files**: `~/.cache/modflow-devtools/models/` (managed by Pooch)
 
-- `--append` or `-a`: If specified, the script will append to the existing registry file instead of overwriting it.
-- `--url` or `-u`: Specifies the base URL for the registry file. If not provided, the default base URL is used.
-- `--model-name-prefix`: Optionally specify a string to prepend to model names. Useful for avoiding collisions.
-- `--namefile`: Optionally specify the glob pattern for namefiles. By default, only `mfsim.nam` (MF6) are found.
+The cache enables:
+- Fast model access without re-downloading
+- Offline access to previously used models
+- Efficient switching between repository refs
 
-For example, to create the "default" registry of models in the MF6 examples and test models repositories, assuming each is checked out next to this project:
+Check cache status:
 
-```shell
-python -m modflow_devtools.models.make_registry -p ../modflow6-examples/examples --url https://github.com/MODFLOW-ORG/modflow6-examples/releases/download/current/mf6examples.zip --model-name-prefix mf6/example
-python -m modflow_devtools.models.make_registry -p ../modflow6-testmodels/mf6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf6 --model-name-prefix mf6/test
-python -m modflow_devtools.models.make_registry -p ../modflow6-largetestmodels --url https://github.com/MODFLOW-ORG/modflow6-largetestmodels/raw/master --model-name-prefix mf6/large
-python -m modflow_devtools.models.make_registry -p ../modflow6-testmodels/mf5to6 --url https://github.com/MODFLOW-ORG/modflow6-testmodels/raw/master/mf5to6 --model-name-prefix mf2005 --namefile "*.nam"
+```python
+from modflow_devtools.models import _DEFAULT_CACHE
+
+# List all cached registries
+cached = _DEFAULT_CACHE.list()  # Returns: [(source, ref), ...]
+for source, ref in cached:
+    print(f"{source}@{ref}")
+
+# Check specific cache
+is_cached = _DEFAULT_CACHE.has("mf6/test", "develop")
+
+# Clear cache (if needed)
+_DEFAULT_CACHE.clear()
 ```
 
-As a shortcut to create the default registry, the script can be run with no arguments: `python -m modflow_devtools.models.make_registry`.
+## Automatic Synchronization
+
+By default, `modflow-devtools` attempts to sync registries:
+- On first import (best-effort, fails silently on network errors)
+- When accessing models (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
+
+To disable auto-sync:
+
+```bash
+export MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1
+```
+
+Then manually sync when needed:
+
+```bash
+python -m modflow_devtools.models sync
+```
+
+## Repository Integration
+
+For model repository maintainers who want to publish their models:
+
+Model repositories should publish a `models.toml` registry file either:
+1. As a release asset (for repositories that build models in CI)
+2. Under version control in a `.registry/` directory
+
+Registry files contain:
+- **`files`**: Map of filenames to hashes
+- **`models`**: Map of model names to file lists
+- **`examples`**: Map of example names to model lists
+
+The `make_registry.py` tool (part of `modflow-devtools`) can generate these registry files. See the [developer documentation](dev/models.md) for details on registry creation.
