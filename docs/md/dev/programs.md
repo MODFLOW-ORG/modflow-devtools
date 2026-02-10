@@ -394,8 +394,8 @@ Exposed as a CLI command and Python API:
 # Sync all configured sources and release tags
 python -m modflow_devtools.programs sync
 
-# Sync specific source to specific release tag
-python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --tag 6.6.3
+# Sync specific source to specific release version
+python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --version 6.6.3
 
 # Force re-download
 python -m modflow_devtools.programs sync --force
@@ -416,7 +416,7 @@ from modflow_devtools.programs import sync_registries, get_sync_status
 sync_registries()
 
 # Sync specific
-sync_registries(repo="MODFLOW-ORG/modflow6", tag="6.6.3")
+sync_registries(repo="MODFLOW-ORG/modflow6", version="6.6.3")
 
 # Check status
 status = get_sync_status()
@@ -881,7 +881,7 @@ The Programs API has been implemented following a consolidated object-oriented a
   ```bash
   python -m modflow_devtools.programs.make_registry \
     --repo MODFLOW-ORG/modflow6 \
-    --tag 6.6.3 \
+    --version 6.6.3 \
     --programs mf6 zbud6 libmf6 mf5to6 \
     --compute-hashes \
     --output programs.toml

@@ -31,7 +31,7 @@ def compute_sha256(file_path: Path) -> str:
     return sha256.hexdigest()
 
 
-def get_release_assets(repo: str, tag: str) -> list[dict]:
+def get_release_assets(repo: str, version: str) -> list[dict]:
     """
     Get release assets for a GitHub release.
 
@@ -39,15 +39,15 @@ def get_release_assets(repo: str, tag: str) -> list[dict]:
     ----------
     repo : str
         Repository in "owner/name" format
-    tag : str
-        Release tag
+    version : str
+        Release version (tag)
 
     Returns
     -------
     list[dict]
         List of asset dictionaries from GitHub API
     """
-    url = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
+    url = f"https://api.github.com/repos/{repo}/releases/tags/{version}"
     response = requests.get(url)
     response.raise_for_status()
     release_data = response.json()
@@ -82,7 +82,7 @@ Examples:
   # Generate registry from existing GitHub release (for testing)
   python -m modflow_devtools.programs.make_registry \\
     --repo MODFLOW-ORG/modflow6 \\
-    --tag 6.6.3 \\
+    --version 6.6.3 \\
     --programs mf6 zbud6 libmf6 mf5to6 \\
     --output programs.toml
 
@@ -102,12 +102,6 @@ Examples:
         help='Repository in "owner/name" format (e.g., MODFLOW-ORG/modflow6) [required]',
     )
     parser.add_argument(
-        "--tag",
-        required=False,
-        type=str,
-        help="Release tag (e.g., 6.6.3) [required when scanning GitHub release]",
-    )
-    parser.add_argument(
         "--dists",
         type=str,
         help="Glob pattern for local distribution files (e.g., *.zip) [for CI mode]",
@@ -121,7 +115,7 @@ Examples:
     parser.add_argument(
         "--version",
         required=False,
-        help="Program version [required when using --dists, defaults to --tag otherwise]",
+        help="Program version",
     )
     parser.add_argument(
         "--description",
@@ -162,8 +156,8 @@ Examples:
             sys.exit(1)
     else:
         # GitHub release mode
-        if not args.repo or not args.tag:
-            print("Error: --repo and --tag are required when not using --dists", file=sys.stderr)
+        if not args.repo:
+            print("Error: --repo is required when not using --dists", file=sys.stderr)
             sys.exit(1)
 
     # Parse programs (support name:path syntax)
@@ -199,16 +193,16 @@ Examples:
     else:
         # GitHub release mode: fetch from GitHub API
         if args.verbose:
-            print(f"Fetching release assets for {args.repo}@{args.tag}...")
+            print(f"Fetching release assets for {args.repo}@{args.version}...")
 
         try:
-            assets = get_release_assets(args.repo, args.tag)
+            assets = get_release_assets(args.repo, args.version)
         except Exception as e:
             print(f"Error fetching release assets: {e}", file=sys.stderr)
             sys.exit(1)
 
         if not assets:
-            print(f"No assets found for release {args.tag}", file=sys.stderr)
+            print(f"No assets found for release {args.version}", file=sys.stderr)
             sys.exit(1)
 
         if args.verbose:
@@ -221,9 +215,6 @@ Examples:
         "devtools_version": modflow_devtools.__version__,
         "programs": {},
     }
-
-    # Use tag as version if not specified
-    version = args.version or args.tag
 
     # Distribution name mappings for filenames
     dist_map = {
@@ -246,7 +237,7 @@ Examples:
                 print(f"\nProcessing program: {program_name}")
 
             program_meta = {
-                "version": version,
+                "version": args.version,
                 "repo": args.repo,
                 "exe": program_exes[program_name],  # Get exe path for this program
             }
