@@ -1,23 +1,103 @@
 # Programs API
 
-The `modflow_devtools.programs` module provides programmatic access to MODFLOW and related programs in the MODFLOW ecosystem. It enables discovering, synchronizing, installing, and managing program binaries.
+The `modflow_devtools.programs` module provides programmatic access to MODFLOW and related programs in the MODFLOW ecosystem. It can be used with MODFLOW organization releases or custom program repositories.
 
-**Note**: This API follows the same design patterns as the Models API, with a dynamic registry system that decouples program releases from `modflow-devtools` releases.
+This module builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
+
+- Registration, discovery and synchronization
+- Installation and version management
+- Platform-specific binary handling
+
+Program registries can be synchronized from remote sources on demand. The user or developer can inspect and install programs published by the MODFLOW organization, from a personal fork, or from custom repositories.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Overview](#overview)
+- [Usage](#usage)
+  - [Syncing registries](#syncing-registries)
+  - [Inspecting available programs](#inspecting-available-programs)
+  - [Installing a program](#installing-a-program)
+  - [Finding installed programs](#finding-installed-programs)
+  - [Version management](#version-management)
+  - [Using the default manager](#using-the-default-manager)
+  - [Customizing program sources](#customizing-program-sources)
+  - [Working with registries](#working-with-registries)
+- [Program Addressing](#program-addressing)
+- [Platform Support](#platform-support)
+- [Cache Management](#cache-management)
+- [Automatic Synchronization](#automatic-synchronization)
+- [Relationship to pymake and get-modflow](#relationship-to-pymake-and-get-modflow)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Overview
 
 The Programs API provides:
 
-- **Registry synchronization**: Download program metadata from remote sources
+- **Program registration**: Index local or remote program repositories
+- **Program discovery**: Browse available programs and versions
 - **Program installation**: Install pre-built binaries for your platform
 - **Version management**: Install multiple versions side-by-side and switch between them
-- **Executable discovery**: Locate installed programs programmatically
 
-## Basic Usage
+Program metadata is provided by **registries** which are published by program repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
+
+A program registry contains metadata for available programs including:
+
+- **Program name and description**
+- **Available versions**
+- **Platform-specific distributions** (binaries and assets)
+
+## Usage
+
+### Syncing registries
+
+Registries can be manually synchronized:
+
+```python
+from modflow_devtools.programs import ProgramSourceConfig
+
+config = ProgramSourceConfig.load()
+
+# Sync all configured sources
+results = config.sync(verbose=True)
+
+# Sync specific source
+results = config.sync(source="modflow6", verbose=True)
+```
+
+Or via CLI:
+
+```bash
+python -m modflow_devtools.programs sync
+python -m modflow_devtools.programs sync --source modflow6
+python -m modflow_devtools.programs sync --force
+```
+
+### Inspecting available programs
+
+```python
+from modflow_devtools.programs import ProgramSourceConfig
+
+config = ProgramSourceConfig.load()
+
+# Check sync status
+status = config.status
+for source_name, source_status in status.items():
+    print(f"{source_name}: {source_status.cached_refs}")
+```
+
+Or by CLI:
+
+```bash
+python -m modflow_devtools.programs info  # Show sync status
+python -m modflow_devtools.programs list  # Show program summary
+python -m modflow_devtools.programs list --verbose  # Full list with details
+python -m modflow_devtools.programs list --source modflow6 --verbose  # Filter by source
+```
 
 ### Installing a program
-
-The simplest way to install a program:
 
 ```python
 from modflow_devtools.programs import install_program
@@ -35,13 +115,8 @@ paths = install_program("mf6", version="6.6.3", bindir="/usr/local/bin")
 Or via CLI:
 
 ```bash
-# Install latest version
 python -m modflow_devtools.programs install mf6
-
-# Install specific version
 python -m modflow_devtools.programs install mf6@6.6.3
-
-# Install to custom directory
 python -m modflow_devtools.programs install mf6@6.6.3 --bindir /usr/local/bin
 ```
 
@@ -63,16 +138,11 @@ for program_name, installations in installed.items():
         print(f"{program_name} {inst.version} in {inst.bindir}")
 ```
 
-Or via CLI:
+Or by CLI:
 
 ```bash
-# Show path to installed executable
 python -m modflow_devtools.programs which mf6
-
-# List all installed programs
 python -m modflow_devtools.programs installed
-
-# List specific program with details
 python -m modflow_devtools.programs installed mf6 --verbose
 ```
 
@@ -91,129 +161,38 @@ install_program("mf6", version="6.5.0")
 select_version("mf6", version="6.5.0")
 ```
 
-Or via CLI:
+Or by CLI:
 
 ```bash
-# Install multiple versions
 python -m modflow_devtools.programs install mf6@6.6.3
 python -m modflow_devtools.programs install mf6@6.5.0
-
-# Switch to different version
 python -m modflow_devtools.programs select mf6@6.5.0
 ```
 
-## Program Registries
+### Using the default manager
 
-Program metadata is provided by remote registries published by program repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
-
-### Syncing registries
-
-Registries can be manually synchronized:
+The module provides explicit access to the default manager used by `install_program()` etc.
 
 ```python
-from modflow_devtools.programs import ProgramSourceConfig
-
-# Load configuration
-config = ProgramSourceConfig.load()
-
-# Sync all configured sources
-results = config.sync(verbose=True)
-
-# Sync specific source
-results = config.sync(source="modflow6", verbose=True)
-```
-
-Or via CLI:
-
-```bash
-# Sync all sources
-python -m modflow_devtools.programs sync
-
-# Sync specific source
-python -m modflow_devtools.programs sync --source modflow6
-
-# Force re-download
-python -m modflow_devtools.programs sync --force
-```
-
-### Viewing available programs
-
-```bash
-# Show sync status
-python -m modflow_devtools.programs info
-
-# List available programs (summary)
-python -m modflow_devtools.programs list
-
-# List with details
-python -m modflow_devtools.programs list --verbose
-
-# Filter by source
-python -m modflow_devtools.programs list --source modflow6 --verbose
-```
-
-## Program Addressing
-
-Programs are addressed using the format: `{program}@{version}`
-
-Examples:
-- `mf6@6.6.3` - MODFLOW 6 version 6.6.3
-- `zbud6@6.6.3` - MODFLOW 6 Zonebudget version 6.6.3
-- `mp7@7.2.001` - MODPATH 7 version 7.2.001
-
-## Advanced Usage
-
-### Using `ProgramManager`
-
-For more control, use the `ProgramManager` class directly:
-
-```python
-from modflow_devtools.programs import ProgramManager
-
-# Create manager (or use _DEFAULT_MANAGER)
-manager = ProgramManager()
+from modflow_devtools.programs import _DEFAULT_MANAGER
 
 # Install programs
-paths = manager.install("mf6", version="6.6.3", verbose=True)
+paths = _DEFAULT_MANAGER.install("mf6", version="6.6.3", verbose=True)
 
 # Switch versions
-manager.select("mf6", version="6.5.0", verbose=True)
+_DEFAULT_MANAGER.select("mf6", version="6.5.0", verbose=True)
 
 # Get executable path
-mf6_path = manager.get_executable("mf6")
+mf6_path = _DEFAULT_MANAGER.get_executable("mf6")
 
 # List installed programs
-installed = manager.list_installed()
+installed = _DEFAULT_MANAGER.list_installed()
 
 # Uninstall specific version
-manager.uninstall("mf6", version="6.5.0")
+_DEFAULT_MANAGER.uninstall("mf6", version="6.5.0")
 
 # Uninstall all versions
-manager.uninstall("mf6", all_versions=True)
-```
-
-### Working with registries
-
-Access cached registry data directly:
-
-```python
-from modflow_devtools.programs import _DEFAULT_CACHE, ProgramSourceConfig
-
-# Load configuration
-config = ProgramSourceConfig.load()
-
-# Check sync status
-status = config.status
-for source_name, source_status in status.items():
-    print(f"{source_name}: {source_status.cached_refs}")
-
-# Load cached registry
-registry = _DEFAULT_CACHE.load("modflow6", "6.6.3")
-if registry:
-    for program_name, metadata in registry.programs.items():
-        print(f"{program_name} {metadata.version}")
-        print(f"  Description: {metadata.description}")
-        print(f"  Distributions: {[d.name for d in metadata.dists]}")
+_DEFAULT_MANAGER.uninstall("mf6", all_versions=True)
 ```
 
 ### Customizing program sources
@@ -233,6 +212,38 @@ refs = ["develop"]
 ```
 
 The user config is automatically merged with the bundled config, allowing you to test against forks or add private repositories.
+
+### Working with registries
+
+Access cached registry data directly:
+
+```python
+from modflow_devtools.programs import _DEFAULT_CACHE, ProgramSourceConfig
+
+config = ProgramSourceConfig.load()
+
+# Check sync status
+status = config.status
+for source_name, source_status in status.items():
+    print(f"{source_name}: {source_status.cached_refs}")
+
+# Load cached registry
+registry = _DEFAULT_CACHE.load("modflow6", "6.6.3")
+if registry:
+    for program_name, metadata in registry.programs.items():
+        print(f"{program_name} {metadata.version}")
+        print(f"  Description: {metadata.description}")
+        print(f"  Distributions: {[d.name for d in metadata.dists]}")
+```
+
+## Program Addressing
+
+Programs are addressed using the format: `{program}@{version}`.
+
+Examples:
+- `mf6@6.6.3` - MODFLOW 6 version 6.6.3
+- `zbud6@6.6.3` - MODFLOW 6 Zonebudget version 6.6.3
+- `mp7@7.2.001` - MODPATH 7 version 7.2.001
 
 ## Platform Support
 
@@ -258,7 +269,7 @@ The cache enables:
 - Efficient version switching
 - Offline access to previously installed programs
 
-## Auto-sync Behavior
+## Automatic Synchronization
 
 By default, `modflow-devtools` attempts to sync registries:
 - On first import (best-effort, fails silently on network errors)
@@ -275,34 +286,6 @@ Then manually sync when needed:
 
 ```bash
 python -m modflow_devtools.programs sync
-```
-
-## Complete CLI Reference
-
-```bash
-# Sync registries
-python -m modflow_devtools.programs sync [--source SOURCE] [--force]
-
-# Show sync status
-python -m modflow_devtools.programs info
-
-# List available programs
-python -m modflow_devtools.programs list [--source SOURCE] [--ref REF] [--verbose]
-
-# Install a program
-python -m modflow_devtools.programs install PROGRAM[@VERSION] [--bindir DIR] [--platform PLATFORM] [--force]
-
-# Switch active version
-python -m modflow_devtools.programs select PROGRAM@VERSION [--bindir DIR]
-
-# Uninstall a program
-python -m modflow_devtools.programs uninstall PROGRAM[@VERSION] [--bindir DIR] [--all] [--remove-cache]
-
-# Show executable path
-python -m modflow_devtools.programs which PROGRAM [--version VERSION] [--bindir DIR]
-
-# List installed programs
-python -m modflow_devtools.programs installed [PROGRAM] [--verbose]
 ```
 
 ## Relationship to pymake and get-modflow
