@@ -1233,6 +1233,7 @@ class ProgramManager:
         # 2. Get program metadata
         program_meta = found_registry.programs[program]
         assert found_source is not None  # Guaranteed by found_registry check above
+        assert found_ref is not None  # Guaranteed by found_registry check above
         version = found_ref  # Use release tag as version
 
         if verbose:
