@@ -8,11 +8,13 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 
 from . import (
     _DEFAULT_CACHE,
     ModelSourceConfig,
+    _try_best_effort_sync,
 )
 
 
@@ -78,6 +80,10 @@ def cmd_sync(args):
 
 def cmd_info(args):
     """Info command handler."""
+    # Attempt auto-sync before showing info (unless disabled)
+    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+        _try_best_effort_sync()
+
     config = ModelSourceConfig.load()
     status = config.status
 
@@ -96,6 +102,10 @@ def cmd_info(args):
 
 def cmd_list(args):
     """List command handler."""
+    # Attempt auto-sync before listing (unless disabled)
+    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+        _try_best_effort_sync()
+
     cached = _DEFAULT_CACHE.list()
 
     if not cached:
