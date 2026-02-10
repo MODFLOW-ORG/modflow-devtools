@@ -12,14 +12,11 @@ import argparse
 import hashlib
 import sys
 import tempfile
-from datetime import datetime, timezone
 from glob import glob
 from pathlib import Path
 
 import requests  # type: ignore[import-untyped]
 import tomli_w
-
-import modflow_devtools
 
 
 def compute_sha256(file_path: Path) -> str:
@@ -211,8 +208,6 @@ Examples:
     # Build registry structure
     registry = {
         "schema_version": "1.0",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "devtools_version": modflow_devtools.__version__,
         "programs": {},
     }
 
@@ -236,11 +231,12 @@ Examples:
             if args.verbose:
                 print(f"\nProcessing program: {program_name}")
 
-            program_meta = {
-                "version": args.version,
-                "repo": args.repo,
-                "exe": program_exes[program_name],  # Get exe path for this program
-            }
+            program_meta = {}
+
+            # Only include exe if it differs from the default (bin/{program_name})
+            exe_path = program_exes[program_name]
+            if exe_path != f"bin/{program_name}":
+                program_meta["exe"] = exe_path
 
             if args.description:
                 program_meta["description"] = args.description
