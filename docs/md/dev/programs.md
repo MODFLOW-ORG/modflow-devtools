@@ -530,34 +530,86 @@ installed = list_installed()
 
 ### Source program integration
 
-For program repositories to integrate:
+For program repositories to integrate, they can generate registry files in two ways:
 
-1. **Generate registry metadata**:
-   ```bash
-   # In program repository
-   python -m modflow_devtools.make_program_registry \
-     --version 6.6.3 \
-     --platforms linux mac win64 \
-     --output .registry/registry.toml
-   ```
+#### Mode 1: Local Assets (CI/Build Pipeline)
 
-2. **Publish registry**: Attach `registry.toml` as a release asset
+Use this mode when you have local distribution files during CI builds:
 
-3. **Example CI integration** (GitHub Actions):
-   ```yaml
-   - name: Generate program registry
-     run: |
-       python -m modflow_devtools.make_program_registry \
-         --version ${{ github.ref_name }} \
-         --platforms linux mac win64 \
-         --output registry.toml
+```bash
+# Generate registry from local distribution files
+python -m modflow_devtools.programs.make_registry \
+  --dists *.zip \
+  --programs mf6 zbud6 libmf6 mf5to6 \
+  --version 6.6.3 \
+  --repo MODFLOW-ORG/modflow6 \
+  --compute-hashes \
+  --output programs.toml
+```
 
-   - name: Upload registry to release
-     uses: actions/upload-release-asset@v1
-     with:
-       asset_path: registry.toml
-       asset_name: registry.toml
-   ```
+**How it works:**
+- Uses `--dists` to specify a glob pattern for local distribution files (e.g., `*.zip`)
+- Scans the local filesystem for matching files
+- Requires `--version` and `--repo` arguments
+- Optionally computes SHA256 hashes from local files with `--compute-hashes`
+- Creates asset entries from local file names
+- Auto-detects platform from file names (linux, mac, win64, etc.)
+
+**Example CI integration** (GitHub Actions):
+```yaml
+- name: Generate program registry
+  run: |
+    python -m modflow_devtools.programs.make_registry \
+      --dists *.zip \
+      --programs mf6 zbud6 libmf6 mf5to6 \
+      --version ${{ github.ref_name }} \
+      --repo ${{ github.repository }} \
+      --compute-hashes \
+      --output programs.toml
+
+- name: Upload registry to release
+  uses: softprops/action-gh-release@v1
+  with:
+    files: programs.toml
+```
+
+#### Mode 2: GitHub Release (Testing/Regeneration)
+
+Use this mode to generate a registry from an existing GitHub release:
+
+```bash
+# Generate registry from existing GitHub release
+python -m modflow_devtools.programs.make_registry \
+  --repo MODFLOW-ORG/modflow6 \
+  --version 6.6.3 \
+  --programs mf6 zbud6 libmf6 mf5to6 \
+  --output programs.toml
+```
+
+**How it works:**
+- Fetches release assets from GitHub API using repo and version (tag)
+- Downloads assets if `--compute-hashes` is specified
+- Useful for testing or regenerating a registry for an existing release
+- No `--dists` argument needed - pulls from GitHub directly
+
+**Additional options:**
+```bash
+# With custom executable paths (if not bin/{program})
+python -m modflow_devtools.programs.make_registry \
+  --dists *.zip \
+  --programs mf6:bin/mf6 zbud6:bin/zbud6 custom:path/to/exe \
+  --version 6.6.3 \
+  --repo MODFLOW-ORG/modflow6
+
+# With description and license metadata
+python -m modflow_devtools.programs.make_registry \
+  --dists *.zip \
+  --programs mf6 \
+  --version 6.6.3 \
+  --repo MODFLOW-ORG/modflow6 \
+  --description "MODFLOW 6 groundwater flow model" \
+  --license "CC0-1.0"
+```
 
 ### Program addressing
 
