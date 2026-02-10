@@ -1,25 +1,3 @@
-"""
-Programs API - Dynamic program registry and installation management.
-
-This module provides utilities for discovering, synchronizing, and managing
-MODFLOW-related programs. It follows the same design patterns as the Models API
-with a consolidated object-oriented implementation.
-
-Key classes:
-    - ProgramCache: Manages local caching of registries
-    - ProgramSourceRepo: Represents a program source repository
-    - ProgramSourceConfig: Configuration container from bootstrap file
-    - ProgramRegistry: Pydantic model for registry structure
-    - DiscoveredProgramRegistry: Discovery result with metadata
-
-Example usage:
-    >>> from modflow_devtools.programs import ProgramSourceConfig
-    >>> config = ProgramSourceConfig.load()
-    >>> source = config.sources["modflow6"]
-    >>> result = source.sync(ref="6.6.3", verbose=True)
-    >>> # Use _DEFAULT_CACHE to access cached registries
-"""
-
 import hashlib
 import os
 import shutil
@@ -33,7 +11,7 @@ import requests  # type: ignore[import-untyped]
 import tomli
 import tomli_w
 from filelock import FileLock
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field
 
 _CACHE_ROOT = Path(pooch.os_cache("modflow-devtools"))
 """Root cache directory (platform-appropriate location via Pooch)"""
@@ -90,34 +68,55 @@ class ProgramDistribution(BaseModel):
 class ProgramMetadata(BaseModel):
     """Program metadata in registry."""
 
-    version: str = Field(..., description="Program version")
     description: str | None = Field(None, description="Program description")
-    repo: str = Field(..., description="Source repository (owner/name)")
     license: str | None = Field(None, description="License identifier")
-    exe: str = Field(..., description="Executable path within archive (e.g., bin/mf6)")
+    exe: str | None = Field(
+        None,
+        description="Executable path within archive (e.g., bin/mf6). Defaults to bin/{program}",
+    )
     dists: list[ProgramDistribution] = Field(
         default_factory=list, description="Available distributions"
     )
 
     model_config = {"arbitrary_types_allowed": True}
 
+    def get_exe_path(self, program_name: str, platform: str | None = None) -> str:
+        """
+        Get executable path, using default if not specified.
+
+        Parameters
+        ----------
+        program_name : str
+            Name of the program
+        platform : str | None
+            Platform name (e.g., 'win64'). If Windows platform, adds .exe extension.
+
+        Returns
+        -------
+        str
+            Executable path within archive
+        """
+        if self.exe:
+            exe = self.exe
+        else:
+            exe = f"bin/{program_name}"
+
+        # Add .exe extension for Windows platforms
+        if platform and platform.startswith("win") and not exe.endswith(".exe"):
+            exe = f"{exe}.exe"
+
+        return exe
+
 
 class ProgramRegistry(BaseModel):
     """Program registry data model."""
 
     schema_version: str | None = Field(None, description="Registry schema version")
-    generated_at: datetime | None = Field(None, description="Generation timestamp")
-    devtools_version: str | None = Field(None, description="modflow-devtools version")
     programs: dict[str, ProgramMetadata] = Field(
         default_factory=dict, description="Map of program names to metadata"
     )
 
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
-
-    @field_serializer("generated_at")
-    def serialize_datetime(self, dt: datetime | None, _info):
-        """Serialize datetime to ISO format."""
-        return dt.isoformat() if dt is not None else None
 
 
 @dataclass
@@ -1187,16 +1186,17 @@ class ProgramManager:
         # Search all cached registries for the program
         found_registry: ProgramRegistry | None = None
         found_ref: str | None = None
+        found_source: ProgramSourceRepo | None = None
 
         for source_name, source in config.sources.items():
             for ref in source.refs:
                 registry = self.cache.load(source_name, ref)
                 if registry and program in registry.programs:
-                    # If version specified, check if it matches
-                    prog_meta = registry.programs[program]
-                    if version is None or prog_meta.version == version:
+                    # If version specified, check if it matches the ref (release tag)
+                    if version is None or ref == version:
                         found_registry = registry
                         found_ref = ref
+                        found_source = source
                         break
             if found_registry:
                 break
@@ -1213,10 +1213,11 @@ class ProgramManager:
                     for ref in source.refs:
                         registry = self.cache.load(source_name, ref)
                         if registry and program in registry.programs:
-                            prog_meta = registry.programs[program]
-                            if version is None or prog_meta.version == version:
+                            # If version specified, check if it matches the ref (release tag)
+                            if version is None or ref == version:
                                 found_registry = registry
                                 found_ref = ref
+                                found_source = source
                                 break
                     if found_registry:
                         break
@@ -1231,7 +1232,9 @@ class ProgramManager:
 
         # 2. Get program metadata
         program_meta = found_registry.programs[program]
-        version = program_meta.version  # Use actual version from registry
+        assert found_source is not None  # Guaranteed by found_registry check above
+        assert found_ref is not None  # Guaranteed by found_registry check above
+        version = found_ref  # Use release tag as version
 
         if verbose:
             print(f"Installing {program} version {version}...")
@@ -1277,14 +1280,12 @@ class ProgramManager:
                 if verbose:
                     print(f"{program} {version} is already installed in {bindir}")
                 # Return paths to existing executables
-                exe_name = Path(program_meta.exe).name
-                # Add .exe extension on Windows
-                if platform.startswith("win") and not exe_name.endswith(".exe"):
-                    exe_name += ".exe"
+                exe_path = program_meta.get_exe_path(program, platform)
+                exe_name = Path(exe_path).name
                 return [bindir / exe_name]
 
         # 7. Download archive (if not cached)
-        asset_url = f"https://github.com/{program_meta.repo}/releases/download/{found_ref}/{dist_meta.asset}"
+        asset_url = f"https://github.com/{found_source.repo}/releases/download/{found_ref}/{dist_meta.asset}"
         archive_dir = self.cache.get_archive_dir(program, version, platform)
         archive_path = archive_dir / dist_meta.asset
 
@@ -1301,10 +1302,7 @@ class ProgramManager:
 
         # 8. Extract to binaries cache (if not already extracted)
         binary_dir = self.cache.get_binary_dir(program, version, platform)
-        exe_path = program_meta.exe
-        # Add .exe extension on Windows for extraction path
-        if platform.startswith("win") and not exe_path.endswith(".exe"):
-            exe_path += ".exe"
+        exe_path = program_meta.get_exe_path(program, platform)
         exe_in_cache = binary_dir / exe_path
 
         if not exe_in_cache.exists() or force:
@@ -1319,10 +1317,9 @@ class ProgramManager:
             )
 
         # 9. Copy executables to bindir
-        exe_name = Path(program_meta.exe).name
-        # Add .exe extension on Windows
-        if platform.startswith("win") and not exe_name.endswith(".exe"):
-            exe_name += ".exe"
+        exe_name = Path(
+            exe_path
+        ).name  # exe_path already set above with platform-specific extension
         dest_exe = bindir / exe_name
 
         if verbose:
@@ -1340,7 +1337,7 @@ class ProgramManager:
         # 10. Update metadata
         assert found_ref is not None  # Guaranteed by found_registry check above
         source_info: dict[str, str] = {
-            "repo": program_meta.repo,
+            "repo": found_source.repo,
             "tag": found_ref,
             "asset_url": asset_url,
             "hash": dist_meta.hash or "",

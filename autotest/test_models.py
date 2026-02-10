@@ -414,11 +414,7 @@ class TestRegistry:
     def test_registry_has_metadata(self, synced_registry):
         """Test that registry has required metadata."""
         assert hasattr(synced_registry, "schema_version")
-        assert hasattr(synced_registry, "generated_at")
-        assert hasattr(synced_registry, "devtools_version")
         assert synced_registry.schema_version is not None
-        assert synced_registry.generated_at is not None
-        assert synced_registry.devtools_version is not None
 
     def test_registry_has_files(self, synced_registry):
         """Test that registry has files."""

@@ -3,7 +3,6 @@ import os
 import urllib
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from functools import partial
 from os import PathLike
 from pathlib import Path
@@ -150,10 +149,6 @@ class ModelRegistry(BaseModel):
     """
 
     schema_version: str | None = Field(None, description="Registry schema version")
-    generated_at: datetime | None = Field(None, description="Timestamp when registry was generated")
-    devtools_version: str | None = Field(
-        None, description="Version of modflow-devtools used to generate"
-    )
     files: dict[str, ModelInputFile] = Field(
         default_factory=dict, description="Map of file names to file entries"
     )
@@ -165,11 +160,6 @@ class ModelRegistry(BaseModel):
     )
 
     model_config = {"arbitrary_types_allowed": True, "populate_by_name": True}
-
-    @field_serializer("generated_at")
-    def serialize_datetime(self, dt: datetime | None, _info):
-        """Serialize datetime to ISO format string."""
-        return dt.isoformat() if dt is not None else None
 
     def copy_to(
         self, workspace: str | PathLike, model_name: str, verbose: bool = False
@@ -871,8 +861,6 @@ class LocalRegistry(ModelRegistry):
         # Initialize Pydantic parent with empty data (no metadata for local registries)
         super().__init__(
             schema_version=None,
-            generated_at=None,
-            devtools_version=None,
             files={},
             models={},
             examples={},
@@ -1015,8 +1003,6 @@ class PoochRegistry(ModelRegistry):
         # Initialize Pydantic parent with empty data (will be populated by _load())
         super().__init__(
             schema_version=None,
-            generated_at=None,
-            devtools_version=None,
             files={},
             models={},
             examples={},
@@ -1114,8 +1100,6 @@ class PoochRegistry(ModelRegistry):
                     # Store metadata from first registry
                     if not self.schema_version and registry.schema_version:
                         self.schema_version = registry.schema_version
-                        self.generated_at = registry.generated_at
-                        self.devtools_version = registry.devtools_version
 
             if not self.files:
                 return False
@@ -1244,8 +1228,6 @@ class PoochRegistry(ModelRegistry):
 
         registry_data = {
             "schema_version": "1.0",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "devtools_version": modflow_devtools.__version__,
             "files": remap(dict(sorted(existing_files.items())), visit=drop_none_or_empty),
             "models": dict(sorted(existing_models.items())),
             "examples": dict(sorted(existing_examples.items())),

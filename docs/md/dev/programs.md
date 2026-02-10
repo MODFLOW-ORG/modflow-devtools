@@ -168,45 +168,54 @@ Each source repository must make a **program registry** file available. Program 
 Registry files shall be named **`programs.toml`** (not `registry.toml` - the specific naming distinguishes it from the Models and DFNs registries) and contain, at minimum, a dictionary `programs` enumerating programs provided by the source repository. For instance:
 
 ```toml
-# Metadata (top-level)
 schema_version = "1.0"
-generated_at = "2025-12-29T10:30:00Z"
-devtools_version = "2.0.0"
 
 [programs.mf6]
-version = "6.6.3"
+# Optional: exe defaults to "bin/mf6" (or "bin/mf6.exe" on Windows), only specify if different
 description = "MODFLOW 6 groundwater flow model"
-repo = "MODFLOW-ORG/modflow6"
 license = "CC0-1.0"
 
-[programs.mf6.binaries.linux]
+[[programs.mf6.dists]]
+name = "linux"
 asset = "mf6.6.3_linux.zip"
 hash = "sha256:..."
-exe = "bin/mf6"
 
-[programs.mf6.binaries.mac]
-asset = "mf6.6.3_macarm.zip"
+[[programs.mf6.dists]]
+name = "mac"
+asset = "mf6.6.3_mac.zip"
 hash = "sha256:..."
-exe = "bin/mf6"
 
-[programs.mf6.binaries.win64]
+[[programs.mf6.dists]]
+name = "win64"
 asset = "mf6.6.3_win64.zip"
 hash = "sha256:..."
-exe = "bin/mf6.exe"
 
 [programs.zbud6]
-version = "6.6.3"
+# exe defaults to "bin/zbud6" (or "bin/zbud6.exe" on Windows)
 description = "MODFLOW 6 Zonebudget utility"
-repo = "MODFLOW-ORG/modflow6"
 license = "CC0-1.0"
 
-[programs.zbud6.binaries.linux]
+[[programs.zbud6.dists]]
+name = "linux"
 asset = "mf6.6.3_linux.zip"
 hash = "sha256:..."
-exe = "bin/zbud6"
+
+[[programs.zbud6.dists]]
+name = "mac"
+asset = "mf6.6.3_mac.zip"
+hash = "sha256:..."
+
+[[programs.zbud6.dists]]
+name = "win64"
+asset = "mf6.6.3_win64.zip"
+hash = "sha256:..."
 ```
 
-The top-level metadata is optional; if a `schema_version` is not provided it will be inferred if possible.
+**Simplified format notes**:
+- Version and repository information come from the release tag and bootstrap configuration, not from the registry file
+- The `exe` field is optional and defaults to `bin/{program}` (with `.exe` automatically added on Windows)
+- Only specify `exe` when the executable location differs from the default
+- The `schema_version` field is optional but recommended for future compatibility
 
 Platform identifiers are as defined in the [modflow-devtools OS tag specification](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html): `linux`, `mac`, `win64`.
 
@@ -394,8 +403,8 @@ Exposed as a CLI command and Python API:
 # Sync all configured sources and release tags
 python -m modflow_devtools.programs sync
 
-# Sync specific source to specific release tag
-python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --tag 6.6.3
+# Sync specific source to specific release version
+python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --version 6.6.3
 
 # Force re-download
 python -m modflow_devtools.programs sync --force
@@ -416,7 +425,7 @@ from modflow_devtools.programs import sync_registries, get_sync_status
 sync_registries()
 
 # Sync specific
-sync_registries(repo="MODFLOW-ORG/modflow6", tag="6.6.3")
+sync_registries(repo="MODFLOW-ORG/modflow6", version="6.6.3")
 
 # Check status
 status = get_sync_status()
@@ -573,31 +582,32 @@ Examples:
 
 The Programs API uses a consolidated object-oriented design with Pydantic models and concrete classes.
 
-#### ProgramBinary
+#### ProgramDistribution
 
-Represents platform-specific binary information:
+Represents platform-specific distribution information:
 
 ```python
-class ProgramBinary(BaseModel):
-    """Platform-specific binary information."""
+class ProgramDistribution(BaseModel):
+    """Distribution-specific information."""
+    name: str  # Distribution name (e.g., linux, mac, win64)
     asset: str  # Release asset filename
     hash: str | None  # SHA256 hash
-    exe: str  # Executable path within archive
 ```
 
 #### ProgramMetadata
 
 Program metadata in registry:
 
-Example:
 ```python
 class ProgramMetadata(BaseModel):
     """Program metadata in registry."""
-    version: str
     description: str | None
-    repo: str  # Source repository (owner/name)
     license: str | None
-    binaries: dict[str, ProgramBinary]  # Platform-specific binaries
+    exe: str | None  # Optional: defaults to bin/{program}
+    dists: list[ProgramDistribution]  # Available distributions
+
+    def get_exe_path(self, program_name: str, platform: str | None = None) -> str:
+        """Get executable path, using default if not specified."""
 ```
 
 #### ProgramRegistry
@@ -608,8 +618,6 @@ Top-level registry data model:
 class ProgramRegistry(BaseModel):
     """Program registry data model."""
     schema_version: str | None
-    generated_at: datetime | None
-    devtools_version: str | None
     programs: dict[str, ProgramMetadata]
 ```
 
@@ -881,7 +889,7 @@ The Programs API has been implemented following a consolidated object-oriented a
   ```bash
   python -m modflow_devtools.programs.make_registry \
     --repo MODFLOW-ORG/modflow6 \
-    --tag 6.6.3 \
+    --version 6.6.3 \
     --programs mf6 zbud6 libmf6 mf5to6 \
     --compute-hashes \
     --output programs.toml

@@ -181,10 +181,7 @@ The registry file contains:
 Example `models.toml`:
 
 ```toml
-# Metadata (top-level)
 schema_version = "1.0"
-generated_at = "2025-12-04T14:30:00Z"
-devtools_version = "1.9.0"
 
 [files]
 "ex-gwf-twri01/mfsim.nam" = {hash = "sha256:abc123..."}
