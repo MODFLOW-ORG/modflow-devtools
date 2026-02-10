@@ -1300,12 +1300,9 @@ _DEFAULT_ZIP_NAME = "mf6examples.zip"
 
 def _try_best_effort_sync():
     """
-    Attempt to sync registries on first import.
+    Attempt to sync registries (best-effort, fails silently).
 
-    This is a best-effort operation - if it fails (network issues,
-    misconfiguration, etc.), we silently continue. The user will get
-    a clear error message if they try to use the registry without
-    having synced successfully.
+    Called by consumer commands before accessing model registries.
     """
     global _SYNC_ATTEMPTED
 
@@ -1322,10 +1319,6 @@ def _try_best_effort_sync():
         # Silently fail - user will get clear error when trying to use registry
         pass
 
-
-# Try to sync on first import (unless disabled)
-if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
-    _try_best_effort_sync()
 
 # Lazy initialization of default registry
 _default_registry_cache = None
