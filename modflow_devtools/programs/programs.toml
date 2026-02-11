@@ -1,63 +1,46 @@
-# Programs API Bootstrap Configuration
-#
 # This file tells modflow-devtools where to find program registries.
-# Programs are discovered from GitHub release assets.
+# Programs are discovered from GitHub release assets (programs.toml)
+# published alongside platform-specific distributions.
 #
-# Each source provides one or more programs (e.g., modflow6 provides mf6, zbud6, libmf6).
-# Program names are globally unique across all sources.
+# Each source provides one or more programs (e.g., modflow6 provides
+# mf6, zbud6, libmf6) as specified in the source's registry file.
 
 [sources.modflow6]
 repo = "MODFLOW-USGS/modflow6"
 refs = ["6.7.0", "6.6.3"]
-# Provides: mf6, zbud6, mf5to6, libmf6
 
 [sources.gridgen]
 repo = "MODFLOW-ORG/gridgen"
 refs = ["v1.0.02"]
-# Provides: gridgen
 
 [sources.triangle]
 repo = "MODFLOW-ORG/triangle"
 refs = ["v1.6"]
-# Provides: triangle
-
-[sources.mfusg]
-repo = "MODFLOW-ORG/mfusg"
-refs = ["v1.5.00"]
-# Provides: mfusg
-
-[sources.mfusgt]
-repo = "MODFLOW-ORG/mfusgt"
-refs = ["v2.6.0"]
-# Provides: mfusg_gsi
-
-[sources.modpath-v7]
-repo = "MODFLOW-ORG/modpath-v7"
-refs = ["7.2.001"]
-# Provides: mp7
-
-[sources.mt3d-usgs]
-repo = "MODFLOW-ORG/mt3d-usgs"
-refs = ["v1.0.0"]
-# Provides: mt3dusgs
-
-[sources.mt3dms]
-repo = "MODFLOW-ORG/mt3dms"
-refs = ["2.0"]
-# Provides: mt3dms
 
 [sources.zonbud]
 repo = "MODFLOW-ORG/zonbud"
 refs = ["v3.01"]
-# Provides: zonbud
 
 [sources.zonbudusg]
 repo = "MODFLOW-ORG/zonbudusg"
 refs = ["v1.01"]
-# Provides: zonbudusg
 
-[sources.executables]
-repo = "MODFLOW-ORG/executables"
-refs = ["latest"]
-# Consolidated repo for legacy programs
-# Provides: mf2005, mf2000, mfnwt, etc.
+[sources.vs2dt]
+repo = "MODFLOW-ORG/vs2dt"
+refs = ["v3.3"]
+
+[sources.mfnwt]
+repo = "MODFLOW-ORG/mfnwt"
+refs = ["v1.3.0"]
+
+[sources.mflgr]
+repo = "MODFLOW-ORG/mflgr"
+refs = ["v2.0.0"]
+
+[sources.mf2000]
+repo = "MODFLOW-ORG/mf2000"
+refs = ["v1.19.01"]
+
+[sources.swtv4]
+repo = "MODFLOW-ORG/swtv4"
+refs = ["v4.00.05"]
