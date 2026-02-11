@@ -27,6 +27,7 @@ Program registries can be synchronized from remote sources on demand. The user o
 - [Program Addressing](#program-addressing)
 - [Platform Support](#platform-support)
 - [Cache Management](#cache-management)
+- [Force Semantics](#force-semantics)
 - [Automatic Synchronization](#automatic-synchronization)
 - [Relationship to pymake and get-modflow](#relationship-to-pymake-and-get-modflow)
 
@@ -72,8 +73,10 @@ Or via CLI:
 ```bash
 python -m modflow_devtools.programs sync
 python -m modflow_devtools.programs sync --source modflow6
-python -m modflow_devtools.programs sync --force
+python -m modflow_devtools.programs sync --force  # Force re-download of registry metadata
 ```
+
+**Note**: The `--force` flag on `sync` forces re-downloading of registry metadata even if already cached. This is separate from installation - see the "Force semantics" section below.
 
 ### Inspecting available programs
 
@@ -268,6 +271,35 @@ The cache enables:
 - Fast re-installation without re-downloading
 - Efficient version switching
 - Offline access to previously installed programs
+
+## Force Semantics
+
+The `--force` flag has different meanings depending on the command:
+
+**`sync --force`**: Forces re-downloading of registry metadata from GitHub
+- Re-fetches `programs.toml` even if already cached
+- Use when registry files have been updated on GitHub
+- Does not affect installed programs or archives
+
+**`install --force`**: Forces re-installation of program binaries
+- Re-extracts from cached archive and re-copies to installation directory
+- Does **not** re-sync registry metadata (use `sync --force` first if needed)
+- Use when installation is corrupted or you want to reinstall to a different location
+- Works offline if archive is already cached
+
+**Common workflows**:
+```bash
+# Update to latest registry and install
+python -m modflow_devtools.programs sync --force
+python -m modflow_devtools.programs install mf6
+
+# Repair broken installation (offline-friendly)
+python -m modflow_devtools.programs install mf6 --force
+
+# Fresh install with latest metadata
+python -m modflow_devtools.programs sync --force
+python -m modflow_devtools.programs install mf6 --force
+```
 
 ## Automatic Synchronization
 

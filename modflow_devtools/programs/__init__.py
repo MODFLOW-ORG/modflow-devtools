@@ -60,6 +60,9 @@ class ProgramDistribution(BaseModel):
         ..., description="Distribution name (e.g., linux, mac, macarm, win64, win64ext)"
     )
     asset: str = Field(..., description="Release asset filename")
+    exe: str | None = Field(
+        None, description="Executable path within archive (e.g., mf6.7.0_win64/bin/mf6.exe)"
+    )
     hash: str | None = Field(None, description="SHA256 hash")
 
     model_config = {"arbitrary_types_allowed": True}
@@ -96,6 +99,17 @@ class ProgramMetadata(BaseModel):
         str
             Executable path within archive
         """
+        # Check distribution-specific exe path first
+        if platform:
+            for dist in self.dists:
+                if dist.name == platform and dist.exe:
+                    exe = dist.exe
+                    # Add .exe extension for Windows platforms if not present
+                    if platform.startswith("win") and not exe.endswith(".exe"):
+                        exe = f"{exe}.exe"
+                    return exe
+
+        # Fall back to program-level exe or default
         if self.exe:
             exe = self.exe
         else:

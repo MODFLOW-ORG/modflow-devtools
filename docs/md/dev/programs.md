@@ -24,6 +24,7 @@ This is a living document which will be updated as development proceeds.
   - [Registry synchronization](#registry-synchronization)
     - [Manual sync](#manual-sync)
     - [Automatic sync](#automatic-sync)
+    - [Force semantics](#force-semantics)
   - [Program installation](#program-installation)
   - [Source program integration](#source-program-integration)
   - [Program addressing](#program-addressing)
@@ -170,51 +171,86 @@ Registry files shall be named **`programs.toml`** (not `registry.toml` - the spe
 ```toml
 schema_version = "1.0"
 
+# Example 1: Distribution-specific exe paths (when archive structures differ)
 [programs.mf6]
-# Optional: exe defaults to "bin/mf6" (or "bin/mf6.exe" on Windows), only specify if different
 description = "MODFLOW 6 groundwater flow model"
 license = "CC0-1.0"
 
 [[programs.mf6.dists]]
 name = "linux"
-asset = "mf6.6.3_linux.zip"
+asset = "mf6.7.0_linux.zip"
+exe = "mf6.7.0_linux/bin/mf6"       # Each platform has different top-level dir
 hash = "sha256:..."
 
 [[programs.mf6.dists]]
 name = "mac"
-asset = "mf6.6.3_mac.zip"
+asset = "mf6.7.0_mac.zip"
+exe = "mf6.7.0_mac/bin/mf6"
 hash = "sha256:..."
 
 [[programs.mf6.dists]]
 name = "win64"
-asset = "mf6.6.3_win64.zip"
+asset = "mf6.7.0_win64.zip"
+exe = "mf6.7.0_win64/bin/mf6.exe"   # Note: .exe extension required
 hash = "sha256:..."
 
+# Example 2: Program-level exe path (when all platforms share same structure)
+[programs.mfnwt]
+exe = "bin/mfnwt"  # Same relative path for all platforms (.exe auto-added on Windows)
+description = "MODFLOW-NWT with Newton formulation"
+license = "CC0-1.0"
+
+[[programs.mfnwt.dists]]
+name = "linux"
+asset = "linux.zip"     # Contains bin/mfnwt
+hash = "sha256:..."
+
+[[programs.mfnwt.dists]]
+name = "win64"
+asset = "win64.zip"     # Contains bin/mfnwt.exe (extension auto-added)
+hash = "sha256:..."
+
+# Example 3: Default exe path (when executable is at bin/{program})
 [programs.zbud6]
-# exe defaults to "bin/zbud6" (or "bin/zbud6.exe" on Windows)
+# No exe specified - defaults to "bin/zbud6" (or "bin/zbud6.exe" on Windows)
 description = "MODFLOW 6 Zonebudget utility"
 license = "CC0-1.0"
 
 [[programs.zbud6.dists]]
 name = "linux"
-asset = "mf6.6.3_linux.zip"
-hash = "sha256:..."
-
-[[programs.zbud6.dists]]
-name = "mac"
-asset = "mf6.6.3_mac.zip"
+asset = "mf6.7.0_linux.zip"
 hash = "sha256:..."
 
 [[programs.zbud6.dists]]
 name = "win64"
-asset = "mf6.6.3_win64.zip"
+asset = "mf6.7.0_win64.zip"
 hash = "sha256:..."
 ```
 
-**Simplified format notes**:
+**Executable path resolution**:
+
+The `exe` field can be specified at three levels, checked in this order:
+
+1. **Distribution-level** (`[[programs.{name}.dists]]` entry with `exe` field)
+   - Use when different platforms have different archive structures
+   - Most specific - overrides program-level and default
+   - Example: `exe = "mf6.7.0_win64/bin/mf6.exe"`
+
+2. **Program-level** (`[programs.{name}]` section with `exe` field)
+   - Use when all platforms share the same relative path structure
+   - Example: `exe = "bin/mfnwt"`
+
+3. **Default** (neither specified)
+   - Falls back to `bin/{program}`
+   - Example: For `mf6`, defaults to `bin/mf6`
+
+**Windows .exe extension handling**:
+- The `.exe` extension is automatically added on Windows platforms if not present
+- You can specify `exe = "mfnwt"` and it becomes `mfnwt.exe` on Windows
+- Or explicitly include it: `exe = "path/to/mfnwt.exe"`
+
+**Format notes**:
 - Version and repository information come from the release tag and bootstrap configuration, not from the registry file
-- The `exe` field is optional and defaults to `bin/{program}` (with `.exe` automatically added on Windows)
-- Only specify `exe` when the executable location differs from the default
 - The `schema_version` field is optional but recommended for future compatibility
 
 Platform identifiers are as defined in the [modflow-devtools OS tag specification](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html): `linux`, `mac`, `win64`.
@@ -437,6 +473,44 @@ status = get_sync_status()
 - **On first use**: If registry cache is empty, attempt to sync before raising errors
 - **Configurable**: Users can disable auto-sync via environment variable: `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`
 
+#### Force semantics
+
+The `--force` flag has different meanings depending on the command, maintaining separation of concerns:
+
+**`sync --force`**: Forces re-downloading of registry metadata
+- Re-fetches `programs.toml` from GitHub even if already cached
+- Use when registry files have been updated upstream
+- Does not affect installed programs or downloaded archives
+- Network operation required
+
+**`install --force`**: Forces re-installation of program binaries
+- Re-extracts from cached archive and re-copies to installation directory
+- Does **not** re-sync registry metadata (registries and installations are decoupled)
+- Use when installation is corrupted or when reinstalling to different location
+- Works offline if archive is already cached
+- Network operation only if archive not cached
+
+**Design rationale**:
+- **Separation of concerns**: Sync manages metadata discovery, install manages binary deployment
+- **Offline workflows**: Users can reinstall without network access if archives are cached
+- **Performance**: Avoids unnecessary network calls when registry hasn't changed
+- **Explicit control**: Users explicitly choose when to refresh metadata vs reinstall binaries
+- **Debugging**: Easier to isolate issues between registry discovery and installation
+
+**Common patterns**:
+```bash
+# Update to latest registry and install
+python -m modflow_devtools.programs sync --force
+python -m modflow_devtools.programs install mf6
+
+# Repair installation without touching registry (offline-friendly)
+python -m modflow_devtools.programs install mf6 --force
+
+# Complete refresh of both metadata and installation
+python -m modflow_devtools.programs sync --force
+python -m modflow_devtools.programs install mf6 --force
+```
+
 ### Program installation
 
 Installation extends beyond metadata to actually providing program executables by downloading and managing pre-built platform-specific binaries.
@@ -643,6 +717,7 @@ class ProgramDistribution(BaseModel):
     """Distribution-specific information."""
     name: str  # Distribution name (e.g., linux, mac, win64)
     asset: str  # Release asset filename
+    exe: str | None  # Executable path within archive (optional, overrides program-level exe)
     hash: str | None  # SHA256 hash
 ```
 

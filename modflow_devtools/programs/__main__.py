@@ -111,11 +111,10 @@ def cmd_list(args):
                 if args.verbose:
                     # Show all programs in verbose mode
                     for program_name, metadata in sorted(programs.items()):
-                        version = metadata.version
                         dist_names = (
                             ", ".join(d.name for d in metadata.dists) if metadata.dists else "none"
                         )
-                        print(f"    - {program_name} ({version}) [{dist_names}]")
+                        print(f"    - {program_name} ({ref}) [{dist_names}]")
             else:
                 print("  No programs")
             print()
