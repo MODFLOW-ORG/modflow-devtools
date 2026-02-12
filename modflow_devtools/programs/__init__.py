@@ -83,7 +83,13 @@ class ProgramMetadata(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def get_exe_path(self, program_name: str, platform: str | None = None) -> str:
+    def get_exe_path(
+        self,
+        program_name: str,
+        platform: str | None = None,
+        asset_name: str | None = None,
+        archive_path: Path | None = None,
+    ) -> str:
         """
         Get executable path, using default if not specified.
 
@@ -93,6 +99,12 @@ class ProgramMetadata(BaseModel):
             Name of the program
         platform : str | None
             Platform name (e.g., 'win64'). If Windows platform, adds .exe extension.
+        asset_name : str | None
+            Asset filename (e.g., 'mf6.6.3_linux.zip'). If provided and program-level exe is used,
+            prepends the asset stem (filename without extension) to support nested folder structure.
+        archive_path : Path | None
+            Path to archive file. If provided and using defaults, will inspect archive to determine
+            which default pattern to use (bin/{program} vs {program} at root).
 
         Returns
         -------
@@ -109,17 +121,101 @@ class ProgramMetadata(BaseModel):
                         exe = f"{exe}.exe"
                     return exe
 
-        # Fall back to program-level exe or default
+        # Fall back to program-level exe or defaults
         if self.exe:
             exe = self.exe
         else:
+            # Try common defaults in order:
+            # 1. bin/{program} (most common)
+            # 2. {program} (binaries at root)
+
+            # If we have the archive, inspect it to determine which pattern to use
+            if archive_path and asset_name:
+                from pathlib import Path
+
+                asset_stem = Path(asset_name).stem
+
+                # Try to detect which default exists in the archive
+                exe = self._detect_default_exe_in_archive(
+                    archive_path, asset_stem, program_name, platform
+                )
+                if exe:
+                    # Already includes asset stem prefix
+                    return exe
+
+            # Fallback when archive not available - try bin/ first
             exe = f"bin/{program_name}"
 
         # Add .exe extension for Windows platforms
         if platform and platform.startswith("win") and not exe.endswith(".exe"):
             exe = f"{exe}.exe"
 
+        # If asset_name provided and we're using program-level exe,
+        # prepend asset stem to support nested folder structure
+        # (e.g., 'bin/mf6' becomes 'mf6.6.3_linux/bin/mf6' for mf6.6.3_linux.zip)
+        if asset_name and not any(
+            dist.name == platform and dist.exe for dist in self.dists if platform
+        ):
+            # Using program-level exe (not dist-specific)
+            from pathlib import Path
+
+            asset_stem = Path(asset_name).stem
+            exe = f"{asset_stem}/{exe}"
+
         return exe
+
+    def _detect_default_exe_in_archive(
+        self,
+        archive_path: Path,
+        asset_stem: str,
+        program_name: str,
+        platform: str | None,
+    ) -> str | None:
+        """
+        Inspect archive to detect which default exe pattern is used.
+
+        Supports both nested ({asset_stem}/path) and flat (path) patterns.
+        Returns the full path if found, None otherwise.
+        """
+        import tarfile
+        import zipfile
+
+        # Try to list archive contents
+        try:
+            if archive_path.suffix.lower() == ".zip":
+                with zipfile.ZipFile(archive_path, "r") as zf:
+                    members = zf.namelist()
+            elif archive_path.suffix.lower() in [".gz", ".tgz"]:
+                with tarfile.open(archive_path, "r:gz") as tf:
+                    members = tf.getnames()
+            elif archive_path.suffix.lower() == ".tar":
+                with tarfile.open(archive_path, "r") as tf:
+                    members = tf.getnames()
+            else:
+                return None
+
+            # Normalize member paths
+            members_normalized = [m.replace("\\", "/") for m in members]
+
+            # Try common patterns in priority order
+            # First try nested patterns (most common), then flat patterns
+            for base_pattern in [f"bin/{program_name}", program_name]:
+                for ext in ["", ".exe", ".dll", ".so", ".dylib"]:
+                    search_pattern = f"{base_pattern}{ext}"
+
+                    # Try nested pattern first (asset_stem/path)
+                    nested_pattern = f"{asset_stem}/{search_pattern}"
+                    if nested_pattern in members_normalized:
+                        return nested_pattern
+
+                    # Try flat pattern (no asset_stem prefix)
+                    if search_pattern in members_normalized:
+                        return search_pattern
+
+            return None
+
+        except (zipfile.BadZipFile, tarfile.TarError, OSError):
+            return None
 
 
 class ProgramRegistry(BaseModel):
@@ -934,9 +1030,6 @@ class ProgramInstallation:
     executables: list[str]
     """List of installed executable names"""
 
-    active: bool
-    """Whether this is the active version in this bindir"""
-
 
 class InstallationMetadata:
     """Manages installation metadata for a program."""
@@ -987,7 +1080,6 @@ class InstallationMetadata:
                     installed_at=installed_at,
                     source=inst_data["source"],
                     executables=inst_data["executables"],
-                    active=inst_data.get("active", False),
                 )
                 self.installations.append(installation)
 
@@ -1014,7 +1106,6 @@ class InstallationMetadata:
                     "installed_at": inst.installed_at.isoformat(),
                     "source": inst.source,
                     "executables": inst.executables,
-                    "active": inst.active,
                 }
                 for inst in self.installations
             ],
@@ -1031,11 +1122,6 @@ class InstallationMetadata:
         ----------
         installation : ProgramInstallation
             Installation to add
-
-        Notes
-        -----
-        If installation marks this version as active in a bindir, all other
-        versions in that bindir are marked inactive.
         """
         # Remove existing installation for same version/bindir if present
         self.installations = [
@@ -1043,12 +1129,6 @@ class InstallationMetadata:
             for inst in self.installations
             if not (inst.version == installation.version and inst.bindir == installation.bindir)
         ]
-
-        # If marking as active, deactivate others in same bindir
-        if installation.active:
-            for inst in self.installations:
-                if inst.bindir == installation.bindir:
-                    inst.active = False
 
         self.installations.append(installation)
         self.save()
@@ -1069,55 +1149,6 @@ class InstallationMetadata:
             for inst in self.installations
             if not (inst.version == version and inst.bindir == bindir)
         ]
-        self.save()
-
-    def get_active_version(self, bindir: Path) -> str | None:
-        """
-        Get active version in a bindir.
-
-        Parameters
-        ----------
-        bindir : Path
-            Installation directory
-
-        Returns
-        -------
-        str | None
-            Active version, or None if no active installation
-        """
-        for inst in self.installations:
-            if inst.bindir == bindir and inst.active:
-                return inst.version
-        return None
-
-    def set_active_version(self, version: str, bindir: Path) -> None:
-        """
-        Set active version in a bindir.
-
-        Parameters
-        ----------
-        version : str
-            Program version
-        bindir : Path
-            Installation directory
-
-        Raises
-        ------
-        ValueError
-            If version is not installed in bindir
-        """
-        # Find the installation
-        found = False
-        for inst in self.installations:
-            if inst.version == version and inst.bindir == bindir:
-                inst.active = True
-                found = True
-            elif inst.bindir == bindir:
-                inst.active = False
-
-        if not found:
-            raise ValueError(f"Version {version} is not installed in {bindir}")
-
         self.save()
 
     def list_installations(self) -> list[ProgramInstallation]:
@@ -1288,16 +1319,6 @@ class ProgramManager:
         metadata = InstallationMetadata(program)
         metadata.load()
 
-        if not force:
-            active_version = metadata.get_active_version(bindir)
-            if active_version == version:
-                if verbose:
-                    print(f"{program} {version} is already installed in {bindir}")
-                # Return paths to existing executables
-                exe_path = program_meta.get_exe_path(program, platform)
-                exe_name = Path(exe_path).name
-                return [bindir / exe_name]
-
         # 7. Download archive (if not cached)
         asset_url = f"https://github.com/{found_source.repo}/releases/download/{found_ref}/{dist_meta.asset}"
         archive_dir = self.cache.get_archive_dir(program, version, platform)
@@ -1314,9 +1335,11 @@ class ProgramManager:
             verbose=verbose,
         )
 
+        # Get exe path (may inspect archive to detect defaults)
+        exe_path = program_meta.get_exe_path(program, platform, dist_meta.asset, archive_path)
+
         # 8. Extract to binaries cache (if not already extracted)
         binary_dir = self.cache.get_binary_dir(program, version, platform)
-        exe_path = program_meta.get_exe_path(program, platform)
         exe_in_cache = binary_dir / exe_path
 
         if not exe_in_cache.exists() or force:
@@ -1363,7 +1386,6 @@ class ProgramManager:
             installed_at=datetime.now(timezone.utc),
             source=source_info,
             executables=[exe_name],
-            active=True,
         )
 
         metadata.add_installation(installation)
@@ -1373,112 +1395,6 @@ class ProgramManager:
 
         # 11. Return installed executable paths
         return [dest_exe]
-
-    def select(
-        self,
-        program: str,
-        version: str,
-        bindir: str | Path | None = None,
-        verbose: bool = False,
-    ) -> list[Path]:
-        """
-        Switch active version in bindir (re-copy from cache).
-
-        Parameters
-        ----------
-        program : str
-            Program name
-        version : str
-            Program version
-        bindir : str | Path, optional
-            Installation directory (default: use previous installation location)
-        verbose : bool
-            Print progress messages
-
-        Returns
-        -------
-        list[Path]
-            List of executable paths
-
-        Raises
-        ------
-        ProgramInstallationError
-            If version is not cached or bindir cannot be determined
-        """
-        import shutil
-
-        # Load metadata
-        metadata = InstallationMetadata(program)
-        if not metadata.load():
-            raise ProgramInstallationError(f"No installation metadata found for {program}")
-
-        # Determine bindir
-        if bindir is None:
-            bindir_options = get_bindir_options(program)
-            if not bindir_options:
-                raise ProgramInstallationError(
-                    "No installation directory found. Specify bindir explicitly."
-                )
-            bindir = bindir_options[0]
-        else:
-            bindir = Path(bindir)
-
-        # Find installation with this version
-        installation = None
-        for inst in metadata.list_installations():
-            if inst.version == version:
-                installation = inst
-                break
-
-        if not installation:
-            raise ProgramInstallationError(
-                f"{program} version {version} is not installed. Run install() first."
-            )
-
-        # Check that binaries are cached
-        binary_dir = self.cache.get_binary_dir(program, version, installation.platform)
-        if not binary_dir.exists():
-            raise ProgramInstallationError(
-                f"Binaries for {program} {version} not found in cache. "
-                f"Run install() to download and cache."
-            )
-
-        # Copy executables to bindir
-        dest_paths = []
-        for exe_name in installation.executables:
-            src_exe = binary_dir / "bin" / exe_name  # Assuming bin/ subdir
-            if not src_exe.exists():
-                # Try without bin/ prefix
-                src_exe = binary_dir / exe_name
-
-            if not src_exe.exists():
-                raise ProgramInstallationError(
-                    f"Executable {exe_name} not found in cache at {binary_dir}"
-                )
-
-            dest_exe = bindir / exe_name
-
-            if verbose:
-                print(f"Copying {src_exe} to {dest_exe}...")
-
-            shutil.copy2(src_exe, dest_exe)
-
-            # Apply executable permissions on Unix
-            if os.name != "nt":
-                import stat
-
-                current_permissions = dest_exe.stat().st_mode
-                dest_exe.chmod(current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-
-            dest_paths.append(dest_exe)
-
-        # Update metadata (mark this version as active)
-        metadata.set_active_version(version, bindir)
-
-        if verbose:
-            print(f"Activated {program} {version} in {bindir}")
-
-        return dest_paths
 
     def uninstall(
         self,
@@ -1575,69 +1491,6 @@ class ProgramManager:
         if verbose:
             print(f"Successfully uninstalled {program}")
 
-    def get_executable(
-        self,
-        program: str,
-        version: str | None = None,
-        bindir: str | Path | None = None,
-    ) -> Path:
-        """
-        Get path to installed executable.
-
-        Parameters
-        ----------
-        program : str
-            Program name
-        version : str, optional
-            Program version (default: active version in bindir)
-        bindir : str | Path, optional
-            Installation directory (default: search in priority order)
-
-        Returns
-        -------
-        Path
-            Path to executable
-
-        Raises
-        ------
-        ProgramInstallationError
-            If executable not found
-        """
-        # Load metadata
-        metadata = InstallationMetadata(program)
-        if not metadata.load():
-            raise ProgramInstallationError(f"Program {program} is not installed")
-
-        # Determine bindir
-        if bindir is None:
-            bindir_options = get_bindir_options(program)
-            if bindir_options:
-                bindir = bindir_options[0]
-        else:
-            bindir = Path(bindir)
-
-        # Find installation
-        for inst in metadata.list_installations():
-            if bindir and inst.bindir != bindir:
-                continue
-            if version and inst.version != version:
-                continue
-            if bindir and not inst.active:
-                continue
-
-            # Return first executable
-            if inst.executables:
-                exe_path = inst.bindir / inst.executables[0]
-                if exe_path.exists():
-                    return exe_path
-
-        raise ProgramInstallationError(
-            f"Executable for {program}"
-            + (f" version {version}" if version else "")
-            + (f" in {bindir}" if bindir else "")
-            + " not found"
-        )
-
     def list_installed(self, program: str | None = None) -> dict[str, list[ProgramInstallation]]:
         """
         List installed programs.
@@ -1731,46 +1584,6 @@ def install_program(
     )
 
 
-def select_version(
-    program: str,
-    version: str,
-    bindir: str | Path | None = None,
-    verbose: bool = False,
-) -> list[Path]:
-    """
-    Switch active version in bindir (re-copy from cache).
-
-    Convenience wrapper for ProgramManager.select().
-
-    Parameters
-    ----------
-    program : str
-        Program name
-    version : str
-        Program version
-    bindir : str | Path, optional
-        Installation directory (default: use previous installation location)
-    verbose : bool
-        Print progress messages
-
-    Returns
-    -------
-    list[Path]
-        List of executable paths
-
-    Raises
-    ------
-    ProgramInstallationError
-        If version is not cached or bindir cannot be determined
-    """
-    return _DEFAULT_MANAGER.select(
-        program=program,
-        version=version,
-        bindir=bindir,
-        verbose=verbose,
-    )
-
-
 def uninstall_program(
     program: str,
     version: str | None = None,
@@ -1811,42 +1624,6 @@ def uninstall_program(
         all_versions=all_versions,
         remove_cache=remove_cache,
         verbose=verbose,
-    )
-
-
-def get_executable(
-    program: str,
-    version: str | None = None,
-    bindir: str | Path | None = None,
-) -> Path:
-    """
-    Get path to installed executable.
-
-    Convenience wrapper for ProgramManager.get_executable().
-
-    Parameters
-    ----------
-    program : str
-        Program name
-    version : str, optional
-        Program version (default: active version in bindir)
-    bindir : str | Path, optional
-        Installation directory (default: search in priority order)
-
-    Returns
-    -------
-    Path
-        Path to executable
-
-    Raises
-    ------
-    ProgramInstallationError
-        If executable not found
-    """
-    return _DEFAULT_MANAGER.get_executable(
-        program=program,
-        version=version,
-        bindir=bindir,
     )
 
 
@@ -1917,11 +1694,9 @@ __all__ = [
     "download_archive",
     "extract_executables",
     "get_bindir_options",
-    "get_executable",
     "get_platform",
     "get_user_config_path",
     "install_program",
     "list_installed",
-    "select_version",
     "uninstall_program",
 ]

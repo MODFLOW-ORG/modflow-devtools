@@ -256,18 +256,14 @@ class TestProgramManager:
     def test_convenience_wrappers(self):
         """Test that convenience functions wrap the default manager."""
         from modflow_devtools.programs import (
-            get_executable,
             install_program,
             list_installed,
-            select_version,
             uninstall_program,
         )
 
         # All functions should exist and be callable
         assert callable(install_program)
-        assert callable(select_version)
         assert callable(uninstall_program)
-        assert callable(get_executable)
         assert callable(list_installed)
 
     def test_program_manager_list_installed_empty(self):
@@ -301,10 +297,6 @@ class TestProgramManager:
         with pytest.raises(ProgramInstallationError, match="not found"):
             manager.install("nonexistent-program-xyz")
 
-        # Test get_executable for non-installed program
-        with pytest.raises(ProgramInstallationError, match="not installed"):
-            manager.get_executable("nonexistent-program-xyz")
-
     def test_installation_metadata_integration(self):
         """Test InstallationMetadata integration with ProgramManager."""
         from datetime import datetime, timezone
@@ -333,7 +325,6 @@ class TestProgramManager:
                 "hash": "",
             },
             executables=["test-program"],
-            active=True,
         )
         metadata.add_installation(installation)
 
@@ -344,7 +335,6 @@ class TestProgramManager:
         assert len(installations) == 1
         assert installations[0].version == "1.0.0"
         assert installations[0].platform == "linux"
-        assert installations[0].active is True
 
         # Clean up
         cache.clear()

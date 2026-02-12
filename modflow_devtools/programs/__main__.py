@@ -6,9 +6,8 @@ Commands:
     info        Show sync status
     list        List available programs
     install     Install a program
-    select      Switch active program version
     uninstall   Uninstall a program
-    which       Show path to installed executable
+    history     Show installation history
 """
 
 import argparse
@@ -19,10 +18,8 @@ from . import (
     _DEFAULT_CACHE,
     ProgramSourceConfig,
     _try_best_effort_sync,
-    get_executable,
     install_program,
     list_installed,
-    select_version,
     uninstall_program,
 )
 
@@ -143,33 +140,6 @@ def cmd_install(args):
         sys.exit(1)
 
 
-def cmd_select(args):
-    """Select command handler."""
-    # Parse program@version format
-    if "@" in args.program:
-        program, version = args.program.split("@", 1)
-    else:
-        print(
-            "Error: Must specify version with program@version format",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-    try:
-        paths = select_version(
-            program=program,
-            version=version,
-            bindir=args.bindir,
-            verbose=True,
-        )
-        print("\nActivated executables:")
-        for path in paths:
-            print(f"  {path}")
-    except Exception as e:
-        print(f"Selection failed: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
 def cmd_uninstall(args):
     """Uninstall command handler."""
     # Parse program@version format if provided
@@ -200,21 +170,7 @@ def cmd_uninstall(args):
         sys.exit(1)
 
 
-def cmd_which(args):
-    """Which command handler."""
-    try:
-        path = get_executable(
-            program=args.program,
-            version=args.version,
-            bindir=args.bindir,
-        )
-        print(path)
-    except Exception as e:
-        print(f"Executable not found: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def cmd_list_installed(args):
+def cmd_history(args):
     """List installed programs command handler."""
     installed = list_installed(args.program)
 
@@ -225,12 +181,11 @@ def cmd_list_installed(args):
             print("No programs installed")
         return
 
-    print("Installed programs:\n")
+    print("Installation history:\n")
     for program_name, installations in sorted(installed.items()):
         print(f"{program_name}:")
         for inst in sorted(installations, key=lambda i: i.version):
-            active_marker = " (active)" if inst.active else ""
-            print(f"  {inst.version} in {inst.bindir}{active_marker}")
+            print(f"  {inst.version} in {inst.bindir}")
             if args.verbose:
                 print(f"    Platform: {inst.platform}")
                 timestamp = inst.installed_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -303,17 +258,6 @@ def main():
         help="Force reinstallation",
     )
 
-    # Select command
-    select_parser = subparsers.add_parser("select", help="Switch active program version")
-    select_parser.add_argument(
-        "program",
-        help="Program name with version (program@version)",
-    )
-    select_parser.add_argument(
-        "--bindir",
-        help="Installation directory",
-    )
-
     # Uninstall command
     uninstall_parser = subparsers.add_parser("uninstall", help="Uninstall a program")
     uninstall_parser.add_argument(
@@ -336,29 +280,14 @@ def main():
         help="Also remove from cache",
     )
 
-    # Which command
-    which_parser = subparsers.add_parser("which", help="Show path to installed executable")
-    which_parser.add_argument(
-        "program",
-        help="Program name",
-    )
-    which_parser.add_argument(
-        "--version",
-        help="Program version",
-    )
-    which_parser.add_argument(
-        "--bindir",
-        help="Installation directory",
-    )
-
-    # Installed command (list installed programs)
-    installed_parser = subparsers.add_parser("installed", help="List installed programs")
-    installed_parser.add_argument(
+    # History command (list installation history)
+    history_parser = subparsers.add_parser("history", help="Show installation history")
+    history_parser.add_argument(
         "program",
         nargs="?",
         help="Specific program to list (default: all)",
     )
-    installed_parser.add_argument(
+    history_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -380,14 +309,10 @@ def main():
         cmd_list(args)
     elif args.command == "install":
         cmd_install(args)
-    elif args.command == "select":
-        cmd_select(args)
     elif args.command == "uninstall":
         cmd_uninstall(args)
-    elif args.command == "which":
-        cmd_which(args)
-    elif args.command == "installed":
-        cmd_list_installed(args)
+    elif args.command == "history":
+        cmd_history(args)
     else:
         parser.print_help()
         sys.exit(1)
