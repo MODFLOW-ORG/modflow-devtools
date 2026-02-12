@@ -68,9 +68,15 @@ results = config.sync(verbose=True)
 results = config.sync(source="modflow6", verbose=True)
 ```
 
-Or via CLI:
+Or via CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf programs sync
+mf programs sync --source modflow6
+mf programs sync --force  # Force re-download of registry metadata
+
+# Or using the module form
 python -m modflow_devtools.programs sync
 python -m modflow_devtools.programs sync --source modflow6
 python -m modflow_devtools.programs sync --force  # Force re-download of registry metadata
@@ -91,9 +97,16 @@ for source_name, source_status in status.items():
     print(f"{source_name}: {source_status.cached_refs}")
 ```
 
-Or by CLI:
+Or by CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf programs info  # Show sync status
+mf programs list  # Show program summary
+mf programs list --verbose  # Full list with details
+mf programs list --source modflow6 --verbose  # Filter by source
+
+# Or using the module form
 python -m modflow_devtools.programs info  # Show sync status
 python -m modflow_devtools.programs list  # Show program summary
 python -m modflow_devtools.programs list --verbose  # Full list with details
@@ -115,9 +128,15 @@ paths = install_program("mf6", version="6.6.3", verbose=True)
 paths = install_program("mf6", version="6.6.3", bindir="/usr/local/bin")
 ```
 
-Or via CLI:
+Or via CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf programs install mf6
+mf programs install mf6@6.6.3
+mf programs install mf6@6.6.3 --bindir /usr/local/bin
+
+# Or using the module form
 python -m modflow_devtools.programs install mf6
 python -m modflow_devtools.programs install mf6@6.6.3
 python -m modflow_devtools.programs install mf6@6.6.3 --bindir /usr/local/bin
@@ -141,12 +160,16 @@ for program_name, installations in installed.items():
         print(f"{program_name} {inst.version} in {inst.bindir}")
 ```
 
-Or by CLI:
+Or by CLI (both forms are equivalent):
 
 ```bash
-python -m modflow_devtools.programs which mf6
-python -m modflow_devtools.programs installed
-python -m modflow_devtools.programs installed mf6 --verbose
+# Using the mf command
+mf programs history
+mf programs history mf6 --verbose
+
+# Or using the module form
+python -m modflow_devtools.programs history
+python -m modflow_devtools.programs history mf6 --verbose
 ```
 
 ### Version management
@@ -164,12 +187,17 @@ install_program("mf6", version="6.5.0")
 select_version("mf6", version="6.5.0")
 ```
 
-Or by CLI:
+Or by CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf programs install mf6@6.6.3
+mf programs install mf6@6.5.0
+# Version switching not yet implemented - use Python API
+
+# Or using the module form
 python -m modflow_devtools.programs install mf6@6.6.3
 python -m modflow_devtools.programs install mf6@6.5.0
-python -m modflow_devtools.programs select mf6@6.5.0
 ```
 
 ### Using the default manager
@@ -290,15 +318,15 @@ The `--force` flag has different meanings depending on the command:
 **Common workflows**:
 ```bash
 # Update to latest registry and install
-python -m modflow_devtools.programs sync --force
-python -m modflow_devtools.programs install mf6
+mf programs sync --force
+mf programs install mf6
 
 # Repair broken installation (offline-friendly)
-python -m modflow_devtools.programs install mf6 --force
+mf programs install mf6 --force
 
 # Fresh install with latest metadata
-python -m modflow_devtools.programs sync --force
-python -m modflow_devtools.programs install mf6 --force
+mf programs sync --force
+mf programs install mf6 --force
 ```
 
 ## Automatic Synchronization
@@ -317,7 +345,8 @@ export MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1
 Then manually sync when needed:
 
 ```bash
-python -m modflow_devtools.programs sync
+mf programs sync
+# Or: python -m modflow_devtools.programs sync
 ```
 
 ## Relationship to pymake and get-modflow

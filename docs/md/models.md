@@ -77,9 +77,16 @@ for source_name, source_status in status.items():
     print(f"{source_name}: {source_status.cached_refs}")
 ```
 
-Or via CLI:
+Or via CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf models sync
+mf models sync --source modflow6-testmodels
+mf models sync --source modflow6-testmodels --ref develop
+mf models sync --force
+
+# Or using the module form
 python -m modflow_devtools.models sync
 python -m modflow_devtools.models sync --source modflow6-testmodels
 python -m modflow_devtools.models sync --source modflow6-testmodels --ref develop
@@ -101,10 +108,17 @@ for example_name, model_list in list(examples.items())[:3]:
     print(f"{example_name}: {len(model_list)} models")
 ```
 
-Or by CLI:
+Or by CLI (both forms are equivalent):
 
 ```bash
+# Using the mf command
+mf models info  # Show sync status
+mf models list  # Show model summary...
+mf models list --verbose  # ..or full list
+# Filter by source
+mf models list --source mf6/test --verbose
 
+# Or using the module form
 python -m modflow_devtools.models info  # Show sync status
 python -m modflow_devtools.models list  # Show model summary...
 python -m modflow_devtools.models list --verbose  # ..or full list
@@ -268,7 +282,8 @@ export MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1
 Then manually sync when needed:
 
 ```bash
-python -m modflow_devtools.models sync
+mf models sync
+# Or: python -m modflow_devtools.models sync
 ```
 
 ## Repository Integration

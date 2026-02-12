@@ -481,19 +481,19 @@ Exposed as a CLI command and Python API:
 
 ```bash
 # Sync all configured sources and release tags
-python -m modflow_devtools.programs sync
+mf programs sync
 
-# Sync specific source to specific release version
-python -m modflow_devtools.programs sync --repo MODFLOW-ORG/modflow6 --version 6.6.3
+# Sync specific source
+mf programs sync --source modflow6
 
 # Force re-download
-python -m modflow_devtools.programs sync --force
+mf programs sync --force
 
 # Show sync status
-python -m modflow_devtools.programs info
+mf programs info
 
 # List available programs
-python -m modflow_devtools.programs list
+mf programs list
 ```
 
 Or via Python API:
@@ -544,15 +544,15 @@ The `--force` flag has different meanings depending on the command, maintaining 
 **Common patterns**:
 ```bash
 # Update to latest registry and install
-python -m modflow_devtools.programs sync --force
-python -m modflow_devtools.programs install mf6
+mf programs sync --force
+mf programs install mf6
 
 # Repair installation without touching registry (offline-friendly)
-python -m modflow_devtools.programs install mf6 --force
+mf programs install mf6 --force
 
 # Complete refresh of both metadata and installation
-python -m modflow_devtools.programs sync --force
-python -m modflow_devtools.programs install mf6 --force
+mf programs sync --force
+mf programs install mf6 --force
 ```
 
 ### Program installation
@@ -561,38 +561,27 @@ Installation extends beyond metadata to actually providing program executables b
 
 ```bash
 # Install from binary (auto-detects platform)
-python -m modflow_devtools.programs install mf6
+mf programs install mf6
 
 # Install specific version
-python -m modflow_devtools.programs install mf6@6.6.3
+mf programs install mf6@6.6.3
 
-# Install to custom location (interactive selection like get-modflow)
-python -m modflow_devtools.programs install mf6 --bindir :
-
-# Install to specific directory
-python -m modflow_devtools.programs install mf6 --bindir /usr/local/bin
+# Install to custom location
+mf programs install mf6 --bindir /usr/local/bin
 
 # Install multiple versions side-by-side (cached separately)
-python -m modflow_devtools.programs install mf6@6.6.3
-python -m modflow_devtools.programs install mf6@6.5.0
+mf programs install mf6@6.6.3
+mf programs install mf6@6.5.0
 
-# Select active version (re-copies from cache to bindir)
-python -m modflow_devtools.programs select mf6@6.6.3
-
-# List installed programs
-python -m modflow_devtools.programs list --installed
-
-# List available versions of a program
-python -m modflow_devtools.programs list mf6
-
-# Show where program is installed
-python -m modflow_devtools.programs which mf6
+# List installation history
+mf programs history
+mf programs history mf6
 
 # Uninstall specific version
-python -m modflow_devtools.programs uninstall mf6@6.6.3
+mf programs uninstall mf6@6.6.3
 
 # Uninstall all versions
-python -m modflow_devtools.programs uninstall mf6 --all
+mf programs uninstall mf6 --all
 ```
 
 Python API:
@@ -1055,14 +1044,14 @@ The Programs API has been implemented following a consolidated object-oriented a
 - Force re-download support
 
 **CLI Interface** ✅
-- `python -m modflow_devtools.programs sync` - Sync registries
-- `python -m modflow_devtools.programs info` - Show sync status
-- `python -m modflow_devtools.programs list` - List available programs
-- `python -m modflow_devtools.programs install` - Install a program
-- `python -m modflow_devtools.programs select` - Switch active version
-- `python -m modflow_devtools.programs uninstall` - Uninstall a program
-- `python -m modflow_devtools.programs which` - Show executable path
-- `python -m modflow_devtools.programs installed` - List installed programs
+- `mf programs sync` - Sync registries
+- `mf programs info` - Show sync status
+- `mf programs list` - List available programs
+- `mf programs install` - Install a program
+- `mf programs uninstall` - Uninstall a program
+- `mf programs history` - Show installation history
+
+All commands also support the module form: `python -m modflow_devtools.programs <command>`
 
 **Registry Generation Tool** ✅
 - `modflow_devtools/programs/make_registry.py` - Generate registry files
