@@ -337,35 +337,35 @@ The simplest approach would be a single such script/command, e.g. `python -m mod
 
 ```bash
 # Show configured registries and status
-python -m modflow_devtools.models info
+mf models info
 
 # Sync all sources to configured refs
-python -m modflow_devtools.models sync
+mf models sync
 
 # Force re-download even if cached
-python -m modflow_devtools.models sync --force
+mf models sync --force
 
 # For a repo publishing models via releases
-python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-examples --ref current
+mf models sync --repo MODFLOW-ORG/modflow6-examples --ref current
 
 # For a repo with models under version control
-python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-testmodels --ref develop 
-python -m modflow_devtools.models sync --repo MODFLOW-ORG/modflow6-testmodels --ref f3df630  # commit hash works too
+mf models sync --repo MODFLOW-ORG/modflow6-testmodels --ref develop
+mf models sync --repo MODFLOW-ORG/modflow6-testmodels --ref f3df630  # commit hash works too
 ```
 
-Or via CLI commands:
+CLI commands are available in two forms:
 
 ```bash
-models info
-models sync
-```
-
-Perhaps leading with a `models` command namespace is too generic, and we need e.g. a leading `mf` namespace on all commands exposed by `modflow-devtools`:
-
-```bash
+# Using the mf namespace (shorter)
 mf models info
 mf models sync
+
+# Or using the module form
+python -m modflow_devtools.models info
+python -m modflow_devtools.models sync
 ```
+
+The `mf` command provides a unified CLI namespace for all `modflow-devtools` commands.
 
 #### Automatic sync
 
@@ -709,7 +709,7 @@ _DEFAULT_CACHE.clear()
 #### Show Registry Status
 
 ```bash
-$ python -m modflow_devtools.models info
+$ mf models info
 
 Registry sync status:
 
@@ -727,19 +727,19 @@ mf6/example (MODFLOW-ORG/modflow6-examples)
 
 ```bash
 # Sync all configured sources/refs
-$ python -m modflow_devtools.models sync
+$ mf models sync
 
 # Sync specific source
-$ python -m modflow_devtools.models sync --source modflow6-testmodels
+$ mf models sync --source modflow6-testmodels
 
 # Sync specific ref
-$ python -m modflow_devtools.models sync --source modflow6-testmodels --ref develop
+$ mf models sync --source modflow6-testmodels --ref develop
 
 # Force re-download
-$ python -m modflow_devtools.models sync --force
+$ mf models sync --force
 
 # Test against a fork
-$ python -m modflow_devtools.models sync \
+$ mf models sync \
     --source modflow6-testmodels \
     --ref feature-branch \
     --repo myusername/modflow6-testmodels
@@ -749,19 +749,19 @@ $ python -m modflow_devtools.models sync \
 
 ```bash
 # Summary view
-$ python -m modflow_devtools.models list
+$ mf models list
 
 # Verbose view (show all model names)
-$ python -m modflow_devtools.models list --verbose
+$ mf models list --verbose
 
 # Filter by source
-$ python -m modflow_devtools.models list --source mf6/test
+$ mf models list --source mf6/test
 
 # Filter by ref
-$ python -m modflow_devtools.models list --ref registry
+$ mf models list --ref registry
 
 # Combine filters
-$ python -m modflow_devtools.models list --source mf6/test --ref registry --verbose
+$ mf models list --source mf6/test --ref registry --verbose
 ```
 
 ### Registry Creation Tool

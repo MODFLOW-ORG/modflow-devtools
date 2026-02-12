@@ -124,29 +124,26 @@ class ProgramMetadata(BaseModel):
                     assert exe is not None  # Narrowing for mypy
                     return exe
 
+        # If we have the archive, inspect it to determine the correct exe path
+        # This handles both nested and flat archive structures
+        if archive_path and asset_name:
+            from pathlib import Path
+
+            asset_stem = Path(asset_name).stem
+
+            # Try to detect the exe location in the archive
+            exe = self._detect_default_exe_in_archive(
+                archive_path, asset_stem, program_name, platform
+            )
+            if exe:
+                # Already has the correct path (with or without asset stem prefix)
+                return exe
+
         # Fall back to program-level exe or defaults
         if self.exe:
             exe = self.exe
         else:
-            # Try common defaults in order:
-            # 1. bin/{program} (most common)
-            # 2. {program} (binaries at root)
-
-            # If we have the archive, inspect it to determine which pattern to use
-            if archive_path and asset_name:
-                from pathlib import Path
-
-                asset_stem = Path(asset_name).stem
-
-                # Try to detect which default exists in the archive
-                exe = self._detect_default_exe_in_archive(
-                    archive_path, asset_stem, program_name, platform
-                )
-                if exe:
-                    # Already includes asset stem prefix
-                    return exe
-
-            # Fallback when archive not available - try bin/ first
+            # Default to bin/{program}
             exe = f"bin/{program_name}"
 
         # Add .exe extension for Windows platforms
@@ -1011,6 +1008,187 @@ def get_bindir_options(program: str | None = None) -> list[Path]:
     return result
 
 
+def get_bindir_shortcut_map(program: str | None = None) -> dict[str, tuple[Path, str]]:
+    """
+    Get map of installation directory shortcuts to (path, description) tuples.
+
+    Adapted from flopy's get-modflow utility:
+    https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py
+
+    Parameters
+    ----------
+    program : str, optional
+        Program name to check for previous installation location
+
+    Returns
+    -------
+    dict[str, tuple[Path, str]]
+        Map of shortcuts (e.g., ':prev', ':python') to (path, description) tuples.
+        Only includes shortcuts for directories that exist and are writable.
+    """
+    import sys
+    from pathlib import Path
+
+    options: dict[str, tuple[Path, str]] = {}
+
+    # 1. Previous installation location
+    if program:
+        metadata = InstallationMetadata(program)
+        if metadata.load():
+            installations = metadata.list_installations()
+            if installations:
+                most_recent = max(installations, key=lambda i: i.installed_at)
+                prev_path = most_recent.bindir
+                if prev_path.exists() and os.access(prev_path, os.W_OK):
+                    options[":prev"] = (prev_path, "previously selected bindir")
+
+    # 2. modflow-devtools dedicated directory
+    if os.name == "nt":
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            mfdt_path = Path(local_app_data) / "modflow-devtools" / "bin"
+        else:
+            mfdt_path = Path.home() / "AppData" / "Local" / "modflow-devtools" / "bin"
+    else:
+        # Unix: ~/.local/share/modflow-devtools/bin
+        xdg_data_home = os.environ.get("XDG_DATA_HOME")
+        if xdg_data_home:
+            mfdt_path = Path(xdg_data_home) / "modflow-devtools" / "bin"
+        else:
+            mfdt_path = Path.home() / ".local" / "share" / "modflow-devtools" / "bin"
+
+    # Create if it doesn't exist
+    try:
+        mfdt_path.mkdir(parents=True, exist_ok=True)
+        if os.access(mfdt_path, os.W_OK):
+            options[":mf"] = (mfdt_path, "used by modflow-devtools")
+    except (OSError, PermissionError):
+        pass
+
+    # 3. Python's Scripts/bin directory
+    if hasattr(sys, "base_prefix"):
+        py_bin = Path(sys.base_prefix) / ("Scripts" if os.name == "nt" else "bin")
+        if py_bin.is_dir() and os.access(py_bin, os.W_OK):
+            options[":python"] = (py_bin, "used by Python")
+
+    # 4. User local bin
+    if os.name == "nt":
+        # Windows: %LOCALAPPDATA%\Microsoft\WindowsApps
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            windowsapps_path = Path(local_app_data) / "Microsoft" / "WindowsApps"
+            if windowsapps_path.is_dir() and os.access(windowsapps_path, os.W_OK):
+                options[":windowsapps"] = (windowsapps_path, "user app path")
+    else:
+        # Unix: ~/.local/bin
+        home_local_bin = Path.home() / ".local" / "bin"
+        if home_local_bin.is_dir() and os.access(home_local_bin, os.W_OK):
+            options[":home"] = (home_local_bin, "user-specific bindir")
+
+    # 5. System local bin (Unix only)
+    if os.name != "nt":
+        local_bin = Path("/usr") / "local" / "bin"
+        if local_bin.is_dir() and os.access(local_bin, os.W_OK):
+            options[":system"] = (local_bin, "system local bindir")
+
+    if not options:
+        raise ProgramInstallationError("No writable installation directories found")
+
+    return options
+
+
+def select_bindir(
+    bindir_arg: str,
+    program: str | None = None,
+) -> Path:
+    """
+    Parse and resolve bindir argument with support for ':' prefix shortcuts.
+
+    Adapted from flopy's get-modflow utility:
+    https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py
+
+    Supports:
+    - ':' alone for interactive selection
+    - ':prev' for previous installation directory
+    - ':mf' for dedicated modflow-devtools directory
+    - ':python' for Python's Scripts/bin directory
+    - ':home' for ~/.local/bin (Unix) or :windowsapps (Windows)
+    - ':system' for /usr/local/bin (Unix only)
+    - ':windowsapps' for %LOCALAPPDATA%\\Microsoft\\WindowsApps (Windows only)
+
+    Parameters
+    ----------
+    bindir_arg : str
+        The bindir argument, which may start with ':'
+    program : str, optional
+        Program name (for :prev lookup)
+
+    Returns
+    -------
+    Path
+        Resolved installation directory path
+
+    Raises
+    ------
+    ProgramInstallationError
+        If shortcut is invalid or selection fails
+    """
+    # Get available options
+    options = get_bindir_shortcut_map(program)
+
+    # Interactive selection (bare ':')
+    if bindir_arg == ":":
+        # Build numbered menu
+        indexed_options = dict(enumerate(options.keys(), 1))
+
+        print("Select a number to choose installation directory:")
+        for idx, shortcut in indexed_options.items():
+            opt_path, opt_info = options[shortcut]
+            print(f"  {idx}: '{opt_path}' -- {opt_info} ('{shortcut}')")
+
+        # Get user input
+        max_tries = 3
+        for attempt in range(max_tries):
+            try:
+                res = input("> ")
+                choice_idx = int(res)
+                if choice_idx not in indexed_options:
+                    raise ValueError("Invalid option number")
+
+                selected_shortcut = indexed_options[choice_idx]
+                selected_path = options[selected_shortcut][0]
+                return selected_path.resolve()
+
+            except (ValueError, KeyError):
+                if attempt < max_tries - 1:
+                    print("Invalid option, try again")
+                else:
+                    raise ProgramInstallationError("Invalid option selected, too many attempts")
+
+    # Auto-select mode (e.g., ':python', ':prev')
+    else:
+        # Find matching shortcuts (support prefix matching)
+        bindir_lower = bindir_arg.lower()
+        matches = [opt for opt in options if opt.startswith(bindir_lower)]
+
+        if len(matches) == 0:
+            available = ", ".join(options.keys())
+            raise ProgramInstallationError(
+                f"Invalid bindir shortcut '{bindir_arg}'. Available: {available}"
+            )
+        elif len(matches) > 1:
+            raise ProgramInstallationError(
+                f"Ambiguous bindir shortcut '{bindir_arg}'. Matches: {', '.join(matches)}"
+            )
+
+        # Exactly one match
+        selected_path = options[matches[0]][0]
+        return selected_path.resolve()
+
+    # This should never be reached but needed for type checking
+    raise ProgramInstallationError("Failed to select bindir")
+
+
 @dataclass
 class ProgramInstallation:
     """Represents a program installation."""
@@ -1697,9 +1875,11 @@ __all__ = [
     "download_archive",
     "extract_executables",
     "get_bindir_options",
+    "get_bindir_shortcut_map",
     "get_platform",
     "get_user_config_path",
     "install_program",
     "list_installed",
+    "select_bindir",
     "uninstall_program",
 ]

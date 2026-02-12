@@ -12,6 +12,7 @@ Commands:
 
 import argparse
 import os
+import shutil
 import sys
 
 from . import (
@@ -20,6 +21,7 @@ from . import (
     _try_best_effort_sync,
     install_program,
     list_installed,
+    select_bindir,
     uninstall_program,
 )
 
@@ -47,21 +49,90 @@ def cmd_sync(args):
             print(f"  Failed: {len(result.failed)} refs")
 
 
+def _format_grid(items, prefix=""):
+    """Format items in a grid layout."""
+    if not items:
+        return
+
+    term_width = shutil.get_terminal_size().columns
+    # Account for prefix indentation
+    available_width = term_width - len(prefix)
+
+    # Calculate column width - find longest item
+    max_item_len = max(len(str(item)) for item in items)
+    col_width = min(max_item_len + 2, available_width)
+
+    # Calculate number of columns
+    num_cols = max(1, available_width // col_width)
+
+    # Print items in grid
+    for i in range(0, len(items), num_cols):
+        row_items = items[i : i + num_cols]
+        line = prefix + "  ".join(str(item).ljust(col_width) for item in row_items)
+        print(line.rstrip())
+
+
 def cmd_info(args):
     """Info command handler."""
     config = ProgramSourceConfig.load()
     status = config.status
 
-    print("Program registry sync status:\n")
+    if not status:
+        print("No program registries configured")
+        return
+
+    # Collect source info
+    sources = []
     for source_name, source_status in status.items():
-        print(f"{source_name} ({source_status.repo})")
-        configured_refs = ", ".join(source_status.configured_refs) or "none"
-        print(f"  Configured refs: {configured_refs}")
         cached_refs = ", ".join(source_status.cached_refs) or "none"
-        print(f"  Cached refs: {cached_refs}")
-        if source_status.missing_refs:
-            missing_refs = ", ".join(source_status.missing_refs)
-            print(f"  Missing refs: {missing_refs}")
+        missing_refs = ", ".join(source_status.missing_refs) if source_status.missing_refs else None
+        sources.append(
+            {
+                "name": source_name,
+                "repo": source_status.repo,
+                "cached": cached_refs,
+                "missing": missing_refs,
+            }
+        )
+
+    # Calculate layout
+    term_width = shutil.get_terminal_size().columns
+    min_col_width = 40
+    num_cols = max(1, min(len(sources), term_width // min_col_width))
+    col_width = term_width // num_cols - 2
+
+    print("Program registries:\n")
+
+    # Print sources in grid
+    for i in range(0, len(sources), num_cols):
+        row_sources = sources[i : i + num_cols]
+
+        # Build rows for this group of sources
+        rows = []
+        max_lines = 0
+        for src in row_sources:
+            lines = [
+                f"{src['name']} ({src['repo']})",
+                f"Cached: {src['cached']}",
+            ]
+            if src["missing"]:
+                lines.append(f"Missing: {src['missing']}")
+            rows.append(lines)
+            max_lines = max(max_lines, len(lines))
+
+        # Print each line across columns
+        for line_idx in range(max_lines):
+            line_parts = []
+            for col_idx, src_lines in enumerate(rows):
+                if line_idx < len(src_lines):
+                    text = src_lines[line_idx]
+                    # Truncate if needed
+                    if len(text) > col_width:
+                        text = text[: col_width - 3] + "..."
+                    line_parts.append(text.ljust(col_width))
+                else:
+                    line_parts.append(" " * col_width)
+            print("  ".join(line_parts))
         print()
 
 
@@ -106,12 +177,14 @@ def cmd_list(args):
             if programs:
                 print(f"  Programs: {len(programs)}")
                 if args.verbose:
-                    # Show all programs in verbose mode
+                    # Show all programs in verbose mode, in grid layout
+                    program_items = []
                     for program_name, metadata in sorted(programs.items()):
                         dist_names = (
                             ", ".join(d.name for d in metadata.dists) if metadata.dists else "none"
                         )
-                        print(f"    - {program_name} ({ref}) [{dist_names}]")
+                        program_items.append(f"{program_name} ({ref}) [{dist_names}]")
+                    _format_grid(program_items, prefix="    ")
             else:
                 print("  No programs")
             print()
@@ -123,11 +196,28 @@ def cmd_install(args):
     if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
         _try_best_effort_sync()
 
+    # Parse program@version syntax if provided
+    if "@" in args.program:
+        program, version = args.program.split("@", 1)
+    else:
+        program = args.program
+        version = args.version
+
+    # Handle ':' prefix shortcuts for bindir
+    # Adapted from flopy's get-modflow utility
+    bindir = args.bindir
+    if bindir is not None and isinstance(bindir, str) and bindir.startswith(":"):
+        try:
+            bindir = select_bindir(bindir, program=program)
+        except Exception as e:
+            print(f"Installation failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
     try:
         paths = install_program(
-            program=args.program,
-            version=args.version,
-            bindir=args.bindir,
+            program=program,
+            version=version,
+            bindir=bindir,
             platform=args.platform,
             force=args.force,
             verbose=True,
@@ -197,7 +287,7 @@ def cmd_history(args):
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        prog="python -m modflow_devtools.programs",
+        prog="mf programs",
         description="Manage MODFLOW program registries",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -246,7 +336,13 @@ def main():
     )
     install_parser.add_argument(
         "--bindir",
-        help="Installation directory (default: auto-select)",
+        help=(
+            "Installation directory. Can be a path or a shortcut starting with ':'. "
+            "Use ':' alone for interactive selection. "
+            "Available shortcuts: :prev (previous), :mf (modflow-devtools), :python, "
+            ":home (Unix) or :windowsapps (Windows), :system (Unix). "
+            "Default: auto-select"
+        ),
     )
     install_parser.add_argument(
         "--platform",

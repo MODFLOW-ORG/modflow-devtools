@@ -9,6 +9,7 @@ Usage:
 
 import argparse
 import os
+import shutil
 import sys
 
 from . import (
@@ -16,6 +17,29 @@ from . import (
     ModelSourceConfig,
     _try_best_effort_sync,
 )
+
+
+def _format_grid(items, prefix=""):
+    """Format items in a grid layout."""
+    if not items:
+        return
+
+    term_width = shutil.get_terminal_size().columns
+    # Account for prefix indentation
+    available_width = term_width - len(prefix)
+
+    # Calculate column width - find longest item
+    max_item_len = max(len(str(item)) for item in items)
+    col_width = min(max_item_len + 2, available_width)
+
+    # Calculate number of columns
+    num_cols = max(1, available_width // col_width)
+
+    # Print items in grid
+    for i in range(0, len(items), num_cols):
+        row_items = items[i : i + num_cols]
+        line = prefix + "  ".join(str(item).ljust(col_width) for item in row_items)
+        print(line.rstrip())
 
 
 def cmd_sync(args):
@@ -87,16 +111,62 @@ def cmd_info(args):
     config = ModelSourceConfig.load()
     status = config.status
 
-    print("Registry sync status:\n")
+    if not status:
+        print("No model registries configured")
+        return
+
+    # Collect source info
+    sources = []
     for source_name, source_status in status.items():
-        print(f"{source_name} ({source_status.repo})")
-        configured_refs = ", ".join(source_status.configured_refs) or "none"
-        print(f"  Configured refs: {configured_refs}")
         cached_refs = ", ".join(source_status.cached_refs) or "none"
-        print(f"  Cached refs: {cached_refs}")
-        if source_status.missing_refs:
-            missing_refs = ", ".join(source_status.missing_refs)
-            print(f"  Missing refs: {missing_refs}")
+        missing_refs = ", ".join(source_status.missing_refs) if source_status.missing_refs else None
+        sources.append(
+            {
+                "name": source_name,
+                "repo": source_status.repo,
+                "cached": cached_refs,
+                "missing": missing_refs,
+            }
+        )
+
+    # Calculate layout
+    term_width = shutil.get_terminal_size().columns
+    min_col_width = 40
+    num_cols = max(1, min(len(sources), term_width // min_col_width))
+    col_width = term_width // num_cols - 2
+
+    print("Model registries:\n")
+
+    # Print sources in grid
+    for i in range(0, len(sources), num_cols):
+        row_sources = sources[i : i + num_cols]
+
+        # Build rows for this group of sources
+        rows = []
+        max_lines = 0
+        for src in row_sources:
+            lines = [
+                f"{src['name']} ({src['repo']})",
+                f"Cached: {src['cached']}",
+            ]
+            if src["missing"]:
+                lines.append(f"Missing: {src['missing']}")
+            rows.append(lines)
+            max_lines = max(max_lines, len(lines))
+
+        # Print each line across columns
+        for line_idx in range(max_lines):
+            line_parts = []
+            for col_idx, src_lines in enumerate(rows):
+                if line_idx < len(src_lines):
+                    text = src_lines[line_idx]
+                    # Truncate if needed
+                    if len(text) > col_width:
+                        text = text[: col_width - 3] + "..."
+                    line_parts.append(text.ljust(col_width))
+                else:
+                    line_parts.append(" " * col_width)
+            print("  ".join(line_parts))
         print()
 
 
@@ -141,9 +211,9 @@ def cmd_list(args):
             if models:
                 print(f"  Models: {len(models)}")
                 if args.verbose:
-                    # Show all models in verbose mode
-                    for model_name in sorted(models.keys()):
-                        print(f"    - {model_name}")
+                    # Show all models in verbose mode, in grid layout
+                    model_names = sorted(models.keys())
+                    _format_grid(model_names, prefix="    ")
             else:
                 print("  No models")
 
@@ -151,16 +221,16 @@ def cmd_list(args):
             if examples:
                 print(f"  Examples: {len(examples)}")
                 if args.verbose:
-                    # Show all examples in verbose mode
-                    for example_name in sorted(examples.keys()):
-                        print(f"    - {example_name}")
+                    # Show all examples in verbose mode, in grid layout
+                    example_names = sorted(examples.keys())
+                    _format_grid(example_names, prefix="    ")
             print()
 
 
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        prog="python -m modflow_devtools.models",
+        prog="mf models",
         description="MODFLOW model registry management",
     )
     subparsers = parser.add_subparsers(dest="command", help="Command to run")

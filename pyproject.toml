@@ -142,6 +142,9 @@ dev = [
 "Bug Tracker" = "https://github.com/MODFLOW-ORG/modflow-devtools/issues"
 "Source Code" = "https://github.com/MODFLOW-ORG/modflow-devtools"
 
+[project.scripts]
+mf = "modflow_devtools.cli:main"
+
 [tool.hatch.build.targets.sdist]
 only-include = ["modflow_devtools"]
 
