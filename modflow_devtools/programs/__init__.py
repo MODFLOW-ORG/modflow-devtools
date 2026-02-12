@@ -111,14 +111,17 @@ class ProgramMetadata(BaseModel):
         str
             Executable path within archive
         """
+        exe: str | None
+
         # Check distribution-specific exe path first
         if platform:
             for dist in self.dists:
                 if dist.name == platform and dist.exe:
                     exe = dist.exe
                     # Add .exe extension for Windows platforms if not present
-                    if platform.startswith("win") and not exe.endswith(".exe"):
+                    if platform.startswith("win") and exe and not exe.endswith(".exe"):
                         exe = f"{exe}.exe"
+                    assert exe is not None  # Narrowing for mypy
                     return exe
 
         # Fall back to program-level exe or defaults
