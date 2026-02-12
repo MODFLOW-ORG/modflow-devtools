@@ -232,22 +232,27 @@ hash = "sha256:..."
 The `exe` field can be specified at three levels, checked in this order:
 
 1. **Distribution-level** (`[[programs.{name}.dists]]` entry with `exe` field)
+   - **Supports any custom path** within the archive
    - Use when different platforms have different archive structures
    - Most specific - overrides program-level and default
    - Example: `exe = "mf6.7.0_win64/bin/mf6.exe"`
+   - Example: `exe = "custom/nested/path/to/program"`
 
 2. **Program-level** (`[programs.{name}]` section with `exe` field)
+   - **Supports any custom path** shared across all platforms
    - Use when all platforms share the same relative path structure
    - Example: `exe = "bin/mfnwt"`
+   - Example: `exe = "special/location/program"`
 
 3. **Default** (neither specified)
-   - Automatically detects executable location when installing
+   - **Automatically detects** executable location when installing
    - Tries common patterns in order:
      - **Nested with bin/**: `{archive_name}/bin/{program}`
      - **Nested without bin/**: `{archive_name}/{program}`
      - **Flat with bin/**: `bin/{program}`
      - **Flat without bin/**: `{program}`
    - Example: For `mf6`, automatically finds binary whether in `mf6.7.0_linux/bin/mf6`, `bin/mf6`, or other common layouts
+   - Only used when no explicit `exe` field is provided
 
 **Archive structure patterns**:
 
