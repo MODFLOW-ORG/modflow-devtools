@@ -232,17 +232,61 @@ hash = "sha256:..."
 The `exe` field can be specified at three levels, checked in this order:
 
 1. **Distribution-level** (`[[programs.{name}.dists]]` entry with `exe` field)
+   - **Supports any custom path** within the archive
    - Use when different platforms have different archive structures
    - Most specific - overrides program-level and default
    - Example: `exe = "mf6.7.0_win64/bin/mf6.exe"`
+   - Example: `exe = "custom/nested/path/to/program"`
 
 2. **Program-level** (`[programs.{name}]` section with `exe` field)
+   - **Supports any custom path** shared across all platforms
    - Use when all platforms share the same relative path structure
    - Example: `exe = "bin/mfnwt"`
+   - Example: `exe = "special/location/program"`
 
 3. **Default** (neither specified)
-   - Falls back to `bin/{program}`
-   - Example: For `mf6`, defaults to `bin/mf6`
+   - **Automatically detects** executable location when installing
+   - Tries common patterns in order:
+     - **Nested with bin/**: `{archive_name}/bin/{program}`
+     - **Nested without bin/**: `{archive_name}/{program}`
+     - **Flat with bin/**: `bin/{program}`
+     - **Flat without bin/**: `{program}`
+   - Example: For `mf6`, automatically finds binary whether in `mf6.7.0_linux/bin/mf6`, `bin/mf6`, or other common layouts
+   - Only used when no explicit `exe` field is provided
+
+**Archive structure patterns**:
+
+The API supports four common archive layouts:
+
+1. **Nested with bin/** (e.g., MODFLOW 6):
+   ```
+   mf6.7.0_linux.zip
+   └── mf6.7.0_linux/
+       └── bin/
+           └── mf6
+   ```
+
+2. **Nested without bin/**:
+   ```
+   program.1.0_linux.zip
+   └── program.1.0_linux/
+       └── program
+   ```
+
+3. **Flat with bin/**:
+   ```
+   program.zip
+   └── bin/
+       └── program
+   ```
+
+4. **Flat without bin/**:
+   ```
+   program.zip
+   └── program
+   ```
+
+The `make_registry` tool automatically detects which pattern each archive uses and only stores non-default exe paths in the registry.
 
 **Windows .exe extension handling**:
 - The `.exe` extension is automatically added on Windows platforms if not present
@@ -628,6 +672,12 @@ python -m modflow_devtools.programs.make_registry \
 - Optionally computes SHA256 hashes from local files with `--compute-hashes`
 - Creates asset entries from local file names
 - Auto-detects platform from file names (linux, mac, win64, etc.)
+- **Automatic pattern detection**:
+  - Inspects archives to detect executable locations
+  - Recognizes nested and flat archive patterns
+  - Automatically optimizes exe paths (only stores non-default paths)
+  - Detects when all distributions use the same relative path
+  - Caches downloaded assets to avoid redundant downloads when multiple programs share the same archive
 
 **Example CI integration** (GitHub Actions):
 ```yaml
@@ -662,9 +712,15 @@ python -m modflow_devtools.programs.make_registry \
 
 **How it works:**
 - Fetches release assets from GitHub API using repo and version (tag)
-- Downloads assets if `--compute-hashes` is specified
+- Downloads assets to detect exe paths and enable pattern optimization
+- Optionally computes SHA256 hashes with `--compute-hashes`
 - Useful for testing or regenerating a registry for an existing release
 - No `--dists` argument needed - pulls from GitHub directly
+- **Automatic pattern detection** (same as Mode 1):
+  - Inspects archives to find executables
+  - Detects nested/flat patterns automatically
+  - Only stores non-default exe paths in registry
+  - Caches downloads when processing multiple programs from same release
 
 **Additional options:**
 ```bash
