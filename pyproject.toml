@@ -69,11 +69,6 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
-version = [
-    "packaging",
-    "tomli",
-    "tomli-w"
-]
 dfn = [
     "boltons",
     "tomli",
@@ -87,7 +82,7 @@ models = [
     "tomli",
     "tomli-w"
 ]
-dev = ["modflow-devtools[lint,test,docs,version,dfn,models]"]
+dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
 
 [dependency-groups]
 build = [
@@ -120,11 +115,6 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
-version = [
-    "packaging",
-    "tomli",
-    "tomli-w"
-]
 dfn = [
     "boltons",
     "tomli",
@@ -143,7 +133,6 @@ dev = [
     {include-group = "lint"},
     {include-group = "test"},
     {include-group = "docs"},
-    {include-group = "version"},
     {include-group = "dfn"},
     {include-group = "models"},
 ]

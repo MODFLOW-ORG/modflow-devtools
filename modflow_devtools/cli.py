@@ -11,8 +11,6 @@ Usage:
     mf programs install <program>
     mf programs uninstall <program>
     mf programs history
-    mf version get
-    mf version set <version>
 """
 
 import argparse
@@ -33,9 +31,6 @@ def main():
     # Programs subcommand
     subparsers.add_parser("programs", help="Manage MODFLOW program registries")
 
-    # Version subcommand
-    subparsers.add_parser("version", help="Manage project versions")
-
     # Parse only the first level to determine which submodule to invoke
     args, remaining = parser.parse_known_args()
 
@@ -55,11 +50,6 @@ def main():
 
         sys.argv = ["mf programs", *remaining]
         programs_main()
-    elif args.subcommand == "version":
-        from modflow_devtools.version.__main__ import main as version_main
-
-        sys.argv = ["mf version", *remaining]
-        version_main()
 
 
 if __name__ == "__main__":
