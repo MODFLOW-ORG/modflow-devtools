@@ -494,6 +494,35 @@ class TestCLI:
         assert f"{TEST_SOURCE_NAME}@{TEST_REF}" in captured.out
         assert "Models:" in captured.out
 
+    def test_cli_clear(self, capsys):
+        """Test 'clear' command."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        source = ModelSourceRepo(
+            repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
+        )
+        result = source.sync(ref=TEST_REF)
+        assert len(result.synced) == 1
+
+        # Verify it's cached
+        assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+
+        # Clear with force flag
+        import argparse
+
+        from modflow_devtools.models.__main__ import cmd_clear
+
+        args = argparse.Namespace(source=TEST_SOURCE_NAME, ref=TEST_REF, force=True)
+        cmd_clear(args)
+
+        # Verify it was cleared
+        assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+
+        captured = capsys.readouterr()
+        assert "Cleared 1 cached registry" in captured.out
+
 
 @pytest.mark.xdist_group("registry_cache")
 class TestIntegration:
@@ -550,8 +579,11 @@ class TestIntegration:
 class TestMakeRegistry:
     """Test registry creation tool (make_registry.py)."""
 
-    def _get_constructed_url(self, mode, repo, ref, **kwargs):
-        """Helper to extract constructed URL from make_registry verbose output."""
+    def _get_constructed_url(self, repo, ref, **kwargs):
+        """Helper to extract constructed URL from make_registry verbose output.
+
+        Mode is now inferred from presence of asset_file in kwargs.
+        """
         import tempfile
 
         # Create a temporary directory to use as dummy path
@@ -561,8 +593,6 @@ class TestMakeRegistry:
                 sys.executable,
                 "-m",
                 "modflow_devtools.models.make_registry",
-                "--mode",
-                mode,
                 "--repo",
                 repo,
                 "--ref",
@@ -587,7 +617,6 @@ class TestMakeRegistry:
     def test_url_construction_version(self):
         """Test URL construction for version mode (auto-detects path from directory)."""
         url = self._get_constructed_url(
-            mode="version",
             repo="MODFLOW-ORG/modflow6-testmodels",
             ref="master",
             name="mf6/test",
@@ -600,7 +629,6 @@ class TestMakeRegistry:
     def test_url_construction_version_different_ref(self):
         """Test URL construction for version mode with different ref."""
         url = self._get_constructed_url(
-            mode="version",
             repo="MODFLOW-ORG/modflow6-largetestmodels",
             ref="develop",
             name="mf6/large",
@@ -612,7 +640,6 @@ class TestMakeRegistry:
     def test_url_construction_release(self):
         """Test URL construction for release mode."""
         url = self._get_constructed_url(
-            mode="release",
             repo="MODFLOW-ORG/modflow6-examples",
             ref="current",
             asset_file="mf6examples.zip",
@@ -626,7 +653,6 @@ class TestMakeRegistry:
     def test_url_construction_release_custom(self):
         """Test URL construction for release mode with custom repo/tag."""
         url = self._get_constructed_url(
-            mode="release",
             repo="username/my-models",
             ref="v1.0.0",
             asset_file="models.zip",

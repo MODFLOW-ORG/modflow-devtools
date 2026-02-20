@@ -46,7 +46,12 @@ def main():
         sys.argv = ["mf models", *remaining]
         models_main()
     elif args.subcommand == "programs":
-        from modflow_devtools.programs.__main__ import main as programs_main
+        import warnings
+
+        # Suppress experimental warning for official CLI
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*modflow_devtools.programs.*experimental.*")
+            from modflow_devtools.programs.__main__ import main as programs_main
 
         sys.argv = ["mf programs", *remaining]
         programs_main()

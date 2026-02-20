@@ -30,20 +30,14 @@ This is a living document which will be updated as development proceeds. As the 
   - [Model Addressing](#model-addressing)
   - [Registry classes](#registry-classes)
   - [Module-Level API](#module-level-api)
-- [Migration path](#migration-path)
-  - [Implementation Summary](#implementation-summary)
-    - [✅ Core Infrastructure](#-core-infrastructure)
-    - [✅ Registry Classes](#-registry-classes)
-    - [✅ User Features](#-user-features)
-    - [✅ Testing](#-testing)
-    - [🚧 Future Work (Upstream CI)](#-future-work-upstream-ci)
+- [Status and Next Steps](#status-and-next-steps)
 - [Cross-API Consistency](#cross-api-consistency)
   - [Shared Patterns](#shared-patterns)
   - [Key Differences](#key-differences)
 - [Demo & Usage Examples](#demo--usage-examples)
   - [Python API](#python-api)
     - [Basic Workflow](#basic-workflow)
-    - [Convenience Methods on BootstrapSource](#convenience-methods-on-bootstrapsource)
+    - [Object-Oriented API](#object-oriented-api)
     - [Cache Management](#cache-management)
   - [CLI Usage](#cli-usage)
     - [Show Registry Status](#show-registry-status)
@@ -388,7 +382,6 @@ Required steps in source model repositories include:
    ```bash
    # Downloads from remote and indexes subdirectory (recommended)
    python -m modflow_devtools.models.make_registry \
-     --mode version \
      --repo MODFLOW-ORG/modflow6-testmodels \
      --ref master \
      --name mf6/test \
@@ -398,14 +391,12 @@ Required steps in source model repositories include:
 
    **For release asset models** (zip published with releases):
    ```bash
-   # Downloads from remote and indexes subdirectory (recommended)
+   # Downloads from remote (provide --asset-file to index from release asset)
    python -m modflow_devtools.models.make_registry \
-     --mode release \
      --repo MODFLOW-ORG/modflow6-examples \
      --ref current \
      --asset-file mf6examples.zip \
      --name mf6/example \
-     --path examples \
      --output .registry
    ```
 
@@ -509,59 +500,11 @@ Expose as `DEFAULT_REGISTRY` a `MergedRegistry` with all sources configured in t
 
 This will break any code checking `isinstance(DEFAULT_REGISTRY, PoochRegistry)`, but it's unlikely anyone is doing that.
 
-## Migration path
+## Status and Next Steps
 
-The transition to the dynamic registry system is complete. The package no longer ships large TOML registry files - only a minimal bootstrap file (`modflow_devtools/models/models.toml`) that tells the system where to find remote model repositories.
+The dynamic registry system is fully implemented. The package ships only a minimal bootstrap file that tells the system where to find remote model repositories. On first import, `modflow-devtools` attempts to auto-sync the default registries.
 
-On first import, `modflow-devtools` attempts to auto-sync the default registries. If this fails (e.g., no network), users will get a clear error message when trying to use the registry, directing them to run `python -m modflow_devtools.models sync`.
-
-Since `modflow-devtools` is currently used only internally (dogfooding), there are no external consumers to worry about for backwards compatibility.
-
-### Implementation Summary
-
-The dynamic registry system has been fully implemented with a streamlined object-oriented design:
-
-#### ✅ Core Infrastructure
-- **Consolidated implementation**: All code in single `modflow_devtools/models/__init__.py` file
-- Bootstrap metadata file (`modflow_devtools/models/models.toml`)
-- Registry schema with Pydantic validation
-- Cache management via `ModelCache` class
-- Sync functionality via `ModelSourceRepo.sync()` method
-- Registry discovery via `ModelSourceRepo.discover()` method
-- CLI subcommands (`python -m modflow_devtools.models` - sync, info, list)
-- **Remote-first registry generation**: `make_registry` downloads from GitHub by default
-- **Intelligent path parameter**: Single `--path` parameter auto-detects local vs. remote subpath usage
-
-#### ✅ Registry Classes (Object-Oriented Design)
-- `ModelRegistry`: Pydantic data model (files/models/examples)
-- `ModelCache`: Cache management with save/load/list/clear
-- `ModelSourceRepo`: Source repository with discovery and sync methods
-- `ModelSourceConfig`: Configuration container managing multiple sources
-- `PoochRegistry`: Remote model fetching with Pooch integration
-- `DiscoveredModelRegistry`: Discovery result with metadata
-- **No separate modules**: Schema, cache, discovery, and sync logic integrated into classes
-- **Method-based API**: Operations are methods on objects (e.g., `source.sync()`, `cache.load()`)
-- Auto-sync on first import (`_try_best_effort_sync()`)
-
-#### ✅ User Features
-- User config overlay (`~/.config/modflow-devtools/models.toml`)
-- Bootstrap config merging via `ModelSourceConfig.load()`
-- Explicit model versioning via git refs
-- Platform-appropriate cache locations
-- Clear error messages when sync is needed
-- **Consolidated registry format**: Single `models.toml` file only
-
-#### ✅ Testing
-- Comprehensive test suite in `autotest/test_models.py`
-- All 34 tests passing
-- Tests configured via `.env` file
-- Parallel execution with pytest-xdist (`--dist loadgroup`)
-- Full mypy type checking with no errors
-
-#### 🚧 Future Work (Upstream CI)
-- Add `.github/workflows/registry.yml` to each model repo
-- Automate registry generation in CI
-- Add registry as release asset for repos with releases
+The next step is upstream integration: model repositories should automate registry generation in CI workflows.
 
 ## Cross-API Consistency
 
@@ -764,6 +707,22 @@ $ mf models list --ref registry
 $ mf models list --source mf6/test --ref registry --verbose
 ```
 
+#### Clear Cached Registries
+
+```bash
+# Clear all cached registries (with confirmation)
+$ mf models clear
+
+# Clear specific source
+$ mf models clear --source mf6/test
+
+# Clear specific source and ref
+$ mf models clear --source mf6/test --ref develop
+
+# Skip confirmation prompt
+$ mf models clear --force
+```
+
 ### Registry Creation Tool
 
 The `make_registry` tool uses a mode-based interface with **remote-first operation** by default:
@@ -772,7 +731,7 @@ The `make_registry` tool uses a mode-based interface with **remote-first operati
 ```bash
 # Downloads repo and indexes subdirectory
 python -m modflow_devtools.models.make_registry \
-  --mode version \
+  \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
   --name mf6/test \
@@ -784,7 +743,7 @@ python -m modflow_devtools.models.make_registry \
 ```bash
 # Downloads repo and indexes subdirectory
 python -m modflow_devtools.models.make_registry \
-  --mode release \
+  --asset-file mf6examples.zip \
   --repo MODFLOW-ORG/modflow6-examples \
   --ref current \
   --asset-file mf6examples.zip \
@@ -797,7 +756,7 @@ python -m modflow_devtools.models.make_registry \
 ```bash
 # Downloads repo and indexes from root
 python -m modflow_devtools.models.make_registry \
-  --mode version \
+  \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
   --name mf6/test \
@@ -808,7 +767,7 @@ python -m modflow_devtools.models.make_registry \
 ```bash
 # Uses existing local checkout
 python -m modflow_devtools.models.make_registry \
-  --mode version \
+  \
   --repo MODFLOW-ORG/modflow6-testmodels \
   --ref master \
   --name mf6/test \
@@ -822,7 +781,7 @@ python -m modflow_devtools.models.make_registry \
   - Relative path like `mf6` → downloads and uses as subdirectory
   - Existing local directory → uses local checkout (for testing)
   - Omitted → downloads and indexes repo root
-- **Mode-based interface**: Choose `--mode version` or `--mode release`
+- **Automatic mode detection**: Presence of `--asset-file` indicates release asset mode, otherwise version-controlled mode
 - **Automatic URL construction**: No manual URL typing required
 - **No git dependency**: Uses GitHub's zipball API
 - **Clear naming**: `--name` matches bootstrap file's `name` field
@@ -853,7 +812,7 @@ This allows testing against forks without modifying the bundled config!
 - name: Generate registry
   run: |
     python -m modflow_devtools.models.make_registry \
-      --mode version \
+      \
       --repo MODFLOW-ORG/modflow6-testmodels \
       --ref ${{ github.ref_name }} \
       --name mf6/test \
@@ -872,7 +831,7 @@ This allows testing against forks without modifying the bundled config!
 - name: Generate registry
   run: |
     python -m modflow_devtools.models.make_registry \
-      --mode release \
+      --asset-file mf6examples.zip \
       --repo MODFLOW-ORG/modflow6-examples \
       --ref ${{ github.ref_name }} \
       --asset-file mf6examples.zip \

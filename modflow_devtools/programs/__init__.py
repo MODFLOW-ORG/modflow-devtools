@@ -1,6 +1,7 @@
 import hashlib
 import os
 import shutil
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from os import PathLike
@@ -12,6 +13,17 @@ import tomli
 import tomli_w
 from filelock import FileLock
 from pydantic import BaseModel, Field
+
+# Experimental API warning
+warnings.warn(
+    "The modflow_devtools.programs API is experimental and may change or be "
+    "removed in future versions without following normal deprecation procedures. "
+    "Use at your own risk. To suppress this warning, use:\n"
+    "  warnings.filterwarnings('ignore', "
+    "message='.*modflow_devtools.programs.*experimental.*')",
+    FutureWarning,
+    stacklevel=2,
+)
 
 _CACHE_ROOT = Path(pooch.os_cache("modflow-devtools"))
 """Root cache directory (platform-appropriate location via Pooch)"""

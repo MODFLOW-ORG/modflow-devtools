@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,9 @@ from modflow_devtools.programs import (
     ProgramSourceRepo,
     get_user_config_path,
 )
+
+# Suppress experimental API warning for tests
+warnings.filterwarnings("ignore", message=".*modflow_devtools.programs.*experimental.*")
 
 
 class TestProgramCache:

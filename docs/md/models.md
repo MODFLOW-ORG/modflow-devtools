@@ -27,6 +27,9 @@ Model registries can be synchronized from remote sources on demand. The user or 
 - [Cache Management](#cache-management)
 - [Automatic Synchronization](#automatic-synchronization)
 - [Repository Integration](#repository-integration)
+  - [Registry Generation](#registry-generation)
+  - [Publishing Registries](#publishing-registries)
+  - [Registry Format](#registry-format)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -263,8 +266,29 @@ for source, ref in cached:
 # Check specific cache
 is_cached = _DEFAULT_CACHE.has("mf6/test", "develop")
 
-# Clear cache (if needed)
-_DEFAULT_CACHE.clear()
+# Clear cache programmatically
+_DEFAULT_CACHE.clear()  # Clear all
+_DEFAULT_CACHE.clear(source="mf6/test")  # Clear specific source
+_DEFAULT_CACHE.clear(source="mf6/test", ref="develop")  # Clear specific source@ref
+```
+
+Or via CLI:
+
+```bash
+# List cached registries
+mf models list
+
+# Clear all cached registries (with confirmation prompt)
+mf models clear
+
+# Clear specific source
+mf models clear --source mf6/test
+
+# Clear specific source and ref
+mf models clear --source mf6/test --ref develop
+
+# Skip confirmation prompt
+mf models clear --force
 ```
 
 ## Automatic Synchronization
@@ -288,15 +312,86 @@ mf models sync
 
 ## Repository Integration
 
-For model repository maintainers who want to publish their models:
+Model repositories publish registry files (`models.toml`) describing available models, input files, and example groupings.
 
-Model repositories should publish a `models.toml` registry file either:
-1. As a release asset (for repositories that build models in CI)
-2. Under version control in a `.registry/` directory
+### Registry Generation
 
-Registry files contain:
-- **`files`**: Map of filenames to hashes
+The `make_registry` tool generates registry files from version-controlled or release asset models.
+
+**Version-controlled models**:
+
+```bash
+python -m modflow_devtools.models.make_registry \
+  --repo MODFLOW-ORG/modflow6-testmodels \
+  --ref master \
+  --name mf6/test \
+  --path mf6 \
+  --output .registry
+```
+
+**Release asset models**:
+
+```bash
+python -m modflow_devtools.models.make_registry \
+  --repo MODFLOW-ORG/modflow6-examples \
+  --ref current \
+  --asset-file mf6examples.zip \
+  --name mf6/example \
+  --output .registry
+```
+
+### Publishing Registries
+
+Registry files can be published under version control or as release assets.
+
+**Under version control**:
+
+For instance, to commit a generated registry to a `.registry/` directory:
+
+```yaml
+- name: Generate registry
+  run: |
+    python -m modflow_devtools.models.make_registry \
+      --repo ${{ github.repository }} \
+      --ref ${{ github.ref_name }} \
+      --name mf6/test \
+      --path mf6 \
+      --output .registry
+
+- name: Commit registry
+  run: |
+    git add .registry/models.toml
+    git commit -m "Update registry [skip ci]"
+    git push
+```
+
+**As release assets**:
+
+For instance, to upload a registry as a release asset:
+
+```yaml
+- name: Generate registry
+  run: |
+    python -m modflow_devtools.models.make_registry \
+      --repo ${{ github.repository }} \
+      --ref ${{ github.ref_name }} \
+      --asset-file mf6examples.zip \
+      --name mf6/example \
+      --output .registry
+
+- name: Upload registry as release asset
+  uses: actions/upload-release-asset@v1
+  with:
+    asset_path: .registry/models.toml
+    asset_name: models.toml
+```
+
+### Registry Format
+
+The generated `models.toml` file contains:
+
+- **`files`**: Map of filenames to hashes (URLs constructed dynamically)
 - **`models`**: Map of model names to file lists
 - **`examples`**: Map of example names to model lists
 
-The `make_registry.py` tool (part of `modflow-devtools`) can generate these registry files. See the [developer documentation](dev/models.md) for details on registry creation.
+See the [developer documentation](dev/models.md) for detailed registry format specifications.

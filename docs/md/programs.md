@@ -1,5 +1,17 @@
 # Programs API
 
+> **Experimental API Warning**
+>
+> This API is experimental and may change or be removed in future versions without following normal deprecation procedures. Use at your own risk.
+>
+> When importing this module programmatically, you will see a `FutureWarning`. To suppress this warning:
+> ```python
+> import warnings
+> warnings.filterwarnings('ignore', message='.*modflow_devtools.programs.*experimental.*')
+> ```
+>
+> The `mf programs` CLI command is stable and does not trigger warnings.
+
 The `modflow_devtools.programs` module provides programmatic access to MODFLOW and related programs in the MODFLOW ecosystem. It can be used with MODFLOW organization releases or custom program repositories.
 
 This module builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
@@ -29,6 +41,10 @@ Program registries can be synchronized from remote sources on demand. The user o
 - [Cache Management](#cache-management)
 - [Force Semantics](#force-semantics)
 - [Automatic Synchronization](#automatic-synchronization)
+- [Repository Integration](#repository-integration)
+  - [Registry Generation](#registry-generation)
+  - [Publishing Registries](#publishing-registries)
+  - [Registry Format](#registry-format)
 - [Relationship to pymake and get-modflow](#relationship-to-pymake-and-get-modflow)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -348,6 +364,71 @@ Then manually sync when needed:
 mf programs sync
 # Or: python -m modflow_devtools.programs sync
 ```
+
+## Repository Integration
+
+Program repositories publish registry files (`programs.toml`) describing available programs and platform-specific distributions.
+
+### Registry Generation
+
+The `make_registry` tool generates registry files from local or remote assets.
+
+**From local assets** (typical CI usage):
+
+```bash
+python -m modflow_devtools.programs.make_registry \
+  --dists *.zip \
+  --programs mf6 zbud6 libmf6 mf5to6 \
+  --version 6.6.3 \
+  --repo MODFLOW-ORG/modflow6 \
+  --compute-hashes \
+  --output programs.toml
+```
+
+**From existing GitHub release**:
+
+```bash
+python -m modflow_devtools.programs.make_registry \
+  --repo MODFLOW-ORG/modflow6 \
+  --version 6.6.3 \
+  --programs mf6 zbud6 libmf6 mf5to6 \
+  --compute-hashes \
+  --output programs.toml
+```
+
+### Publishing Registries
+
+Registry files are published as GitHub release assets alongside binary distributions.
+
+For instance, to publish a registry in a GitHub Actions workflow:
+
+```yaml
+- name: Generate program registry
+  run: |
+    python -m modflow_devtools.programs.make_registry \
+      --dists *.zip \
+      --programs mf6 zbud6 libmf6 mf5to6 \
+      --version ${{ github.ref_name }} \
+      --repo ${{ github.repository }} \
+      --compute-hashes \
+      --output programs.toml
+
+- name: Upload registry to release
+  uses: softprops/action-gh-release@v1
+  with:
+    files: programs.toml
+```
+
+### Registry Format
+
+The generated `programs.toml` file contains:
+
+- Program metadata (description, license)
+- Platform-specific distributions (linux, mac, win64)
+- Asset filenames and SHA256 hashes
+- Executable paths within archives
+
+See the [developer documentation](dev/programs.md) for detailed registry format specifications.
 
 ## Relationship to pymake and get-modflow
 
