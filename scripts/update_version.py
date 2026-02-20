@@ -45,7 +45,7 @@ def update_version(
     timestamp: datetime = datetime.now(),
     version: Version | None = None,
 ):
-    lock_path = Path(_version_txt_path.name + ".lock")
+    lock_path = _version_txt_path.parent / (_version_txt_path.name + ".lock")
     lock = FileLock(lock_path)
     with lock:
         previous = Version(_version_txt_path.read_text().strip())
