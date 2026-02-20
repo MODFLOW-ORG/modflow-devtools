@@ -494,6 +494,35 @@ class TestCLI:
         assert f"{TEST_SOURCE_NAME}@{TEST_REF}" in captured.out
         assert "Models:" in captured.out
 
+    def test_cli_clear(self, capsys):
+        """Test 'clear' command."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        source = ModelSourceRepo(
+            repo=TEST_REPO,
+            name=TEST_SOURCE_NAME,
+            refs=[TEST_REF],
+        )
+        result = source.sync(ref=TEST_REF)
+        assert len(result.synced) == 1
+
+        # Verify it's cached
+        assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+
+        # Clear with force flag
+        import argparse
+
+        from modflow_devtools.models.__main__ import cmd_clear
+
+        args = argparse.Namespace(source=TEST_SOURCE_NAME, ref=TEST_REF, force=True)
+        cmd_clear(args)
+
+        # Verify it was cleared
+        assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+
+        captured = capsys.readouterr()
+        assert "Cleared 1 cached registry" in captured.out
+
 
 @pytest.mark.xdist_group("registry_cache")
 class TestIntegration:

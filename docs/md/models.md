@@ -266,8 +266,29 @@ for source, ref in cached:
 # Check specific cache
 is_cached = _DEFAULT_CACHE.has("mf6/test", "develop")
 
-# Clear cache (if needed)
-_DEFAULT_CACHE.clear()
+# Clear cache programmatically
+_DEFAULT_CACHE.clear()  # Clear all
+_DEFAULT_CACHE.clear(source="mf6/test")  # Clear specific source
+_DEFAULT_CACHE.clear(source="mf6/test", ref="develop")  # Clear specific source@ref
+```
+
+Or via CLI:
+
+```bash
+# List cached registries
+mf models list
+
+# Clear all cached registries (with confirmation prompt)
+mf models clear
+
+# Clear specific source
+mf models clear --source mf6/test
+
+# Clear specific source and ref
+mf models clear --source mf6/test --ref develop
+
+# Skip confirmation prompt
+mf models clear --force
 ```
 
 ## Automatic Synchronization

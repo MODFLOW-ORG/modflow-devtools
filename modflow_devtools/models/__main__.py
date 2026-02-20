@@ -5,6 +5,7 @@ Usage:
     python -m modflow_devtools.models sync
     python -m modflow_devtools.models info
     python -m modflow_devtools.models list
+    python -m modflow_devtools.models clear
 """
 
 import argparse
@@ -227,6 +228,58 @@ def cmd_list(args):
             print()
 
 
+def cmd_clear(args):
+    """Clear command handler."""
+    cached = _DEFAULT_CACHE.list()
+
+    # Determine what will be cleared
+    if args.source and args.ref:
+        items_to_clear = [(args.source, args.ref)]
+        desc = f"{args.source}@{args.ref}"
+    elif args.source:
+        items_to_clear = [(source, ref) for source, ref in cached if source == args.source]
+        desc = f"all refs for source '{args.source}'"
+    else:
+        items_to_clear = cached
+        desc = "all cached registries"
+
+    if not items_to_clear:
+        if args.source or args.ref:
+            filter_desc = []
+            if args.source:
+                filter_desc.append(f"source={args.source}")
+            if args.ref:
+                filter_desc.append(f"ref={args.ref}")
+            print(f"No cached registries matching filters: {', '.join(filter_desc)}")
+        else:
+            print("No cached registries to clear")
+        return
+
+    # Show what will be cleared
+    print(f"Will clear {desc}:")
+    for source, ref in sorted(items_to_clear):
+        print(f"  {source}@{ref}")
+
+    # Confirm unless --force
+    if not args.force:
+        try:
+            response = input("\nProceed? [y/N] ").strip().lower()
+            if response not in ["y", "yes"]:
+                print("Cancelled")
+                return
+        except (KeyboardInterrupt, EOFError):
+            print("\nCancelled")
+            return
+
+    # Clear the cache
+    _DEFAULT_CACHE.clear(source=args.source, ref=args.ref)
+
+    print(
+        f"\nCleared {len(items_to_clear)} cached registr"
+        f"{'y' if len(items_to_clear) == 1 else 'ies'}"
+    )
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -280,6 +333,25 @@ def main():
         help="Show all model names (not truncated)",
     )
 
+    # Clear command
+    clear_parser = subparsers.add_parser("clear", help="Clear cached registries")
+    clear_parser.add_argument(
+        "--source",
+        "-s",
+        help="Clear specific source (default: all sources)",
+    )
+    clear_parser.add_argument(
+        "--ref",
+        "-r",
+        help="Clear specific ref (requires --source)",
+    )
+    clear_parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Skip confirmation prompt",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -293,6 +365,8 @@ def main():
             cmd_info(args)
         elif args.command == "list":
             cmd_list(args)
+        elif args.command == "clear":
+            cmd_clear(args)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

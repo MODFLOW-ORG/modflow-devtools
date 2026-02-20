@@ -707,6 +707,22 @@ $ mf models list --ref registry
 $ mf models list --source mf6/test --ref registry --verbose
 ```
 
+#### Clear Cached Registries
+
+```bash
+# Clear all cached registries (with confirmation)
+$ mf models clear
+
+# Clear specific source
+$ mf models clear --source mf6/test
+
+# Clear specific source and ref
+$ mf models clear --source mf6/test --ref develop
+
+# Skip confirmation prompt
+$ mf models clear --force
+```
+
 ### Registry Creation Tool
 
 The `make_registry` tool uses a mode-based interface with **remote-first operation** by default:
