@@ -57,8 +57,6 @@ def update_version(
         update_init_py(timestamp, version)
         update_docs_config(version)
 
-    lock_path.unlink()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
