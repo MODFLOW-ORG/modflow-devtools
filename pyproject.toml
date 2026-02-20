@@ -166,6 +166,7 @@ ignore-words-list = [
     "wel",
     "gage",
     "sav",
+    "registr",
 ]
 
 [tool.ruff]
