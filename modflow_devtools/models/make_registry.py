@@ -6,6 +6,7 @@ from urllib.request import urlopen
 from zipfile import ZipFile
 
 import modflow_devtools.models as models
+from modflow_devtools.download import download_and_unzip
 
 _REPOS_PATH = Path(__file__).parents[2]
 
@@ -109,26 +110,22 @@ Examples:
   python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\
-    --mode version \\
     --name mf6/test \\
     --path mf6 \\
     --output .registry
 
-  # Release asset models - downloads from remote
+  # Release asset models - automatically detected via --asset-file
   python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-examples \\
     --ref current \\
-    --mode release \\
     --asset-file mf6examples.zip \\
     --name mf6/example \\
-    --path examples \\
     --output .registry
 
   # No path - downloads and indexes entire repo root
   python -m modflow_devtools.models.make_registry \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\
-    --mode version \\
     --name mf6/test \\
     --output .registry
 
@@ -137,7 +134,6 @@ Examples:
     --path /path/to/modflow6-testmodels/mf6 \\
     --repo MODFLOW-ORG/modflow6-testmodels \\
     --ref master \\
-    --mode version \\
     --name mf6/test \\
     --output .registry
 """,
@@ -166,16 +162,6 @@ Examples:
         ),
     )
 
-    # Mode-based URL construction
-    parser.add_argument(
-        "--mode",
-        required=True,
-        choices=["version", "release"],
-        help=(
-            "Model publication mode: 'version' (version-controlled files) "
-            "or 'release' (release asset zipfile)."
-        ),
-    )
     parser.add_argument(
         "--repo",
         required=True,
@@ -192,7 +178,9 @@ Examples:
         "--asset-file",
         type=str,
         help=(
-            "Asset filename for 'release' mode (e.g., mf6examples.zip). Required when mode=release."
+            "Release asset filename (e.g., mf6examples.zip). "
+            "If provided, models are indexed from the release asset "
+            "instead of version-controlled files."
         ),
     )
     parser.add_argument(
@@ -217,6 +205,9 @@ Examples:
     )
     args = parser.parse_args()
 
+    # Infer mode from presence of --asset-file
+    mode = "release" if args.asset_file else "version"
+
     # Determine the local path to index
     temp_dir = None
     index_path = None
@@ -238,35 +229,96 @@ Examples:
                         "For production, use a subpath (e.g., 'mf6') to download from remote."
                     )
             else:
-                # It's a subpath - download and navigate to it
+                # Path doesn't exist locally - need to download
+                # For release mode, download the asset; for version mode, download repo
+                if mode == "release":
+                    # Download release asset
+                    if not args.asset_file:
+                        parser.error(
+                            "--asset-file is required when mode=release and path not found locally"
+                        )
+
+                    asset_url = f"https://github.com/{args.repo}/releases/download/{args.ref}/{args.asset_file}"
+
+                    if args.verbose:
+                        print(f"Path '{args.path}' not found locally")
+                        print("Downloading and extracting release asset for indexing...")
+
+                    # Create temp directory and download/extract
+                    temp_dir = Path(tempfile.mkdtemp(prefix="modflow-devtools-"))
+                    extract_dir = download_and_unzip(
+                        asset_url, path=temp_dir, delete_zip=True, verbose=args.verbose
+                    )
+
+                    # The release asset may have files at root or in a subdirectory
+                    # Check if the specified path exists within the extracted content
+                    if (extract_dir / args.path).exists():
+                        index_path = extract_dir / args.path
+                    else:
+                        # Path not found as subdirectory, maybe it's at root
+                        index_path = extract_dir
+
+                    if args.verbose:
+                        print(f"Will index from: {index_path}")
+                else:
+                    # Version mode - download repository
+                    if args.verbose:
+                        print(
+                            f"Path '{args.path}' not found locally, "
+                            f"treating as subpath in remote..."
+                        )
+                        print("Downloading from remote...")
+
+                    repo_root = _download_repo(args.repo, args.ref, verbose=args.verbose)
+                    temp_dir = repo_root.parent.parent
+
+                    index_path = repo_root / args.path
+                    if not index_path.exists():
+                        raise RuntimeError(
+                            f"Subpath '{args.path}' not found in downloaded repository"
+                        )
+                    path_in_repo = args.path
+
+                    if args.verbose:
+                        print(f"Will index from: {index_path}")
+        else:
+            # No path provided
+            if mode == "release":
+                # Download release asset and extract to temp directory
+                if not args.asset_file:
+                    parser.error("--asset-file is required when mode=release")
+
+                asset_url = (
+                    f"https://github.com/{args.repo}/releases/download/{args.ref}/{args.asset_file}"
+                )
+
                 if args.verbose:
-                    print(f"Path '{args.path}' not found locally, treating as subpath in remote...")
-                    print("Downloading from remote...")
+                    print(
+                        "No path provided, downloading and extracting release asset from remote..."
+                    )
 
-                repo_root = _download_repo(args.repo, args.ref, verbose=args.verbose)
-                temp_dir = repo_root.parent.parent
-
-                index_path = repo_root / args.path
-                if not index_path.exists():
-                    raise RuntimeError(f"Subpath '{args.path}' not found in downloaded repository")
-                path_in_repo = args.path
+                # Create temp directory and download/extract
+                temp_dir = Path(tempfile.mkdtemp(prefix="modflow-devtools-"))
+                index_path = download_and_unzip(
+                    asset_url, path=temp_dir, delete_zip=True, verbose=args.verbose
+                )
 
                 if args.verbose:
                     print(f"Will index from: {index_path}")
-        else:
-            # No path provided - download and use repo root
-            if args.verbose:
-                print("No path provided, downloading entire repository from remote...")
+            else:
+                # Version mode - download entire repository
+                if args.verbose:
+                    print("No path provided, downloading entire repository from remote...")
 
-            repo_root = _download_repo(args.repo, args.ref, verbose=args.verbose)
-            temp_dir = repo_root.parent.parent
-            index_path = repo_root
+                repo_root = _download_repo(args.repo, args.ref, verbose=args.verbose)
+                temp_dir = repo_root.parent.parent
+                index_path = repo_root
 
-            if args.verbose:
-                print(f"Will index from repo root: {index_path}")
+                if args.verbose:
+                    print(f"Will index from repo root: {index_path}")
 
         # Validate arguments and construct URL
-        if args.mode == "version":
+        if mode == "version":
             # If using local path, try to auto-detect path in repo from directory structure
             if use_local_path:
                 path_obj = Path(index_path).resolve()
@@ -306,7 +358,7 @@ Examples:
                 print("Mode: version (version-controlled)")
                 print(f"Constructed URL: {url}")
 
-        elif args.mode == "release":
+        elif mode == "release":
             # Construct release download URL for release assets
             if not args.asset_file:
                 parser.error("--asset-file is required when mode=release")
