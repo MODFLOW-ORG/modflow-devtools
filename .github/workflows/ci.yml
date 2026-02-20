@@ -117,8 +117,8 @@ jobs:
         env:
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-          TEST_REPO: wpbonelli/modflow6-testmodels
-          TEST_REF: registry
+          TEST_REPO: MODFLOW-ORG/modflow6-testmodels
+          TEST_REF: develop
           TEST_SOURCE: modflow6-testmodels
           TEST_SOURCE_NAME: mf6/test
           MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
