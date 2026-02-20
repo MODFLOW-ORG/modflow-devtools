@@ -1,3 +1,29 @@
+### Version 1.9.0
+
+#### New features
+
+* [feat(misc)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/910a1f1d201c262e218da27865b7e9487271e4d2): Add verbose option to set_dir (#258). Committed by wpbonelli on 2025-11-06.
+* [feat(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/c8a136872198e1d9f36be74e958d003cdc75f6eb): Improve models API (#268). Committed by wpbonelli on 2026-01-15.
+* [feat(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5e85417270cea1b4e5081d531c8c98b072acc371): Add programs API (#270). Committed by wpbonelli on 2026-01-16.
+* [feat(version)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/f9e26de1efdda95d509c0cc0cb1cf886a3f6c278): Add project version management tool (#284). Committed by wpbonelli on 2026-02-13.
+
+#### Bug fixes
+
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/d736dfd881cbc39d2fe82180d98d1d2a0130f146): Backwards-compatibility adjustments (#272). Committed by wpbonelli on 2026-01-20.
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/a1497797fc9b1a7cf4ed7cd72e43f0b290fd49d4): Miscellaneous fixes (#273). Committed by wpbonelli on 2026-01-21.
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5dce2af85369063d037c58a3bfc12a2e32c74770): Check env var before auto-sync, fix tests (#275). Committed by wpbonelli on 2026-01-23.
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/f6cc9bbbcc8577a4384e18159597c128181e3ecf): Exclude output files from registries (#274). Committed by wpbonelli on 2026-01-23.
+* [fix(models)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5aa924836fe700bb7ccf4c56faeea52b72368bb5): Auto-sync only on api commands (#277). Committed by wpbonelli on 2026-02-10.
+* [fix(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/2674176f6151814fa158269478015b1b175ba884): Exe path at program or dist level, add tests, update docs (#281). Committed by wpbonelli on 2026-02-11.
+* [fix(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/a9584012258e5ca52be86a7d631da2f0bf10b75c): Multiple fixes/improvements (#282). Committed by wpbonelli on 2026-02-12.
+* [fix](https://github.com/MODFLOW-ORG/modflow-devtools/commit/18af51ae53bf1c8fb877620b0fa26e7be28ea210): More fixes/improvements (#283). Committed by wpbonelli on 2026-02-12.
+* [fix](https://github.com/MODFLOW-ORG/modflow-devtools/commit/448993522772773ea650206e94185ad8ec72bb83): Multiple fixes (#285). Committed by wpbonelli on 2026-02-20.
+
+#### Refactoring
+
+* [refactor(programs)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/bb76dc1c36f235b3e8bd5b10231661081dda7fe9): Multiple programs api improvements (#276). Committed by wpbonelli on 2026-02-09.
+* [refactor(registries)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/75c6909a6202da02b30a1b7b5743e75498aa26a7): Leaner model/program registry file contents (#279). Committed by wpbonelli on 2026-02-10.
+
 ### Version 1.8.0
 
 #### New features
