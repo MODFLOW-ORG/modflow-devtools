@@ -18,17 +18,17 @@
 #   repo = "username/my-models"
 #   refs = ["main"]
 
-[sources.modflow6-testmodels]
-repo = "MODFLOW-ORG/modflow6-testmodels"
-name = "mf6/test"
-refs = ["develop", "master"]
-
 [sources.modflow6-examples]
 repo = "MODFLOW-ORG/modflow6-examples"
 name = "mf6/example"
 refs = ["current"]
 
+[sources.modflow6-testmodels]
+repo = "MODFLOW-ORG/modflow6-testmodels"
+name = "mf6/test"
+refs = ["develop"]
+
 [sources.modflow6-largetestmodels]
 repo = "MODFLOW-ORG/modflow6-largetestmodels"
 name = "mf6/large"
-refs = ["develop", "master"]
+refs = ["develop"]
