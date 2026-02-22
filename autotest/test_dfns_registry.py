@@ -281,7 +281,7 @@ class TestLocalDfnRegistry:
 
     def test_init(self, dfn_dir):
         """Test LocalDfnRegistry initialization."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir, ref="local")
 
@@ -291,7 +291,7 @@ class TestLocalDfnRegistry:
 
     def test_spec_property(self, dfn_dir):
         """Test accessing spec through registry."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -302,7 +302,7 @@ class TestLocalDfnRegistry:
 
     def test_get_dfn(self, dfn_dir):
         """Test getting a DFN by name."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -313,7 +313,7 @@ class TestLocalDfnRegistry:
 
     def test_get_dfn_path(self, dfn_dir):
         """Test getting file path for a component."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -324,7 +324,7 @@ class TestLocalDfnRegistry:
 
     def test_get_dfn_path_not_found(self, dfn_dir):
         """Test getting path for nonexistent component raises FileNotFoundError."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -333,7 +333,7 @@ class TestLocalDfnRegistry:
 
     def test_schema_version_property(self, dfn_dir):
         """Test schema_version property."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -341,7 +341,7 @@ class TestLocalDfnRegistry:
 
     def test_components_property(self, dfn_dir):
         """Test components property returns flat dict."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
 
@@ -389,7 +389,7 @@ class TestMakeRegistry:
 
     def test_compute_file_hash(self, tmp_path):
         """Test computing file hash."""
-        from modflow_devtools.dfn.make_registry import compute_file_hash
+        from modflow_devtools.dfns.make_registry import compute_file_hash
 
         test_file = tmp_path / "test.txt"
         test_file.write_text("hello world")
@@ -402,7 +402,7 @@ class TestMakeRegistry:
 
     def test_scan_dfn_directory(self, dfn_dir):
         """Test scanning a DFN directory."""
-        from modflow_devtools.dfn.make_registry import scan_dfn_directory
+        from modflow_devtools.dfns.make_registry import scan_dfn_directory
 
         files = scan_dfn_directory(dfn_dir)
 
@@ -415,7 +415,7 @@ class TestMakeRegistry:
         """Test generating a registry file."""
         import tomli
 
-        from modflow_devtools.dfn.make_registry import generate_registry
+        from modflow_devtools.dfns.make_registry import generate_registry
 
         output_path = tmp_path / "dfns.toml"
 
@@ -437,7 +437,7 @@ class TestMakeRegistry:
 
     def test_generate_registry_empty_dir(self, tmp_path):
         """Test generating registry from empty directory raises ValueError."""
-        from modflow_devtools.dfn.make_registry import generate_registry
+        from modflow_devtools.dfns.make_registry import generate_registry
 
         with pytest.raises(ValueError, match="No DFN files found"):
             generate_registry(
@@ -447,7 +447,7 @@ class TestMakeRegistry:
 
     def test_cli_help(self):
         """Test CLI help output."""
-        from modflow_devtools.dfn.make_registry import main
+        from modflow_devtools.dfns.make_registry import main
 
         # --help should exit with 0
         with pytest.raises(SystemExit) as exc_info:
@@ -456,7 +456,7 @@ class TestMakeRegistry:
 
     def test_cli_generate(self, dfn_dir, tmp_path):
         """Test CLI generate command."""
-        from modflow_devtools.dfn.make_registry import main
+        from modflow_devtools.dfns.make_registry import main
 
         output_path = tmp_path / "dfns.toml"
 
@@ -481,21 +481,21 @@ class TestCLI:
 
     def test_main_help(self):
         """Test CLI help output."""
-        from modflow_devtools.dfn.__main__ import main
+        from modflow_devtools.dfns.__main__ import main
 
         result = main([])
         assert result == 0
 
     def test_info_command(self):
         """Test info command."""
-        from modflow_devtools.dfn.__main__ import main
+        from modflow_devtools.dfns.__main__ import main
 
         result = main(["info"])
         assert result == 0
 
     def test_clean_command_no_cache(self, tmp_path):
         """Test clean command when cache doesn't exist."""
-        from modflow_devtools.dfn.__main__ import main
+        from modflow_devtools.dfns.__main__ import main
 
         # Patch get_cache_dir to return nonexistent directory
         with patch("modflow_devtools.dfn.__main__.get_cache_dir") as mock_cache_dir:
@@ -506,7 +506,7 @@ class TestCLI:
 
     def test_sync_command_no_registry(self):
         """Test sync command when registry doesn't exist (expected to fail)."""
-        from modflow_devtools.dfn.__main__ import main
+        from modflow_devtools.dfns.__main__ import main
 
         # This should fail because MODFLOW 6 repo doesn't have the registry yet
         result = main(["sync", "--ref", "nonexistent-ref"])
@@ -519,7 +519,7 @@ class TestRemoteDfnRegistry:
 
     def test_init(self):
         """Test RemoteDfnRegistry initialization."""
-        from modflow_devtools.dfn import RemoteDfnRegistry
+        from modflow_devtools.dfns import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(source="modflow6", ref="develop")
 
@@ -528,7 +528,7 @@ class TestRemoteDfnRegistry:
 
     def test_unknown_source_raises(self):
         """Test that unknown source raises ValueError."""
-        from modflow_devtools.dfn import RemoteDfnRegistry
+        from modflow_devtools.dfns import RemoteDfnRegistry
 
         with pytest.raises(ValueError, match="Unknown source"):
             RemoteDfnRegistry(source="nonexistent", ref="develop")
@@ -584,7 +584,7 @@ class TestRemoteDfnRegistry:
 
     def test_init_with_repo_override(self):
         """Test RemoteDfnRegistry with repo override."""
-        from modflow_devtools.dfn import RemoteDfnRegistry
+        from modflow_devtools.dfns import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(
             source=TEST_DFN_SOURCE,
@@ -649,7 +649,7 @@ class TestRemoteDfnRegistry:
 
     def test_get_dfn(self):
         """Test getting a DFN from the test repository."""
-        from modflow_devtools.dfn import Dfn
+        from modflow_devtools.dfns import Dfn
         from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
         registry = RemoteDfnRegistry(
@@ -713,7 +713,7 @@ class TestModuleFunctions:
 
     def test_list_components_local(self, dfn_dir):
         """Test list_components with local registry."""
-        from modflow_devtools.dfn import LocalDfnRegistry
+        from modflow_devtools.dfns import LocalDfnRegistry
 
         registry = LocalDfnRegistry(path=dfn_dir)
         components = list(registry.spec.keys())
