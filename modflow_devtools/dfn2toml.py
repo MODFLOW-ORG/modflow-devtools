@@ -10,8 +10,8 @@ from pathlib import Path
 import tomli_w as tomli
 from boltons.iterutils import remap
 
-from modflow_devtools.dfn import Dfn, is_valid, load, load_flat, map, to_flat, to_tree
-from modflow_devtools.dfn.schema.block import block_sort_key
+from modflow_devtools.dfns import Dfn, is_valid, load, load_flat, map, to_flat, to_tree
+from modflow_devtools.dfns.schema.block import block_sort_key
 from modflow_devtools.misc import drop_none_or_empty
 
 # mypy: ignore-errors

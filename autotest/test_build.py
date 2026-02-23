@@ -28,5 +28,6 @@ def test_meson_build(tmp_path):
 
     assert (bin_path / f"mf6{_exe_ext}").is_file()
     assert (bin_path / f"zbud6{_exe_ext}").is_file()
-    assert (bin_path / f"mf5to6{_exe_ext}").is_file()
+    # mf5to6 is no longer built by default in modflow6 meson.build
+    # assert (bin_path / f"mf5to6{_exe_ext}").is_file()
     assert (bin_path / f"libmf6{_lib_ext}").is_file()
