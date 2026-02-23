@@ -113,7 +113,7 @@ jobs:
           MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
           TEST_DFN_PATH: ${{ github.workspace }}/modflow6/doc/mf6io/mf6ivar/dfn
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py
+        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py --ignore test_dfns_registry.py
 
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
@@ -124,8 +124,7 @@ jobs:
         env:
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-          # DFNs API - use test fork with registry file for RemoteDfnRegistry tests
-          # Note: TEST_DFN_PATH is intentionally NOT set here to use fetch behavior
+          # TODO: switch to upstream when dfn registry file added
           TEST_DFNS_REPO: wpbonelli/modflow6
           TEST_DFNS_REF: registry
           TEST_DFNS_SOURCE: modflow6

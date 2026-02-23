@@ -520,7 +520,7 @@ class TestCLI:
         from modflow_devtools.dfns.__main__ import main
 
         # Patch get_cache_dir to return nonexistent directory
-        with patch("modflow_devtools.dfn.__main__.get_cache_dir") as mock_cache_dir:
+        with patch("modflow_devtools.dfns.__main__.get_cache_dir") as mock_cache_dir:
             mock_cache_dir.return_value = tmp_path / "nonexistent"
             result = main(["clean"])
 
