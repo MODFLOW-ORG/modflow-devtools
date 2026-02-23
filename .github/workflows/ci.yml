@@ -103,7 +103,18 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Setup Fortran
+        if: runner.os != 'Windows'
         uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+          version: ${{ env.GCC_V }}
+
+      - name: Setup Fortran (Windows)
+        if: runner.os == 'Windows'
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel
+          version: latest
 
       - name: Install project
         working-directory: modflow-devtools
