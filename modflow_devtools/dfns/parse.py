@@ -81,6 +81,41 @@ def is_multi_package(meta: list[str]) -> bool:
     return any("multi-package" in m for m in meta)
 
 
+def parse_mf6_subpackages(meta: list[str]) -> list[str]:
+    """
+    Return MF6 subpackage abbreviations declared via '# mf6 subpackage <abbr>'.
+
+    These declarations specify schema-level composition constraints: which component
+    types can be children of this component. For example, '# mf6 subpackage utl-ncf'
+    in gwf-dis.dfn means a gwf-dis component can have utl-ncf child components.
+
+    This is distinct from flopy subpackages ('# flopy subpackage <key> <abbr> ...'),
+    which define field-level foreign key references where specific fields reference
+    other components via file paths.
+
+    Parameters
+    ----------
+    meta : list[str]
+        Metadata lines extracted from DFN file comments.
+
+    Returns
+    -------
+    list[str]
+        List of uppercase component abbreviations (e.g., ['UTL-NCF']).
+
+    See Also
+    --------
+    Dfn.subcomponents : Stores the result (schema-level constraint).
+    Dfn.fkeys : Field-level foreign keys from flopy subpackage declarations.
+    """
+    result = []
+    for m in meta:
+        if m.startswith("mf6-subpackage "):
+            abbr = m.removeprefix("mf6-subpackage ").strip().upper()
+            result.append(abbr)
+    return result
+
+
 def parse_dfn(f, common: dict | None = None) -> tuple[OMD, list[str]]:
     """
     Parse a DFN file into an ordered dict of fields and a list of metadata.
@@ -133,6 +168,11 @@ def parse_dfn(f, common: dict | None = None) -> tuple[OMD, list[str]]:
             _, sep, tail = line.partition("package-type")
             if sep == "package-type":
                 metadata.append(f"package-type {tail.strip()}")
+            # Parse mf6 subpackage declarations (schema-level composition constraints).
+            # Distinct from flopy subpackage (field-level foreign keys, parsed above).
+            _, sep, tail = line.partition("mf6 subpackage")
+            if sep == "mf6 subpackage":
+                metadata.append(f"mf6-subpackage {tail.strip()}")
             continue
 
         # if we hit a newline and the field has attributes,
