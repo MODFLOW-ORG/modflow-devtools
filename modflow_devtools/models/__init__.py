@@ -1178,6 +1178,11 @@ class PoochRegistry(ModelRegistry):
         examples: dict[str, list[str]] = {}
         is_zip = url.endswith((".zip", ".tar")) if url else False
 
+        # For zip-based registries, add the zip file itself to the files dict
+        # so Pooch can fetch it
+        if url and is_zip:
+            files[url.rpartition("/")[2]] = {"hash": None, "url": url}
+
         model_paths = get_model_paths(path, namefile=namefile)
         for model_path in model_paths:
             model_path = model_path.expanduser().resolve().absolute()
