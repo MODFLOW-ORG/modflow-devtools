@@ -23,6 +23,7 @@ from modflow_devtools.dfns.parse import (
     is_advanced_package,
     is_multi_package,
     parse_dfn,
+    parse_mf6_subpackages,
     try_parse_bool,
     try_parse_parent,
 )
@@ -90,6 +91,32 @@ Dfns = dict[str, "Dfn"]
 class Dfn:
     """
     MODFLOW 6 input component definition.
+
+    Attributes
+    ----------
+    schema_version : Version
+        Schema version of this definition.
+    name : str
+        Component name (e.g., "gwf-chd", "sim-nam").
+    parent : str | None
+        Parent component name (instance-level hierarchy).
+    advanced : bool
+        Whether this is an advanced package.
+    multi : bool
+        Whether this is a multi-package.
+    ftype : str | None
+        File type identifier.
+    ref : Ref | None
+        Metadata if this component is a subpackage (child's perspective).
+        Populated from DFN comments like: # flopy subpackage <key> <abbr> <param> <val>
+    blocks : Blocks | None
+        Block definitions containing field specifications.
+    children : Dfns | None
+        Actual child component instances (instance-level).
+    subcomponents : list[str] | None
+        Allowed child component types (schema-level constraint).
+        Populated from DFN comments like: # mf6 subpackage <abbr>
+        Example: ['UTL-NCF'] means this component can have utl-ncf children.
     """
 
     schema_version: Version
@@ -101,6 +128,7 @@ class Dfn:
     ref: Ref | None = None
     blocks: Blocks | None = None
     children: Dfns | None = None
+    subcomponents: list[str] | None = None
 
     @property
     def fields(self) -> Fields:
@@ -565,6 +593,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
             block_name: {field["name"]: FieldV1.from_dict(field) for field in block}
             for block_name, block in groupby(fields.values(), lambda field: field["block"])
         }
+        subcomponents = parse_mf6_subpackages(meta)
         return Dfn(
             name=name,
             schema_version=Version("1"),
@@ -573,6 +602,7 @@ def load(f, format: str = "dfn", **kwargs) -> Dfn:
             multi=is_multi_package(meta),
             ftype=name.split("-", 1)[1].upper() if "-" in name else None,
             blocks=blocks,
+            subcomponents=subcomponents if subcomponents else None,
         )
 
     elif format == "toml":

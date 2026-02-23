@@ -38,6 +38,7 @@ class FieldV1(Field):
     mf6internal: str | None = None
     block_variable: bool = False
     just_data: bool = False
+    time_series: bool = False
 
     @classmethod
     def from_dict(cls, d: dict, strict: bool = False) -> "FieldV1":
