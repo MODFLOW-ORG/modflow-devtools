@@ -89,7 +89,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: modflow-devtools
- 
+
+      - name: Checkout modflow6 for DFN autodiscovery
+        uses: actions/checkout@v4
+        with:
+          repository: MODFLOW-ORG/modflow6
+          path: modflow6
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -105,8 +111,9 @@ jobs:
         env:
           REPOS_PATH: ${{ github.workspace }}
           MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
+          TEST_DFN_PATH: ${{ github.workspace }}/modflow6/doc/mf6io/mf6ivar/dfn
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py --ignore test_dfn_registry.py
+        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py
 
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
@@ -117,7 +124,8 @@ jobs:
         env:
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-          # DFNs API
+          # DFNs API - use test fork with registry file for RemoteDfnRegistry tests
+          # Note: TEST_DFN_PATH is intentionally NOT set here to use fetch behavior
           TEST_DFNS_REPO: wpbonelli/modflow6
           TEST_DFNS_REF: registry
           TEST_DFNS_SOURCE: modflow6
@@ -130,7 +138,7 @@ jobs:
           TEST_PROGRAMS_REPO: MODFLOW-ORG/modflow6
           TEST_PROGRAMS_REF: develop
           TEST_PROGRAMS_SOURCE: modflow6
-        run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py test_dfn_registry.py
+        run: uv run pytest -v -n auto --dist loadgroup --durations 0 test_download.py test_models.py test_dfns_registry.py
   
   rtd:
     name: Docs

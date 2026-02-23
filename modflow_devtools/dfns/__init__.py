@@ -794,6 +794,7 @@ def get_dfn(
     component: str,
     ref: str = "develop",
     source: str = "modflow6",
+    path: str | PathLike | None = None,
 ) -> "Dfn":
     """
     Get a DFN by component name from the registry.
@@ -809,6 +810,9 @@ def get_dfn(
         Git ref (branch, tag, or commit hash). Default is "develop".
     source : str, optional
         Source repository name. Default is "modflow6".
+    path : str or PathLike, optional
+        Path to a local directory containing DFN files. If provided,
+        uses autodiscovery from local filesystem instead of remote.
 
     Returns
     -------
@@ -819,9 +823,10 @@ def get_dfn(
     --------
     >>> dfn = get_dfn("gwf-chd")
     >>> dfn = get_dfn("gwf-chd", ref="6.6.0")
+    >>> dfn = get_dfn("gwf-chd", path="/path/to/dfns")
     """
     registry = _get_registry_module()
-    reg = registry.get_registry(source=source, ref=ref)
+    reg = registry.get_registry(source=source, ref=ref, path=path)
     return reg.get_dfn(component)
 
 
@@ -829,6 +834,7 @@ def get_dfn_path(
     component: str,
     ref: str = "develop",
     source: str = "modflow6",
+    path: str | PathLike | None = None,
 ) -> Path:
     """
     Get the local cached file path for a DFN component.
@@ -841,24 +847,29 @@ def get_dfn_path(
         Git ref (branch, tag, or commit hash). Default is "develop".
     source : str, optional
         Source repository name. Default is "modflow6".
+    path : str or PathLike, optional
+        Path to a local directory containing DFN files. If provided,
+        returns path from local filesystem instead of cache.
 
     Returns
     -------
     Path
-        Path to the local cached DFN file.
+        Path to the local DFN file (cached or local directory).
 
     Examples
     --------
     >>> path = get_dfn_path("gwf-chd", ref="6.6.0")
+    >>> path = get_dfn_path("gwf-chd", path="/path/to/dfns")
     """
     registry = _get_registry_module()
-    reg = registry.get_registry(source=source, ref=ref)
+    reg = registry.get_registry(source=source, ref=ref, path=path)
     return reg.get_dfn_path(component)
 
 
 def list_components(
     ref: str = "develop",
     source: str = "modflow6",
+    path: str | PathLike | None = None,
 ) -> list[str]:
     """
     List available components for a registry.
@@ -869,6 +880,9 @@ def list_components(
         Git ref (branch, tag, or commit hash). Default is "develop".
     source : str, optional
         Source repository name. Default is "modflow6".
+    path : str or PathLike, optional
+        Path to a local directory containing DFN files. If provided,
+        lists components from local filesystem.
 
     Returns
     -------
@@ -880,7 +894,8 @@ def list_components(
     >>> components = list_components(ref="6.6.0")
     >>> "gwf-chd" in components
     True
+    >>> components = list_components(path="/path/to/dfns")
     """
     registry = _get_registry_module()
-    reg = registry.get_registry(source=source, ref=ref)
+    reg = registry.get_registry(source=source, ref=ref, path=path)
     return list(reg.spec.keys())

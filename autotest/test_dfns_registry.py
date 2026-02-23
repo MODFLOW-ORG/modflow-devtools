@@ -29,10 +29,32 @@ MF6_OWNER = TEST_DFN_REPO.split("/")[0]
 MF6_REPO = TEST_DFN_REPO.split("/")[1]
 MF6_REF = TEST_DFN_REF
 
+# Path to cloned MF6 repository for autodiscovery (set by CI or local testing)
+# If set, use this instead of fetching individual DFN files
+TEST_DFN_PATH = os.getenv("TEST_DFN_PATH")
+
 
 @pytest.fixture(scope="module")
 def dfn_dir():
-    """Ensure DFN files are downloaded for testing."""
+    """
+    Provide path to DFN files for testing.
+
+    Priority:
+    1. If TEST_DFN_PATH is set, use the DFN directory from a cloned MF6 repo (autodiscovery)
+    2. Otherwise, fetch individual DFN files to temp directory (legacy behavior)
+
+    The autodiscovery approach is preferred in CI to avoid needing registry files.
+    """
+    # If TEST_DFN_PATH is set, use it (points to cloned MF6 DFN directory)
+    if TEST_DFN_PATH:
+        dfn_path = Path(TEST_DFN_PATH).expanduser().resolve()
+        if not dfn_path.exists():
+            raise ValueError(f"TEST_DFN_PATH={TEST_DFN_PATH} does not exist")
+        if not any(dfn_path.glob("*.dfn")):
+            raise ValueError(f"No DFN files found in TEST_DFN_PATH={TEST_DFN_PATH}")
+        return dfn_path
+
+    # Fall back to fetching individual DFN files (legacy behavior for local development)
     if not any(DFN_DIR.glob("*.dfn")):
         fetch_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
     return DFN_DIR
@@ -731,3 +753,95 @@ class TestModuleFunctions:
         assert isinstance(status, dict)
         # All refs should be either True or False
         assert all(isinstance(v, bool) for v in status.values())
+
+
+@requires_pkg("boltons", "pydantic")
+class TestGetRegistryWithPath:
+    """Tests for get_registry() with path parameter."""
+
+    def test_get_registry_with_path_returns_local_registry(self, dfn_dir):
+        """Test that get_registry with path returns LocalDfnRegistry."""
+        from modflow_devtools.dfns.registry import LocalDfnRegistry, get_registry
+
+        registry = get_registry(path=dfn_dir)
+
+        assert isinstance(registry, LocalDfnRegistry)
+        assert registry.path == dfn_dir.resolve()
+
+    def test_get_registry_with_path_and_metadata(self, dfn_dir):
+        """Test that source/ref metadata is preserved with path."""
+        from modflow_devtools.dfns.registry import get_registry
+
+        registry = get_registry(path=dfn_dir, source="test", ref="local")
+
+        assert registry.source == "test"
+        assert registry.ref == "local"
+
+    def test_get_registry_without_path_returns_remote_registry(self):
+        """Test that get_registry without path still returns RemoteDfnRegistry."""
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry, get_registry
+
+        registry = get_registry(source="modflow6", ref="develop", auto_sync=False)
+
+        assert isinstance(registry, RemoteDfnRegistry)
+
+
+@requires_pkg("boltons", "pydantic")
+class TestConvenienceFunctionsWithPath:
+    """Tests for convenience functions with path parameter."""
+
+    def test_get_dfn_with_path(self, dfn_dir):
+        """Test get_dfn() with path parameter."""
+        from modflow_devtools.dfns import get_dfn
+
+        dfn = get_dfn("gwf-chd", path=dfn_dir)
+
+        assert dfn.name == "gwf-chd"
+        assert dfn.parent == "gwf-nam"
+
+    def test_get_dfn_path_with_path(self, dfn_dir):
+        """Test get_dfn_path() with path parameter."""
+        from modflow_devtools.dfns import get_dfn_path
+
+        file_path = get_dfn_path("gwf-chd", path=dfn_dir)
+
+        assert file_path.exists()
+        assert file_path.name == "gwf-chd.dfn"
+
+    def test_list_components_with_path(self, dfn_dir):
+        """Test list_components() with path parameter."""
+        from modflow_devtools.dfns import list_components
+
+        components = list_components(path=dfn_dir)
+
+        assert len(components) > 100
+        assert "gwf-chd" in components
+
+
+@requires_pkg("boltons", "pydantic")
+def test_autodiscovery_workflow(dfn_dir):
+    """Test complete autodiscovery workflow."""
+    from modflow_devtools.dfns import get_dfn, get_registry, list_components
+
+    # Get registry pointing at local directory
+    registry = get_registry(path=dfn_dir, ref="local")
+
+    # List components
+    components = list(registry.spec.keys())
+    assert len(components) > 100
+
+    # Get specific DFN
+    gwf_chd = registry.get_dfn("gwf-chd")
+    assert gwf_chd.name == "gwf-chd"
+    assert gwf_chd.blocks is not None
+
+    # Get file path
+    chd_path = registry.get_dfn_path("gwf-chd")
+    assert chd_path.exists()
+
+    # Use convenience functions
+    components_list = list_components(path=dfn_dir)
+    assert "gwf-chd" in components_list
+
+    dfn = get_dfn("gwf-wel", path=dfn_dir)
+    assert dfn.name == "gwf-wel"

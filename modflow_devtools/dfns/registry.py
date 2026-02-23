@@ -735,7 +735,8 @@ def get_registry(
     source: str = "modflow6",
     ref: str = "develop",
     auto_sync: bool = True,
-) -> RemoteDfnRegistry:
+    path: str | PathLike | None = None,
+) -> DfnRegistry:
     """
     Get a registry for the specified source and ref.
 
@@ -748,17 +749,32 @@ def get_registry(
     auto_sync : bool, optional
         If True and registry is not cached, automatically sync. Default is True.
         Can be disabled via MODFLOW_DEVTOOLS_NO_AUTO_SYNC environment variable.
+        Ignored when path is provided.
+    path : str or PathLike, optional
+        Path to a local directory containing DFN files. If provided, returns
+        a LocalDfnRegistry for autodiscovery instead of RemoteDfnRegistry.
+        When using a local path, source and ref are used for metadata only.
 
     Returns
     -------
-    RemoteDfnRegistry
-        Registry for the specified source and ref.
+    DfnRegistry
+        Registry for the specified source and ref. Returns LocalDfnRegistry
+        if path is provided, otherwise RemoteDfnRegistry.
 
     Examples
     --------
+    >>> # Remote registry (existing behavior)
     >>> registry = get_registry(ref="6.6.0")
     >>> dfn = registry.get_dfn("gwf-chd")
+
+    >>> # Local registry with autodiscovery (NEW)
+    >>> registry = get_registry(path="/path/to/mf6/doc/mf6io/mf6ivar/dfn")
+    >>> dfn = registry.get_dfn("gwf-chd")
     """
+    # If path is provided, return LocalDfnRegistry for autodiscovery
+    if path is not None:
+        return LocalDfnRegistry(path=Path(path), source=source, ref=ref)
+
     # Check for auto-sync opt-out
     if os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         auto_sync = False
