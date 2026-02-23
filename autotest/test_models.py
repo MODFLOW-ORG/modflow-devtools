@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from flaky import flaky
 
 from modflow_devtools.models import (
     _DEFAULT_CACHE,
@@ -231,6 +232,7 @@ class TestCache:
 class TestDiscovery:
     """Test registry discovery."""
 
+    @flaky(max_runs=3, min_passes=1)
     def test_discover_registry(self):
         """Test discovering registry for test repo."""
         # Use test repo/ref from environment
@@ -248,6 +250,7 @@ class TestDiscovery:
         assert discovered.mode == "version_controlled"
         assert isinstance(discovered.registry, ModelRegistry)
 
+    @flaky(max_runs=3, min_passes=1)
     def test_discover_registry_nonexistent_ref(self):
         """Test that discovery fails gracefully for nonexistent ref."""
         source = ModelSourceRepo(
@@ -264,6 +267,7 @@ class TestDiscovery:
 class TestSync:
     """Test registry synchronization."""
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_single_source_single_ref(self):
         """Test syncing a single source/ref."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -280,6 +284,7 @@ class TestSync:
         assert len(result.failed) == 0
         assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in result.synced
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_creates_cache(self):
         """Test that sync creates cached registry."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -293,6 +298,7 @@ class TestSync:
         source.sync(ref=TEST_MODELS_REF)
         assert _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_skip_cached(self):
         """Test that sync skips already-cached registries."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -312,6 +318,7 @@ class TestSync:
         assert len(result2.synced) == 0
         assert len(result2.skipped) == 1
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_force(self):
         """Test that force flag re-syncs cached registries."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -331,6 +338,7 @@ class TestSync:
         assert len(result.synced) == 1
         assert len(result.skipped) == 0
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_via_source_method(self):
         """Test syncing via ModelSourceRepo.sync() method."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -348,6 +356,7 @@ class TestSync:
         assert len(result.synced) == 1
         assert (TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF) in result.synced
 
+    @flaky(max_runs=3, min_passes=1)
     def test_source_is_synced_method(self):
         """Test ModelSourceRepo.is_synced() method."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -362,6 +371,7 @@ class TestSync:
         source.sync(ref=TEST_MODELS_REF)
         assert source.is_synced(TEST_MODELS_REF)
 
+    @flaky(max_runs=3, min_passes=1)
     def test_source_list_synced_refs_method(self):
         """Test ModelSourceRepo.list_synced_refs() method."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -509,6 +519,7 @@ class TestCLI:
 class TestIntegration:
     """Integration tests for full workflows."""
 
+    @flaky(max_runs=3, min_passes=1)
     def test_full_workflow(self):
         """Test complete workflow: discover -> cache -> load."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
@@ -531,6 +542,7 @@ class TestIntegration:
         assert loaded is not None
         assert len(loaded.models) == len(discovered.registry.models)
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_and_list_models(self):
         """Test syncing and listing available models."""
         _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)

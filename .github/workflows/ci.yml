@@ -102,6 +102,9 @@ jobs:
           cache-dependency-glob: "**/pyproject.toml"
           python-version: ${{ matrix.python }}
 
+      - name: Setup Fortran
+        uses: fortran-lang/setup-fortran@v1
+
       - name: Install project
         working-directory: modflow-devtools
         run: uv sync --all-extras

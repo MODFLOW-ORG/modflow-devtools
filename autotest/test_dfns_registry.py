@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from flaky import flaky
 from packaging.version import Version
 
 from modflow_devtools.dfns.fetch import fetch_dfns
@@ -634,6 +635,7 @@ class TestRemoteDfnRegistry:
         assert TEST_DFN_REPO in url
         assert TEST_DFN_REF in url
 
+    @flaky(max_runs=3, min_passes=1)
     def test_fetch_registry(self):
         """Test fetching registry from the test repository."""
         from modflow_devtools.dfns.registry import RemoteDfnRegistry
@@ -652,6 +654,7 @@ class TestRemoteDfnRegistry:
         # (e.g., generated from develop branch but accessed on registry branch)
         assert meta.ref is not None
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_files(self):
         """Test syncing DFN files from the test repository."""
         from modflow_devtools.dfns.registry import RemoteDfnRegistry
@@ -669,6 +672,7 @@ class TestRemoteDfnRegistry:
         path = registry.get_dfn_path("gwf-chd")
         assert path.exists()
 
+    @flaky(max_runs=3, min_passes=1)
     def test_get_dfn(self):
         """Test getting a DFN from the test repository."""
         from modflow_devtools.dfns import Dfn
@@ -688,6 +692,7 @@ class TestRemoteDfnRegistry:
         assert isinstance(dfn, Dfn)
         assert dfn.name == "gwf-chd"
 
+    @flaky(max_runs=3, min_passes=1)
     def test_get_spec(self):
         """Test getting the full spec from the test repository."""
         from modflow_devtools.dfns import DfnSpec
@@ -708,6 +713,7 @@ class TestRemoteDfnRegistry:
         assert "gwf-chd" in spec
         assert "sim-nam" in spec
 
+    @flaky(max_runs=3, min_passes=1)
     def test_list_components(self):
         """Test listing available components from the test repository."""
         from modflow_devtools.dfns.registry import RemoteDfnRegistry
