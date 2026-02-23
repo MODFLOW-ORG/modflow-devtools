@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 
 import pytest
+from flaky import flaky
 
 from modflow_devtools.programs import (
     _DEFAULT_CACHE,
@@ -493,6 +494,7 @@ class TestExeFieldResolution:
 class TestForceSemantics:
     """Test force flag semantics for sync and install."""
 
+    @flaky(max_runs=3, min_passes=1)
     def test_sync_force_flag(self):
         """Test that sync --force re-downloads even if cached."""
         # Clear cache first

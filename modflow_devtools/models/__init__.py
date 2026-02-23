@@ -286,7 +286,12 @@ class ModelCache:
             return None
 
         with registry_file.open("rb") as f:
-            return ModelRegistry(**tomli.load(f))
+            data = tomli.load(f)
+            # Defensive: filter out any empty file entries that might have been saved
+            # (should not happen with current code, but handles edge cases)
+            if "files" in data:
+                data["files"] = {k: v for k, v in data["files"].items() if v}
+            return ModelRegistry(**data)
 
     def has(self, source: str, ref: str) -> bool:
         """
