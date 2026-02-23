@@ -19,17 +19,6 @@ from boltons.dictutils import OMD
 from boltons.iterutils import remap
 from packaging.version import Version
 
-# Experimental API warning
-warnings.warn(
-    "The modflow_devtools.dfns API is experimental and may change or be "
-    "removed in future versions without following normal deprecation procedures. "
-    "Use at your own risk. To suppress this warning, use:\n"
-    "  warnings.filterwarnings('ignore', "
-    "message='.*modflow_devtools.dfns.*experimental.*')",
-    FutureWarning,
-    stacklevel=2,
-)
-
 from modflow_devtools.dfns.parse import (
     is_advanced_package,
     is_multi_package,
@@ -44,6 +33,17 @@ from modflow_devtools.dfns.schema.v1 import SCALAR_TYPES as V1_SCALAR_TYPES
 from modflow_devtools.dfns.schema.v1 import FieldV1
 from modflow_devtools.dfns.schema.v2 import FieldV2
 from modflow_devtools.misc import drop_none_or_empty, try_literal_eval
+
+# Experimental API warning
+warnings.warn(
+    "The modflow_devtools.dfns API is experimental and may change or be "
+    "removed in future versions without following normal deprecation procedures. "
+    "Use at your own risk. To suppress this warning, use:\n"
+    "  warnings.filterwarnings('ignore', "
+    "message='.*modflow_devtools.dfns.*experimental.*')",
+    FutureWarning,
+    stacklevel=2,
+)
 
 __all__ = [
     "Block",

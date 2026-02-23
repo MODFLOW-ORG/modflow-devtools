@@ -478,28 +478,28 @@ class TestCLI:
     def test_cli_clear(self, capsys):
         """Test 'clear' command."""
         # Sync a registry first
-        _DEFAULT_CACHE.clear(source=TEST_SOURCE_NAME, ref=TEST_REF)
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
         source = ModelSourceRepo(
-            repo=TEST_REPO,
-            name=TEST_SOURCE_NAME,
-            refs=[TEST_REF],
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
         )
-        result = source.sync(ref=TEST_REF)
+        result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
 
         # Verify it's cached
-        assert _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+        assert _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
         # Clear with force flag
         import argparse
 
         from modflow_devtools.models.__main__ import cmd_clear
 
-        args = argparse.Namespace(source=TEST_SOURCE_NAME, ref=TEST_REF, force=True)
+        args = argparse.Namespace(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF, force=True)
         cmd_clear(args)
 
         # Verify it was cleared
-        assert not _DEFAULT_CACHE.has(TEST_SOURCE_NAME, TEST_REF)
+        assert not _DEFAULT_CACHE.has(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
 
         captured = capsys.readouterr()
         assert "Cleared 1 cached registry" in captured.out
