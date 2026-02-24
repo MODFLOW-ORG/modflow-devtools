@@ -22,8 +22,8 @@ from modflow_devtools.models import (
     get_user_config_path,
 )
 
-TEST_MODELS_REPO = os.getenv("TEST_MODELS_REPO", "wpbonelli/modflow6-testmodels")
-TEST_MODELS_REF = os.getenv("TEST_MODELS_REF", "registry")
+TEST_MODELS_REPO = os.getenv("TEST_MODELS_REPO", "MODFLOW-ORG/modflow6-testmodels")
+TEST_MODELS_REF = os.getenv("TEST_MODELS_REF", "develop")
 TEST_MODELS_SOURCE = os.getenv("TEST_MODELS_SOURCE", "modflow6-testmodels")
 TEST_MODELS_SOURCE_NAME = os.getenv("TEST_MODELS_SOURCE_NAME", "mf6/test")
 
