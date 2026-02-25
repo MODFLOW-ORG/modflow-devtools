@@ -1362,6 +1362,15 @@ def copy_to(workspace: str | PathLike, model_name: str, verbose: bool = False) -
     return get_default_registry().copy_to(workspace, model_name, verbose=verbose)
 
 
+def cp(workspace: str | PathLike, model_name: str, verbose: bool = False) -> Path | None:
+    """
+    Alias for copy_to().
+    Copy the model's input files to the given workspace.
+    The workspace will be created if it does not exist.
+    """
+    return copy_to(workspace, model_name, verbose=verbose)
+
+
 def __getattr__(name: str):
     """
     Lazy module attribute access for backwards compatibility.

@@ -5,6 +5,8 @@ Usage:
     python -m modflow_devtools.models sync
     python -m modflow_devtools.models info
     python -m modflow_devtools.models list
+    python -m modflow_devtools.models copy <model> <workspace>
+    python -m modflow_devtools.models cp <model> <workspace>  # cp is an alias for copy
     python -m modflow_devtools.models clear
 """
 
@@ -280,6 +282,26 @@ def cmd_clear(args):
     )
 
 
+def cmd_copy(args):
+    """Copy command handler."""
+    # Attempt auto-sync before copying (unless disabled)
+    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+        _try_best_effort_sync()
+
+    from . import copy_to
+
+    try:
+        workspace = copy_to(args.workspace, args.model, verbose=args.verbose)
+        if workspace:
+            print(f"\nSuccessfully copied model '{args.model}' to: {workspace}")
+        else:
+            print(f"Error: Model '{args.model}' not found in registry", file=sys.stderr)
+            sys.exit(1)
+    except Exception as e:
+        print(f"Error copying model: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -352,6 +374,23 @@ def main():
         help="Skip confirmation prompt",
     )
 
+    # Copy command (with cp alias)
+    copy_parser = subparsers.add_parser("copy", aliases=["cp"], help="Copy model to workspace")
+    copy_parser.add_argument(
+        "model",
+        help="Name of the model to copy (e.g., mf6/test/test001a_Tharmonic)",
+    )
+    copy_parser.add_argument(
+        "workspace",
+        help="Destination workspace directory",
+    )
+    copy_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print detailed progress messages",
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -367,6 +406,8 @@ def main():
             cmd_list(args)
         elif args.command == "clear":
             cmd_clear(args)
+        elif args.command in ("copy", "cp"):
+            cmd_copy(args)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
