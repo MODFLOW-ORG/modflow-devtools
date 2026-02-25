@@ -52,7 +52,6 @@ _OUTPUT_FILE_EXTENSIONS = [
     ".bud",  # budget file
     ".ddn",  # drawdown file
     ".ucn",  # concentration file
-    ".obs",  # observation file
     ".glo",  # global listing file
 ]
 """Output file extensions to exclude from model input registry"""
