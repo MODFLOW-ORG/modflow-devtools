@@ -43,10 +43,11 @@ def test_set_env():
             assert environ.get(key) is None
 
 
-_repos_path = environ.get("REPOS_PATH")
-if _repos_path is None:
-    _repos_path = Path(__file__).parent.parent.parent.parent
-_repos_path = Path(_repos_path).expanduser().absolute()
+_repos_path_str = environ.get("REPOS_PATH")
+if _repos_path_str is None:
+    _repos_path: Path = Path(__file__).parent.parent.parent.parent
+else:
+    _repos_path = Path(_repos_path_str).expanduser().absolute()
 _testmodels_repo_path = _repos_path / "modflow6-testmodels"
 _testmodels_repo_paths_mf6 = sorted((_testmodels_repo_path / "mf6").glob("test*"))
 _testmodels_repo_paths_mf5to6 = sorted((_testmodels_repo_path / "mf5to6").glob("test*"))
@@ -57,9 +58,7 @@ _examples_path = _examples_repo_path / "examples"
 _example_paths = sorted(_examples_path.glob("ex-*")) if _examples_path.is_dir() else []
 
 
-@pytest.mark.skipif(
-    not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found"
-)
+@pytest.mark.skipif(not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found")
 def test_get_packages():
     model_path = _testmodels_repo_paths_mf6[0]
 
@@ -79,9 +78,7 @@ def test_get_packages():
     assert "ims" not in packages
 
 
-@pytest.mark.skipif(
-    not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found"
-)
+@pytest.mark.skipif(not any(_testmodels_repo_paths_mf6), reason="mf6 test models not found")
 def test_get_packages_fails_on_invalid_namefile(module_tmpdir):
     model_path = _testmodels_repo_paths_mf6[0]
     new_model_path = module_tmpdir / model_path.name
@@ -132,7 +129,7 @@ def get_expected_model_dirs(path, pattern="mfsim.nam") -> list[Path]:
 
 
 def get_expected_namefiles(path, pattern="mfsim.nam") -> list[Path]:
-    folders = []
+    folders: list[Path] = []
     for root, dirs, _ in os.walk(path):
         for d in dirs:
             p = Path(root) / d
@@ -154,9 +151,7 @@ def test_get_model_paths_examples():
     assert set(expected_paths) == set(paths)
 
 
-@pytest.mark.skipif(
-    not any(_largetestmodel_paths), reason="modflow6-largetestmodels not found"
-)
+@pytest.mark.skipif(not any(_largetestmodel_paths), reason="modflow6-largetestmodels not found")
 def test_get_model_paths_largetestmodels():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
@@ -173,9 +168,7 @@ def test_get_model_paths_largetestmodels():
     not any(_largetestmodel_paths) or not any(_example_paths),
     reason="repos not found",
 )
-@pytest.mark.parametrize(
-    "models", [(_examples_path, 63), (_largetestmodels_repo_path, 16)]
-)
+@pytest.mark.parametrize("models", [(_examples_path, 63), (_largetestmodels_repo_path, 16)])
 def test_get_model_paths_exclude_patterns(models):
     path, expected_count = models
     paths = get_model_paths(path, excluded=["gwt"])
@@ -195,9 +188,7 @@ def test_get_namefile_paths_examples():
     assert set(expected_paths) == set(paths)
 
 
-@pytest.mark.skipif(
-    not any(_largetestmodel_paths), reason="modflow6-largetestmodels not found"
-)
+@pytest.mark.skipif(not any(_largetestmodel_paths), reason="modflow6-largetestmodels not found")
 def test_get_namefile_paths_largetestmodels():
     expected_paths = get_expected_namefiles(_largetestmodels_repo_path)
     paths = get_namefile_paths(_largetestmodels_repo_path)
@@ -214,9 +205,7 @@ def test_get_namefile_paths_largetestmodels():
     not any(_largetestmodel_paths) or not any(_example_paths),
     reason="repos not found",
 )
-@pytest.mark.parametrize(
-    "models", [(_examples_path, 43), (_largetestmodels_repo_path, 19)]
-)
+@pytest.mark.parametrize("models", [(_examples_path, 43), (_largetestmodels_repo_path, 19)])
 def test_get_namefile_paths_exclude_patterns(models):
     path, expected_count = models
     paths = get_namefile_paths(path, excluded=["gwf"])

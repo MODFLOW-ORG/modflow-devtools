@@ -43,11 +43,10 @@ Python development tools for MODFLOW 6 and related projects.
 
 Python3.10+, dependency-free by default.
 
-Several optional dependency groups are available, oriented around specific use cases:
+Two main dependency groups are available, oriented around specific use cases:
 
-- `dfn`: MF6 definition file parsing
-- `test`: pytest fixtures/extensions
-- `models`: example model access
+- `test`: pytest fixtures, markers, and extensions
+- `ecosystem`: program/model management, definition file utilities
 
 ## Installation
 

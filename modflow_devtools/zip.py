@@ -179,6 +179,4 @@ def zip_all(path, file_pths=None, dir_pths=None, patterns=None):
     -------
 
     """
-    return MFZipFile.compressall(
-        path, file_pths=file_pths, dir_pths=dir_pths, patterns=patterns
-    )
+    return MFZipFile.compressall(path, file_pths=file_pths, dir_pths=dir_pths, patterns=patterns)

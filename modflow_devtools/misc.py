@@ -20,17 +20,19 @@ from urllib.error import URLError
 
 
 @contextmanager
-def set_dir(path: PathLike):
+def set_dir(path: PathLike, verbose: bool = False):
     origin = Path.cwd()
     wrkdir = Path(path).expanduser().resolve()
 
     try:
         chdir(path)
-        print(f"Changed to working directory: {wrkdir} (previously: {origin})")
+        if verbose:
+            print(f"Changed to working directory: {wrkdir} (previously: {origin})")
         yield
     finally:
         chdir(origin)
-        print(f"Returned to previous directory: {origin}")
+        if verbose:
+            print(f"Returned to previous directory: {origin}")
 
 
 # alias like https://github.com/Deltares/imod-python/blob/ab2af5e20fd9996b1821c3356166a834945eef5e/imod/util/context.py#L26
@@ -114,9 +116,7 @@ def run_cmd(*args, verbose=False, **kwargs):
 
 def run_py_script(script, *args, verbose=False):
     """Run a Python script, return tuple (stdout, stderr, returncode)."""
-    return run_cmd(
-        sys.executable, script, *args, verbose=verbose, cwd=Path(script).parent
-    )
+    return run_cmd(sys.executable, script, *args, verbose=verbose, cwd=Path(script).parent)
 
 
 def get_current_branch() -> str:
@@ -179,8 +179,7 @@ def get_packages(namefile_path: PathLike) -> list[str]:
         nf_path = [path.parent / s for s in line.split(" ") if s != ""][1]
         if nf_path.suffix != ".nam":
             raise ValueError(
-                "Failed to parse GWF or GWT model namefile "
-                f"from simulation namefile line: {line}"
+                f"Failed to parse GWF or GWT model namefile from simulation namefile line: {line}"
             )
         return nf_path
 
@@ -247,9 +246,7 @@ def get_namefile_paths(
     paths = list(path.rglob(f"{prefix}*/**/{namefile}" if prefix else namefile))
 
     # remove excluded
-    paths = [
-        p for p in paths if (not excluded or not any(e in str(p) for e in excluded))
-    ]
+    paths = [p for p in paths if (not excluded or not any(e in str(p) for e in excluded))]
 
     # filter by package
     if packages:
@@ -309,9 +306,7 @@ def get_model_paths(
         for mp in sorted(
             {
                 p.parent
-                for p in get_namefile_paths(
-                    p, prefix, namefile, excluded, selected, packages
-                )
+                for p in get_namefile_paths(p, prefix, namefile, excluded, selected, packages)
             },
             key=keyfunc,
         ):
@@ -361,10 +356,7 @@ def is_github_rate_limited() -> bool | None:
         with request.urlopen("https://api.github.com/users/octocat") as response:
             remaining = int(response.headers["x-ratelimit-remaining"])
             if remaining < 10:
-                warn(
-                    f"Only {remaining} GitHub API requests "
-                    "remaining before rate-limiting"
-                )
+                warn(f"Only {remaining} GitHub API requests remaining before rate-limiting")
             return remaining > 0
     except (ValueError, URLError):
         return None
@@ -385,9 +377,7 @@ def has_exe(exe):
     return _has_exe_cache[exe]
 
 
-def has_pkg(
-    pkg: str, strict: bool = False, name_map: dict[str, str] | None = None
-) -> bool:
+def has_pkg(pkg: str, strict: bool = False, name_map: dict[str, str] | None = None) -> bool:
     """
     Determines if the given Python package is installed.
 

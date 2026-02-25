@@ -1,0 +1,1444 @@
+# DFNs API Design
+
+This document describes the design of the DFNs (Definition Files) API ([GitHub issue #262](https://github.com/MODFLOW-ORG/modflow-devtools/issues/262)). It is intended to be developer-facing, not user-facing, though users may also find it informative.
+
+This is a living document which will be updated as development proceeds.
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Background](#background)
+- [Objective](#objective)
+- [Overview](#overview)
+- [Architecture](#architecture)
+  - [Bootstrap file](#bootstrap-file)
+    - [Bootstrap file contents](#bootstrap-file-contents)
+    - [Sample bootstrap file](#sample-bootstrap-file)
+  - [DFN spec and registry files](#dfn-spec-and-registry-files)
+    - [Specification file](#specification-file)
+    - [Registry file format](#registry-file-format)
+    - [Sample files](#sample-files)
+  - [Registry discovery](#registry-discovery)
+    - [Discovery modes](#discovery-modes)
+    - [Registry discovery procedure](#registry-discovery-procedure)
+  - [Registry/DFN caching](#registrydfn-caching)
+  - [Registry synchronization](#registry-synchronization)
+    - [Manual sync](#manual-sync)
+    - [Automatic sync](#automatic-sync)
+  - [Source repository integration](#source-repository-integration)
+  - [DFN addressing](#dfn-addressing)
+  - [Registry classes](#registry-classes)
+    - [DfnRegistry (abstract base)](#dfnregistry-abstract-base)
+    - [RemoteDfnRegistry](#remotedfnregistry)
+    - [LocalDfnRegistry](#localdfnregistry)
+  - [Module-level API](#module-level-api)
+- [Schema Versioning](#schema-versioning)
+  - [Separating format from schema](#separating-format-from-schema)
+  - [Schema evolution](#schema-evolution)
+  - [Tentative v2 schema design](#tentative-v2-schema-design)
+- [Component Hierarchy](#component-hierarchy)
+- [Backwards Compatibility Strategy](#backwards-compatibility-strategy)
+  - [Development approach](#development-approach)
+  - [Schema version support](#schema-version-support)
+  - [API compatibility](#api-compatibility)
+  - [Migration timeline](#migration-timeline)
+- [Implementation Dependencies](#implementation-dependencies)
+  - [Existing work on dfn branch](#existing-work-on-dfn-branch)
+  - [Core components](#core-components)
+  - [MODFLOW 6 repository integration](#modflow-6-repository-integration)
+  - [Testing and documentation](#testing-and-documentation)
+- [Relationship to Models and Programs APIs](#relationship-to-models-and-programs-apis)
+- [Design Decisions](#design-decisions)
+  - [Use Pooch for fetching](#use-pooch-for-fetching)
+  - [Use Pydantic for schema validation](#use-pydantic-for-schema-validation)
+  - [Schema versioning strategy](#schema-versioning-strategy)
+  - [Future enhancements](#future-enhancements)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+## Background
+
+The `modflow_devtools.dfn` module currently provides utilities for parsing and working with MODFLOW 6 definition files. On the `dfn` branch, significant work has been done including:
+
+- Object models for DFN components (`Dfn`, `Block`, `Field` classes)
+- Schema definitions for both v1 (legacy) and v2 (in development)
+- Parsers for the old DFN format
+- Schema mapping capabilities including utilities for converting between flat and hierarchical component representations
+- A `fetch_dfns()` function for manually downloading DFN files from the MODFLOW 6 repository
+- Validation tools
+
+However, there is currently no registry-based API for:
+- Automatically discovering and synchronizing DFN files from remote sources
+- Managing multiple versions of definition files simultaneously
+- Caching definition files locally for offline use
+
+Users must manually download definition files or rely on whatever happens to be bundled with their installation. This creates similar problems to what the Models API addressed:
+1. **Version coupling**: Users are locked to whatever DFN version is bundled
+2. **Manual management**: Users must manually track and download DFN updates
+3. **No multi-version support**: Difficult to work with multiple MODFLOW 6 versions simultaneously
+4. **Maintenance burden**: Developers must manually update bundled DFNs
+
+## Objective
+
+Create a DFNs API that:
+1. **Mirrors Models/Programs API patterns** for consistency and familiarity
+2. **Leverages existing dfn module work** (parsers, schemas, object models)
+3. **Provides automated discovery** of definition files from MODFLOW 6 repository
+4. **Supports multiple versions** simultaneously with explicit version addressing
+5. **Uses Pooch** for fetching and caching (avoiding custom HTTP client code)
+6. **Handles schema evolution** with proper separation of file format vs schema version
+7. **Maintains loose coupling** between devtools and remote DFN sources
+
+## Overview
+
+Make the MODFLOW 6 repository responsible for publishing a definition file registry.
+
+Make `modflow-devtools` responsible for:
+- Defining the DFN registry publication contract
+- Providing registry-creation machinery
+- Storing bootstrap information locating the MODFLOW 6 repository
+- Discovering remote registries at install time or on demand
+- Caching registry metadata and definition files
+- Exposing a synchronized view of available definition files
+- Parsing and validating definition files
+- Mapping between schema versions
+
+MODFLOW 6 is currently the only repository using the DFN specification system, but this leaves the door open for other repositories to begin using it.
+
+## Architecture
+
+The DFNs API will mirror the Models and Programs API architecture, adapted for definition file-specific concerns.
+
+**Implementation approach**: Following the Models API's streamlined design, the DFNs API should consolidate core functionality in a single `modflow_devtools/dfn/__init__.py` file with clear class-based separation:
+- `DfnCache`: Cache management for registries and DFN files
+- `DfnSourceRepo`: Source repository with discovery/sync methods
+- `DfnSourceConfig`: Configuration container from bootstrap file
+- `DfnRegistry`: Pydantic data model for registry structure
+- `PoochDfnRegistry`: Remote fetching with Pooch integration
+- `DiscoveredDfnRegistry`: Discovery result with metadata
+- `DfnSpec`: Full specification with hierarchical and flat access
+
+This single-module OO design improves maintainability while keeping the existing `Dfn`, `Block`, and `Field` dataclasses that are already well-established.
+
+### Bootstrap file
+
+The **bootstrap** file tells `modflow-devtools` where to look for DFN registries. This file will be checked into the repository at `modflow_devtools/dfn/dfns.toml` and distributed with the package.
+
+#### Bootstrap file contents
+
+At the top level, the bootstrap file consists of a table of `sources`, each describing a repository that publishes definition files.
+
+Each source has:
+- `repo`: Repository identifier (owner/name)
+- `dfn_path`: Path within the repository to the directory containing DFN files (defaults to `doc/mf6io/mf6ivar/dfn`)
+- `registry_path`: Path within the repository to the registry metadata file (defaults to `.registry/dfns.toml`)
+- `refs`: List of git refs (branches, tags, or commit hashes) to sync by default
+
+#### User config overlay
+
+Users can customize or extend the bundled bootstrap configuration by creating a user config file at:
+- Linux/macOS: `~/.config/modflow-devtools/dfns.toml` (respects `$XDG_CONFIG_HOME`)
+- Windows: `%APPDATA%/modflow-devtools/dfns.toml`
+
+The user config follows the same format as the bundled bootstrap file. Sources defined in the user config will override or extend those in the bundled config, allowing users to:
+- Add custom DFN repositories
+- Point to forks of existing repositories (useful for testing experimental schema versions)
+- Override default refs for existing sources
+
+**Implementation note**: The user config path logic (`get_user_config_path("dfn")`) is shared across all three APIs (Models, Programs, DFNs) via `modflow_devtools.config`, but each API implements its own `merge_bootstrap()` function using API-specific bootstrap schemas.
+
+#### Sample bootstrap file
+
+```toml
+[sources.modflow6]
+repo = "MODFLOW-ORG/modflow6"
+dfn_path = "doc/mf6io/mf6ivar/dfn"
+registry_path = ".registry/dfns.toml"
+refs = [
+    "6.6.0",
+    "6.5.0",
+    "6.4.4",
+    "develop",
+]
+```
+
+### DFN spec and registry files
+
+Two types of metadata files support the DFNs API:
+
+1. **Specification file** (`spec.toml`): Part of the DFN set, describes the specification itself
+2. **Registry file** (`dfns.toml`): Infrastructure for discovery and distribution
+
+#### Specification file
+
+A `spec.toml` file lives **in the DFN directory** alongside the DFN files. It describes the specification:
+
+```toml
+# MODFLOW 6 input specification
+schema_version = "1.1"
+
+[components]
+# Component organization by type
+simulation = ["sim-nam", "sim-tdis"]
+models = ["gwf-nam", "gwt-nam", "gwe-nam"]
+packages = ["gwf-chd", "gwf-drn", "gwf-wel", ...]
+exchanges = ["exg-gwfgwf", "exg-gwfgwt", ...]
+solutions = ["sln-ims"]
+```
+
+**Notes**:
+- The spec file is **part of the DFN set**, not registry infrastructure
+- **Handwritten** by MODFLOW 6 developers, not generated
+- Describes the specification as a whole (schema version, component organization)
+- Lives in the DFN directory: `doc/mf6io/mf6ivar/dfn/spec.toml`
+- **v1/v1.1**: Spec file is **optional** - can be inferred if not present:
+  - `schema_version` can be inferred from DFN content or defaulted
+  - `components` section (shown above) is just for categorization/convenience, not hierarchy
+  - Hierarchy inferred from naming conventions (e.g., `gwf-chd` → parent is `gwf-nam`)
+- **v2**: Spec file is **required** for clarity and correctness:
+  - Explicit `schema_version = "2.0"` declaration
+  - Defines hierarchy via `root` attribute (string reference or inline definition)
+  - Component files define `children` lists (preferred) or `parent` attributes (backward-compatible)
+  - Can be a single file containing everything, or a spec file pointing to separate component files
+  - Ensures clean structural/format separation
+  - See Component Hierarchy section for details
+- **Correspondence**: `spec.toml` (on disk) ↔ `DfnSpec` (in Python)
+
+**Minimal handwritten spec file (v1/v1.1)**:
+```toml
+schema_version = "1.1"
+```
+
+Or for v1/v1.1, no spec file needed - everything inferred.
+
+#### Registry file format
+
+A **`dfns.toml`** registry file for **discovery and distribution** (the specific naming distinguishes it from `models.toml` and `programs.toml`):
+
+```toml
+# Registry metadata (top-level, optional)
+schema_version = "1.0"
+generated_at = "2025-01-02T10:30:00Z"
+devtools_version = "1.9.0"
+
+[metadata]
+ref = "6.6.0"  # Optional, known from discovery context
+
+# File listings (filenames and hashes, URLs constructed as needed)
+[files]
+"spec.toml" = {hash = "sha256:..."}  # Specification file
+"sim-nam.dfn" = {hash = "sha256:..."}
+"sim-tdis.dfn" = {hash = "sha256:..."}
+"gwf-nam.dfn" = {hash = "sha256:..."}
+"gwf-chd.dfn" = {hash = "sha256:..."}
+# ... all DFN files
+```
+
+**Notes**:
+- Registry is purely **infrastructure** for discovery and distribution
+- The `files` section maps filenames to hashes for verification
+- URLs are constructed dynamically from bootstrap metadata (repo, ref, dfn_path) + filename
+- This allows using personal forks by changing the bootstrap file
+- **All registry metadata is optional** - registries can be handwritten minimally
+- The specification file is listed alongside DFN files
+
+**Minimal handwritten registry**:
+```toml
+[files]
+"spec.toml" = {hash = "sha256:abc123..."}
+"sim-nam.dfn" = {hash = "sha256:def456..."}
+"gwf-nam.dfn" = {hash = "sha256:789abc..."}
+```
+
+#### Sample files
+
+**For TOML-format DFNs (future v2 schema)**:
+
+**Option A**: Separate component files (spec.toml references external files)
+
+Spec file (`spec.toml`):
+```toml
+schema_version = "2.0"
+root = "sim-nam"  # References external sim-nam.toml file
+```
+
+Component file (`sim-nam.toml`):
+```toml
+children = ["sim-tdis", "gwf-nam", "gwt-nam", "gwe-nam", "exg-gwfgwf", "sln-ims"]
+
+[options]
+# ... fields
+```
+
+Component file (`gwf-nam.toml`):
+```toml
+children = ["gwf-dis", "gwf-chd", "gwf-wel", "gwf-drn", ...]
+
+[options]
+# ... fields
+```
+
+Registry (`dfns.toml`):
+```toml
+[files]
+"spec.toml" = {hash = "sha256:..."}
+"sim-nam.toml" = {hash = "sha256:..."}
+"gwf-nam.toml" = {hash = "sha256:..."}
+"gwf-chd.toml" = {hash = "sha256:..."}
+# ... all component files
+```
+
+**Option B**: Single specification file (spec.toml contains everything)
+
+`spec.toml` contains entire specification:
+```toml
+schema_version = "2.0"
+
+[root]  # Root component defined inline
+name = "sim-nam"
+
+[root.options]
+# ... all sim-nam fields
+
+[root.children.sim-tdis]
+# ... all sim-tdis fields
+
+[root.children.gwf-nam]
+children = ["gwf-dis", "gwf-chd", "gwf-wel", ...]  # Can nest children inline too
+
+[root.children.gwf-nam.options]
+# ... all gwf-nam fields
+
+[root.children.gwf-nam.children.gwf-chd]
+# ... all gwf-chd fields nested within gwf-nam
+
+# ... entire hierarchy nested in one file
+```
+
+Registry just points to the one file:
+```toml
+[files]
+"spec.toml" = {hash = "sha256:..."}
+```
+
+**Key design**: The `root` attribute is overloaded:
+- **String value** (`root = "sim-nam"`): Reference to external component file
+- **Table/section** (`[root]`): Inline component definition with full nested hierarchy
+
+Component `children` are always a list of strings, whether referencing external files or naming nested inline sections.
+
+### Registry discovery
+
+DFN registries can be discovered in two modes, similar to the Models API.
+
+#### Discovery modes
+
+**1. Registry as version-controlled file**:
+
+Registry files can be versioned in the repository at a conventional path, in which case discovery uses GitHub raw content URLs:
+
+```
+https://raw.githubusercontent.com/{org}/{repo}/{ref}/.registry/dfns.toml
+```
+
+This mode supports any git ref (branches, tags, commit hashes).
+
+**2. Registry as release asset**:
+
+Registry files can also be published as release assets:
+
+```
+https://github.com/{org}/{repo}/releases/download/{tag}/dfns.toml
+```
+
+This mode:
+- Requires release tags only
+- Allows registry generation in CI without committing to repo
+- Provides faster discovery (no need to check multiple ref types)
+
+**Discovery precedence**: Release asset mode takes precedence if both exist (same as Models API).
+
+#### Registry discovery procedure
+
+At sync time, `modflow-devtools` discovers remote registries for each configured ref:
+
+1. **Check for release tag** (if release asset mode enabled):
+   - Look for a GitHub release with the specified tag
+   - Try to fetch `dfns.toml` from release assets
+   - If found, use it and skip step 2
+   - If release exists but lacks registry asset, fall through to step 2
+
+2. **Check for version-controlled registry**:
+   - Look for a commit hash, tag, or branch matching the ref
+   - Try to fetch registry from `{registry_path}` via raw content URL
+   - If found, use it
+   - If ref exists but lacks registry file, raise error:
+     ```python
+     DfnRegistryDiscoveryError(
+         f"Registry file not found in {registry_path} for 'modflow6@{ref}'"
+     )
+     ```
+
+3. **Failure case**:
+   - If no matching ref found at all, raise error:
+     ```python
+     DfnRegistryDiscoveryError(
+         f"Registry discovery failed, ref 'modflow6@{ref}' does not exist"
+     )
+     ```
+
+**Note**: For initial implementation, focus on version-controlled mode. Release asset mode requires MODFLOW 6 to start distributing DFN files with releases (currently they don't), but would be a natural addition once that happens.
+
+### Registry/DFN caching
+
+Cache structure mirrors the Models API pattern:
+
+```
+~/.cache/modflow-devtools/
+├── dfn/
+│   ├── registries/
+│   │   └── modflow6/              # by source repo
+│   │       ├── 6.6.0/
+│   │       │   └── dfns.toml
+│   │       ├── 6.5.0/
+│   │       │   └── dfns.toml
+│   │       └── develop/
+│   │           └── dfns.toml
+│   └── files/                     # Actual DFN files, managed by Pooch
+│       └── modflow6/
+│           ├── 6.6.0/
+│           │   ├── sim-nam.dfn
+│           │   ├── gwf-nam.dfn
+│           │   └── ...
+│           ├── 6.5.0/
+│           │   └── ...
+│           └── develop/
+│               └── ...
+```
+
+**Cache management**:
+- Registry files cached per source repository and ref
+- DFN files fetched and cached individually by Pooch, verified against registry hashes
+- Cache persists across Python sessions for offline use
+- Cache can be cleared with `dfn clean` command
+- Users can check cache status with `dfn info`
+
+### Registry synchronization
+
+Synchronization updates the local registry cache with remote metadata.
+
+#### Manual sync
+
+Exposed as a CLI command and Python API:
+
+```bash
+# Sync all configured refs
+python -m modflow_devtools.dfn sync
+
+# Sync specific ref
+python -m modflow_devtools.dfn sync --ref 6.6.0
+
+# Sync to any git ref (branch, tag, commit hash)
+python -m modflow_devtools.dfn sync --ref develop
+python -m modflow_devtools.dfn sync --ref f3df630a
+
+# Force re-download
+python -m modflow_devtools.dfn sync --force
+
+# Show sync status
+python -m modflow_devtools.dfn info
+
+# List available DFNs for a ref
+python -m modflow_devtools.dfn list --ref 6.6.0
+
+# List all synced refs
+python -m modflow_devtools.dfn list
+```
+
+Or via Python API:
+
+```python
+from modflow_devtools.dfn import sync_dfns, get_sync_status
+
+# Sync all configured refs
+sync_dfns()
+
+# Sync specific ref
+sync_dfns(ref="6.6.0")
+
+# Check sync status
+status = get_sync_status()
+```
+
+#### Automatic sync
+
+- **At install time**: Best-effort sync to default refs during package installation (fail silently on network errors)
+- **On first use**: If registry cache is empty for requested ref, attempt to sync before raising errors
+- **Lazy loading**: Don't sync until DFN access is actually requested
+- **Configurable**: Users can disable auto-sync via environment variable: `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`
+
+### Source repository integration
+
+For the MODFLOW 6 repository to integrate:
+
+1. **Optionally handwrite `spec.toml`** in the DFN directory (if not present, everything is inferred):
+   ```toml
+   # doc/mf6io/mf6ivar/dfn/spec.toml
+   schema_version = "1.1"
+
+   [components]
+   simulation = ["sim-nam", "sim-tdis"]
+   models = ["gwf-nam", "gwt-nam", "gwe-nam"]
+   # ...
+   ```
+
+   If `spec.toml` is absent (v1/v1.1 only), `DfnSpec.load()` will:
+   - Scan the directory for `.dfn` and `.toml` files
+   - Infer schema version from DFN content
+   - Infer component organization from filenames
+   - Build hierarchy using naming conventions
+
+   **Note**: For v2 schema, `spec.toml` is required and must declare `schema_version = "2.0"`
+
+2. **Generate registry** in CI:
+   ```bash
+   # In MODFLOW 6 repository CI
+   python -m modflow_devtools.dfn.make_registry \
+     --dfn-path doc/mf6io/mf6ivar/dfn \
+     --output .registry/dfns.toml \
+     --ref ${{ github.ref_name }}
+   ```
+
+3. **Commit registry** to `.registry/dfns.toml`
+
+4. **Example CI integration** (GitHub Actions):
+   ```yaml
+   - name: Generate DFN registry
+     run: |
+       pip install modflow-devtools
+       python -m modflow_devtools.dfn.make_registry \
+         --dfn-path doc/mf6io/mf6ivar/dfn \
+         --output .registry/dfns.toml \
+         --ref ${{ github.ref_name }}
+
+   - name: Commit registry
+     run: |
+       git config user.name "github-actions[bot]"
+       git config user.email "github-actions[bot]@users.noreply.github.com"
+       git add .registry/dfns.toml
+       git diff-index --quiet HEAD || git commit -m "chore: update DFN registry"
+       git push
+   ```
+
+**Note**: Initially generate registries for version-controlled mode. Release asset mode would require MODFLOW 6 to start distributing DFNs with releases.
+
+### DFN addressing
+
+**Format**: `mf6@{ref}/{component}`
+
+Components include:
+- `ref`: Git ref (branch, tag, or commit hash) corresponding to a MODFLOW 6 version
+- `component`: DFN component name (without file extension)
+
+Examples:
+- `mf6@6.6.0/sim-nam` - Simulation name file definition for MODFLOW 6 v6.6.0
+- `mf6@6.6.0/gwf-chd` - GWF CHD package definition for v6.6.0
+- `mf6@develop/gwf-wel` - GWF WEL package definition from develop branch
+- `mf6@f3df630a/gwt-adv` - GWT ADV package definition from specific commit
+
+**Benefits**:
+- Explicit versioning prevents confusion
+- Supports multiple MODFLOW 6 versions simultaneously
+- Enables comparison between versions
+- Works with any git ref (not just releases)
+
+**Note**: The source is always "mf6" (MODFLOW 6), but the addressing scheme allows for future sources if needed.
+
+### Registry classes
+
+The registry class hierarchy is based on a Pydantic `DfnRegistry` base class:
+
+**`DfnRegistry` (base class)**:
+- Pydantic model with optional `meta` field for registry metadata
+- Provides access to a `DfnSpec` (the full parsed specification)
+- Can be instantiated directly for data-only use (e.g., loading/parsing TOML files)
+- Key properties:
+  - `spec` - The full DFN specification (lazy-loaded)
+  - `ref` - Git ref for this registry
+  - `get_dfn(component)` - Convenience for `spec[component]`
+  - `get_dfn_path(component)` - Get local path to DFN file
+  - `schema_version` - Convenience for `spec.schema_version`
+  - `components` - Convenience for `dict(spec.items())`
+
+**`RemoteDfnRegistry(DfnRegistry)`**:
+
+Handles remote registry discovery, caching, and DFN fetching. Constructs DFN file URLs dynamically from bootstrap metadata:
+
+```python
+class RemoteDfnRegistry(DfnRegistry):
+    def __init__(self, source: str = "modflow6", ref: str = "develop"):
+        self.source = source
+        self._ref = ref
+        self._spec = None
+        self._registry_meta = None
+        self._bootstrap_meta = None
+        self._pooch = None
+        self._cache_dir = None
+        self._load()
+
+    def _setup_pooch(self):
+        # Create Pooch instance with dynamically constructed URLs
+        import pooch
+
+        self._cache_dir = self._get_cache_dir()
+
+        # Construct base URL from bootstrap metadata (NOT stored in registry)
+        repo = self._bootstrap_meta["repo"]
+        dfn_path = self._bootstrap_meta.get("dfn_path", "doc/mf6io/mf6ivar/dfn")
+        base_url = f"https://raw.githubusercontent.com/{repo}/{self._ref}/{dfn_path}/"
+
+        self._pooch = pooch.create(
+            path=self._cache_dir,
+            base_url=base_url,
+            registry=self._registry_meta["files"],  # Just filename -> hash
+        )
+
+    def get_dfn_path(self, component: str) -> Path:
+        # Use Pooch to fetch file (from cache or remote)
+        # Pooch constructs full URL from base_url + filename at runtime
+        filename = self._get_filename(component)
+        return Path(self._pooch.fetch(filename))
+```
+
+**Benefits of dynamic URL construction**:
+- Registry files are smaller and simpler (no URLs stored)
+- Users can test against personal forks by modifying bootstrap file
+- Single source of truth for repository location
+- URLs adapt automatically when repo/path changes
+
+**`LocalDfnRegistry(DfnRegistry)`**:
+
+For developers working with local DFN files:
+
+```python
+class LocalDfnRegistry(DfnRegistry):
+    def __init__(self, path: str | PathLike, ref: str = "local"):
+        self.path = Path(path).expanduser().resolve()
+        self._ref = ref
+        self._spec = None
+
+    @property
+    def spec(self) -> DfnSpec:
+        """Lazy-load the DfnSpec from local directory."""
+        if self._spec is None:
+            self._spec = DfnSpec.load(self.path)
+        return self._spec
+
+    def get_dfn_path(self, component: str) -> Path:
+        # Return local file path directly
+        # Look for both .dfn and .toml extensions
+        for ext in [".dfn", ".toml"]:
+            p = self.path / f"{component}{ext}"
+            if p.exists():
+                return p
+        raise ValueError(f"Component {component} not found in {self.path}")
+```
+
+**Design decisions**:
+- **Pydantic-based** (not ABC) - allows direct instantiation for data-only use cases
+- **Dynamic URL construction** - DFN file URLs constructed at runtime, not stored in registry
+- **No `MergedRegistry`** - users typically work with one MODFLOW 6 version at a time, so merging across versions doesn't make sense
+
+### Module-level API
+
+Convenient module-level functions:
+
+```python
+# Default registry for latest stable MODFLOW 6 version
+from modflow_devtools.dfn import (
+    DEFAULT_REGISTRY,
+    DfnSpec,
+    get_dfn,
+    get_dfn_path,
+    list_components,
+    sync_dfns,
+    get_registry,
+    map,
+)
+
+# Get individual DFNs
+dfn = get_dfn("gwf-chd")  # Uses DEFAULT_REGISTRY
+dfn = get_dfn("gwf-chd", ref="6.5.0")  # Specific version
+
+# Get file path
+path = get_dfn_path("gwf-wel", ref="6.6.0")
+
+# List available components
+components = list_components(ref="6.6.0")
+
+# Work with specific registry
+registry = get_registry(ref="6.6.0")
+gwf_nam = registry.get_dfn("gwf-nam")
+
+# Load full specification - single canonical hierarchical representation
+spec = DfnSpec.load("/path/to/dfns")  # Load from directory
+
+# Hierarchical access
+spec.schema_version  # "1.1"
+spec.root  # Root Dfn (simulation component)
+spec.root.children["gwf-nam"]  # Navigate hierarchy
+spec.root.children["gwf-nam"].children["gwf-chd"]
+
+# Flat dict-like access via Mapping protocol
+gwf_chd = spec["gwf-chd"]  # Get component by name
+for name, dfn in spec.items():  # Iterate all components
+    print(name)
+len(spec)  # Total number of components
+
+# Access spec through registry (registry provides the spec)
+registry = get_registry(ref="6.6.0")
+spec = registry.spec  # Registry wraps a DfnSpec
+gwf_chd = registry.spec["gwf-chd"]
+
+# Map between schema versions
+dfn_v1 = get_dfn("gwf-chd", ref="6.4.4")  # Older version in v1 schema
+dfn_v2 = map(dfn_v1, schema_version="2")  # Convert to v2 schema
+```
+
+**`DfnSpec` class**:
+
+The `DfnSpec` dataclass represents the full specification with a single canonical hierarchical representation:
+
+```python
+from collections.abc import Mapping
+from dataclasses import dataclass
+
+@dataclass
+class DfnSpec(Mapping):
+    """Full DFN specification with hierarchical structure and flat dict access."""
+
+    schema_version: str
+    root: Dfn  # Hierarchical canonical representation (simulation component)
+
+    # Mapping protocol - provides flat dict-like access
+    def __getitem__(self, name: str) -> Dfn:
+        """Get component by name (flattened lookup)."""
+        ...
+
+    def __iter__(self):
+        """Iterate over all component names."""
+        ...
+
+    def __len__(self):
+        """Total number of components in the spec."""
+        ...
+
+    @classmethod
+    def load(cls, path: Path | str) -> "DfnSpec":
+        """
+        Load specification from a directory of DFN files.
+
+        The specification is always loaded as a hierarchical tree,
+        with flat access available via the Mapping protocol.
+        """
+        ...
+```
+
+**Design benefits**:
+- **Single canonical representation**: Hierarchical tree is the source of truth
+- **Flat access when needed**: Mapping protocol provides dict-like interface
+- **Simple, focused responsibility**: `DfnSpec` only knows how to load from a directory
+- **Clean layering**: Registries built on top of `DfnSpec`, not intertwined
+- **Clean semantics**: `DfnSpec` = full specification, `Dfn` = individual component
+- **Pythonic**: Implements standard `Mapping` protocol
+
+**Separation of concerns**:
+- **`DfnSpec`**: Canonical representation of the full specification (foundation)
+  - Loads from a directory of DFN files via `load()` classmethod
+  - Hierarchical tree via `.root` property
+  - Flat dict access via `Mapping` protocol
+  - No knowledge of registries, caching, or remote sources
+- **Registries**: Handle discovery, distribution, and caching (built on DfnSpec)
+  - Fetch and cache DFN files from remote sources
+  - Internally use `DfnSpec` to represent the loaded specification
+  - Provide access via `.spec` property
+  - `get_dfn(component)` → convenience for `spec[component]`
+  - `get_dfn_path(component)` → returns cached file path
+
+Backwards compatibility with existing `fetch_dfns()`:
+
+```python
+# Old API (still works for manual downloads)
+from modflow_devtools.dfn import fetch_dfns
+fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
+
+# New API (preferred - uses registry and caching)
+from modflow_devtools.dfn import sync_dfns, get_registry, DfnSpec
+sync_dfns(ref="6.6.0")
+registry = get_registry(ref="6.6.0")
+spec = registry.spec  # Registry wraps a DfnSpec
+```
+
+## Schema Versioning
+
+A key design consideration is properly handling schema evolution while separating file format from schema version.
+
+### Separating format from schema
+
+As discussed in [issue #259](https://github.com/MODFLOW-ORG/modflow-devtools/issues/259), **file format and schema version are orthogonal concerns**:
+
+**File format** (serialization):
+- `dfn` - Legacy DFN text format
+- `toml` - Modern TOML format (or potentially YAML, see below)
+
+The format is simply how the data is serialized to disk. Any schema version can be serialized in any supported format.
+
+**Schema version** (structural specification):
+- Defines what components exist and how they relate to each other
+- Defines which variables each component contains
+- Defines variable types, shapes, and constraints
+- Separates structural specification from input format representation concerns
+
+The schema describes the semantic structure and meaning of the specification, independent of how it's serialized.
+
+**Key distinction**: The schema migration is about separating structural specification (components, relationships, variables, types) from input format representation. This is discussed in detail in [pyphoenix-project issue #246](https://github.com/modflowpy/pyphoenix-project/issues/246).
+
+For example:
+- **Input format issue** (v1): Period data defined as recarrays with artificial dimensions like `maxbound`
+- **Structural reality** (v2): Each column is actually a variable living on (a subset of) the grid, using semantically meaningful dimensions
+
+The v1 schema conflates:
+- **Structural information**: Components, their relationships, and variables within each component
+- **Format information**: How MF6 allows arrays to be provided, when keywords like `FILEIN`/`FILEOUT` are necessary
+
+The v2 schema should treat these as **separate layers**, where consumers can selectively apply formatting details atop a canonical data model.
+
+**Current state** (on dfn branch):
+- The code supports loading both `dfn` and `toml` formats
+- The `Dfn.load()` function accepts a `format` parameter
+- Schema version is determined independently of file format
+- V1→V1.1 and V1→V2 schema mapping is implemented
+
+**Implications for DFNs API**:
+- Registry metadata includes both `format` and `schema_version` fields
+- Registries can have different formats at different refs (some refs: dfn, others: toml)
+- The same schema version can be serialized in different formats
+- Schema mapping happens after loading, independent of file format
+- Users can request specific schema versions via `map()` function
+
+### Schema evolution
+
+**v1 schema** (original):
+- Current MODFLOW 6 releases through 6.6.x
+- Flat structure with `in_record`, `tagged`, `preserve_case`, etc. attributes
+- Mixes structural specification with input format representation (recarray/maxbound issue)
+- Can be serialized as `.dfn` (original) or `.toml`
+
+**v1.1 schema** (intermediate - current mainline on dfn branch):
+- Cleaned-up v1 with data normalization
+- Removed unnecessary attributes (`in_record`, `tagged`, etc.)
+- Structural improvements (period block arrays separated into individual variables)
+- Better parent-child relationships inferred from naming conventions
+- Can be serialized as `.dfn` or `.toml`
+- **Recommendation from issue #259**: Use this as the mainline, not jump to v2
+
+**v2 schema** (future - comprehensive redesign):
+- For devtools 2.x / FloPy 4.x / eventually MF6
+- **Requires explicit `spec.toml` file** - no inference for v2 (ensures clarity and correctness)
+- **Complete separation of structural specification from input format concerns** (see [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246))
+  - Structural layer: components, relationships, variables, data models
+  - Format layer: how MF6 allows arrays to be provided, FILEIN/FILEOUT keywords, etc.
+  - Consumers can selectively apply formatting details atop canonical data model
+- **Explicit parent-child relationships in DFN files** (see Component Hierarchy section)
+- Modern type system with proper array types and semantically meaningful dimensions
+- Consolidated attribute representation (see Tentative v2 schema design)
+- Likely serialized as TOML or YAML (with JSON-Schema validation via Pydantic)
+
+**DFNs API strategy**:
+- Support all schema versions via registry metadata
+- Provide transparent schema mapping where needed
+- Default to native schema version from registry
+- Allow explicit schema version selection via API
+- Maintain backwards compatibility during transitions
+
+### Tentative v2 schema design
+
+Based on feedback from mwtoews in [PR #229](https://github.com/MODFLOW-ORG/modflow-devtools/pull/229) and the structural/format separation discussed in [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246):
+
+**Structural vs format separation**:
+The v2 schema should cleanly separate:
+- **Structural specification**: Component definitions, relationships, variable data models
+  - Generated classes encode only structure and data models
+  - Use semantically meaningful dimensions (grid dimensions, time periods)
+- **Format specification**: How MF6 reads/writes the data (separate layer)
+  - I/O layers exclusively handle input format concerns
+  - FILEIN/FILEOUT keywords, array input methods, etc.
+
+**Consolidated attributes**: Replace individual boolean fields with an `attrs` list:
+```toml
+# Instead of this (v1/v1.1):
+optional = true
+time_series = true
+layered = false
+
+# Use this (v2):
+attrs = ["optional", "time_series"]
+```
+
+**Array syntax for shapes**: Use actual arrays instead of string representations:
+```toml
+# Instead of this (v1/v1.1):
+shape = "(nper, nnodes)"
+
+# Use this (v2):
+shape = ["nper", "nnodes"]
+```
+
+**Format considerations**:
+- **TOML vs YAML**: YAML's more forgiving whitespace better accommodates long descriptions (common for scientific parameters)
+- **Validation approach**: Use Pydantic for both schema definition and validation
+  - Pydantic provides rigorous validation (addresses pyphoenix-project #246 requirement for formal specification)
+  - Built-in validation after parsing TOML/YAML to dict (no custom parsing logic)
+  - Automatic JSON-Schema generation for documentation and external tooling
+  - More Pythonic than using `python-jsonschema` directly
+
+**Pydantic integration**:
+```python
+from pydantic import BaseModel, Field
+from typing import Any
+
+class FieldV2(BaseModel):
+    name: str
+    type: str
+    block: str | None = None
+    shape: list[str] | None = None
+    attrs: list[str] = Field(default_factory=list)
+    description: str = ""
+    default: Any = None
+    children: dict[str, "FieldV2"] | None = None
+
+# Usage:
+# 1. Parse TOML/YAML to dict (using tomli/pyyaml/etc)
+# 2. Validate with Pydantic (built-in)
+parsed = tomli.load(f)
+field = FieldV2(**parsed)  # Validates automatically
+
+# 3. Export JSON-Schema if needed (for docs, external tools)
+schema = FieldV2.model_json_schema()
+```
+
+Benefits:
+- **Validation and schema in one**: Pydantic handles both, no separate validation library needed
+- **Type safety**: Full Python type hints and IDE support
+- **JSON-Schema export**: Available for documentation and external tooling
+- **Widely adopted**: Well-maintained, used throughout Python ecosystem
+- **Better UX**: Clear error messages, better handling of multi-line descriptions (if using YAML)
+
+## Component Hierarchy
+
+**Design decision**: Component parent-child relationships are defined in `spec.toml` for v2, with backward-compatible support for `parent` attributes in component files.
+
+The registry file's purpose is to tell devtools what it needs to know to consume the DFNs and make them available to users (file locations, hashes). The specification file (`spec.toml`) and component files are the single source of truth for the specification itself, including component relationships.
+
+**v2 schema approach (primary)** - Hierarchy in `spec.toml`:
+```toml
+# spec.toml
+schema_version = "2.0"
+root = "sim-nam"  # Or inline [root] definition
+```
+
+```toml
+# sim-nam.toml
+children = ["sim-tdis", "gwf-nam", "gwt-nam", ...]
+
+[options]
+# ... field definitions
+```
+
+```toml
+# gwf-nam.toml
+children = ["gwf-dis", "gwf-chd", "gwf-wel", ...]
+
+[options]
+# ... field definitions
+```
+
+**v2 schema approach (alternative)** - `parent` attribute still supported:
+```toml
+# gwf-chd.toml
+parent = "gwf-nam"  # Backward-compatible
+
+[options]
+# ... field definitions
+```
+
+`DfnSpec.load()` can build the hierarchy from either:
+1. **`children` lists** (preferred for v2) - parent components list their children
+2. **`parent` attributes** (backward-compatible) - child components reference their parent
+
+Benefits of `children` in `spec.toml`:
+- **Single top-down view** - entire hierarchy visible from root
+- **Matches `DfnSpec` design** - `spec.toml` ↔ `DfnSpec` with `.root` and tree structure
+- **Cleaner component files** - focus on their structure, not their position in hierarchy
+- **Easier validation** - validate entire tree structure in one pass
+
+Benefits of keeping `parent` support:
+- **Backward compatibility** - existing component files with `parent` still work
+- **Gradual migration** - can transition incrementally to v2
+- **Flexibility** - both approaches work, choose based on preference
+
+**Current state (v1/v1.1)**:
+- Hierarchy is **implicit** in naming conventions: `gwf-dis` → parent is `gwf-nam`
+- `to_tree()` function infers relationships from component names
+- Works but fragile (relies on naming conventions being followed)
+- No `spec.toml` required (everything inferred)
+
+## Backwards Compatibility Strategy
+
+Since FloPy 3 is already consuming the v1.1 schema and we need to develop v2 schema in parallel, careful planning is needed to avoid breaking existing consumers.
+
+### Development approach
+
+**Mainline (develop branch)**:
+- Keep v1.1 schema stable on mainline
+- Implement DFNs API with full v1/v1.1 support
+- All v1.1 schema changes are **additive only** (no breaking changes)
+- FloPy 3 continues consuming from mainline without disruption
+
+**V2 development (dfn-v2 branch)**:
+- Create separate `dfn-v2` branch for v2 schema development
+- Develop v2 schema, Pydantic models, and structural/format separation
+- Test v2 schema with experimental FloPy 4 development
+- Iterate on v2 design without affecting mainline stability
+
+**Integration approach**:
+1. **Phase 1**: DFNs API on mainline supports v1/v1.1 only
+2. **Phase 2**: Add v2 schema support to mainline (v1, v1.1, and v2 all supported)
+3. **Phase 3**: Merge dfn-v2 branch, deprecate v1 (but keep it working)
+4. **Phase 4**: Eventually remove v1 support in devtools 3.x (v1.1 and v2 only)
+
+### Schema version support
+
+The DFNs API will support **multiple schema versions simultaneously**:
+
+```python
+# Schema version is tracked per registry/ref
+registry_v1 = get_registry(ref="6.4.4")  # MODFLOW 6.4.4 uses v1 schema
+registry_v11 = get_registry(ref="6.6.0")  # MODFLOW 6.6.0 uses v1.1 schema
+registry_v2 = get_registry(ref="develop")  # Future: develop uses v2 schema
+
+# Get DFN in native schema version
+dfn_v1 = registry_v1.get_dfn("gwf-chd")  # Returns v1 schema
+dfn_v11 = registry_v11.get_dfn("gwf-chd")  # Returns v1.1 schema
+
+# Transparently map to desired schema version
+from modflow_devtools.dfn import map
+dfn_v2 = map(dfn_v1, schema_version="2")  # v1 → v2
+dfn_v2 = map(dfn_v11, schema_version="2")  # v1.1 → v2
+```
+
+**Registry support**:
+- Each registry metadata includes `schema_version` (from `spec.toml` or inferred)
+- Different refs can have different schema versions
+- `RemoteDfnRegistry` loads appropriate schema version for each ref
+- `load()` function detects schema version and uses appropriate parser/validator
+
+**Schema detection**:
+```python
+# In RemoteDfnRegistry or DfnSpec.load()
+def _detect_schema_version(self) -> Version:
+    # 1. Check spec.toml if present
+    if spec_file := self._load_spec_file():
+        return spec_file.schema_version
+
+    # 2. Infer from DFN content
+    sample_dfn = self._load_sample_dfn()
+    return infer_schema_version(sample_dfn)
+
+    # 3. Default to latest stable
+    return Version("1.1")
+```
+
+### API compatibility
+
+**Breaking changes in current implementation**:
+
+The `dfn` branch introduces fundamental breaking changes that make it incompatible with a 1.x release:
+
+1. **Core types changed from TypedDict to dataclass**:
+   ```python
+   # Old (develop) - dict-like access
+   dfn["name"]
+   field.get("type")
+
+   # New (dfn branch) - attribute access
+   dfn.name
+   field.type
+   ```
+
+2. **`Dfn` structure changed**:
+   - Removed: `sln`, `fkeys`
+   - Added: `schema_version`, `parent`, `blocks`
+   - Renamed: `fkeys` → `children`
+
+3. **Removed exports**:
+   - `get_dfns()` - now `fetch_dfns()` in submodule, not re-exported from main module
+   - `FormatVersion`, `Sln`, `FieldType`, `Reader` type aliases
+
+4. **`Field` structure changed** - different attributes and semantics between v1/v2
+
+**Why aliasing is not feasible**:
+
+The TypedDict → dataclass change is fundamental and cannot be cleanly aliased:
+- Code using `dfn["name"]` syntax would break immediately
+- Making a dataclass behave like a dict requires implementing `__getitem__`, `get()`, `keys()`, `values()`, `items()`, etc.
+- Even with these methods, isinstance checks and type hints would behave differently
+- The complexity and maintenance burden outweigh the benefits
+
+**Recommendation**: Release as **devtools 2.0**, not 1.x.
+
+**New API (devtools 2.x)**:
+
+```python
+# DFNs API
+from modflow_devtools.dfn import DfnSpec, get_dfn, get_registry, sync_dfns
+
+# Sync and access DFNs
+sync_dfns(ref="6.6.0")
+dfn = get_dfn("gwf-chd", ref="6.6.0")
+registry = get_registry(ref="6.6.0")
+spec = registry.spec
+
+# Attribute access (dataclass style)
+print(dfn.name)  # "gwf-chd"
+print(dfn.blocks["options"])
+
+# fetch_dfns() still available for manual downloads
+from modflow_devtools.dfn.fetch import fetch_dfns
+fetch_dfns("MODFLOW-ORG", "modflow6", "6.6.0", "/tmp/dfns")
+```
+
+### Migration timeline
+
+**devtools 1.x** (current stable):
+- Existing `modflow_devtools/dfn.py` with TypedDict-based API
+- `get_dfns()` function for manual downloads
+- No registry infrastructure
+- **No changes** - maintain stability for existing users
+
+**devtools 2.0** (this work):
+- ❌ Breaking: `Dfn`, `Field` change from TypedDict to dataclass
+- ❌ Breaking: `get_dfns()` renamed to `fetch_dfns()` (in submodule)
+- ❌ Breaking: Several type aliases removed or moved
+- ✅ New: Full DFNs API with registry infrastructure
+- ✅ New: `DfnSpec` class with hierarchical and flat access
+- ✅ New: `RemoteDfnRegistry`, `LocalDfnRegistry` classes
+- ✅ New: CLI commands (sync, info, list, clean)
+- ✅ New: Schema versioning and mapping (v1 ↔ v2)
+- ✅ New: Pydantic-based configuration and validation
+
+**devtools 2.x** (future minor releases):
+- Add v2 DFN schema support when MODFLOW 6 adopts it
+- Schema mapping between all versions (v1, v1.1, v2)
+- Additional CLI commands and features
+- Performance improvements
+
+**devtools 3.0** (distant future):
+- Consider removing v1 schema support (with deprecation warnings in 2.x)
+- Potential further API refinements
+
+**Key principles**:
+1. **Clean break at 2.0** - no half-measures with aliasing
+2. **Multi-version schema support** - DFNs API works with v1, v1.1, and v2 simultaneously
+3. **Clear migration path** - document all breaking changes in release notes
+4. **Semantic versioning** - breaking changes require major version bump
+
+**Testing strategy**:
+- Test suite covers all schema versions (v1, v1.1, v2)
+- Test schema mapping in all directions (v1↔v1.1↔v2)
+- Test mixed-version scenarios (different refs with different schemas)
+- Integration tests with real MODFLOW 6 repository
+
+**Documentation**:
+- Clear migration guide from 1.x to 2.x
+- Document all breaking changes with before/after examples
+- Document which MODFLOW 6 versions use which schema versions
+- Examples showing multi-version usage
+
+## Implementation Dependencies
+
+### Existing work on dfn branch
+
+The `dfn` branch already includes substantial infrastructure:
+
+**Completed**:
+- ✅ `Dfn`, `Block`, `Field` dataclasses
+- ✅ Schema definitions (`FieldV1`, `FieldV2`)
+- ✅ Parsers for both DFN and TOML formats
+- ✅ Schema mapping (V1 → V2) with `MapV1To2`
+- ✅ Flat/tree conversion utilities (`load_flat()`, `load_tree()`, `to_tree()`)
+- ✅ `fetch_dfns()` function for manual downloads
+- ✅ Validation utilities
+- ✅ `dfn2toml` conversion tool
+
+**Integration with `DfnSpec` design**:
+
+The `dfn` branch currently has:
+```python
+# Returns dict[str, Dfn] - flat representation
+dfns = load_flat("/path/to/dfns")
+
+# Returns root Dfn with children - hierarchical representation
+root = load_tree("/path/to/dfns")
+```
+
+The new `DfnSpec` class will consolidate these:
+```python
+# Single load, both representations available
+spec = DfnSpec.load("/path/to/dfns")
+spec.root  # Hierarchical (same as old load_tree)
+spec["gwf-chd"]  # Flat dict access (same as old load_flat)
+```
+
+**Migration path**:
+1. **Add `DfnSpec` class** - wraps existing `to_tree()` logic and implements `Mapping`
+2. **Keep `load_flat()` and `load_tree()`** - mark as internal/deprecated but maintain for compatibility
+3. **`DfnSpec.load()` implementation** - uses existing functions internally:
+   ```python
+   @classmethod
+   def load(cls, path: Path | str) -> "DfnSpec":
+       # Use existing load_flat for paths
+       dfns = load_flat(path)
+
+       # Use existing to_tree to build hierarchy
+       root = to_tree(dfns)
+       schema_version = root.schema_version  # or load from spec.toml
+       return cls(schema_version=schema_version, root=root)
+   ```
+4. **Update registries** - make them wrap `DfnSpec`:
+   ```python
+   class RemoteDfnRegistry(DfnRegistry):
+       @property
+       def spec(self) -> DfnSpec:
+           if self._spec is None:
+               self._ensure_cached()  # Fetch all files
+               self._spec = DfnSpec.load(self._cache_dir)  # Load from cache
+           return self._spec
+   ```
+5. **Future**: Eventually remove `load_flat()` and `load_tree()` from public API
+
+This approach:
+- Reuses all existing parsing/conversion logic
+- Provides cleaner API without breaking existing code
+- Smooth transition: old functions work, new class preferred
+
+**Note**: FloPy 3 is already generating code from an early version of this schema (per [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246)), which creates some stability requirements for the v1.1/v2 transition.
+
+**Choreography with develop branch**:
+
+Currently:
+- **develop branch** has `modflow_devtools/dfn.py` (single file, basic utilities)
+- **dfn branch** has `modflow_devtools/dfn/` (package with full implementation)
+- **dfns-api branch** (current) just adds planning docs
+
+Merge sequence:
+1. **First**: Merge `dfns-api` branch → `develop` (adds planning docs)
+2. **Then**: Merge `dfn` branch → `develop` (replaces `dfn.py` with `dfn/` package)
+   - This replaces the single file with the package
+   - Maintains API compatibility: `from modflow_devtools.dfn import ...` still works
+   - Adds substantial new functionality (schema classes, parsers, etc.)
+3. **Finally**: Implement DFNs API features on `develop` (registries, sync, CLI, `DfnSpec`)
+
+API changes during merge:
+```python
+# Old dfn.py API (on develop now) - uses TypedDicts
+from modflow_devtools.dfn import get_dfns, Field, Dfn
+dfn["name"]  # dict-like access
+
+# New dfn/ package API (after dfn branch merge) - dataclasses
+from modflow_devtools.dfn import Dfn, Block, Field  # Now dataclasses
+from modflow_devtools.dfn.fetch import fetch_dfns  # Renamed, moved to submodule
+from modflow_devtools.dfn import DfnSpec, get_registry, sync_dfns  # New additions
+dfn.name  # attribute access
+```
+
+**Breaking changes** (see [API compatibility](#api-compatibility) section for full details):
+- `Field`, `Dfn`, etc. change from `TypedDict` to `dataclass` - **requires 2.0 release**
+- `get_dfns()` renamed to `fetch_dfns()` and moved to submodule
+- Several type aliases removed or moved to schema submodules
+
+**Implementation status** (DFNs API):
+- ✅ Bootstrap file and registry schema
+- ✅ Registry discovery and synchronization
+- ✅ Pooch integration for file caching
+- ✅ Registry classes (`DfnRegistry`, `RemoteDfnRegistry`, `LocalDfnRegistry`)
+- ✅ CLI commands (sync, info, list, clean)
+- ✅ Module-level convenience API
+- ✅ Registry generation tool (`make_registry.py`)
+- ⚠️ Integration with MODFLOW 6 CI (requires registry branch merge in MF6 repo)
+
+### Core components
+
+**Foundation** (no dependencies):
+1. Merge dfn branch work (schema, parser, utility code)
+2. Add bootstrap file (`modflow_devtools/dfn/dfns.toml`)
+3. Define registry schema with Pydantic (handles validation and provides JSON-Schema export)
+4. Implement registry discovery logic
+5. Create cache directory structure utilities
+
+**Registry infrastructure** (depends on Foundation):
+1. Add Pooch as dependency
+2. Implement `DfnRegistry` abstract base class
+3. Implement `RemoteDfnRegistry` with Pooch for file fetching
+4. Refactor existing code into `LocalDfnRegistry`
+5. Implement `sync_dfns()` function
+6. Add registry metadata caching with hash verification
+7. Implement version-controlled registry discovery
+8. Add auto-sync on first use (with opt-out via `MODFLOW_DEVTOOLS_NO_AUTO_SYNC`)
+9. **Implement `DfnSpec` dataclass** with `Mapping` protocol for single canonical hierarchical representation with flat dict access
+
+**CLI and module API** (depends on Registry infrastructure):
+1. Create `modflow_devtools/dfn/__main__.py`
+2. Add commands: `sync`, `info`, `list`, `clean`
+3. Add `--ref` flag for version selection
+4. Add `--force` flag for re-download
+5. Add convenience functions (`get_dfn`, `get_dfn_path`, `list_components`, etc.)
+6. Create `DEFAULT_REGISTRY` for latest stable version
+7. Maintain backwards compatibility with `fetch_dfns()`
+
+**Registry generation tool** (depends on Foundation):
+1. Implement `modflow_devtools/dfn/make_registry.py`
+2. Scan DFN directory and generate **registry file** (`dfns.toml`): file listings with hashes
+3. Compute file hashes (SHA256) for all files (including `spec.toml` if present)
+4. Registry output: just filename -> hash mapping (no URLs - constructed dynamically)
+5. Support both full output (for CI) and minimal output (for handwriting)
+6. **Do NOT generate `spec.toml`** - that's handwritten by MODFLOW 6 developers
+7. Optionally validate `spec.toml` against DFN set for consistency if it exists
+8. For v1/v1.1: infer hierarchy from naming conventions for validation
+9. For v2: read explicit parent relationships from DFN files for validation
+
+### MODFLOW 6 repository integration
+
+**CI workflow** (depends on Registry generation tool):
+1. Install modflow-devtools in MODFLOW 6 CI
+2. Generate registry on push to develop and release tags
+3. Commit registry to `.registry/dfns.toml`
+4. Test registry discovery and sync
+5. **Note**: `spec.toml` is handwritten by developers (optional), checked into repo like DFN files
+
+**Bootstrap configuration** (depends on MODFLOW 6 CI):
+1. Add stable MODFLOW 6 releases to bootstrap refs (6.6.0, 6.5.0, etc.)
+2. Include `develop` branch for latest definitions
+3. Test multi-ref discovery and sync
+
+### Testing and documentation
+
+**Testing** (depends on all core components):
+1. Unit tests for registry classes
+2. Integration tests for sync mechanism
+3. Network failure scenarios
+4. Multi-version scenarios
+5. Schema mapping tests (v1 → v1.1 → v2)
+6. Both file format tests (dfn and toml)
+7. Backwards compatibility tests with existing FloPy usage
+
+**Documentation** (can be done concurrently with implementation):
+1. Update `docs/md/dfn.md` with API examples
+2. Document format vs schema separation clearly
+3. Document schema evolution roadmap (v1 → v1.1 → v2)
+4. Document component hierarchy approach (explicit in DFN files for v2)
+5. Add migration guide for existing code
+6. CLI usage examples
+7. MODFLOW 6 CI integration guide
+
+## Relationship to Models and Programs APIs
+
+The DFNs API deliberately mirrors the Models and Programs API architecture for consistency:
+
+| Aspect | Models API | Programs API | **DFNs API** |
+|--------|-----------|--------------|--------------|
+| **Bootstrap file** | `models/models.toml` | `programs/programs.toml` | `dfn/dfns.toml` |
+| **Registry format** | TOML with files/models/examples | TOML with programs/binaries | TOML with files/components/hierarchy |
+| **Discovery** | Release assets or version control | Release assets only | Version control (+ release assets future) |
+| **Caching** | `~/.cache/.../models` | `~/.cache/.../programs` | `~/.cache/.../dfn` |
+| **Addressing** | `source@ref/path/to/model` | `program@version` | `mf6@ref/component` |
+| **CLI** | `models sync/info/list` | `programs sync/info/install` | `dfn sync/info/list/clean` |
+| **Primary use** | Access model input files | Install program binaries | Parse definition files |
+
+**Key differences**:
+- DFNs API focuses on metadata/parsing, not installation
+- DFNs API leverages existing parser infrastructure (Dfn, Block, Field classes)
+- DFNs API handles schema versioning/mapping (format vs schema separation)
+- DFNs API supports both flat and hierarchical representations
+
+**Shared patterns**:
+- Bootstrap-driven discovery
+- Remote sync with Pooch caching
+- Ref-based versioning (branches, tags, commits)
+- CLI command structure
+- Lazy loading / auto-sync on first use
+- Environment variable opt-out for auto-sync
+
+This consistency benefits both developers and users with a familiar experience across all three APIs.
+
+## Cross-API Consistency
+
+The DFNs API follows the same design patterns as the Models and Programs APIs for consistency. See the **Cross-API Consistency** section in `models.md` for full details.
+
+**Key shared patterns**:
+- Pydantic-based registry classes (not ABCs)
+- Dynamic URL construction (URLs built at runtime, not stored in registries)
+- Bootstrap and user config files with identical naming (`dfns.toml`), distinguished by location
+- Top-level `schema_version` metadata field
+- Distinctly named registry file (`dfns.toml`)
+- Shared config utility: `get_user_config_path("dfn")`
+
+**Unique to DFNs API**:
+- Discovery via version control (release assets mode planned for future)
+- Extra `dfn_path` bootstrap field (location of DFN files within repo)
+- Schema versioning and mapping capabilities
+- No `MergedRegistry` (users work with one MF6 version at a time)
+
+## Design Decisions
+
+### Use Pooch for fetching
+
+Following the recommendation in [issue #262](https://github.com/MODFLOW-ORG/modflow-devtools/issues/262), the DFNs API will use Pooch for fetching to avoid maintaining custom HTTP client code. This provides:
+
+- **Automatic caching**: Pooch handles local caching with verification
+- **Hash verification**: Ensures file integrity
+- **Progress bars**: Better user experience for downloads
+- **Well-tested**: Pooch is mature and widely used
+- **Consistency**: Same approach as Models API
+
+### Use Pydantic for schema validation
+
+Pydantic will be used for defining and validating DFN schemas (both registry schemas and DFN content schemas):
+
+- **Built-in validation**: No need for separate validation libraries like `python-jsonschema`
+- **Type safety**: Full Python type hints and IDE support
+- **JSON-Schema export**: Can generate JSON-Schema for documentation and external tooling
+- **Developer experience**: Clear error messages, good Python integration
+- **Justification**: Widely adopted, well-maintained, addresses the formal specification requirement from [pyphoenix-project #246](https://github.com/modflowpy/pyphoenix-project/issues/246)
+
+### Schema versioning strategy
+
+Based on [issue #259](https://github.com/MODFLOW-ORG/modflow-devtools/issues/259):
+
+- **Separate format from schema**: Registry metadata includes both
+- **Support v1.1 as mainline**: Don't jump straight to v2
+- **Backwards compatible**: Continue supporting v1 for existing MODFLOW 6 releases
+- **Schema mapping**: Provide transparent conversion via `map()` function
+- **Future-proof**: Design allows for v2 when ready (devtools 2.x / FloPy 4.x)
+
+### Future enhancements
+
+1. **Release asset mode**: Add support for registries as release assets (in addition to version control)
+2. **Registry compression**: Compress registry files for faster downloads
+3. **Partial updates**: Diff-based registry synchronization
+4. **Offline mode**: Explicit offline mode that never attempts sync
+5. **Conda integration**: Coordinate with conda-forge for bundled DFN packages
+6. **Multi-source support**: Support definition files from sources other than MODFLOW 6
+7. **Validation API**: Expose validation functionality for user-provided input files
+8. **Diff/compare API**: Compare DFNs across versions to identify changes

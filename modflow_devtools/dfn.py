@@ -185,6 +185,29 @@ class Dfn(TypedDict):
     `str` to `Field`, and metadata, of which only a
     limited set of keys are allowed. Block names and
     metadata keys may not overlap.
+
+    Attributes
+    ----------
+    name : str
+        Component name.
+    advanced : bool
+        Whether this is an advanced package.
+    multi : bool
+        Whether this is a multi-package.
+    ref : Ref | None
+        Metadata if this component is a subpackage (child's perspective).
+        Populated from: # flopy subpackage <key> <abbr> <param> <val>
+    sln : Sln | None
+        Solution package metadata.
+    fkeys : Dfns | None
+        Field-level foreign key references to other components.
+        Maps field names to Ref objects. Populated from flopy subpackage
+        metadata when specific fields reference other components.
+    subcomponents : list[str] | None
+        Allowed child component types (schema-level constraint).
+        Populated from: # mf6 subpackage <abbr>
+        Example: ['UTL-NCF'] means this component can have utl-ncf children.
+        Distinct from fkeys, which are field-level references.
     """
 
     name: str
@@ -193,6 +216,7 @@ class Dfn(TypedDict):
     ref: Ref | None = None
     sln: Sln | None = None
     fkeys: Dfns | None = None
+    subcomponents: list[str] | None = None
 
     @staticmethod
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
@@ -220,6 +244,11 @@ class Dfn(TypedDict):
                 _, sep, tail = line.partition("package-type")
                 if sep == "package-type":
                     meta.append(f"package-type {tail.strip()}")
+                # Parse mf6 subpackage declarations (schema-level composition constraints).
+                # Distinct from flopy subpackage (field-level foreign keys, parsed above).
+                _, sep, tail = line.partition("mf6 subpackage")
+                if sep == "mf6 subpackage":
+                    meta.append(f"mf6-subpackage {tail.strip()}")
                 continue
 
             # if we hit a newline and the parameter dict
@@ -249,16 +278,11 @@ class Dfn(TypedDict):
                     subs = literal_eval(subs)
                     cmmn = common.get(key, None)
                     if cmmn is None:
-                        warn(
-                            "Can't substitute description text, "
-                            f"common variable not found: {key}"
-                        )
+                        warn(f"Can't substitute description text, common variable not found: {key}")
                     else:
                         descr = cmmn.get("description", "")
                         if any(subs):
-                            descr = descr.replace("\\", "").replace(
-                                "{#1}", subs["{#1}"]
-                            )
+                            descr = descr.replace("\\", "").replace("{#1}", subs["{#1}"])
                 field["description"] = descr
 
         # add the final parameter
@@ -331,8 +355,7 @@ class Dfn(TypedDict):
 
                     # explicit record
                     if n_item_names == 1 and (
-                        item_types[0].startswith("record")
-                        or item_types[0].startswith("keystring")
+                        item_types[0].startswith("record") or item_types[0].startswith("keystring")
                     ):
                         return _convert_field(next(iter(flat.getlist(item_names[0]))))
 
@@ -343,9 +366,7 @@ class Dfn(TypedDict):
                             type="record",
                             block=block,
                             fields=_fields(),
-                            description=description.replace(
-                                "is the list of", "is the record of"
-                            ),
+                            description=description.replace("is the list of", "is the record of"),
                             reader=reader,
                             **field,
                         )
@@ -358,19 +379,13 @@ class Dfn(TypedDict):
                     }
                     first = next(iter(fields.values()))
                     single = len(fields) == 1
-                    item_type = (
-                        "keystring"
-                        if single and "keystring" in first["type"]
-                        else "record"
-                    )
+                    item_type = "keystring" if single and "keystring" in first["type"] else "record"
                     return Field(
                         name=first["name"] if single else _name,
                         type=item_type,
                         block=block,
                         fields=first["fields"] if single else fields,
-                        description=description.replace(
-                            "is the list of", f"is the {item_type} of"
-                        ),
+                        description=description.replace("is the list of", f"is the {item_type} of"),
                         reader=reader,
                         **field,
                     )
@@ -390,11 +405,7 @@ class Dfn(TypedDict):
                     fields = {}
                     for name in names:
                         v = flat.get(name, None)
-                        if (
-                            not v
-                            or not v.get("in_record", False)
-                            or v["type"].startswith("record")
-                        ):
+                        if not v or not v.get("in_record", False) or v["type"].startswith("record"):
                             continue
                         fields[name] = v
                     return fields
@@ -490,11 +501,7 @@ class Dfn(TypedDict):
 
         def _sln() -> Sln | None:
             sln = next(
-                iter(
-                    m
-                    for m in meta
-                    if isinstance(m, str) and m.startswith("solution_package")
-                ),
+                iter(m for m in meta if isinstance(m, str) and m.startswith("solution_package")),
                 None,
             )
             if sln:
@@ -505,9 +512,7 @@ class Dfn(TypedDict):
         def _sub() -> Ref | None:
             def _parent():
                 line = next(
-                    iter(
-                        m for m in meta if isinstance(m, str) and m.startswith("parent")
-                    ),
+                    iter(m for m in meta if isinstance(m, str) and m.startswith("parent")),
                     None,
                 )
                 if not line:
@@ -517,9 +522,7 @@ class Dfn(TypedDict):
 
             def _rest():
                 line = next(
-                    iter(
-                        m for m in meta if isinstance(m, str) and m.startswith("subpac")
-                    ),
+                    iter(m for m in meta if isinstance(m, str) and m.startswith("subpac")),
                     None,
                 )
                 if not line:
@@ -548,6 +551,22 @@ class Dfn(TypedDict):
                 return Ref(parent=parent, **rest)
             return None
 
+        def _subcomponents() -> list[str] | None:
+            """
+            Extract allowed child component types from mf6 subpackage metadata.
+
+            This parses '# mf6 subpackage <abbr>' declarations to determine
+            schema-level composition constraints (which component types can be
+            children). Distinct from fkeys, which are field-level foreign keys
+            populated from '# flopy subpackage ...' declarations.
+            """
+            result = []
+            for m in meta:
+                if m.startswith("mf6-subpackage "):
+                    abbr = m.removeprefix("mf6-subpackage ").strip().upper()
+                    result.append(abbr)
+            return result if result else None
+
         return cls(
             name=name,
             fkeys=fkeys,
@@ -555,6 +574,7 @@ class Dfn(TypedDict):
             multi=_multi(),
             sln=_sln(),
             ref=_sub(),
+            subcomponents=_subcomponents(),
             **blocks,
         )
 
@@ -586,13 +606,11 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v1(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [
-            p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
-        ]
+        paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]]
 
         # load common variables
         common_path: Path | None = dfndir / "common.dfn"
-        if not common_path.is_file:
+        if not common_path.is_file():
             common = None
         else:
             with common_path.open() as f:
@@ -618,9 +636,7 @@ class Dfn(TypedDict):
 
     @staticmethod
     def _load_all_v2(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [
-            p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
-        ]
+        paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]]
         dfns: Dfns = {}
         for path in paths:
             with path.open(mode="rb") as f:
@@ -640,9 +656,7 @@ class Dfn(TypedDict):
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
 
-def get_dfns(
-    owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False
-):
+def get_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False):
     """Fetch definition files from the MODFLOW 6 repository."""
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
     if verbose:
@@ -655,6 +669,4 @@ def get_dfns(
             raise ValueError(f"Missing proj dir in {dl_path}, found {contents}")
         if verbose:
             print("Copying dfns from download dir to output dir")
-        shutil.copytree(
-            proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True
-        )
+        shutil.copytree(proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True)

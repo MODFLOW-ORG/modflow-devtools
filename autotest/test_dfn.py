@@ -20,20 +20,19 @@ def pytest_generate_tests(metafunc):
         if not any(DFN_DIR.glob("*.dfn")):
             get_dfns(MF6_OWNER, MF6_REPO, MF6_REF, DFN_DIR, verbose=True)
         dfn_names = [
-            dfn.stem
-            for dfn in DFN_DIR.glob("*.dfn")
-            if dfn.stem not in ["common", "flopy"]
+            dfn.stem for dfn in DFN_DIR.glob("*.dfn") if dfn.stem not in ["common", "flopy"]
         ]
         metafunc.parametrize("dfn_name", dfn_names, ids=dfn_names)
 
     if "toml_name" in metafunc.fixturenames:
-        convert(DFN_DIR, TOML_DIR)
-        dfn_paths = list(DFN_DIR.glob("*.dfn"))
-        assert all(
-            (TOML_DIR / f"{dfn.stem}.toml").is_file()
-            for dfn in dfn_paths
-            if "common" not in dfn.stem
-        )
+        # Only convert if TOML files don't exist yet (avoid repeated conversions)
+        dfn_paths = [p for p in DFN_DIR.glob("*.dfn") if p.stem not in ["common", "flopy"]]
+        if not TOML_DIR.exists() or not all(
+            (TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths
+        ):
+            convert(DFN_DIR, TOML_DIR)
+        # Verify all expected TOML files were created
+        assert all((TOML_DIR / f"{dfn.stem}.toml").is_file() for dfn in dfn_paths)
         toml_names = [toml.stem for toml in TOML_DIR.glob("*.toml")]
         metafunc.parametrize("toml_name", toml_names, ids=toml_names)
 

@@ -1,0 +1,24 @@
+# DFNs API bootstrap configuration
+#
+# This file tells modflow-devtools where to find DFN registries.
+# Users can override or extend this by creating a config file at:
+#   - Linux/macOS: ~/.config/modflow-devtools/dfns.toml
+#   - Windows: %APPDATA%/modflow-devtools/dfns.toml
+
+[sources.modflow6]
+# GitHub repository containing DFN files
+repo = "MODFLOW-ORG/modflow6"
+
+# Path within the repository to the DFN files directory
+dfn_path = "doc/mf6io/mf6ivar/dfn"
+
+# Path within the repository to the registry metadata file
+registry_path = ".registry/dfns.toml"
+
+# Git refs (branches, tags, commit hashes) to sync by default
+refs = [
+    "develop",
+    "6.6.0",
+    "6.5.0",
+    "6.4.4",
+]

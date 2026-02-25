@@ -69,18 +69,25 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
+# deprecated
 dfn = [
     "boltons",
+    "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
+# deprecated
 models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
+# prefer ecosystem to dfn/models separately
+ecosystem = ["modflow-devtools[dfn,models]"]
 dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
 
 [dependency-groups]
@@ -114,17 +121,27 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
+# deprecated
 dfn = [
     "boltons",
+    "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
 ]
+# deprecated
 models = [
     "boltons",
     "filelock",
     "pooch",
+    "pydantic",
     "tomli",
     "tomli-w"
+]
+# prefer ecosystem to dfn/models separately
+ecosystem = [
+    {include-group = "dfn"},
+    {include-group = "models"},
 ]
 dev = [
     {include-group = "build"},
@@ -140,6 +157,9 @@ dev = [
 "Bug Tracker" = "https://github.com/MODFLOW-ORG/modflow-devtools/issues"
 "Source Code" = "https://github.com/MODFLOW-ORG/modflow-devtools"
 
+[project.scripts]
+mf = "modflow_devtools.cli:main"
+
 [tool.hatch.build.targets.sdist]
 only-include = ["modflow_devtools"]
 
@@ -148,6 +168,7 @@ packages = ["modflow_devtools"]
 
 [tool.hatch.build]
 include = [
+    "modflow_devtools/dfn/*.toml",
     "modflow_devtools/registry/*"
 ]
 
@@ -161,10 +182,11 @@ ignore-words-list = [
     "wel",
     "gage",
     "sav",
+    "registr",
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 
 [tool.ruff.lint]
 select = [

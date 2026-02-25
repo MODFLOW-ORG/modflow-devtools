@@ -122,29 +122,17 @@ def snapshot(request, snapshot_disable) -> Union[MatchAnything, "SnapshotAsserti
 
 @pytest.fixture
 def array_snapshot(snapshot, snapshot_disable):
-    return (
-        MatchAnything()
-        if snapshot_disable
-        else snapshot.use_extension(BinaryArrayExtension)
-    )
+    return MatchAnything() if snapshot_disable else snapshot.use_extension(BinaryArrayExtension)
 
 
 @pytest.fixture
 def text_array_snapshot(snapshot, snapshot_disable):
-    return (
-        MatchAnything()
-        if snapshot_disable
-        else snapshot.use_extension(TextArrayExtension)
-    )
+    return MatchAnything() if snapshot_disable else snapshot.use_extension(TextArrayExtension)
 
 
 @pytest.fixture
 def readable_array_snapshot(snapshot, snapshot_disable):
-    return (
-        MatchAnything()
-        if snapshot_disable
-        else snapshot.use_extension(ReadableArrayExtension)
-    )
+    return MatchAnything() if snapshot_disable else snapshot.use_extension(ReadableArrayExtension)
 
 
 # pytest config hooks

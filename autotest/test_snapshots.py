@@ -6,7 +6,9 @@ import pytest
 from _pytest.config import ExitCode
 
 proj_root = Path(__file__).parents[1]
-module_path = Path(inspect.getmodulename(__file__))
+_module_name = inspect.getmodulename(__file__)
+assert _module_name is not None
+module_path = Path(_module_name)
 snapshot_array = np.array([1.1, 2.2, 3.3])
 snapshots_path = proj_root / "autotest" / "__snapshots__"
 
@@ -14,9 +16,7 @@ snapshots_path = proj_root / "autotest" / "__snapshots__"
 def test_binary_array_snapshot(array_snapshot):
     assert array_snapshot == snapshot_array
     snapshot_path = (
-        snapshots_path
-        / module_path.stem
-        / f"{inspect.currentframe().f_code.co_name}.npy"
+        snapshots_path / module_path.stem / f"{inspect.currentframe().f_code.co_name}.npy"
     )
     assert snapshot_path.is_file()
     assert np.allclose(np.load(snapshot_path), snapshot_array)
@@ -39,9 +39,7 @@ def test_binary_array_snapshot(array_snapshot):
 def test_text_array_snapshot(text_array_snapshot):
     assert text_array_snapshot == snapshot_array
     snapshot_path = (
-        snapshots_path
-        / module_path.stem
-        / f"{inspect.currentframe().f_code.co_name}.txt"
+        snapshots_path / module_path.stem / f"{inspect.currentframe().f_code.co_name}.txt"
     )
     assert snapshot_path.is_file()
     assert np.allclose(np.loadtxt(snapshot_path), snapshot_array)
@@ -50,9 +48,7 @@ def test_text_array_snapshot(text_array_snapshot):
 def test_readable_text_array_snapshot(readable_array_snapshot):
     assert readable_array_snapshot == snapshot_array
     snapshot_path = (
-        snapshots_path
-        / module_path.stem
-        / f"{inspect.currentframe().f_code.co_name}.txt"
+        snapshots_path / module_path.stem / f"{inspect.currentframe().f_code.co_name}.txt"
     )
     assert snapshot_path.is_file()
     assert np.allclose(
