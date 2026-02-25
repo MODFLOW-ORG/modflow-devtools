@@ -430,6 +430,7 @@ class TestRegistry:
         assert len(pooch_registry) == len(synced_registry.files)
 
 
+@pytest.mark.xdist_group("registry_cache")
 class TestCLI:
     """Test CLI commands."""
 
@@ -453,7 +454,7 @@ class TestCLI:
 
         from modflow_devtools.models.__main__ import cmd_list
 
-        args = argparse.Namespace(verbose=False)
+        args = argparse.Namespace(verbose=False, source=None, ref=None)
         cmd_list(args)
 
         captured = capsys.readouterr()
@@ -526,6 +527,11 @@ class TestCLI:
         result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
 
+        # Invalidate cached default registry so it reloads with newly synced data
+        import modflow_devtools.models
+
+        modflow_devtools.models._default_registry_cache = None
+
         # Load registry and get first model name
         registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
         assert len(registry.models) > 0
@@ -558,6 +564,11 @@ class TestCLI:
         result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
 
+        # Invalidate cached default registry so it reloads with newly synced data
+        import modflow_devtools.models
+
+        modflow_devtools.models._default_registry_cache = None
+
         # Try to copy nonexistent model
         import argparse
 
@@ -585,6 +596,11 @@ class TestCLI:
         )
         result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
+
+        # Invalidate cached default registry so it reloads with newly synced data
+        import modflow_devtools.models
+
+        modflow_devtools.models._default_registry_cache = None
 
         # Load registry and get first model name
         registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
@@ -618,6 +634,11 @@ class TestCLI:
         )
         result = source.sync(ref=TEST_MODELS_REF)
         assert len(result.synced) == 1
+
+        # Invalidate cached default registry so it reloads with newly synced data
+        import modflow_devtools.models
+
+        modflow_devtools.models._default_registry_cache = None
 
         # Load registry and get first model name
         registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
