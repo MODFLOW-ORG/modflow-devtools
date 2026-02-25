@@ -5,6 +5,8 @@ Usage:
     mf models sync
     mf models info
     mf models list
+    mf models copy <model> <workspace>
+    mf models cp <model> <workspace>  # cp is an alias for copy
     mf programs sync
     mf programs info
     mf programs list

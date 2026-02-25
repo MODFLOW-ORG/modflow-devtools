@@ -514,6 +514,127 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "Cleared 1 cached registry" in captured.out
 
+    def test_cli_copy(self, tmp_path):
+        """Test 'copy' command."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
+        source = ModelSourceRepo(
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
+        )
+        result = source.sync(ref=TEST_MODELS_REF)
+        assert len(result.synced) == 1
+
+        # Load registry and get first model name
+        registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
+        assert len(registry.models) > 0
+        model_name = next(iter(registry.models.keys()))
+
+        # Create workspace
+        workspace = tmp_path / "test-workspace"
+
+        # Copy model
+        import argparse
+
+        from modflow_devtools.models.__main__ import cmd_copy
+
+        args = argparse.Namespace(model=model_name, workspace=str(workspace), verbose=True)
+        cmd_copy(args)
+
+        # Verify workspace was created and contains files
+        assert workspace.exists()
+        assert len(list(workspace.rglob("*"))) > 0
+
+    def test_cli_copy_nonexistent_model(self, tmp_path, capsys):
+        """Test 'copy' command with nonexistent model."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
+        source = ModelSourceRepo(
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
+        )
+        result = source.sync(ref=TEST_MODELS_REF)
+        assert len(result.synced) == 1
+
+        # Try to copy nonexistent model
+        import argparse
+
+        from modflow_devtools.models.__main__ import cmd_copy
+
+        workspace = tmp_path / "test-workspace"
+        args = argparse.Namespace(
+            model="nonexistent-model-12345", workspace=str(workspace), verbose=False
+        )
+
+        with pytest.raises(SystemExit):
+            cmd_copy(args)
+
+        captured = capsys.readouterr()
+        assert "not in registry" in captured.err.lower()
+
+    def test_cli_cp_alias(self, tmp_path):
+        """Test 'cp' alias for 'copy' command."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
+        source = ModelSourceRepo(
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
+        )
+        result = source.sync(ref=TEST_MODELS_REF)
+        assert len(result.synced) == 1
+
+        # Load registry and get first model name
+        registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
+        assert len(registry.models) > 0
+        model_name = next(iter(registry.models.keys()))
+
+        # Create workspace
+        workspace = tmp_path / "test-workspace-cp"
+
+        # Test that cp alias works via command parsing
+        import argparse
+
+        from modflow_devtools.models.__main__ import cmd_copy
+
+        # Simulate args as if 'cp' command was used (argparse will set command to 'cp')
+        args = argparse.Namespace(model=model_name, workspace=str(workspace), verbose=False)
+        cmd_copy(args)
+
+        # Verify workspace was created and contains files
+        assert workspace.exists()
+        assert len(list(workspace.rglob("*"))) > 0
+
+    def test_python_cp_alias(self, tmp_path):
+        """Test Python API cp() alias for copy_to()."""
+        # Sync a registry first
+        _DEFAULT_CACHE.clear(source=TEST_MODELS_SOURCE_NAME, ref=TEST_MODELS_REF)
+        source = ModelSourceRepo(
+            repo=TEST_MODELS_REPO,
+            name=TEST_MODELS_SOURCE_NAME,
+            refs=[TEST_MODELS_REF],
+        )
+        result = source.sync(ref=TEST_MODELS_REF)
+        assert len(result.synced) == 1
+
+        # Load registry and get first model name
+        registry = _DEFAULT_CACHE.load(TEST_MODELS_SOURCE_NAME, TEST_MODELS_REF)
+        assert len(registry.models) > 0
+        model_name = next(iter(registry.models.keys()))
+
+        # Test cp() function
+        from modflow_devtools.models import cp
+
+        workspace = tmp_path / "test-workspace-python-cp"
+        result_path = cp(str(workspace), model_name, verbose=False)
+
+        # Verify workspace was created and contains files
+        assert result_path is not None
+        assert workspace.exists()
+        assert len(list(workspace.rglob("*"))) > 0
+
 
 @pytest.mark.xdist_group("registry_cache")
 class TestIntegration:

@@ -7,6 +7,7 @@ This is a living document which will be updated as development proceeds. As the 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+
 - [Background](#background)
 - [Objective](#objective)
 - [Motivation](#motivation)
@@ -43,6 +44,8 @@ This is a living document which will be updated as development proceeds. As the 
     - [Show Registry Status](#show-registry-status)
     - [Sync Registries](#sync-registries)
     - [List Available Models](#list-available-models)
+    - [Clear Cached Registries](#clear-cached-registries)
+    - [Copy Models to Workspace](#copy-models-to-workspace)
   - [Registry Creation Tool](#registry-creation-tool)
   - [User Config Overlay for Fork Testing](#user-config-overlay-for-fork-testing)
   - [Upstream CI Workflow Examples](#upstream-ci-workflow-examples)
@@ -328,6 +331,7 @@ The simplest approach would be a single such script/command, e.g. `python -m mod
 - `sync`: synchronize registries for all configured source model repositories, or a specific repo
 - `info`: show configured registries and their sync status, or a particular registry's sync status
 - `list`: list available models for all registries, or for a particular registry
+- `copy` (or `cp`): copy a model's input files to a workspace directory
 
 ```bash
 # Show configured registries and status
@@ -345,6 +349,10 @@ mf models sync --repo MODFLOW-ORG/modflow6-examples --ref current
 # For a repo with models under version control
 mf models sync --repo MODFLOW-ORG/modflow6-testmodels --ref develop
 mf models sync --repo MODFLOW-ORG/modflow6-testmodels --ref f3df630  # commit hash works too
+
+# Copy a model to a workspace (cp is an alias for copy)
+mf models copy mf6/test/test001a_Tharmonic ./my-workspace
+mf models cp mf6/example/ex-gwf-twri01 /path/to/workspace --verbose
 ```
 
 CLI commands are available in two forms:
@@ -544,7 +552,7 @@ The Models, Programs, and DFNs APIs share a consistent design for ease of use an
 7. **Unified CLI operations**:
    - Sync all APIs: `python -m modflow_devtools sync --all`
    - Clean all caches: `python -m modflow_devtools clean --all`
-   - Individual API operations: `python -m modflow_devtools.{api} sync|info|list|clean`
+   - Individual API operations: `python -m modflow_devtools.{api} sync|info|list|copy|clean`
 
 8. **MergedRegistry pattern**: Only used where needed
    - Models: Yes (essential for multi-source/multi-ref unified view)
@@ -721,6 +729,19 @@ $ mf models clear --source mf6/test --ref develop
 
 # Skip confirmation prompt
 $ mf models clear --force
+```
+
+#### Copy Models to Workspace
+
+```bash
+# Copy a model to a workspace directory
+$ mf models copy mf6/test/test001a_Tharmonic ./my-workspace
+
+# Copy with verbose output (cp is an alias for copy)
+$ mf models cp mf6/example/ex-gwf-twri01 /path/to/workspace --verbose
+
+# Works with absolute or relative paths
+$ mf models copy mf6/large/prudic2004t2 ../workspace
 ```
 
 ### Registry Creation Tool

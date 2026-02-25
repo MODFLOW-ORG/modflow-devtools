@@ -131,13 +131,36 @@ python -m modflow_devtools.models list --source mf6/test --verbose
 
 ### Copying models to a workspace
 
+Models can be copied to a workspace programmatically:
+
 ```python
 from tempfile import TemporaryDirectory
-from modflow_devtools.models import copy_to
+from modflow_devtools.models import copy_to, cp  # cp is an alias
 
 with TemporaryDirectory() as workspace:
     model_path = copy_to(workspace, "mf6/example/ex-gwf-twri01", verbose=True)
+    # Or use the shorter alias
+    model_path = cp(workspace, "mf6/example/ex-gwf-twri01", verbose=True)
 ```
+
+Or via CLI (both forms are equivalent):
+
+```bash
+# Using the mf command
+mf models copy mf6/test/test001a_Tharmonic ./my-workspace
+mf models cp mf6/example/ex-gwf-twri01 /path/to/workspace --verbose  # cp is an alias
+
+# Or using the module form
+python -m modflow_devtools.models copy mf6/test/test001a_Tharmonic ./my-workspace
+python -m modflow_devtools.models cp mf6/example/ex-gwf-twri01 /path/to/workspace --verbose
+```
+
+The copy command:
+- Automatically attempts to sync registries before copying (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
+- Creates the workspace directory if it doesn't exist
+- Copies all input files for the specified model
+- Preserves subdirectory structure within the workspace
+- Use `--verbose` or `-v` flag to see detailed progress
 
 ### Using the default registry
 
