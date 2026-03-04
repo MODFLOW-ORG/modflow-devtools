@@ -11,6 +11,7 @@ import tomli_w as tomli
 from boltons.iterutils import remap
 
 from modflow_devtools.dfns import Dfn, is_valid, load, load_flat, map, to_flat, to_tree
+from modflow_devtools.dfns.parse import parse_dfn
 from modflow_devtools.dfns.schema.block import block_sort_key
 from modflow_devtools.misc import drop_none_or_empty
 
@@ -33,8 +34,6 @@ def convert(inpath: PathLike, outdir: PathLike, schema_version: str = "2") -> No
         common_path = inpath.parent / "common.dfn"
         if common_path.exists():
             with common_path.open() as f:
-                from modflow_devtools.dfn import parse_dfn
-
                 common, _ = parse_dfn(f)
         else:
             common = {}
