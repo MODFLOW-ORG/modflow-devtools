@@ -575,11 +575,12 @@ def map(
     schema_version: str | Version = "2",
 ) -> Dfn:
     """Map a MODFLOW 6 specification to another schema version."""
-    if dfn.schema_version == schema_version:
+    version = Version(str(schema_version))
+    if version == dfn.schema_version:
         return dfn
-    elif Version(str(schema_version)) == Version("1"):
+    elif version == Version("1"):
         raise NotImplementedError("Mapping to schema version 1 is not implemented yet.")
-    elif Version(str(schema_version)) == Version("2"):
+    elif version == Version("2"):
         return MapV1To2().map(dfn)
     raise ValueError(f"Unsupported schema version: {schema_version}. Expected 1 or 2.")
 
