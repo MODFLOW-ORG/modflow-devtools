@@ -476,7 +476,7 @@ status = get_sync_status()
 - **At install time**: Best-effort sync to default refs during package installation (fail silently on network errors)
 - **On first use**: If registry cache is empty for requested ref, attempt to sync before raising errors
 - **Lazy loading**: Don't sync until DFN access is actually requested
-- **Configurable**: Users can disable auto-sync via environment variable: `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`
+- **Configurable (Experimental)**: Auto-sync is opt-in via environment variable: `MODFLOW_DEVTOOLS_AUTO_SYNC=1` (set to "1", "true", or "yes")
 
 ### Source repository integration
 
@@ -1295,7 +1295,7 @@ dfn.name  # attribute access
 5. Implement `sync_dfns()` function
 6. Add registry metadata caching with hash verification
 7. Implement version-controlled registry discovery
-8. Add auto-sync on first use (with opt-out via `MODFLOW_DEVTOOLS_NO_AUTO_SYNC`)
+8. Add auto-sync on first use (opt-in via `MODFLOW_DEVTOOLS_AUTO_SYNC` while experimental)
 9. **Implement `DfnSpec` dataclass** with `Mapping` protocol for single canonical hierarchical representation with flat dict access
 
 **CLI and module API** (depends on Registry infrastructure):

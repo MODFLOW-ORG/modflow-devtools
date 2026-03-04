@@ -139,7 +139,7 @@ def cmd_info(args):
 def cmd_list(args):
     """List command handler."""
     # Attempt auto-sync before listing (unless disabled)
-    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
     cached = _DEFAULT_CACHE.list()
@@ -193,7 +193,7 @@ def cmd_list(args):
 def cmd_install(args):
     """Install command handler."""
     # Attempt auto-sync before installation (unless disabled)
-    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
     # Parse program@version syntax if provided

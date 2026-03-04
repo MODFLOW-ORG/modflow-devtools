@@ -347,16 +347,16 @@ mf programs install mf6 --force
 
 ## Automatic Synchronization
 
-By default, `modflow-devtools` attempts to sync registries:
-- On first import (best-effort, fails silently on network errors)
-- Before installation (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
-- Before listing available programs
-
-To disable auto-sync:
+Auto-sync is **opt-in** (experimental). To enable:
 
 ```bash
-export MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1
+export MODFLOW_DEVTOOLS_AUTO_SYNC=1  # or "true" or "yes"
 ```
+
+When enabled, `modflow-devtools` attempts to sync registries:
+- On first access (best-effort, fails silently on network errors)
+- Before installation
+- Before listing available programs
 
 Then manually sync when needed:
 

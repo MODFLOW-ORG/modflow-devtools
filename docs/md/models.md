@@ -156,7 +156,7 @@ python -m modflow_devtools.models cp mf6/example/ex-gwf-twri01 /path/to/workspac
 ```
 
 The copy command:
-- Automatically attempts to sync registries before copying (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
+- Automatically attempts to sync registries before copying (if `MODFLOW_DEVTOOLS_AUTO_SYNC=1`)
 - Creates the workspace directory if it doesn't exist
 - Copies all input files for the specified model
 - Preserves subdirectory structure within the workspace
@@ -316,15 +316,15 @@ mf models clear --force
 
 ## Automatic Synchronization
 
-By default, `modflow-devtools` attempts to sync registries:
-- On first import (best-effort, fails silently on network errors)
-- When accessing models (unless `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`)
-
-To disable auto-sync:
+Auto-sync is **opt-in** (experimental). To enable:
 
 ```bash
-export MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1
+export MODFLOW_DEVTOOLS_AUTO_SYNC=1  # or "true" or "yes"
 ```
+
+When enabled, `modflow-devtools` attempts to sync registries:
+- On first access (best-effort, fails silently on network errors)
+- When accessing models via the API or CLI
 
 Then manually sync when needed:
 

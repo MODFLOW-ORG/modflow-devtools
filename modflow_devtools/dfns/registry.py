@@ -734,7 +734,7 @@ def get_sync_status(source: str = "modflow6") -> dict[str, bool]:
 def get_registry(
     source: str = "modflow6",
     ref: str = "develop",
-    auto_sync: bool = True,
+    auto_sync: bool = False,
     path: str | PathLike | None = None,
 ) -> DfnRegistry:
     """
@@ -747,8 +747,9 @@ def get_registry(
     ref : str, optional
         Git ref (branch, tag, or commit hash). Default is "develop".
     auto_sync : bool, optional
-        If True and registry is not cached, automatically sync. Default is True.
-        Can be disabled via MODFLOW_DEVTOOLS_NO_AUTO_SYNC environment variable.
+        If True and registry is not cached, automatically sync. Default is False
+        (opt-in while experimental). Can be enabled via MODFLOW_DEVTOOLS_AUTO_SYNC
+        environment variable (set to "1", "true", or "yes").
         Ignored when path is provided.
     path : str or PathLike, optional
         Path to a local directory containing DFN files. If provided, returns
@@ -775,9 +776,9 @@ def get_registry(
     if path is not None:
         return LocalDfnRegistry(path=Path(path), source=source, ref=ref)
 
-    # Check for auto-sync opt-out
-    if os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
-        auto_sync = False
+    # Check for auto-sync opt-in (experimental - off by default)
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
+        auto_sync = True
 
     registry = RemoteDfnRegistry(source=source, ref=ref)
 

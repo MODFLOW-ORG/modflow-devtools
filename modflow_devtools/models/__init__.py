@@ -1322,6 +1322,9 @@ def get_default_registry():
     This allows the module to import successfully even if the cache
     is empty, with a clear error message on first use.
 
+    Auto-sync can be enabled via MODFLOW_DEVTOOLS_AUTO_SYNC environment variable
+    (currently opt-in while experimental). Set to "1", "true", or "yes" to enable.
+
     Returns
     -------
     PoochRegistry
@@ -1329,6 +1332,9 @@ def get_default_registry():
     """
     global _default_registry_cache
     if _default_registry_cache is None:
+        # Opt-in auto-sync (experimental - off by default)
+        if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
+            _try_best_effort_sync()
         _default_registry_cache = PoochRegistry(base_url=_DEFAULT_BASE_URL, env=_DEFAULT_ENV)
     return _default_registry_cache
 

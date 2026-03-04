@@ -108,7 +108,7 @@ def cmd_sync(args):
 def cmd_info(args):
     """Info command handler."""
     # Attempt auto-sync before showing info (unless disabled)
-    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
     config = ModelSourceConfig.load()
@@ -176,7 +176,7 @@ def cmd_info(args):
 def cmd_list(args):
     """List command handler."""
     # Attempt auto-sync before listing (unless disabled)
-    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
     cached = _DEFAULT_CACHE.list()
@@ -285,7 +285,7 @@ def cmd_clear(args):
 def cmd_copy(args):
     """Copy command handler."""
     # Attempt auto-sync before copying (unless disabled)
-    if not os.environ.get("MODFLOW_DEVTOOLS_NO_AUTO_SYNC"):
+    if os.environ.get("MODFLOW_DEVTOOLS_AUTO_SYNC", "").lower() in ("1", "true", "yes"):
         _try_best_effort_sync()
 
     from . import copy_to

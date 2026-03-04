@@ -124,7 +124,7 @@ jobs:
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}
-          MODFLOW_DEVTOOLS_NO_AUTO_SYNC: 1
+          MODFLOW_DEVTOOLS_AUTO_SYNC: 0
           TEST_DFN_PATH: ${{ github.workspace }}/modflow6/doc/mf6io/mf6ivar/dfn
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
         run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py --ignore test_models.py --ignore test_dfns_registry.py

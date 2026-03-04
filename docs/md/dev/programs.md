@@ -509,7 +509,7 @@ status = get_sync_status()
 
 - **At install time**: Best-effort sync during package installation (fail silently on network errors)
 - **On first use**: If registry cache is empty, attempt to sync before raising errors
-- **Configurable**: Users can disable auto-sync via environment variable: `MODFLOW_DEVTOOLS_NO_AUTO_SYNC=1`
+- **Configurable (Experimental)**: Auto-sync is opt-in via environment variable: `MODFLOW_DEVTOOLS_AUTO_SYNC=1` (set to "1", "true", or "yes")
 
 #### Force semantics
 
