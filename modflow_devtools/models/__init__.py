@@ -1062,7 +1062,7 @@ class PoochRegistry(ModelRegistry):
         Load registry data from cache.
 
         Raises an error if no cached registries are found.
-        Run 'python -m modflow_devtools.models sync' to populate the cache.
+        Run 'mf models sync' to populate the cache.
         """
         # Try to load from cache
         loaded_from_cache = self._try_load_from_cache()
@@ -1070,7 +1070,7 @@ class PoochRegistry(ModelRegistry):
         if not loaded_from_cache:
             raise RuntimeError(
                 "No model registries found in cache. "
-                "Run 'python -m modflow_devtools.models sync' to download registries, "
+                "Run 'mf models sync' to download registries, "
                 "or use ModelSourceConfig.load().sync() programmatically."
             )
 

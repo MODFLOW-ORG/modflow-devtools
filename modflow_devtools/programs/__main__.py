@@ -145,7 +145,9 @@ def cmd_list(args):
     cached = _DEFAULT_CACHE.list()
 
     if not cached:
-        print("No cached program registries. Run 'sync' first.")
+        print(
+            "No program registries found in cache. Run 'mf programs sync' to download registries."
+        )
         return
 
     # Apply filters

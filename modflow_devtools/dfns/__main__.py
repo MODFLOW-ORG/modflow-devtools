@@ -2,10 +2,10 @@
 Command-line interface for the DFNs API.
 
 Usage:
-    python -m modflow_devtools.dfns sync [--ref REF] [--force]
-    python -m modflow_devtools.dfns info
-    python -m modflow_devtools.dfns list [--ref REF]
-    python -m modflow_devtools.dfns clean [--all]
+    mf dfns sync [--ref REF] [--force]
+    mf dfns info
+    mf dfns list [--ref REF]
+    mf dfns clean [--all]
 """
 
 from __future__ import annotations
@@ -138,7 +138,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     except DfnRegistryNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
-        print("Try running 'python -m modflow_devtools.dfn sync' first.", file=sys.stderr)
+        print("Try running 'mf dfns sync' first.", file=sys.stderr)
         return 1
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -198,7 +198,7 @@ def _format_size(size_bytes: int) -> str:
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
-        prog="python -m modflow_devtools.dfn",
+        prog="mf dfns",
         description="MODFLOW 6 definition file tools",
     )
     parser.add_argument(
