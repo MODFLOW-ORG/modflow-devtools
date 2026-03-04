@@ -12,7 +12,7 @@ from modflow_devtools.dfns.schema.v2 import FieldV2
 from modflow_devtools.markers import requires_pkg
 
 PROJ_ROOT = Path(__file__).parents[1]
-DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfn"
+DFN_DIR = PROJ_ROOT / "autotest" / "temp" / "dfns"
 TOML_DIR = DFN_DIR / "toml"
 SPEC_DIRS = {1: DFN_DIR, 2: TOML_DIR}
 MF6_OWNER = "MODFLOW-ORG"
