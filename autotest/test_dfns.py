@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from packaging.version import Version
 
-from modflow_devtools.dfn2toml import convert, is_valid
+from modflow_devtools.dfns.dfn2toml import convert, is_valid
 from modflow_devtools.dfns import Dfn, _load_common, load, load_flat
 from modflow_devtools.dfns.fetch import fetch_dfns
 from modflow_devtools.dfns.schema.v1 import FieldV1
