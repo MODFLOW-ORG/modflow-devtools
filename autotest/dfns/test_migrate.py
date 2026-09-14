@@ -114,11 +114,14 @@ def test_migrate_v2_0_0_dev3(dev3, snapshot):
         assert snapshot(name=p.stem) == p.read_text()
 
 
-# Minimal synthetic DFN (a trimmed gwt-ssm SOURCES block) exercising the
-# write_if_empty tag. No real upstream DFN sets this tag yet -- it isn't
-# derivable from other DFN attributes (see Block.write_if_empty in schema.py)
-# -- so this is covered here rather than via the real-corpus snapshot tests
-# above.
+# Minimal synthetic DFN (shaped like gwt-ssm's SOURCES block) exercising the
+# write_if_empty tag. No real upstream DFN sets this tag directly yet (it
+# isn't derivable from other DFN attributes -- see Block.write_if_empty in
+# schema.py), so the general per-field mechanism is covered here against a
+# neutral component name rather than via the real-corpus snapshot tests
+# above. gwt-ssm/gwe-ssm themselves get write_if_empty from a dedicated
+# migration-time fixup (_fix_ssm_sources_write_if_empty) instead, pending
+# that DFN tag -- see the tests below that exercise those two names directly.
 _SOURCES_DFN = """\
 block sources
 name sources
@@ -165,20 +168,37 @@ def _load_sources_fields(dfn_text: str = _SOURCES_DFN):
     return Dfn.load_dfn(io.StringIO(dfn_text))
 
 
+# A neutral name (not gwt-ssm/gwe-ssm) so these general-mechanism tests
+# aren't also exercising the SSM-specific fixup below.
+_NEUTRAL_NAME = "gwt-tst"
+
+
 def test_migrate_v2_0_0_dev2_write_if_empty():
     fields, meta = _load_sources_fields()
-    component = to_v2_0_0_dev2("gwt-ssm", fields, meta)
+    component = to_v2_0_0_dev2(_NEUTRAL_NAME, fields, meta)
     assert component.blocks["sources"].write_if_empty is True
 
 
 def test_migrate_v2_0_0_dev3_write_if_empty():
     fields, meta = _load_sources_fields()
-    component = to_v2_0_0_dev3("gwt-ssm", fields, meta)
+    component = to_v2_0_0_dev3(_NEUTRAL_NAME, fields, meta)
     assert component.blocks["sources"].write_if_empty is True
 
 
 def test_migrate_write_if_empty_absent_defaults_false():
     dfn_without_tag = _SOURCES_DFN.replace("write_if_empty true\n", "")
     fields, meta = _load_sources_fields(dfn_without_tag)
-    component = to_v2_0_0_dev2("gwt-ssm", fields, meta)
+    component = to_v2_0_0_dev2(_NEUTRAL_NAME, fields, meta)
     assert component.blocks["sources"].write_if_empty is False
+
+
+@pytest.mark.parametrize("name", ["gwt-ssm", "gwe-ssm"])
+def test_migrate_ssm_sources_write_if_empty_without_tag(name):
+    """
+    gwt-ssm/gwe-ssm get write_if_empty from _fix_ssm_sources_write_if_empty
+    regardless of whether the DFN sets the tag -- no real DFN does yet.
+    """
+    dfn_without_tag = _SOURCES_DFN.replace("write_if_empty true\n", "")
+    fields, meta = _load_sources_fields(dfn_without_tag)
+    component = to_v2_0_0_dev2(name, fields, meta)
+    assert component.blocks["sources"].write_if_empty is True

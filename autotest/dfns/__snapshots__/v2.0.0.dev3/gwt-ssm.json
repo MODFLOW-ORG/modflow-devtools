@@ -21,6 +21,7 @@
       }
     },
     "sources": {
+      "write_if_empty": true,
       "fields": {
         "sources": {
           "type": "list",

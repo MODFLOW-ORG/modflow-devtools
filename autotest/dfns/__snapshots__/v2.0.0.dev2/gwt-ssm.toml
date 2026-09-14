@@ -15,6 +15,9 @@ longname = "save calculated flows to budget file"
 description = "keyword to indicate that SSM flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 optional = true
 
+[blocks.sources]
+write_if_empty = true
+
 [blocks.sources.fields.sources]
 type = "list"
 longname = "package list"

@@ -1119,6 +1119,27 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, "packages": new_packages, "period": new_period}
 
 
+def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Mark SSM's SOURCES block write_if_empty: MF6 requires the block's header
+    to appear in the input file even with zero source terms (IDM
+    required=.true. in src/Idm/gwt-ssmidm.f90 and src/Idm/gwe-ssmidm.f90,
+    matching optional=false on the field in the DFN) -- it errors on read if
+    the block is absent entirely, unlike a block gated by a real dimension
+    count (e.g. LAK TABLES/OUTLETS), which must instead be omitted when
+    empty. There's no DFN tag for this distinction yet; once modflow6 adds a
+    `write_if_empty true` line to the SOURCES field in gwt-ssm.dfn/
+    gwe-ssm.dfn, the general per-field pass in to_v2_0_0_dev2 picks it up
+    directly and this stopgap can be removed.
+    """
+    if name not in ("gwt-ssm", "gwe-ssm"):
+        return blocks
+    sources = blocks.get("sources")
+    if sources is None or sources.write_if_empty:
+        return blocks
+    return {**blocks, "sources": sources.model_copy(update={"write_if_empty": True})}
+
+
 def _parse_valid(valid: Any, coerce=None) -> list | None:
     """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
     parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
@@ -1617,6 +1638,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
+    blocks = _fix_ssm_sources_write_if_empty(name, blocks)
     # Must run after `_fix_lak_relations`: LAK's period `number` field looks
     # exactly like a lonely pk (leading required Integer, no fk) before it's
     # split into per-arm `lakeno`/`outletno` fk's — marking it pk here first
