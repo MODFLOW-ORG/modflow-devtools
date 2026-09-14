@@ -1589,6 +1589,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
 
     for field in fields.values(multi=True):
         block = blocks.setdefault(field["block"], v2.Block(name=field["block"], fields={}))
+        if try_parse_bool(field.get("write_if_empty", False)):
+            block.write_if_empty = True
         if try_parse_bool(field.get("block_variable", False)):
             # Field's token(s) attach to the BEGIN <BLOCK> line itself (e.g. `BEGIN
             # PERIOD <iper>`) rather than appearing as a body row. Must be checked

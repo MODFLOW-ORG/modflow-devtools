@@ -63,6 +63,33 @@ def test_block_optional_empty_fields():
     assert block.optional is True
 
 
+def test_block_write_if_empty_defaults_false():
+    block = Block(
+        name="sources",
+        fields={"sources": List(name="sources", item=Record(name="sources", fields={}))},
+    )
+    assert block.write_if_empty is False
+
+
+def test_block_write_if_empty_explicit():
+    block = Block(
+        name="sources",
+        fields={"sources": List(name="sources", item=Record(name="sources", fields={}))},
+        write_if_empty=True,
+    )
+    assert block.write_if_empty is True
+
+
+def test_block_write_if_empty_dict_roundtrip():
+    block = Block(
+        name="sources",
+        fields={"sources": List(name="sources", item=Record(name="sources", fields={}))},
+        write_if_empty=True,
+    )
+    b = Block.model_validate({"name": block.name, **block.model_dump()})
+    assert b.write_if_empty is True
+
+
 def _pkg(name: str, blocks=None, dims=None, parent=None, **kw) -> Package:
     return Package(name=name, blocks=blocks, dims=dims, parent=parent, **kw)
 

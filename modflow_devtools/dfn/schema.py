@@ -77,6 +77,12 @@ class Field(TypedDict):
     layered: NotRequired[bool | None]
     preserve_case: NotRequired[bool]
     numeric_index: NotRequired[bool]
+    # Whether MF6 requires this block's header to appear in the input file
+    # even when it has zero body lines (e.g. an empty required recarray
+    # block). Set explicitly on the block's aggregate field -- see
+    # Block.write_if_empty in modflow_devtools.dfns.schema for why this
+    # can't be derived from `optional` or any other existing attribute.
+    write_if_empty: NotRequired[bool]
     # Version strings (e.g. "6.6.0"), not booleans -- `load_dfn` stores every
     # attribute's raw text verbatim (see `field[key] = value` above), and unlike
     # the boolean-flag attributes here, nothing coerces these two via

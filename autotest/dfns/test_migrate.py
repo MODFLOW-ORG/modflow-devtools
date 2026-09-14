@@ -1,3 +1,4 @@
+import io
 import json
 import tomllib
 from pathlib import Path
@@ -5,7 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from modflow_devtools.dfn.schema import Dfn
 from modflow_devtools.dfns import fetch_dfns, migrate
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
 FORMATS = ["yaml", "toml", "json"]
 MF6_OWNER = "MODFLOW-ORG"
@@ -108,3 +112,73 @@ def test_migrate_v2_0_0_dev3(dev3, snapshot):
         assert data["name"] == p.stem
         assert data["schema_version"] == "2.0.0.dev3"
         assert snapshot(name=p.stem) == p.read_text()
+
+
+# Minimal synthetic DFN (a trimmed gwt-ssm SOURCES block) exercising the
+# write_if_empty tag. No real upstream DFN sets this tag yet -- it isn't
+# derivable from other DFN attributes (see Block.write_if_empty in schema.py)
+# -- so this is covered here rather than via the real-corpus snapshot tests
+# above.
+_SOURCES_DFN = """\
+block sources
+name sources
+type recarray pname srctype auxname
+reader urword
+optional false
+write_if_empty true
+longname package list
+description
+
+block sources
+name pname
+in_record true
+type string
+tagged false
+reader urword
+longname package name
+description pname
+
+block sources
+name srctype
+in_record true
+type string
+tagged false
+optional false
+reader urword
+longname source type
+description srctype
+
+block sources
+name auxname
+in_record true
+type string
+tagged false
+optional false
+reader urword
+longname auxiliary variable name
+description auxname
+"""
+
+
+def _load_sources_fields(dfn_text: str = _SOURCES_DFN):
+    pytest.importorskip("boltons")
+    return Dfn.load_dfn(io.StringIO(dfn_text))
+
+
+def test_migrate_v2_0_0_dev2_write_if_empty():
+    fields, meta = _load_sources_fields()
+    component = to_v2_0_0_dev2("gwt-ssm", fields, meta)
+    assert component.blocks["sources"].write_if_empty is True
+
+
+def test_migrate_v2_0_0_dev3_write_if_empty():
+    fields, meta = _load_sources_fields()
+    component = to_v2_0_0_dev3("gwt-ssm", fields, meta)
+    assert component.blocks["sources"].write_if_empty is True
+
+
+def test_migrate_write_if_empty_absent_defaults_false():
+    dfn_without_tag = _SOURCES_DFN.replace("write_if_empty true\n", "")
+    fields, meta = _load_sources_fields(dfn_without_tag)
+    component = to_v2_0_0_dev2("gwt-ssm", fields, meta)
+    assert component.blocks["sources"].write_if_empty is False

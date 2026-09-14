@@ -555,6 +555,19 @@ class Block(BaseModel):
     name: str
     fields: dict[str, InputField]
     header: "InputField | None" = None
+    # Whether MF6 requires this block's header to appear in the input file even
+    # when it has zero body lines. Distinct from (and not derivable from)
+    # `optional`: a block can be required (`optional=False`, every field
+    # required) yet still only conditionally present at the Fortran level --
+    # e.g. gated by a dimension being nonzero, in which case it must be
+    # *omitted* entirely when empty rather than written out empty. Which
+    # behavior a given required block actually has is a runtime fact only the
+    # Fortran source encodes; it cannot be inferred from other DFN attributes
+    # (see gwf-lak's TABLES/OUTLETS, which are hand-written and both bypass
+    # the generic required-block check regardless of what the DFN says). Set
+    # from an explicit `write_if_empty true` tag on the block's own field(s)
+    # -- never inferred.
+    write_if_empty: bool = False
 
     @model_validator(mode="after")
     def _check_field_order(self) -> "Block":
