@@ -22,7 +22,7 @@ blocks:
           have an IDOMAIN value less than one.  Values assigned to cells with IDOMAIN values less than
           one are not used and have no effect on simulation results. No data cells should contain the
           value DNODATA (3.0E+30).
-        default: 'true'
+        default: true
         developmode: true
       auxiliary:
         type: array

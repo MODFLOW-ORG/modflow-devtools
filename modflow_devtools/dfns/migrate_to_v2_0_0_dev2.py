@@ -1220,11 +1220,14 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         deprecated: str | None = f.get("deprecated") or None
         valid = f.get("valid")
         _default_raw = f.get("default", f.get("default_value", None))
-        default = (
-            try_literal_eval(_default_raw)
-            if _type != "string" and isinstance(_default_raw, str)
-            else _default_raw
-        )
+        if _type == "keyword" and isinstance(_default_raw, str):
+            default = try_parse_bool(_default_raw, False)
+        else:
+            default = (
+                try_literal_eval(_default_raw)  # type: ignore
+                if _type != "string" and isinstance(_default_raw, str)
+                else _default_raw
+            )
 
         def _parse_shape(s: str) -> list[str]:
             result = []
