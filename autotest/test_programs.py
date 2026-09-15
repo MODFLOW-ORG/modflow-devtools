@@ -1,574 +1,358 @@
+"""
+Tests for the programs API.
+
+Unlike the models/DFNs APIs, there is no registry to sync - installation is
+driven directly by GitHub releases from one of the three real MODFLOW-ORG
+distributions (`executables`, `modflow6`, `modflow6-nightly-build`), and a
+local per-program ledger tracks what's installed where.
+"""
+
+import json
 import warnings
-from datetime import UTC
+import zipfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from flaky import flaky
 
+from modflow_devtools.markers import requires_github
 from modflow_devtools.programs import (
-    _DEFAULT_CACHE,
+    AVAILABLE_REPOS,
+    InstallationMetadata,
     ProgramCache,
-    ProgramDistribution,
-    ProgramMetadata,
-    ProgramRegistry,
-    ProgramSourceConfig,
-    ProgramSourceRepo,
-    get_user_config_path,
+    ProgramInstallation,
+    ProgramInstallationError,
+    _compute_file_hash,
+    _select_asset,
+    _verify_hash,
+    extract_release_archive,
+    get_bindir_options,
+    get_bindir_shortcut_map,
+    get_executable,
+    get_platform,
+    install_program,
+    list_installed,
+    register_installation,
+    uninstall_program,
 )
 
-# Suppress experimental API warning for tests
 warnings.filterwarnings("ignore", message=".*modflow_devtools.programs.*experimental.*")
 
 
-class TestProgramCache:
-    """Test cache management."""
+@pytest.fixture
+def isolated_cache(tmp_path, monkeypatch):
+    """Route the program cache (archives + installation ledger) to a temp dir
+    so tests never touch the developer's real ~/.cache/modflow-devtools."""
+    cache = ProgramCache(root=tmp_path / "programs-cache")
+    monkeypatch.setattr("modflow_devtools.programs._DEFAULT_CACHE", cache)
+    return cache
 
-    def test_get_cache_root(self):
-        """Test getting cache root directory."""
-        cache = ProgramCache()
-        assert "modflow-devtools" in str(cache.root)
-        # Should contain 'programs'
-        assert "programs" in str(cache.root)
 
-    def test_save_and_load_registry(self):
-        """Test saving and loading a registry."""
-        cache = ProgramCache()
-        cache.clear()
+def _make_zip(path: Path, files: dict[str, bytes]) -> Path:
+    with zipfile.ZipFile(path, "w") as zf:
+        for name, content in files.items():
+            zf.writestr(name, content)
+    return path
 
-        # Create a simple registry
-        registry = ProgramRegistry(
-            schema_version="1.0",
-            programs={
-                "test-program": {
-                    "version": "1.0.0",
-                    "repo": "test/repo",
-                    "exe": "bin/test-program",
-                    "binaries": {},
-                }
+
+class TestPlatform:
+    def test_get_platform_returns_supported_ostag(self):
+        assert get_platform() in ("linux", "mac", "macarm", "win64")
+
+
+class TestHashing:
+    def test_compute_and_verify(self, tmp_path):
+        f = tmp_path / "file.bin"
+        f.write_bytes(b"hello world")
+        digest = _compute_file_hash(f)
+        assert _verify_hash(f, f"sha256:{digest}")
+        assert not _verify_hash(f, f"sha256:{'0' * 64}")
+
+    def test_verify_hash_bad_format(self, tmp_path):
+        f = tmp_path / "file.bin"
+        f.write_bytes(b"data")
+        with pytest.raises(ValueError):
+            _verify_hash(f, "not-a-valid-hash")
+
+
+class TestSelectAsset:
+    def test_matches_whole_token_only(self):
+        release = {
+            "tag_name": "6.8.0",
+            "assets": [
+                {"name": "mf6.8.0_win64ext.zip"},
+                {"name": "mf6.8.0_win64.zip"},
+                {"name": "mf6.8.0_linux.zip"},
+            ],
+        }
+        asset = _select_asset(release, "win64")
+        assert asset["name"] == "mf6.8.0_win64.zip"
+
+    def test_mac_does_not_match_macarm(self):
+        release = {"tag_name": "v1", "assets": [{"name": "macarm.zip"}]}
+        with pytest.raises(ProgramInstallationError):
+            _select_asset(release, "mac")
+
+    def test_macarm_matches_macarm(self):
+        release = {"tag_name": "v1", "assets": [{"name": "macarm.zip"}]}
+        assert _select_asset(release, "macarm")["name"] == "macarm.zip"
+
+    def test_no_match_raises_with_available_assets_listed(self):
+        release = {"tag_name": "v1", "assets": [{"name": "linux.zip"}]}
+        with pytest.raises(ProgramInstallationError, match=r"linux\.zip"):
+            _select_asset(release, "win64")
+
+
+class TestExtractReleaseArchive:
+    def test_code_json_bundle_versions_each_program_independently(self, tmp_path):
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {
+                "code.json": json.dumps(
+                    {
+                        "mf6": {"version": "6.8.0", "shared_object": False},
+                        "mfnwt": {"version": "1.3.0", "shared_object": False},
+                        "libmf6": {"version": "6.8.0", "shared_object": True},
+                    }
+                ).encode(),
+                "mf6": b"fake-mf6-binary",
+                "mfnwt": b"fake-mfnwt-binary",
+                "libmf6.so": b"fake-shared-object",
             },
         )
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(archive, dest, release_tag="29.0", ostag="linux")
 
-        # Save it
-        cache.save(registry, "test-source", "1.0.0")
+        by_name = {p.name: p for p in extracted}
+        assert by_name["mf6"].version == "6.8.0"
+        assert by_name["mfnwt"].version == "1.3.0"
+        assert by_name["libmf6"].version == "6.8.0"
+        assert by_name["libmf6"].is_shared_object
+        assert not by_name["mf6"].is_shared_object
+        assert (dest / "mf6").exists()
+        assert (dest / "libmf6.so").exists()
 
-        # Check it exists
-        assert cache.has("test-source", "1.0.0")
-
-        # Load it back
-        loaded = cache.load("test-source", "1.0.0")
-        assert loaded is not None
-        assert loaded.schema_version == "1.0"
-        assert "test-program" in loaded.programs
-
-        # Clean up
-        cache.clear()
-
-    def test_list_cached_registries(self):
-        """Test listing cached registries."""
-        cache = ProgramCache()
-        cache.clear()
-
-        # Create and save a few registries
-        for i in range(3):
-            registry = ProgramRegistry(programs={})
-            cache.save(registry, f"source{i}", f"v{i}.0")
-
-        # List them
-        cached = cache.list()
-        assert len(cached) == 3
-        assert ("source0", "v0.0") in cached
-        assert ("source1", "v1.0") in cached
-        assert ("source2", "v2.0") in cached
-
-        # Clean up
-        cache.clear()
-
-
-class TestProgramSourceConfig:
-    """Test bootstrap configuration loading."""
-
-    def test_load_bootstrap(self):
-        """Test loading bootstrap configuration."""
-        config = ProgramSourceConfig.load()
-        assert isinstance(config, ProgramSourceConfig)
-        assert len(config.sources) > 0
-
-    def test_bootstrap_has_sources(self):
-        """Test that bootstrap has expected sources."""
-        config = ProgramSourceConfig.load()
-        # Should have modflow6 at minimum
-        assert "modflow6" in config.sources
-
-    def test_bootstrap_source_has_name(self):
-        """Test that sources have names injected."""
-        config = ProgramSourceConfig.load()
-        for key, source in config.sources.items():
-            assert source.name is not None
-            # If no explicit name override, name should equal key
-            if source.name == key:
-                assert source.name == key
-
-    def test_get_user_config_path(self):
-        """Test that user config path is platform-appropriate."""
-        user_config_path = get_user_config_path()
-        assert isinstance(user_config_path, Path)
-        assert user_config_path.name == "programs.toml"
-        assert "modflow-devtools" in str(user_config_path)
-
-    def test_merge_config(self):
-        """Test merging configurations."""
-        # Create base config
-        base = ProgramSourceConfig(
-            sources={
-                "source1": ProgramSourceRepo(repo="org/repo1", name="source1", refs=["v1"]),
-                "source2": ProgramSourceRepo(repo="org/repo2", name="source2", refs=["v2"]),
-            }
+    def test_code_json_bundle_respects_subset(self, tmp_path):
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {
+                "code.json": json.dumps(
+                    {
+                        "mf6": {"version": "6.8.0", "shared_object": False},
+                        "mfnwt": {"version": "1.3.0", "shared_object": False},
+                    }
+                ).encode(),
+                "mf6": b"fake-mf6-binary",
+                "mfnwt": b"fake-mfnwt-binary",
+            },
         )
-
-        # Create overlay config
-        overlay = ProgramSourceConfig(
-            sources={
-                "source1": ProgramSourceRepo(
-                    repo="org/custom-repo1", name="source1", refs=["v1.1"]
-                ),
-                "source3": ProgramSourceRepo(repo="org/repo3", name="source3", refs=["v3"]),
-            }
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(
+            archive, dest, release_tag="29.0", ostag="linux", subset={"mfnwt"}
         )
+        assert [p.name for p in extracted] == ["mfnwt"]
+        assert not (dest / "mf6").exists()
 
-        # Merge
-        merged = ProgramSourceConfig.merge(base, overlay)
-
-        # Check that overlay overrode base for source1
-        assert merged.sources["source1"].repo == "org/custom-repo1"
-        assert merged.sources["source1"].refs == ["v1.1"]
-
-        # Check that base source2 is preserved
-        assert merged.sources["source2"].repo == "org/repo2"
-
-        # Check that overlay source3 was added
-        assert merged.sources["source3"].repo == "org/repo3"
-
-    def test_load_with_user_config(self, tmp_path):
-        """Test loading bootstrap with user config overlay."""
-        # Create a user config file
-        user_config = tmp_path / "programs.toml"
-        user_config.write_text(
-            """
-[sources.custom-programs]
-repo = "user/custom-programs"
-refs = ["v1.0"]
-
-[sources.modflow6]
-repo = "user/modflow6-fork"
-refs = ["custom-branch"]
-"""
+    def test_plain_archive_versions_by_release_tag(self, tmp_path):
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {
+                "mf6.8.0_linux/bin/mf6": b"fake-mf6-binary",
+                "mf6.8.0_linux/bin/zbud6": b"fake-zbud6-binary",
+                "mf6.8.0_linux/bin/libmf6.so": b"fake-shared-object",
+            },
         )
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(archive, dest, release_tag="6.8.0", ostag="linux")
 
-        # Load with user config
-        config = ProgramSourceConfig.load(user_config_path=user_config)
+        assert {p.name for p in extracted} == {"mf6", "zbud6", "libmf6"}
+        assert all(p.version == "6.8.0" for p in extracted)
+        # nested archive dir should not survive extraction
+        assert not (dest / "mf6.8.0_linux").exists()
+        assert (dest / "mf6").exists()
 
-        # Check that user config was merged
-        assert "custom-programs" in config.sources
-        assert config.sources["custom-programs"].repo == "user/custom-programs"
+    def test_flat_archive_no_bin_dir(self, tmp_path):
+        archive = _make_zip(tmp_path / "linux.zip", {"mf6": b"fake-mf6-binary"})
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(archive, dest, release_tag="1.0", ostag="linux")
+        assert [p.name for p in extracted] == ["mf6"]
+        assert (dest / "mf6").exists()
 
-        # Check that user config overrode bundled for modflow6
-        if "modflow6" in config.sources:
-            assert config.sources["modflow6"].repo == "user/modflow6-fork"
-
-    def test_status(self):
-        """Test sync status reporting."""
-        _DEFAULT_CACHE.clear()
-
-        config = ProgramSourceConfig.load()
-        status = config.status
-
-        # Should have status for all configured sources
-        assert len(status) > 0
-
-        # Each status should have required fields
-        for source_name, source_status in status.items():
-            assert source_status.repo
-            assert isinstance(source_status.configured_refs, list)
-            assert isinstance(source_status.cached_refs, list)
-            assert isinstance(source_status.missing_refs, list)
-
-        _DEFAULT_CACHE.clear()
+    def test_no_match_raises(self, tmp_path):
+        archive = _make_zip(tmp_path / "linux.zip", {"mf6": b"fake-mf6-binary"})
+        with pytest.raises(ProgramInstallationError):
+            extract_release_archive(
+                archive, tmp_path / "out", release_tag="1.0", ostag="linux", subset={"nope"}
+            )
 
 
-class TestProgramSourceRepo:
-    """Test source repository methods."""
+class TestInstallationMetadata:
+    def test_add_list_remove_roundtrip(self, isolated_cache):
+        metadata = InstallationMetadata("mf6")
+        assert not metadata.load()
 
-    def test_source_has_sync_method(self):
-        """Test that ProgramSourceRepo has sync method."""
-        config = ProgramSourceConfig.load()
-        source = next(iter(config.sources.values()))
-        assert hasattr(source, "sync")
-        assert callable(source.sync)
-
-    def test_source_has_is_synced_method(self):
-        """Test that ProgramSourceRepo has is_synced method."""
-        config = ProgramSourceConfig.load()
-        source = next(iter(config.sources.values()))
-        assert hasattr(source, "is_synced")
-        assert callable(source.is_synced)
-
-    def test_source_has_list_synced_refs_method(self):
-        """Test that ProgramSourceRepo has list_synced_refs method."""
-        config = ProgramSourceConfig.load()
-        source = next(iter(config.sources.values()))
-        assert hasattr(source, "list_synced_refs")
-        assert callable(source.list_synced_refs)
-
-
-class TestProgramManager:
-    """Test ProgramManager class."""
-
-    def test_program_manager_init(self):
-        """Test ProgramManager initialization."""
-        from modflow_devtools.programs import ProgramCache, ProgramManager
-
-        # Test with default cache
-        manager = ProgramManager()
-        assert isinstance(manager.cache, ProgramCache)
-
-        # Test with custom cache
-        custom_cache = ProgramCache()
-        manager = ProgramManager(cache=custom_cache)
-        assert manager.cache is custom_cache
-
-    def test_program_manager_lazy_config(self):
-        """Test lazy configuration loading."""
-        from modflow_devtools.programs import ProgramManager
-
-        manager = ProgramManager()
-        # Config should not be loaded yet
-        assert manager._config is None
-
-        # Accessing config should load it
-        config = manager.config
-        assert config is not None
-        assert manager._config is config
-
-        # Second access should return same instance
-        config2 = manager.config
-        assert config2 is config
-
-    def test_default_manager_exists(self):
-        """Test that default manager instance exists."""
-        from modflow_devtools.programs import _DEFAULT_MANAGER, ProgramManager
-
-        assert isinstance(_DEFAULT_MANAGER, ProgramManager)
-
-    def test_convenience_wrappers(self):
-        """Test that convenience functions wrap the default manager."""
-        from modflow_devtools.programs import (
-            install_program,
-            list_installed,
-            uninstall_program,
-        )
-
-        # All functions should exist and be callable
-        assert callable(install_program)
-        assert callable(uninstall_program)
-        assert callable(list_installed)
-
-    def test_program_manager_list_installed_empty(self):
-        """Test list_installed with no installations."""
-        from modflow_devtools.programs import ProgramCache, ProgramManager
-
-        # Use fresh cache
-        cache = ProgramCache()
-        cache.clear()
-
-        # Also clear metadata directory to ensure no leftover installation data
-        if cache.metadata_dir.exists():
-            import shutil
-
-            shutil.rmtree(cache.metadata_dir)
-
-        manager = ProgramManager(cache=cache)
-
-        installed = manager.list_installed()
-        assert installed == {}
-
-    def test_program_manager_error_handling(self):
-        """Test error handling in ProgramManager."""
-        import pytest
-
-        from modflow_devtools.programs import ProgramInstallationError, ProgramManager
-
-        manager = ProgramManager()
-
-        # Test install non-existent program
-        with pytest.raises(ProgramInstallationError, match="not found"):
-            manager.install("nonexistent-program-xyz")
-
-    def test_installation_metadata_integration(self):
-        """Test InstallationMetadata integration with ProgramManager."""
-        from datetime import datetime
-        from pathlib import Path
-
-        from modflow_devtools.programs import (
-            InstallationMetadata,
-            ProgramCache,
-            ProgramInstallation,
-        )
-
-        cache = ProgramCache()
-        cache.clear()
-
-        # Create and save metadata
-        metadata = InstallationMetadata("test-program")
-        installation = ProgramInstallation(
-            version="1.0.0",
+        inst = ProgramInstallation(
+            version="6.8.0",
             platform="linux",
-            bindir=Path("/tmp/test"),
+            bindir=Path("/usr/local/bin"),
             installed_at=datetime.now(UTC),
-            source={
-                "repo": "test/repo",
-                "tag": "1.0.0",
-                "asset_url": "https://example.com/test.zip",
-                "hash": "",
-            },
-            executables=["test-program"],
+            source={"repo": "MODFLOW-ORG/modflow6", "tag": "6.8.0"},
+            executables=["mf6"],
         )
-        metadata.add_installation(installation)
+        metadata.add_installation(inst)
 
-        # Verify it was saved
-        metadata2 = InstallationMetadata("test-program")
-        assert metadata2.load()
-        installations = metadata2.list_installations()
-        assert len(installations) == 1
-        assert installations[0].version == "1.0.0"
-        assert installations[0].platform == "linux"
+        reloaded = InstallationMetadata("mf6")
+        assert reloaded.load()
+        assert len(reloaded.list_installations()) == 1
+        assert reloaded.list_installations()[0].version == "6.8.0"
 
-        # Clean up
-        cache.clear()
+        reloaded.remove_installation("6.8.0", Path("/usr/local/bin"))
+        assert reloaded.list_installations() == []
 
+    def test_add_installation_replaces_same_version_and_bindir(self, isolated_cache):
+        metadata = InstallationMetadata("mf6")
+        bindir = Path("/usr/local/bin")
+        for tag in ("v1", "v2"):
+            metadata.add_installation(
+                ProgramInstallation(
+                    version="6.8.0",
+                    platform="linux",
+                    bindir=bindir,
+                    installed_at=datetime.now(UTC),
+                    source={"tag": tag},
+                    executables=["mf6"],
+                )
+            )
+        assert len(metadata.list_installations()) == 1
+        assert metadata.list_installations()[0].source["tag"] == "v2"
 
-class TestExeFieldResolution:
-    """Test executable path resolution logic."""
-
-    def test_distribution_level_exe_takes_precedence(self):
-        """Test that distribution-level exe overrides program-level."""
-        metadata = ProgramMetadata(
-            exe="bin/program",  # Program-level
-            dists=[
-                ProgramDistribution(
-                    name="linux",
-                    asset="linux.zip",
-                    exe="custom/path/to/program",  # Distribution-level
-                ),
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    exe="custom/path/to/program.exe",  # Distribution-level
-                ),
-            ],
-        )
-
-        # Distribution-level should be used
-        assert metadata.get_exe_path("program", "linux") == "custom/path/to/program"
-        assert metadata.get_exe_path("program", "win64") == "custom/path/to/program.exe"
-
-    def test_program_level_exe_fallback(self):
-        """Test that program-level exe is used when no distribution match."""
-        metadata = ProgramMetadata(
-            exe="bin/program",  # Program-level
-            dists=[
-                ProgramDistribution(
-                    name="linux",
-                    asset="linux.zip",
-                    # No exe specified
-                ),
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    # No exe specified
-                ),
-            ],
-        )
-
-        # Program-level should be used
-        assert metadata.get_exe_path("program", "linux") == "bin/program"
-        # Should auto-add .exe on Windows
-        assert metadata.get_exe_path("program", "win64") == "bin/program.exe"
-
-    def test_default_exe_path(self):
-        """Test default exe path when neither level specifies."""
-        metadata = ProgramMetadata(
-            # No program-level exe
-            dists=[
-                ProgramDistribution(
-                    name="linux",
-                    asset="linux.zip",
-                    # No distribution-level exe
-                ),
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    # No distribution-level exe
-                ),
-            ],
-        )
-
-        # Should default to bin/{program_name}
-        assert metadata.get_exe_path("myprogram", "linux") == "bin/myprogram"
-        # Should auto-add .exe on Windows
-        assert metadata.get_exe_path("myprogram", "win64") == "bin/myprogram.exe"
-
-    def test_windows_exe_extension_handling(self):
-        """Test automatic .exe extension on Windows platforms."""
-        metadata = ProgramMetadata(
-            dists=[
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    exe="mfnwt",  # No .exe extension
-                ),
-            ],
-        )
-
-        # Should auto-add .exe
-        assert metadata.get_exe_path("mfnwt", "win64") == "mfnwt.exe"
-
-        # Should not double-add if already present
-        metadata2 = ProgramMetadata(
-            dists=[
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    exe="mfnwt.exe",  # Already has .exe
-                ),
-            ],
-        )
-        assert metadata2.get_exe_path("mfnwt", "win64") == "mfnwt.exe"
-
-    def test_mixed_exe_field_usage(self):
-        """Test mixed usage: some distributions with exe, some without."""
-        metadata = ProgramMetadata(
-            exe="default/path/program",  # Program-level fallback
-            dists=[
-                ProgramDistribution(
-                    name="linux",
-                    asset="linux.zip",
-                    exe="linux-specific/bin/program",  # Has distribution-level
-                ),
-                ProgramDistribution(
-                    name="mac",
-                    asset="mac.zip",
-                    # No distribution-level, should use program-level
-                ),
-                ProgramDistribution(
-                    name="win64",
-                    asset="win64.zip",
-                    exe="win64-specific/bin/program.exe",  # Has distribution-level
-                ),
-            ],
-        )
-
-        # Linux uses distribution-level
-        assert metadata.get_exe_path("program", "linux") == "linux-specific/bin/program"
-        # Mac uses program-level fallback
-        assert metadata.get_exe_path("program", "mac") == "default/path/program"
-        # Windows uses distribution-level
-        assert metadata.get_exe_path("program", "win64") == "win64-specific/bin/program.exe"
-
-    def test_nonexistent_platform_uses_fallback(self):
-        """Test that non-matching platform uses program-level or default."""
-        metadata = ProgramMetadata(
-            exe="bin/program",
-            dists=[
-                ProgramDistribution(
-                    name="linux",
-                    asset="linux.zip",
-                    exe="linux/bin/program",
-                ),
-            ],
-        )
-
-        # Requesting win64 when only linux has distribution-specific exe
-        # Should fall back to program-level
-        assert metadata.get_exe_path("program", "win64") == "bin/program.exe"
+    def test_corrupt_metadata_file_loads_empty(self, isolated_cache):
+        isolated_cache.metadata_dir.mkdir(parents=True, exist_ok=True)
+        (isolated_cache.metadata_dir / "mf6.json").write_text("not json")
+        metadata = InstallationMetadata("mf6")
+        assert metadata.load() is False
+        assert metadata.list_installations() == []
 
 
-class TestForceSemantics:
-    """Test force flag semantics for sync and install."""
+class TestRegisterAndQuery:
+    def test_register_installation_is_source_agnostic(self, isolated_cache, tmp_path):
+        exe = tmp_path / "mf6"
+        exe.write_bytes(b"fake")
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"], source="conda-forge")
 
+        found = get_executable("mf6")
+        assert found == exe
+
+        installed = list_installed()
+        assert installed["mf6"][0].source == {"origin": "conda-forge"}
+
+    def test_get_executable_returns_none_when_unknown(self, isolated_cache):
+        assert get_executable("does-not-exist") is None
+
+    def test_get_executable_skips_missing_files(self, isolated_cache, tmp_path):
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"])
+        # file was never actually created on disk
+        assert get_executable("mf6") is None
+
+    def test_get_executable_filters_by_version(self, isolated_cache, tmp_path):
+        for version in ("6.7.0", "6.8.0"):
+            exe_dir = tmp_path / version
+            exe_dir.mkdir()
+            (exe_dir / "mf6").write_bytes(b"fake")
+            register_installation("mf6", version, exe_dir, ["mf6"])
+
+        assert get_executable("mf6", version="6.7.0") == tmp_path / "6.7.0" / "mf6"
+        assert get_executable("mf6", version="6.8.0") == tmp_path / "6.8.0" / "mf6"
+
+    def test_uninstall_removes_file_and_forgets(self, isolated_cache, tmp_path):
+        exe = tmp_path / "mf6"
+        exe.write_bytes(b"fake")
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"])
+
+        uninstall_program("mf6", version="6.8.0", bindir=tmp_path)
+
+        assert not exe.exists()
+        assert list_installed("mf6") == {}
+
+    def test_uninstall_keep_files(self, isolated_cache, tmp_path):
+        exe = tmp_path / "mf6"
+        exe.write_bytes(b"fake")
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"])
+
+        uninstall_program("mf6", version="6.8.0", bindir=tmp_path, delete_files=False)
+
+        assert exe.exists()
+        assert list_installed("mf6") == {}
+
+    def test_uninstall_requires_version_or_all(self, isolated_cache, tmp_path):
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"])
+        with pytest.raises(ValueError):
+            uninstall_program("mf6")
+
+    def test_uninstall_all_versions(self, isolated_cache, tmp_path):
+        for version in ("6.7.0", "6.8.0"):
+            register_installation("mf6", version, tmp_path, [f"mf6-{version}"])
+        uninstall_program("mf6", all_versions=True, delete_files=False)
+        assert list_installed("mf6") == {}
+
+    def test_list_installed_filters_by_program(self, isolated_cache, tmp_path):
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"])
+        register_installation("mp7", "7.2.001", tmp_path, ["mp7"])
+        assert set(list_installed().keys()) == {"mf6", "mp7"}
+        assert set(list_installed("mf6").keys()) == {"mf6"}
+
+
+class TestBindirSelection:
+    def test_get_bindir_options_nonempty(self):
+        assert len(get_bindir_options()) > 0
+
+    def test_get_bindir_shortcut_map_has_python(self):
+        options = get_bindir_shortcut_map()
+        assert ":python" in options or ":mf" in options
+
+
+class TestInstallProgramLive:
+    """Live installs against real MODFLOW-ORG releases - one per distribution
+    format, kept small via `subset`/`program` to avoid slow downloads."""
+
+    @requires_github
     @flaky(max_runs=3, min_passes=1)
-    def test_sync_force_flag(self):
-        """Test that sync --force re-downloads even if cached."""
-        # Clear cache first
-        _DEFAULT_CACHE.clear()
+    def test_install_from_modflow6_repo(self, isolated_cache, tmp_path):
+        bindir = tmp_path / "bin"
+        installations = install_program("mf6", repo="modflow6", bindir=bindir)
+        assert len(installations) == 1
+        assert installations[0].executables == ["mf6"]
+        assert (bindir / "mf6").exists()
+        assert get_executable("mf6") == bindir / "mf6"
 
-        config = ProgramSourceConfig.load()
+    @requires_github
+    @flaky(max_runs=3, min_passes=1)
+    def test_install_from_nightly_repo(self, isolated_cache, tmp_path):
+        bindir = tmp_path / "bin"
+        installations = install_program("mf6", repo="modflow6-nightly-build", bindir=bindir)
+        assert len(installations) == 1
+        assert (bindir / "mf6").exists()
 
-        # Get a source that we know exists (modflow6)
-        if "modflow6" not in config.sources:
-            pytest.skip("modflow6 source not configured")
+    @requires_github
+    @flaky(max_runs=3, min_passes=1)
+    def test_install_from_executables_repo_subset(self, isolated_cache, tmp_path):
+        bindir = tmp_path / "bin"
+        installations = install_program(subset="mfnwt", repo="executables", bindir=bindir)
+        assert len(installations) == 1
+        assert installations[0].executables == ["mfnwt"]
+        assert (bindir / "mfnwt").exists()
 
-        source = config.sources["modflow6"]
+    @requires_github
+    def test_install_unknown_repo_rejected(self, isolated_cache, tmp_path):
+        with pytest.raises(ProgramInstallationError):
+            install_program("mf6", repo="not-a-real-repo", bindir=tmp_path)
 
-        # First sync (should download)
-        result1 = source.sync(
-            ref=source.refs[0] if source.refs else None, force=False, verbose=False
-        )
+    @requires_github
+    def test_install_unknown_release_lists_available(self, isolated_cache, tmp_path):
+        with pytest.raises(ProgramInstallationError, match="choose from"):
+            install_program("mf6", repo="modflow6", version="not-a-real-tag", bindir=tmp_path)
 
-        # Check if sync succeeded (it might fail if no registry available)
-        if not result1.synced:
-            pytest.skip(f"Sync failed: {result1.failed}")
 
-        # Verify it's cached
-        ref = source.refs[0] if source.refs else None
-        assert _DEFAULT_CACHE.has(source.name, ref)
-
-        # Second sync without force (should skip)
-        result2 = source.sync(ref=ref, force=False, verbose=False)
-        assert len(result2.skipped) > 0
-
-        # Third sync with force (should re-download)
-        result3 = source.sync(ref=ref, force=True, verbose=False)
-        assert len(result3.synced) > 0
-
-        # Clean up
-        _DEFAULT_CACHE.clear()
-
-    def test_install_force_does_not_sync(self):
-        """Test that install --force does not re-sync registry."""
-        from modflow_devtools.programs import ProgramManager
-
-        # This is more of a design verification test
-        # We verify that the install method signature has force parameter
-        # and that it's documented to not sync
-
-        manager = ProgramManager()
-
-        # Check install method has force parameter
-        import inspect
-
-        sig = inspect.signature(manager.install)
-        assert "force" in sig.parameters
-
-        # Check that force parameter is documented correctly
-        # The docstring should mention that force doesn't re-sync
-        docstring = manager.install.__doc__
-        if docstring:
-            # This is a basic check - in reality the behavior is tested
-            # through integration tests
-            assert docstring is not None
-
-    def test_sync_and_install_independence(self):
-        """Test that sync cache and install state are independent."""
-        from modflow_devtools.programs import ProgramCache
-
-        cache = ProgramCache()
-
-        # Registry cache is separate from installation metadata
-        # Registry cache: ~/.cache/modflow-devtools/programs/registries/
-        # Install metadata: ~/.cache/modflow-devtools/programs/metadata/
-
-        assert cache.registries_dir != cache.metadata_dir
-
-        # Verify paths are different
-        assert "registries" in str(cache.registries_dir)
-        assert "metadata" in str(cache.metadata_dir)
+def test_available_repos_matches_get_modflow_parity():
+    assert set(AVAILABLE_REPOS) == {"executables", "modflow6", "modflow6-nightly-build"}

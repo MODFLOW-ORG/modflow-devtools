@@ -8,430 +8,143 @@
 > warnings.filterwarnings('ignore', message='.*modflow_devtools.programs.*experimental.*')
 > ```
 
-The `modflow_devtools.programs` module provides programmatic access to MODFLOW and related programs in the MODFLOW ecosystem. It can be used with MODFLOW organization releases or custom program repositories.
+The `modflow_devtools.programs` module installs MODFLOW and related program executables and tracks what's installed where. It is a generalized, in-tree successor to flopy's [`get_modflow.py`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py) utility, supporting the same three real MODFLOW-ORG release distributions.
 
-This module builds on [Pooch](https://www.fatiando.org/pooch/latest/index.html) for file fetching and caching. While it leverages Pooch's capabilities, it provides an independent layer with:
-
-- Registration, discovery and synchronization
-- Installation and version management
-- Platform-specific binary handling
-
-Program registries can be synchronized from remote sources on demand. The user or developer can inspect and install programs published by the MODFLOW organization, from a personal fork, or from custom repositories.
+Unlike the [Models API](models.md) and DFNs API, there is no registry to sync here. Program binaries are a solved problem for a real package manager - conda-forge is the natural long-term home for installing MODFLOW programs, and this module isn't trying to compete with or duplicate that. What it does provide, regardless of how a program was installed, is a local **installation ledger**: a record of what's installed, where, at what version, from what source. See [Relationship to get-modflow and conda-forge](#relationship-to-get-modflow-and-conda-forge) below.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-
-- [Overview](#overview)
-- [Usage](#usage)
-  - [Syncing registries](#syncing-registries)
-  - [Inspecting available programs](#inspecting-available-programs)
-  - [Installing a program](#installing-a-program)
-  - [Finding installed programs](#finding-installed-programs)
-  - [Version management](#version-management)
-  - [Using the default manager](#using-the-default-manager)
-  - [Customizing program sources](#customizing-program-sources)
-  - [Working with registries](#working-with-registries)
-- [Program Addressing](#program-addressing)
-- [Platform Support](#platform-support)
-- [Cache Management](#cache-management)
-- [Force Semantics](#force-semantics)
-- [Automatic Synchronization](#automatic-synchronization)
-- [Repository Integration](#repository-integration)
-  - [Registry Generation](#registry-generation)
-  - [Publishing Registries](#publishing-registries)
-  - [Registry Format](#registry-format)
-- [Relationship to pymake and get-modflow](#relationship-to-pymake-and-get-modflow)
+- [Installing a program](#installing-a-program)
+- [Program sources](#program-sources)
+- [Finding installed programs](#finding-installed-programs)
+- [Recording installations from other sources](#recording-installations-from-other-sources)
+- [Version management](#version-management)
+- [Uninstalling](#uninstalling)
+- [Platform support](#platform-support)
+- [Cache and ledger layout](#cache-and-ledger-layout)
+- [Relationship to get-modflow and conda-forge](#relationship-to-get-modflow-and-conda-forge)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Overview
-
-The Programs API provides:
-
-- **Program registration**: Index local or remote program repositories
-- **Program discovery**: Browse available programs and versions
-- **Program installation**: Install pre-built binaries for your platform
-- **Version management**: Install multiple versions side-by-side and switch between them
-
-Program metadata is provided by **registries** which are published by program repositories. On first use, `modflow-devtools` automatically attempts to sync these registries.
-
-A program registry contains metadata for available programs including:
-
-- **Program name and description**
-- **Available versions**
-- **Platform-specific distributions** (binaries and assets)
-
-## Usage
-
-### Syncing registries
-
-Registries can be manually synchronized:
-
-```python
-from modflow_devtools.programs import ProgramSourceConfig
-
-config = ProgramSourceConfig.load()
-
-# Sync all configured sources
-results = config.sync(verbose=True)
-
-# Sync specific source
-results = config.sync(source="modflow6", verbose=True)
-```
-
-Or via CLI (both forms are equivalent):
-
-```bash
-# Using the mf command
-mf programs sync
-mf programs sync --source modflow6
-mf programs sync --force  # Force re-download of registry metadata
-
-# Or using the module form
-python -m modflow_devtools.programs sync
-python -m modflow_devtools.programs sync --source modflow6
-python -m modflow_devtools.programs sync --force  # Force re-download of registry metadata
-```
-
-**Note**: The `--force` flag on `sync` forces re-downloading of registry metadata even if already cached. This is separate from installation - see the "Force semantics" section below.
-
-### Inspecting available programs
-
-```python
-from modflow_devtools.programs import ProgramSourceConfig
-
-config = ProgramSourceConfig.load()
-
-# Check sync status
-status = config.status
-for source_name, source_status in status.items():
-    print(f"{source_name}: {source_status.cached_refs}")
-```
-
-Or by CLI (both forms are equivalent):
-
-```bash
-# Using the mf command
-mf programs info  # Show sync status
-mf programs list  # Show program summary
-mf programs list --verbose  # Full list with details
-mf programs list --source modflow6 --verbose  # Filter by source
-
-# Or using the module form
-python -m modflow_devtools.programs info  # Show sync status
-python -m modflow_devtools.programs list  # Show program summary
-python -m modflow_devtools.programs list --verbose  # Full list with details
-python -m modflow_devtools.programs list --source modflow6 --verbose  # Filter by source
-```
-
-### Installing a program
+## Installing a program
 
 ```python
 from modflow_devtools.programs import install_program
 
-# Install latest available version
-paths = install_program("mf6", verbose=True)
+# Install mf6 from the modflow6 repo's latest release (auto-detects platform,
+# auto-selects an installation directory)
+installations = install_program("mf6", repo="modflow6")
 
-# Install specific version
-paths = install_program("mf6", version="6.6.3", verbose=True)
+# Install a specific version to a specific directory
+install_program("mf6", repo="modflow6", version="6.8.0", bindir="/usr/local/bin")
 
-# Install to custom directory
-paths = install_program("mf6", version="6.6.3", bindir="/usr/local/bin")
+# Install several programs from the combined 'executables' distribution
+install_program(subset="mfnwt,mf2005", repo="executables", bindir="/usr/local/bin")
+
+# Install everything in a release (no program/subset given)
+install_program(repo="executables", bindir="/usr/local/bin")
 ```
 
-Or via CLI (both forms are equivalent):
+Or via CLI:
 
 ```bash
-# Using the mf command
-mf programs install mf6
-mf programs install mf6@6.6.3
-mf programs install mf6@6.6.3 --bindir /usr/local/bin
-
-# Or using the module form
-python -m modflow_devtools.programs install mf6
-python -m modflow_devtools.programs install mf6@6.6.3
-python -m modflow_devtools.programs install mf6@6.6.3 --bindir /usr/local/bin
+mf programs install mf6 --repo modflow6
+mf programs install mf6 --repo modflow6 --version 6.8.0 --bindir /usr/local/bin
+mf programs install --repo executables --subset mfnwt,mf2005 --bindir /usr/local/bin
 ```
 
-### Finding installed programs
+## Program sources
+
+Three real MODFLOW-ORG distributions are supported, matching `get_modflow.py`:
+
+| `repo` | Contents | Versioning |
+|---|---|---|
+| `executables` (default) | Combined legacy distribution: many programs bundled in one archive, described by an embedded `code.json` manifest | Each program has its own version, read from `code.json` |
+| `modflow6` | `mf6`, `zbud6`, `mf5to6`, `libmf6` | All share the release tag as their version |
+| `modflow6-nightly-build` | Same programs as `modflow6`, nightly builds | All share the nightly build tag |
+
+`owner` defaults to `MODFLOW-ORG`; override it to test against a fork.
+
+## Finding installed programs
 
 ```python
-from modflow_devtools.programs import _DEFAULT_MANAGER, list_installed
+from modflow_devtools.programs import get_executable, list_installed
 
-# Get path to installed executable
-mf6_path = _DEFAULT_MANAGER.get_executable("mf6")
+mf6_path = get_executable("mf6")
+mf6_path = get_executable("mf6", version="6.8.0")
 
-# Get specific version
-mf6_path = _DEFAULT_MANAGER.get_executable("mf6", version="6.6.3")
-
-# List all installed programs
 installed = list_installed()
-for program_name, installations in installed.items():
+for program, installations in installed.items():
     for inst in installations:
-        print(f"{program_name} {inst.version} in {inst.bindir}")
-```
-
-Or by CLI (both forms are equivalent):
-
-```bash
-# Using the mf command
-mf programs history
-mf programs history mf6 --verbose
-
-# Or using the module form
-python -m modflow_devtools.programs history
-python -m modflow_devtools.programs history mf6 --verbose
-```
-
-### Version management
-
-Multiple versions can be installed side-by-side. Switching between them is done by re-running `install` — the archive is already cached, so no re-download occurs:
-
-```python
-from modflow_devtools.programs import install_program
-
-# Install multiple versions
-install_program("mf6", version="6.6.3")
-install_program("mf6", version="6.5.0")
-
-# Switch back to 6.6.3 — re-copies from cache, no download
-install_program("mf6", version="6.6.3")
+        print(f"{program} {inst.version} in {inst.bindir}")
 ```
 
 Or by CLI:
 
 ```bash
-mf programs install mf6@6.6.3
-mf programs install mf6@6.5.0
-
-# Switch back — fast, uses cached archive
-mf programs install mf6@6.6.3
+mf programs list
+mf programs list mf6 --verbose
 ```
 
-### Using the default manager
+## Recording installations from other sources
 
-The module provides explicit access to the default manager used by `install_program()` etc.
+The ledger isn't tied to `install_program`. Anything that installs a MODFLOW program - a conda-forge package, a manual build, another tool - can register itself so `get_executable`/`list_installed` can find it:
 
 ```python
-from modflow_devtools.programs import _DEFAULT_MANAGER
+from modflow_devtools.programs import register_installation
 
-# Install programs
-paths = _DEFAULT_MANAGER.install("mf6", version="6.6.3", verbose=True)
-
-# Switch versions
-_DEFAULT_MANAGER.select("mf6", version="6.5.0", verbose=True)
-
-# Get executable path
-mf6_path = _DEFAULT_MANAGER.get_executable("mf6")
-
-# List installed programs
-installed = _DEFAULT_MANAGER.list_installed()
-
-# Uninstall specific version
-_DEFAULT_MANAGER.uninstall("mf6", version="6.5.0")
-
-# Uninstall all versions
-_DEFAULT_MANAGER.uninstall("mf6", all_versions=True)
+register_installation(
+    "mf6", "6.8.0", bindir="/opt/conda/envs/modflow/bin",
+    executables=["mf6"], source="conda-forge",
+)
 ```
 
-### Customizing program sources
+## Version management
 
-Create a user config file to add custom sources or override defaults:
-
-- **Windows**: `%APPDATA%/modflow-devtools/programs.toml`
-- **macOS**: `~/Library/Application Support/modflow-devtools/programs.toml`
-- **Linux**: `~/.config/modflow-devtools/programs.toml`
-
-Example user config:
-
-```toml
-[sources.modflow6]
-repo = "myusername/modflow6"  # Use a fork for testing
-refs = ["develop"]
-```
-
-The user config is automatically merged with the bundled config, allowing you to test against forks or add private repositories.
-
-### Working with registries
-
-Access cached registry data directly:
+Multiple versions can be installed side by side, to different `bindir`s (or the same one, if you don't mind overwriting):
 
 ```python
-from modflow_devtools.programs import _DEFAULT_CACHE, ProgramSourceConfig
-
-config = ProgramSourceConfig.load()
-
-# Check sync status
-status = config.status
-for source_name, source_status in status.items():
-    print(f"{source_name}: {source_status.cached_refs}")
-
-# Load cached registry
-registry = _DEFAULT_CACHE.load("modflow6", "6.6.3")
-if registry:
-    for program_name, metadata in registry.programs.items():
-        print(f"{program_name} {metadata.version}")
-        print(f"  Description: {metadata.description}")
-        print(f"  Distributions: {[d.name for d in metadata.dists]}")
+install_program("mf6", repo="modflow6", version="6.8.0", bindir="/opt/mf6-6.8.0")
+install_program("mf6", repo="modflow6", version="6.7.0", bindir="/opt/mf6-6.7.0")
 ```
 
-## Program Addressing
+The downloaded archive is cached (`~/.cache/modflow-devtools/programs/archives/`), so re-installing an already-downloaded version doesn't re-fetch it. Pass `force=True` to force re-download.
 
-Programs are addressed using the format: `{program}@{version}`.
+## Uninstalling
 
-Examples:
-- `mf6@6.6.3` - MODFLOW 6 version 6.6.3
-- `zbud6@6.6.3` - MODFLOW 6 Zonebudget version 6.6.3
-- `mp7@7.2.001` - MODPATH 7 version 7.2.001
+```python
+from modflow_devtools.programs import uninstall_program
 
-## Platform Support
-
-The Programs API automatically detects your platform and downloads the appropriate binaries:
-
-- **linux**: Linux x86_64
-- **mac**: macOS (Intel and Apple Silicon)
-- **win64**: Windows 64-bit
-
-Programs must provide pre-built binaries for supported platforms. Building from source is not supported—program repositories are responsible for releasing platform-specific binaries.
-
-## Cache Management
-
-Downloaded archives and installed binaries are cached locally:
-
-- **Registries**: `~/.cache/modflow-devtools/programs/registries/{source}/{ref}/`
-- **Archives**: `~/.cache/modflow-devtools/programs/archives/{program}/{version}/{platform}/`
-- **Binaries**: `~/.cache/modflow-devtools/programs/binaries/{program}/{version}/{platform}/`
-- **Metadata**: `~/.cache/modflow-devtools/programs/installations/{program}.json`
-
-The cache enables:
-- Fast re-installation without re-downloading
-- Efficient version switching
-- Offline access to previously installed programs
-
-## Force Semantics
-
-The `--force` flag has different meanings depending on the command:
-
-**`sync --force`**: Forces re-downloading of registry metadata from GitHub
-- Re-fetches `programs.toml` even if already cached
-- Use when registry files have been updated on GitHub
-- Does not affect installed programs or archives
-
-**`install --force`**: Forces re-installation of program binaries
-- Re-extracts from cached archive and re-copies to installation directory
-- Does **not** re-sync registry metadata (use `sync --force` first if needed)
-- Use when installation is corrupted or you want to reinstall to a different location
-- Works offline if archive is already cached
-
-**Common workflows**:
-```bash
-# Update to latest registry and install
-mf programs sync --force
-mf programs install mf6
-
-# Repair broken installation (offline-friendly)
-mf programs install mf6 --force
-
-# Fresh install with latest metadata
-mf programs sync --force
-mf programs install mf6 --force
+uninstall_program("mf6", version="6.7.0", bindir="/opt/mf6-6.7.0")  # deletes the file(s)
+uninstall_program("mf6", version="6.7.0", bindir="/opt/mf6-6.7.0", delete_files=False)  # ledger only
+uninstall_program("mf6", all_versions=True)
 ```
 
-## Automatic Synchronization
-
-Auto-sync is **opt-in** (experimental). To enable:
+Or via CLI:
 
 ```bash
-export MODFLOW_DEVTOOLS_AUTO_SYNC=1  # or "true" or "yes"
+mf programs uninstall mf6@6.7.0 --bindir /opt/mf6-6.7.0
+mf programs uninstall mf6 --all
 ```
 
-When enabled, `modflow-devtools` attempts to sync registries:
-- On first access (best-effort, fails silently on network errors)
-- Before installation
-- Before listing available programs
+## Platform support
 
-Then manually sync when needed:
+Platform is auto-detected as a MODFLOW ostag - `linux`, `mac`, `macarm`, or `win64` - via `modflow_devtools.ostags.get_ostag`. Override with `platform=...` if needed. Programs must publish pre-built binaries for the target platform; building from source is not supported.
 
-```bash
-mf programs sync
-# Or: python -m modflow_devtools.programs sync
+## Cache and ledger layout
+
+```
+~/.cache/modflow-devtools/programs/
+├── archives/{repo}/{tag}/{platform}/{asset name}   # downloaded release archives
+└── metadata/{program}.json                          # per-program installation ledger
 ```
 
-## Repository Integration
+The ledger is a flat list of installations per program name - version, platform, bindir, install time, source, and the executable filename(s) - independent of how the archive was cached or discovered.
 
-Program repositories publish registry files (`programs.toml`) describing available programs and platform-specific distributions.
+## Relationship to get-modflow and conda-forge
 
-### Registry Generation
+This module is meant to eventually replace flopy's `get_modflow.py`: it ports the same download/extract/bindir-selection logic, generalized across all three of `get_modflow.py`'s supported repos (`executables`, `modflow6`, `modflow6-nightly-build`) rather than one at a time, and adds per-program version tracking instead of a single flat "what did I last run" log.
 
-The `make_registry` tool generates registry files from local or remote assets.
-
-**From local assets** (typical CI usage):
-
-```bash
-python -m modflow_devtools.programs.make_registry \
-  --dists *.zip \
-  --programs mf6 zbud6 libmf6 mf5to6 \
-  --version 6.6.3 \
-  --repo MODFLOW-ORG/modflow6 \
-  --compute-hashes \
-  --output programs.toml
-```
-
-**From existing GitHub release**:
-
-```bash
-python -m modflow_devtools.programs.make_registry \
-  --repo MODFLOW-ORG/modflow6 \
-  --version 6.6.3 \
-  --programs mf6 zbud6 libmf6 mf5to6 \
-  --compute-hashes \
-  --output programs.toml
-```
-
-### Publishing Registries
-
-Registry files are published as GitHub release assets alongside binary distributions.
-
-For instance, to publish a registry in a GitHub Actions workflow:
-
-```yaml
-- name: Generate program registry
-  run: |
-    python -m modflow_devtools.programs.make_registry \
-      --dists *.zip \
-      --programs mf6 zbud6 libmf6 mf5to6 \
-      --version ${{ github.ref_name }} \
-      --repo ${{ github.repository }} \
-      --compute-hashes \
-      --output programs.toml
-
-- name: Upload registry to release
-  uses: softprops/action-gh-release@v1
-  with:
-    files: programs.toml
-```
-
-### Registry Format
-
-The generated `programs.toml` file contains:
-
-- Program metadata (description, license)
-- Platform-specific distributions (linux, mac, win64)
-- Asset filenames and SHA256 hashes
-- Executable paths within archives
-
-See the [developer documentation](dev/programs.md) for detailed registry format specifications.
-
-## Relationship to pymake and get-modflow
-
-The Programs API is designed to eventually supersede:
-- **pymake's program database**: Registry responsibilities are delegated to program repositories
-- **flopy's get-modflow**: Installation patterns adapted and enhanced for multi-version support
-
-The Programs API provides:
-- Decoupled releases (programs release independently of devtools)
-- Multiple versions side-by-side
-- Unified cache structure
-- Comprehensive installation tracking
-- Fast version switching
+It deliberately does **not** try to be a package manager. An earlier iteration of this API explored a Models/DFNs-style registry (each program repository publishing its own `programs.toml` manifest, synced and cached locally). That was built and later dropped: it duplicates work a real package manager already does well, and in practice no MODFLOW-ORG program repository adopted the registry contract, including `modflow6` itself. If MODFLOW programs become available via conda-forge, that's the better place to get them installed and managed; this module's installation ledger is designed to accept those installs too (via `register_installation`), not to compete with them.

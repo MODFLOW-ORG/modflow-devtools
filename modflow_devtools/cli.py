@@ -12,21 +12,18 @@ Usage:
     mf models list
     mf models copy <model> <workspace>
     mf models cp <model> <workspace>  # cp is an alias for copy
-    mf programs sync
-    mf programs info
-    mf programs list
     mf programs install <program>
     mf programs uninstall <program>
-    mf programs history
+    mf programs list
 """
 
 import argparse
 import sys
-import warnings
 
 
 def _sync_all():
-    """Sync all registries (dfns, models, programs)."""
+    """Sync all registries (dfns, models). The Programs API has no registry to sync -
+    it installs directly from GitHub releases and tracks installs in a local ledger."""
     print("Syncing all registries...")
     print()
 
@@ -56,21 +53,6 @@ def _sync_all():
         print(f"Error syncing models: {e}")
     print()
 
-    # Sync Programs
-    print("=== Programs ===")
-    try:
-        # Suppress experimental warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message=".*modflow_devtools.programs.*experimental.*")
-            from modflow_devtools.programs import ProgramSourceConfig
-
-        config = ProgramSourceConfig.load()
-        config.sync()
-        print("Programs synced successfully")
-    except Exception as e:
-        print(f"Error syncing programs: {e}")
-    print()
-
     print("All registries synced!")
 
 
@@ -83,7 +65,7 @@ def main():
     subparsers = parser.add_subparsers(dest="subcommand", help="Available commands")
 
     # Sync subcommand (syncs all APIs)
-    subparsers.add_parser("sync", help="Sync all registries (dfns, models, programs)")
+    subparsers.add_parser("sync", help="Sync all registries (dfns, models)")
 
     # DFNs subcommand
     subparsers.add_parser("dfns", help="Manage MODFLOW 6 definition files")
@@ -92,7 +74,7 @@ def main():
     subparsers.add_parser("models", help="Manage MODFLOW model registries")
 
     # Programs subcommand
-    subparsers.add_parser("programs", help="Manage MODFLOW program registries")
+    subparsers.add_parser("programs", help="Install and track MODFLOW program executables")
 
     # Parse only the first level to determine which submodule to invoke
     args, remaining = parser.parse_known_args()
