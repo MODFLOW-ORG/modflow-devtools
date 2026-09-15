@@ -62,6 +62,14 @@ def _make_zip(path: Path, files: dict[str, bytes]) -> Path:
     return path
 
 
+def _exe(name: str) -> str:
+    """Expected filename for a real (live, auto-detected-platform) install -
+    Windows executables get a real .exe extension, appended by extract_release_archive
+    via get_platform()/get_binary_suffixes(). Fixture-driven extract_release_archive
+    tests pass an explicit ostag="linux" and don't need this."""
+    return f"{name}.exe" if sys.platform == "win32" else name
+
+
 class TestPlatform:
     def test_get_platform_returns_supported_ostag(self):
         assert get_platform() in ("linux", "mac", "macarm", "win64")
@@ -328,9 +336,9 @@ class TestInstallProgramLive:
         bindir = tmp_path / "bin"
         installations = install_program("mf6", repo="modflow6", bindir=bindir)
         assert len(installations) == 1
-        assert installations[0].executables == ["mf6"]
-        assert (bindir / "mf6").exists()
-        assert get_executable("mf6") == bindir / "mf6"
+        assert installations[0].executables == [_exe("mf6")]
+        assert (bindir / _exe("mf6")).exists()
+        assert get_executable("mf6") == bindir / _exe("mf6")
 
     @requires_github
     @flaky(max_runs=3, min_passes=1)
@@ -338,7 +346,7 @@ class TestInstallProgramLive:
         bindir = tmp_path / "bin"
         installations = install_program("mf6", repo="modflow6-nightly-build", bindir=bindir)
         assert len(installations) == 1
-        assert (bindir / "mf6").exists()
+        assert (bindir / _exe("mf6")).exists()
 
     @requires_github
     @flaky(max_runs=3, min_passes=1)
@@ -346,8 +354,8 @@ class TestInstallProgramLive:
         bindir = tmp_path / "bin"
         installations = install_program(subset="mfnwt", repo="executables", bindir=bindir)
         assert len(installations) == 1
-        assert installations[0].executables == ["mfnwt"]
-        assert (bindir / "mfnwt").exists()
+        assert installations[0].executables == [_exe("mfnwt")]
+        assert (bindir / _exe("mfnwt")).exists()
 
     @requires_github
     def test_install_unknown_repo_rejected(self, isolated_cache, tmp_path):
@@ -368,8 +376,8 @@ class TestInstallProgramLive:
         bindir = tmp_path / "bin"
         installations = install_program(repo="gridgen", bindir=bindir)
         assert len(installations) == 1
-        assert installations[0].executables == ["gridgen"]
-        assert (bindir / "gridgen").exists()
+        assert installations[0].executables == [_exe("gridgen")]
+        assert (bindir / _exe("gridgen")).exists()
 
 
 def test_known_repos_matches_get_modflow_parity():
@@ -580,8 +588,8 @@ class TestCLI:
         )
         cmd_install(install_args)
         installed_out = capsys.readouterr().out
-        assert "mf6 6.8.0" in installed_out
-        assert (bindir / "mf6").exists()
+        assert f"{_exe('mf6')} 6.8.0" in installed_out
+        assert (bindir / _exe("mf6")).exists()
 
         list_args = argparse.Namespace(program="mf6", verbose=False)
         cmd_list(list_args)
@@ -592,7 +600,7 @@ class TestCLI:
         )
         cmd_uninstall(uninstall_args)
         capsys.readouterr()
-        assert not (bindir / "mf6").exists()
+        assert not (bindir / _exe("mf6")).exists()
         assert list_installed("mf6") == {}
 
 
@@ -666,7 +674,7 @@ class TestMoreCoverage:
         )
         installations = install_program("mf6", repo="modflow6")
         assert installations[0].bindir == auto_dir
-        assert (auto_dir / "mf6").exists()
+        assert (auto_dir / _exe("mf6")).exists()
 
 
 class TestGetReleaseErrorWrapping:
