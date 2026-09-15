@@ -111,8 +111,11 @@ The ledger isn't tied to `install_program`. Anything that installs a MODFLOW pro
 from modflow_devtools.programs import register_installation
 
 register_installation(
-    "mf6", "6.8.0", bindir="/opt/conda/envs/modflow/bin",
-    executables=["mf6"], source="conda-forge",
+    "mf6",
+    "6.8.0",
+    bindir="/opt/conda/envs/modflow/bin",
+    executables=["mf6"],
+    source="conda-forge",
 )
 ```
 
@@ -133,7 +136,9 @@ The downloaded archive is cached (`~/.cache/modflow-devtools/programs/archives/`
 from modflow_devtools.programs import uninstall_program
 
 uninstall_program("mf6", version="6.7.0", bindir="/opt/mf6-6.7.0")  # deletes the file(s)
-uninstall_program("mf6", version="6.7.0", bindir="/opt/mf6-6.7.0", delete_files=False)  # ledger only
+uninstall_program(
+    "mf6", version="6.7.0", bindir="/opt/mf6-6.7.0", delete_files=False
+)  # ledger only
 uninstall_program("mf6", all_versions=True)
 ```
 

@@ -107,6 +107,7 @@ class ProgramInstallation:
 
 class InstallationMetadata:
     """Ledger for one program name, at ~/.cache/modflow-devtools/programs/metadata/{program}.json"""
+
     def load(self) -> bool: ...
     def save(self) -> None: ...
     def add_installation(self, installation: ProgramInstallation) -> None: ...
@@ -132,7 +133,7 @@ from modflow_devtools.programs import (
 install_program("mf6", repo="modflow6", version="6.8.0", bindir="/usr/local/bin")
 register_installation("mf6", "6.8.0", "/opt/conda/envs/mf/bin", ["mf6"], source="conda-forge")
 get_executable("mf6")  # -> Path | None
-list_installed()       # -> dict[str, list[ProgramInstallation]]
+list_installed()  # -> dict[str, list[ProgramInstallation]]
 uninstall_program("mf6", version="6.8.0", bindir="/usr/local/bin")
 ```
 
