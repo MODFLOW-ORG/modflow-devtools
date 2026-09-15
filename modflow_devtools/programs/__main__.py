@@ -11,9 +11,9 @@ import argparse
 import sys
 
 from . import (
-    AVAILABLE_REPOS,
     DEFAULT_OWNER,
     DEFAULT_REPO,
+    KNOWN_REPOS,
     install_program,
     list_installed,
     select_bindir,
@@ -122,9 +122,10 @@ def main():
     )
     install_parser.add_argument(
         "--repo",
-        choices=AVAILABLE_REPOS,
         default=DEFAULT_REPO,
-        help=f"Source distribution; default is '{DEFAULT_REPO}'.",
+        help=f"Source repo under --owner; default is '{DEFAULT_REPO}'. Not restricted to "
+        f"{KNOWN_REPOS} - any repo with a GitHub release and a matching platform asset "
+        "works, e.g. 'mfnwt', 'gridgen'.",
     )
     install_parser.add_argument(
         "--owner",

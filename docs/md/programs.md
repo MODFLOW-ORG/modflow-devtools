@@ -8,13 +8,12 @@
 > warnings.filterwarnings('ignore', message='.*modflow_devtools.programs.*experimental.*')
 > ```
 
-The `modflow_devtools.programs` module installs MODFLOW and related program executables and tracks what's installed where. It is a generalized, in-tree successor to flopy's [`get_modflow.py`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py) utility, supporting the same three real MODFLOW-ORG release distributions.
+The `modflow_devtools.programs` module installs MODFLOW and related program executables and tracks what's installed where. It is a generalized, in-tree successor to flopy's [`get_modflow.py`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py) utility: it supports the same three distributions `get_modflow.py` does, plus any other repo that publishes releases in the same shape - including installing directly from an individual program's own repo.
 
 Unlike the [Models API](models.md) and DFNs API, there is no registry to sync here. Program binaries are a solved problem for a real package manager - conda-forge is the natural long-term home for installing MODFLOW programs, and this module isn't trying to compete with or duplicate that. What it does provide, regardless of how a program was installed, is a local **installation ledger**: a record of what's installed, where, at what version, from what source. See [Relationship to get-modflow and conda-forge](#relationship-to-get-modflow-and-conda-forge) below.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 - [Installing a program](#installing-a-program)
 - [Program sources](#program-sources)
@@ -57,13 +56,22 @@ mf programs install --repo executables --subset mfnwt,mf2005 --bindir /usr/local
 
 ## Program sources
 
-Three real MODFLOW-ORG distributions are supported, matching `get_modflow.py`:
+`repo` is **not** restricted to a fixed list - any repo under `owner` (default `MODFLOW-ORG`) with a GitHub release and a platform-matching asset works, including installing a single program directly from its own repo:
+
+```python
+install_program(repo="mfnwt", bindir="/usr/local/bin")
+install_program(repo="gridgen", bindir="/usr/local/bin")
+```
+
+`KNOWN_REPOS` names the three distributions `get_modflow.py` supports out of the box, which `install_program` still understands specially (see table below) - it's a set of well-known defaults, not an allowlist:
 
 | `repo` | Contents | Versioning |
 |---|---|---|
 | `executables` (default) | Combined legacy distribution: many programs bundled in one archive, described by an embedded `code.json` manifest | Each program has its own version, read from `code.json` |
 | `modflow6` | `mf6`, `zbud6`, `mf5to6`, `libmf6` | All share the release tag as their version |
 | `modflow6-nightly-build` | Same programs as `modflow6`, nightly builds | All share the nightly build tag |
+
+A growing number of individual program repos (`mfnwt`, `mt3d-usgs`, `vs2dt`, `gridgen`, `triangle`, `zonbud`, `zonbudusg`, ...) already publish releases in the same single-program shape as `modflow6` - one archive per platform, no `code.json` needed since there's only one program in it. Anything shaped like that just works by passing its repo name.
 
 `owner` defaults to `MODFLOW-ORG`; override it to test against a fork.
 

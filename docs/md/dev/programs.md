@@ -8,7 +8,6 @@ This document describes the design of the Programs API ([GitHub issue #263](http
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 - [Background](#background)
 - [First iteration: a registry, mirroring Models/DFNs](#first-iteration-a-registry-mirroring-modelsdfns)
@@ -22,6 +21,7 @@ This document describes the design of the Programs API ([GitHub issue #263](http
   - [CLI](#cli)
 - [Relationship to Models/DFNs APIs](#relationship-to-modelsdfns-apis)
 - [Relationship to get-modflow](#relationship-to-get-modflow)
+- [Path to retiring pymake](#path-to-retiring-pymake)
 - [Explicitly out of scope](#explicitly-out-of-scope)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -45,11 +45,11 @@ The registry/sync/bootstrap layer (`ProgramSourceConfig`, `ProgramSourceRepo`, `
 
 ## Current design
 
-Install directly from the three real MODFLOW-ORG release distributions (matching flopy's [`get_modflow.py`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py)), and keep one genuinely new piece: a local per-program installation ledger.
+Install directly from GitHub releases (matching flopy's [`get_modflow.py`](https://github.com/modflowpy/flopy/blob/develop/flopy/utils/get_modflow.py)), and keep one genuinely new piece: a local per-program installation ledger.
 
 ### Program sources
 
-No registry, no bootstrap file - `AVAILABLE_REPOS` is a fixed tuple of the three real distributions:
+No registry, no bootstrap file, and - unlike the first iteration - no fixed allowlist of repos either. `get_release(owner, repo, tag)` builds the GitHub API URL directly from whatever `owner`/`repo` it's given and lets a nonexistent repo 404 naturally (wrapped into a clear `ProgramInstallationError`, see below) rather than rejecting it locally. `KNOWN_REPOS` is a tuple naming the three distributions `get_modflow.py` supports out of the box - `install_program`'s docstring and the CLI `--repo` help text point to it as a set of good defaults, but it is not enforced:
 
 | `repo` | Shape | Versioning |
 |---|---|---|
@@ -57,7 +57,9 @@ No registry, no bootstrap file - `AVAILABLE_REPOS` is a fixed tuple of the three
 | `modflow6` | One archive per ostag containing `mf6`/`zbud6`/`mf5to6`/`libmf6`, no `code.json` | Shared release tag |
 | `modflow6-nightly-build` | Same shape as `modflow6`, nightly tags | Shared nightly tag |
 
-`get_release`/`get_releases` hit the GitHub API directly (`GET /repos/{owner}/{repo}/releases[/tags/{tag}]`), with retry/backoff on transient failures, mirroring `get_modflow.py`'s own retry logic. `owner` defaults to `MODFLOW-ORG` but is overridable (e.g. to test a fork).
+**Why open rather than allowlisted:** a growing number of individual program repos already publish releases in the same single-program shape as `modflow6` (one archive per ostag, no `code.json`) - confirmed live: `mfnwt`, `mt3d-usgs`, `vs2dt`, `gridgen`, `triangle`, `zonbud`, `zonbudusg` all do, alongside `mf6`/`mf6-nightly`. That's already 8 of the ~17 programs `executables` bundles, installable directly from their own repos with zero code changes here - `extract_release_archive`'s shape-autodetection (see below) doesn't care whether the repo is one of the three well-known ones. The remaining programs (`mf2005`, `mt3dms`, `mfusg`, and others with no independent release yet) haven't made that jump; as they do, they work automatically too. Restricting `repo` to a fixed list would have meant re-adding entries by hand as each program repo catches up, for a check that only prevents a typo from reaching the GitHub API - and the GitHub API already reports a typo clearly on its own once `get_release`'s 404 handling is solid (which it has to be regardless, for a real `repo` value with a bad `tag`).
+
+`get_release`/`get_releases` hit the GitHub API directly (`GET /repos/{owner}/{repo}/releases[/tags/{tag}]`), with retry/backoff on transient failures, mirroring `get_modflow.py`'s own retry logic. `owner` defaults to `MODFLOW-ORG` but is overridable (e.g. to test a fork). A repo that doesn't exist (or has no releases) 404s at *both* the `/releases/tags/{tag}` and `/releases` endpoints, so `get_release`'s 404 handler - which calls `get_releases` to list available tags for a friendlier error message - catches `get_releases`'s own `ProgramInstallationError` in turn and reports "repo not found" instead of a confusing "tag not found, choose from: []" or an unwrapped `requests.exceptions.HTTPError` leaking out of the library.
 
 ### Asset selection
 
@@ -164,6 +166,16 @@ This module is meant to eventually replace flopy's `get_modflow.py`, and now tra
 | Flat metadata list, written only when running inside flopy | `InstallationMetadata`, per-program, always written, one ledger entry per program even within a combined install |
 
 Programs are expected to publish pre-built binaries for all supported platforms; building from source is out of scope, as it was for `get_modflow.py`.
+
+## Path to retiring pymake
+
+`pymake` today plays two roles for `executables`: building each program from source, and knowing the combined list of what to build. This API's job is neither of those - it installs from releases that already exist. But an open `repo` (see "Program sources" above) is what makes a path to retiring pymake possible, in two independent steps:
+
+1. **Already true today, no further work needed:** as individual program repos adopt their own build/release CI (meson + GitHub Actions publishing per-platform zips - the pattern `mfnwt`, `mt3d-usgs`, `vs2dt`, `gridgen`, `triangle`, `zonbud`, and `zonbudusg` already follow), each becomes installable directly via `install_program(repo=<name>)`, bypassing both `executables` and pymake for that program entirely. This is a per-program-repo migration, not a devtools change.
+
+2. **Not yet built, and deliberately not this module's job:** `executables` itself could stop invoking pymake to build everything from source, and instead have its release CI *compose* a combined bundle by fetching each participating program's latest release asset per platform (via this module's `get_release`/`download_archive`), extracting it, and re-packing everything into one archive plus a freshly generated `code.json`. This is the mirror image of `extract_release_archive`, and could reuse most of its primitives, but the composition policy (which programs to bundle, how to name/version the result) is `executables`-repo-specific business logic - it belongs in that repo's own CI script, not in this library, for the same reason the registry contract in the first iteration didn't belong here either.
+
+Once (1) covers enough programs, `executables` may not need to exist as a combined bundle at all - the remaining question, not yet decided, is whether the "one command installs everything" convenience it provides is worth the composition step's maintenance cost once users can just install each program from its own repo directly.
 
 ## Explicitly out of scope
 

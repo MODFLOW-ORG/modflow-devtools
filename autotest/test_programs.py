@@ -21,7 +21,7 @@ from flaky import flaky
 
 from modflow_devtools.markers import requires_github
 from modflow_devtools.programs import (
-    AVAILABLE_REPOS,
+    KNOWN_REPOS,
     InstallationMetadata,
     ProgramCache,
     ProgramInstallation,
@@ -351,17 +351,29 @@ class TestInstallProgramLive:
 
     @requires_github
     def test_install_unknown_repo_rejected(self, isolated_cache, tmp_path):
-        with pytest.raises(ProgramInstallationError):
-            install_program("mf6", repo="not-a-real-repo", bindir=tmp_path)
+        with pytest.raises(ProgramInstallationError, match="not found"):
+            install_program("mf6", repo="not-a-real-repo-xyz", bindir=tmp_path)
 
     @requires_github
     def test_install_unknown_release_lists_available(self, isolated_cache, tmp_path):
         with pytest.raises(ProgramInstallationError, match="choose from"):
             install_program("mf6", repo="modflow6", version="not-a-real-tag", bindir=tmp_path)
 
+    @requires_github
+    @flaky(max_runs=3, min_passes=1)
+    def test_install_from_arbitrary_program_repo_not_in_known_repos(self, isolated_cache, tmp_path):
+        """`repo` isn't restricted to KNOWN_REPOS - individual program repos that
+        publish their own releases in the same shape work directly."""
+        assert "gridgen" not in KNOWN_REPOS
+        bindir = tmp_path / "bin"
+        installations = install_program(repo="gridgen", bindir=bindir)
+        assert len(installations) == 1
+        assert installations[0].executables == ["gridgen"]
+        assert (bindir / "gridgen").exists()
 
-def test_available_repos_matches_get_modflow_parity():
-    assert set(AVAILABLE_REPOS) == {"executables", "modflow6", "modflow6-nightly-build"}
+
+def test_known_repos_matches_get_modflow_parity():
+    assert set(KNOWN_REPOS) == {"executables", "modflow6", "modflow6-nightly-build"}
 
 
 class TestDownloadArchive:
@@ -655,3 +667,53 @@ class TestMoreCoverage:
         installations = install_program("mf6", repo="modflow6")
         assert installations[0].bindir == auto_dir
         assert (auto_dir / "mf6").exists()
+
+
+class TestGetReleaseErrorWrapping:
+    """No-network coverage for the 404 handling get_release/get_releases need now
+    that arbitrary repos are allowed (a nonexistent repo 404s at both the
+    /releases/tags/{tag} and /releases list endpoints - get_release must not let
+    the inner get_releases() call's HTTPError leak out unwrapped)."""
+
+    def test_repo_not_found_raises_program_installation_error(self, monkeypatch):
+        from modflow_devtools.programs import get_release
+
+        class _FakeResponse:
+            status_code = 404
+
+            def raise_for_status(self):
+                import requests
+
+                raise requests.exceptions.HTTPError(response=self)
+
+        monkeypatch.setattr(
+            "modflow_devtools.programs.requests.get", lambda *a, **k: _FakeResponse()
+        )
+        with pytest.raises(ProgramInstallationError, match="not found"):
+            get_release(repo="not-a-real-repo-xyz")
+
+    def test_tag_not_found_lists_available_releases(self, monkeypatch):
+        from modflow_devtools.programs import get_release
+
+        class _FakeResponse:
+            def __init__(self, status_code, payload=None):
+                self.status_code = status_code
+                self._payload = payload or []
+
+            def raise_for_status(self):
+                import requests
+
+                if self.status_code >= 400:
+                    raise requests.exceptions.HTTPError(response=self)
+
+            def json(self):
+                return self._payload
+
+        def _fake_get(url, **kwargs):
+            if url.endswith("/releases/tags/not-a-real-tag"):
+                return _FakeResponse(404)
+            return _FakeResponse(200, [{"tag_name": "1.0.0"}, {"tag_name": "0.9.0"}])
+
+        monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
+        with pytest.raises(ProgramInstallationError, match=r"1\.0\.0"):
+            get_release(repo="mfnwt", tag="not-a-real-tag")

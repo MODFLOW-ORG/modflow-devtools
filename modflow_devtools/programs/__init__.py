@@ -45,8 +45,12 @@ _CACHE_ROOT = Path(pooch.os_cache("modflow-devtools"))
 
 DEFAULT_OWNER = "MODFLOW-ORG"
 DEFAULT_REPO = "executables"
-AVAILABLE_REPOS = ("executables", "modflow6", "modflow6-nightly-build")
-"""The three real MODFLOW-ORG distributions get_modflow.py supports."""
+KNOWN_REPOS = ("executables", "modflow6", "modflow6-nightly-build")
+"""The three repos get_modflow.py supports out of the box - not an allowlist.
+Any owner/repo with a GitHub release and an ostag-matching asset works with
+`install_program`/`get_release`; a growing number of individual program repos
+(mfnwt, mt3d-usgs, vs2dt, gridgen, triangle, zonbud, zonbudusg, ...) already
+publish releases in the same shape `executables` and `modflow6` do."""
 
 GITHUB_API = "https://api.github.com"
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
@@ -113,13 +117,6 @@ def _request_json(
     raise ProgramInstallationError(f"request failed for {url}: exhausted retries")
 
 
-def _check_repo(repo: str) -> None:
-    if repo not in AVAILABLE_REPOS:
-        raise ProgramInstallationError(
-            f"repo {repo!r} not supported; choose one of {AVAILABLE_REPOS}"
-        )
-
-
 def get_releases(
     owner: str = DEFAULT_OWNER,
     repo: str = DEFAULT_REPO,
@@ -128,8 +125,12 @@ def get_releases(
     delay: float | None = None,
 ) -> list[str]:
     """List available release tags for owner/repo, plus 'latest'."""
-    _check_repo(repo)
-    data = _request_json(f"{GITHUB_API}/repos/{owner}/{repo}/releases", tries=tries, delay=delay)
+    try:
+        data = _request_json(
+            f"{GITHUB_API}/repos/{owner}/{repo}/releases", tries=tries, delay=delay
+        )
+    except requests.exceptions.HTTPError as err:
+        raise ProgramInstallationError(f"repo {owner}/{repo} not found: {err}") from err
     return ["latest", *(r["tag_name"] for r in data)]
 
 
@@ -142,7 +143,6 @@ def get_release(
     delay: float | None = None,
 ) -> dict:
     """Fetch GitHub release metadata for owner/repo@tag ('latest' resolves the newest release)."""
-    _check_repo(repo)
     url = (
         f"{GITHUB_API}/repos/{owner}/{repo}/releases/latest"
         if tag == "latest"
@@ -152,7 +152,10 @@ def get_release(
         return _request_json(url, tries=tries, delay=delay)
     except requests.exceptions.HTTPError as err:
         if err.response is not None and err.response.status_code == 404:
-            available = get_releases(owner, repo, tries=tries, delay=delay)
+            try:
+                available = get_releases(owner, repo, tries=tries, delay=delay)
+            except ProgramInstallationError:
+                raise ProgramInstallationError(f"repo {owner}/{repo} not found") from err
             raise ProgramInstallationError(
                 f"release {tag!r} not found for {owner}/{repo}; choose from: {', '.join(available)}"
             ) from err
@@ -671,8 +674,10 @@ def install_program(
         also omitted, every program in the release is installed - matching
         get_modflow.py's default behavior.
     repo : str
-        One of "executables" (default: the combined legacy distribution),
-        "modflow6", or "modflow6-nightly-build".
+        Any repo under `owner` with a GitHub release and an ostag-matching
+        asset - not restricted to `KNOWN_REPOS` (default: "executables", the
+        combined legacy distribution). Individual program repos work directly,
+        e.g. repo="mfnwt" or repo="gridgen".
     owner : str
         GitHub repository owner; override to test against a fork.
     version : str
@@ -867,9 +872,9 @@ def list_installed(program: str | None = None) -> dict[str, list[ProgramInstalla
 
 
 __all__ = [
-    "AVAILABLE_REPOS",
     "DEFAULT_OWNER",
     "DEFAULT_REPO",
+    "KNOWN_REPOS",
     "_DEFAULT_CACHE",
     "InstallationMetadata",
     "ProgramCache",
