@@ -7,7 +7,10 @@ distributions (`executables`, `modflow6`, `modflow6-nightly-build`), and a
 local per-program ledger tracks what's installed where.
 """
 
+import argparse
 import json
+import subprocess
+import sys
 import warnings
 import zipfile
 from datetime import UTC, datetime
@@ -26,6 +29,7 @@ from modflow_devtools.programs import (
     _compute_file_hash,
     _select_asset,
     _verify_hash,
+    download_archive,
     extract_release_archive,
     get_bindir_options,
     get_bindir_shortcut_map,
@@ -34,8 +38,10 @@ from modflow_devtools.programs import (
     install_program,
     list_installed,
     register_installation,
+    select_bindir,
     uninstall_program,
 )
+from modflow_devtools.programs.__main__ import cmd_install, cmd_list, cmd_uninstall, main
 
 warnings.filterwarnings("ignore", message=".*modflow_devtools.programs.*experimental.*")
 
@@ -356,3 +362,296 @@ class TestInstallProgramLive:
 
 def test_available_repos_matches_get_modflow_parity():
     assert set(AVAILABLE_REPOS) == {"executables", "modflow6", "modflow6-nightly-build"}
+
+
+class TestDownloadArchive:
+    def test_uses_cached_file_without_hash(self, tmp_path):
+        dest = tmp_path / "archive.zip"
+        dest.write_bytes(b"cached-content")
+        result = download_archive("https://example.invalid/archive.zip", dest)
+        assert result == dest
+        assert dest.read_bytes() == b"cached-content"
+
+    def test_uses_cached_file_with_matching_hash(self, tmp_path):
+        dest = tmp_path / "archive.zip"
+        dest.write_bytes(b"cached-content")
+        digest = _compute_file_hash(dest)
+        result = download_archive(
+            "https://example.invalid/archive.zip", dest, expected_hash=f"sha256:{digest}"
+        )
+        assert result == dest
+
+    def test_redownloads_on_hash_mismatch(self, tmp_path, monkeypatch):
+        import hashlib
+
+        dest = tmp_path / "archive.zip"
+        dest.write_bytes(b"stale-content")
+
+        class _FakeResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def iter_content(self, chunk_size=8192):
+                yield b"fresh-content"
+
+        monkeypatch.setattr(
+            "modflow_devtools.programs.requests.get",
+            lambda *a, **k: _FakeResponse(),
+        )
+
+        fresh_digest = hashlib.sha256(b"fresh-content").hexdigest()
+        result = download_archive(
+            "https://example.invalid/archive.zip", dest, expected_hash=f"sha256:{fresh_digest}"
+        )
+        assert result.read_bytes() == b"fresh-content"
+
+    def test_force_redownloads_even_when_cached(self, tmp_path, monkeypatch):
+        dest = tmp_path / "archive.zip"
+        dest.write_bytes(b"stale-content")
+        calls = []
+
+        class _FakeResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def iter_content(self, chunk_size=8192):
+                calls.append(1)
+                yield b"fresh-content"
+
+        monkeypatch.setattr(
+            "modflow_devtools.programs.requests.get",
+            lambda *a, **k: _FakeResponse(),
+        )
+        download_archive("https://example.invalid/archive.zip", dest, force=True)
+        assert calls == [1]
+        assert dest.read_bytes() == b"fresh-content"
+
+
+class TestRetryLogic:
+    def test_request_json_retries_then_succeeds(self, monkeypatch):
+        import requests
+
+        from modflow_devtools.programs import _request_json
+
+        monkeypatch.setattr("modflow_devtools.programs.time.sleep", lambda *_: None)
+
+        class _FakeResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"ok": True}
+
+        calls = {"n": 0}
+
+        def _fake_get(*a, **k):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise requests.exceptions.ConnectionError("transient")
+            return _FakeResponse()
+
+        monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
+        result = _request_json("https://example.invalid/x", tries=3, delay=0)
+        assert result == {"ok": True}
+        assert calls["n"] == 3
+
+    def test_request_json_exhausts_retries(self, monkeypatch):
+        import requests
+
+        from modflow_devtools.programs import _request_json
+
+        monkeypatch.setattr("modflow_devtools.programs.time.sleep", lambda *_: None)
+
+        def _fake_get(*a, **k):
+            raise requests.exceptions.ConnectionError("down")
+
+        monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
+        with pytest.raises(ProgramInstallationError):
+            _request_json("https://example.invalid/x", tries=2, delay=0)
+
+
+class TestSelectBindir:
+    def test_auto_select_by_prefix(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(
+            "modflow_devtools.programs.get_bindir_shortcut_map",
+            lambda program=None: {":python": (tmp_path, "used by Python")},
+        )
+        assert select_bindir(":py") == tmp_path.resolve()
+
+    def test_ambiguous_shortcut_raises(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(
+            "modflow_devtools.programs.get_bindir_shortcut_map",
+            lambda program=None: {
+                ":prev": (tmp_path, "a"),
+                ":python": (tmp_path, "b"),
+            },
+        )
+        with pytest.raises(ProgramInstallationError, match="Ambiguous"):
+            select_bindir(":p")
+
+    def test_unknown_shortcut_raises(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(
+            "modflow_devtools.programs.get_bindir_shortcut_map",
+            lambda program=None: {":python": (tmp_path, "used by Python")},
+        )
+        with pytest.raises(ProgramInstallationError, match="Invalid bindir shortcut"):
+            select_bindir(":nope")
+
+
+class TestCLI:
+    def test_main_no_command_prints_help_and_exits(self, capsys):
+        sys_argv = sys.argv
+        sys.argv = ["mf-programs"]
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+        finally:
+            sys.argv = sys_argv
+        assert exc_info.value.code == 1
+        assert "usage" in capsys.readouterr().out.lower()
+
+    def test_cmd_uninstall_requires_version_or_all(self, capsys):
+        args = argparse.Namespace(program="mf6", bindir=None, all_versions=False, keep_files=False)
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_uninstall(args)
+        assert exc_info.value.code == 1
+        assert "must specify version" in capsys.readouterr().err.lower()
+
+    def test_cmd_list_no_installations(self, isolated_cache, capsys):
+        args = argparse.Namespace(program=None, verbose=False)
+        cmd_list(args)
+        assert "no programs installed" in capsys.readouterr().out.lower()
+
+    def test_cmd_list_shows_registered_installation(self, isolated_cache, tmp_path, capsys):
+        exe = tmp_path / "mf6"
+        exe.write_bytes(b"fake")
+        register_installation("mf6", "6.8.0", tmp_path, ["mf6"], source="manual")
+
+        args = argparse.Namespace(program=None, verbose=True)
+        cmd_list(args)
+        out = capsys.readouterr().out
+        assert "mf6" in out
+        assert "6.8.0" in out
+        assert str(tmp_path) in out
+
+    def test_help_smoke_test_via_subprocess(self):
+        for argv in (
+            [sys.executable, "-m", "modflow_devtools.programs", "--help"],
+            [sys.executable, "-m", "modflow_devtools.programs", "install", "--help"],
+            [sys.executable, "-m", "modflow_devtools.programs", "uninstall", "--help"],
+            [sys.executable, "-m", "modflow_devtools.programs", "list", "--help"],
+        ):
+            result = subprocess.run(argv, capture_output=True, text=True, timeout=30)
+            assert result.returncode == 0, result.stderr
+
+    @requires_github
+    @flaky(max_runs=3, min_passes=1)
+    def test_cmd_install_at_version_syntax_and_list_and_uninstall(
+        self, isolated_cache, tmp_path, capsys
+    ):
+        bindir = tmp_path / "bin"
+        install_args = argparse.Namespace(
+            program="mf6@6.8.0",
+            repo="modflow6",
+            owner="MODFLOW-ORG",
+            version=None,
+            bindir=str(bindir),
+            platform=None,
+            subset=None,
+            force=False,
+        )
+        cmd_install(install_args)
+        installed_out = capsys.readouterr().out
+        assert "mf6 6.8.0" in installed_out
+        assert (bindir / "mf6").exists()
+
+        list_args = argparse.Namespace(program="mf6", verbose=False)
+        cmd_list(list_args)
+        assert "6.8.0" in capsys.readouterr().out
+
+        uninstall_args = argparse.Namespace(
+            program="mf6@6.8.0", bindir=str(bindir), all_versions=False, keep_files=False
+        )
+        cmd_uninstall(uninstall_args)
+        capsys.readouterr()
+        assert not (bindir / "mf6").exists()
+        assert list_installed("mf6") == {}
+
+
+class TestMoreCoverage:
+    def test_download_archive_exhausts_retries(self, tmp_path, monkeypatch):
+        import requests
+
+        monkeypatch.setattr("modflow_devtools.programs.time.sleep", lambda *_: None)
+
+        def _fake_get(*a, **k):
+            raise requests.exceptions.ConnectionError("down")
+
+        monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
+        with pytest.raises(ProgramInstallationError):
+            download_archive("https://example.invalid/x.zip", tmp_path / "x.zip", tries=2, delay=0)
+
+    def test_download_archive_hash_mismatch_after_download_raises(self, tmp_path, monkeypatch):
+        class _FakeResponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                pass
+
+            def iter_content(self, chunk_size=8192):
+                yield b"content"
+
+        monkeypatch.setattr(
+            "modflow_devtools.programs.requests.get", lambda *a, **k: _FakeResponse()
+        )
+        with pytest.raises(ProgramInstallationError, match="does not match expected"):
+            download_archive(
+                "https://example.invalid/x.zip",
+                tmp_path / "x.zip",
+                expected_hash=f"sha256:{'0' * 64}",
+            )
+
+    def test_get_executable_filters_by_bindir(self, isolated_cache, tmp_path):
+        dir_a, dir_b = tmp_path / "a", tmp_path / "b"
+        dir_a.mkdir()
+        dir_b.mkdir()
+        (dir_a / "mf6").write_bytes(b"fake")
+        (dir_b / "mf6").write_bytes(b"fake")
+        register_installation("mf6", "6.8.0", dir_a, ["mf6"])
+        register_installation("mf6", "6.8.0", dir_b, ["mf6"])
+
+        assert get_executable("mf6", bindir=dir_a) == dir_a / "mf6"
+        assert get_executable("mf6", bindir=dir_b) == dir_b / "mf6"
+
+    def test_uninstall_prints_when_no_metadata(self, isolated_cache, capsys):
+        uninstall_program("does-not-exist", all_versions=True, verbose=True)
+        assert "no installation metadata found" in capsys.readouterr().out.lower()
+
+    def test_bindir_prev_shortcut_from_prior_installation(self, isolated_cache, tmp_path):
+        exe_dir = tmp_path / "prev-bin"
+        exe_dir.mkdir()
+        register_installation("mf6", "6.8.0", exe_dir, ["mf6"])
+
+        options = get_bindir_options("mf6")
+        assert exe_dir in options
+
+        shortcuts = get_bindir_shortcut_map("mf6")
+        assert shortcuts[":prev"][0] == exe_dir
+
+    @requires_github
+    @flaky(max_runs=3, min_passes=1)
+    def test_install_program_auto_selects_bindir(self, isolated_cache, tmp_path, monkeypatch):
+        auto_dir = tmp_path / "auto-bin"
+        auto_dir.mkdir()
+        monkeypatch.setattr(
+            "modflow_devtools.programs.get_bindir_options", lambda program=None: [auto_dir]
+        )
+        installations = install_program("mf6", repo="modflow6")
+        assert installations[0].bindir == auto_dir
+        assert (auto_dir / "mf6").exists()
