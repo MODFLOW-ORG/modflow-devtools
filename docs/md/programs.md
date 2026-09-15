@@ -63,6 +63,13 @@ install_program(repo="mfnwt", bindir="/usr/local/bin")
 install_program(repo="gridgen", bindir="/usr/local/bin")
 ```
 
+Or via CLI:
+
+```bash
+mf programs install --repo mfnwt --bindir /usr/local/bin
+mf programs install --repo gridgen --bindir /usr/local/bin
+```
+
 `KNOWN_REPOS` names the three distributions `get_modflow.py` supports out of the box, which `install_program` still understands specially (see table below) - it's a set of well-known defaults, not an allowlist:
 
 | `repo` | Contents | Versioning |

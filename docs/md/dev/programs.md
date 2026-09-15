@@ -141,6 +141,7 @@ uninstall_program("mf6", version="6.8.0", bindir="/usr/local/bin")
 ```bash
 mf programs install mf6 --repo modflow6 [--version V] [--bindir DIR] [--platform P] [--force]
 mf programs install --repo executables --subset mfnwt,mf2005 --bindir DIR
+mf programs install --repo gridgen --bindir DIR  # any repo works, not just KNOWN_REPOS
 mf programs uninstall mf6@6.8.0 --bindir DIR [--all] [--keep-files]
 mf programs list [PROGRAM] [-v]
 ```
