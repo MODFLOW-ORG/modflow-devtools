@@ -136,7 +136,7 @@ def test_children_of_empty():
 
 def test_load(dfn_dir):
     spec = Dfns.load(dfn_dir)
-    assert spec.schema_version == "2.0.0.dev2"
+    assert spec.schema_version == "2.0.0.dev3"
     assert spec.root is not None
     assert spec.root.name == "sim-nam"
     assert len(spec.components) > 100

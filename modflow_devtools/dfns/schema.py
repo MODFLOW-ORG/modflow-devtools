@@ -1357,7 +1357,7 @@ class Dfns(BaseModel):
         dfns: dict = {}
         if dfn_paths:
             from modflow_devtools.dfn import schema as v1
-            from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
+            from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
             common_path = path / "common.dfn"
             common = None
@@ -1368,7 +1368,19 @@ class Dfns(BaseModel):
             for stem, dfn_path in dfn_paths.items():
                 with dfn_path.open() as f:
                     fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
-                dfns[stem] = to_v2_0_0_dev2(name=stem, fields=fields, meta=meta)
+                # to_v2_0_0_dev3() runs to_v2_0_0_dev2() itself as its own first
+                # step (same raw (name, fields, meta) input) -- this was calling
+                # to_v2_0_0_dev2() directly and stopping there, silently leaving
+                # every component one schema version behind CURRENT_SCHEMA_VERSION
+                # (still true as of MODFLOW-ORG/modflow-devtools@develop). Confirmed
+                # directly: Dfns.load() on a freshly-synced raw-.dfn directory (the
+                # exact path a live RemoteDfnRegistry.spec(schema_version=
+                # CURRENT_SCHEMA_VERSION) call takes) returned components with
+                # schema_version == "2.0.0.dev2", not "2.0.0.dev3", with no error or
+                # warning -- e.g. gwf-chdg's now-removed vestigial `maxbound`
+                # DIMENSIONS field (see the dev3 migration fix in this same branch)
+                # was still present, because the dev3-only fix never ran.
+                dfns[stem] = to_v2_0_0_dev3(name=stem, fields=fields, meta=meta)
         elif toml_paths:
             import tomli
 

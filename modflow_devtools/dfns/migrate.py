@@ -145,11 +145,22 @@ def migrate(
                 fmt,
             )
     elif schema_version == "2.0.0.dev2":
-        from modflow_devtools.dfns import Dfns
+        from modflow_devtools.dfn import schema as v1
+        from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
 
-        dfns = Dfns.load(inpath).components
-        for dfn_name, dfn in dfns.items():
-            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_name}.{fmt}", fmt)
+        inpath = Path(inpath).expanduser().absolute()
+        common_path = inpath / "common.dfn"
+        common = None
+        if common_path.is_file():
+            with common_path.open() as f:
+                common, _ = v1.Dfn.load_dfn(f)  # type: ignore[attr-defined]
+        exclude = {"common", "flopy"}
+        dfn_paths = [p for p in sorted(inpath.glob("*.dfn")) if p.stem not in exclude]
+        for dfn_path in dfn_paths:
+            with dfn_path.open() as f:
+                fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
+            dfn = to_v2_0_0_dev2(name=dfn_path.stem, fields=fields, meta=meta)
+            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_path.stem}.{fmt}", fmt)
     elif schema_version == "2.0.0.dev3":
         from modflow_devtools.dfn import schema as v1
         from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
