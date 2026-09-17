@@ -5,10 +5,6 @@ parent = "gwf-nam"
 multi = true
 subtype = "stress"
 
-[dims.maxbound]
-value = "maxbound"
-scope = "model"
-
 [dims.auxiliary]
 value = "len(auxiliary)"
 
@@ -99,11 +95,7 @@ description = "cubic-scaling is used to scale the drain conductance"
 optional = true
 developmode = true
 
-[blocks.dimensions.fields.maxbound]
-type = "integer"
-longname = "maximum number of drain cells in any stress period"
-description = "integer value specifying the maximum number of drains cells that will be specified for use during any stress period."
-optional = true
+[blocks.dimensions.fields]
 
 [blocks.period.fields.elev]
 type = "array"

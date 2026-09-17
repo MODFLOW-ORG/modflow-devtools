@@ -6,10 +6,6 @@
   "multi": true,
   "subtype": "stress",
   "dims": {
-    "maxbound": {
-      "value": "maxbound",
-      "scope": "model"
-    },
     "auxiliary": {
       "value": "len(auxiliary)"
     },
@@ -100,14 +96,7 @@
       }
     },
     "dimensions": {
-      "fields": {
-        "maxbound": {
-          "type": "integer",
-          "longname": "maximum number of constant head cells in any stress period",
-          "description": "integer value specifying the maximum number of constant-head cells that will be specified for use during any stress period.",
-          "optional": true
-        }
-      }
+      "fields": {}
     },
     "period": {
       "fields": {

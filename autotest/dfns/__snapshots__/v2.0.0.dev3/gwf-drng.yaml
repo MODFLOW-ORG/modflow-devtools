@@ -5,9 +5,6 @@ parent: gwf-nam
 multi: true
 subtype: stress
 dims:
-  maxbound:
-    value: maxbound
-    scope: model
   auxiliary:
     value: len(auxiliary)
   naux:
@@ -118,13 +115,7 @@ blocks:
         optional: true
         developmode: true
   dimensions:
-    fields:
-      maxbound:
-        type: integer
-        longname: maximum number of drain cells in any stress period
-        description: integer value specifying the maximum number of drains cells that will be specified
-          for use during any stress period.
-        optional: true
+    fields: {}
   period:
     fields:
       elev:

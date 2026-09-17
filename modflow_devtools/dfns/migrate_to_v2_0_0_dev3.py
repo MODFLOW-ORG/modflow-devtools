@@ -1464,11 +1464,54 @@ def to_v2_0_0_dev3(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             else:
                 existing_runtime_dims[dim_name] = v2.RuntimeDim(set_in="ar")
 
+    # Step 7: drop the vestigial `maxbound` DIMENSIONS input on READARRAYGRID
+    # ("G-variant") stress packages (gwf-chdg/drng/ghbg/rivg/welg and any future
+    # sibling built the same way). Confirmed directly in the MF6 Fortran source
+    # (src/Model/ModelUtilities/BoundaryPackageExt.f90, BndExtType%source_dimensions):
+    #
+    #   if (this%readasarrays) then
+    #     this%maxbound = this%dis%get_ncpl()
+    #   else
+    #     call mem_set_value(this%maxbound, 'MAXBOUND', this%input_mempath, ...)
+    #     ...
+    #   end if
+    #
+    # When READARRAYGRID is set, the whole branch that reads a user-supplied
+    # MAXBOUND from the input file is skipped unconditionally -- MAXBOUND is
+    # always overwritten with NCPL instead. A MAXBOUND entry in a real .chdg
+    # (etc.) file's DIMENSIONS block is accepted by the parser but silently
+    # has zero effect: not read, not logged, not validated. This is distinct
+    # from the ordinary (list-input) variant, where MAXBOUND is a real,
+    # required sizing dimension (`shape (maxbound)` on stress_period_data) --
+    # only the READARRAYGRID variant's copy of this field is dead input.
+    #
+    # `memory.maxbound` (from the Step 4 stress-package template, above) is
+    # left untouched -- it still correctly documents the real runtime value
+    # (readonly, set_in="ar"), just no longer as something a caller provides.
+    blocks = component.blocks
+    _options_fields = blocks.get("options").fields if blocks and "options" in blocks else {}
+    _dims_fields = blocks.get("dimensions").fields if blocks and "dimensions" in blocks else {}
+    if (
+        isinstance(component, v2.Package)
+        and component.subtype == "stress"
+        and blocks
+        and "readarraygrid" in _options_fields
+        and "maxbound" in _dims_fields
+    ):
+        dims_block = blocks["dimensions"]
+        new_dims_fields = {k: v for k, v in dims_block.fields.items() if k != "maxbound"}
+        blocks = {
+            **blocks,
+            "dimensions": dims_block.model_copy(update={"fields": new_dims_fields}),
+        }
+        existing_input_dims.pop("maxbound", None)
+
     return component.model_copy(
         update={
             "schema_version": "2.0.0.dev3",
             "memory": memory or None,
             "dims": existing_input_dims or None,
             "runtime_dims": existing_runtime_dims or None,
+            "blocks": blocks,
         }
     )

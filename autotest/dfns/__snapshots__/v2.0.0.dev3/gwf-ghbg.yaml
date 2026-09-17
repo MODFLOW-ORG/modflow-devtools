@@ -5,9 +5,6 @@ parent: gwf-nam
 multi: true
 subtype: stress
 dims:
-  maxbound:
-    value: maxbound
-    scope: model
   auxiliary:
     value: len(auxiliary)
   naux:
@@ -100,13 +97,7 @@ blocks:
           simulation is run in VALIDATE mode, otherwise it is ignored.
         optional: true
   dimensions:
-    fields:
-      maxbound:
-        type: integer
-        longname: maximum number of general-head boundaries in any stress period
-        description: integer value specifying the maximum number of general-head boundary cells that will
-          be specified for use during any stress period.
-        optional: true
+    fields: {}
   period:
     fields:
       bhead:
