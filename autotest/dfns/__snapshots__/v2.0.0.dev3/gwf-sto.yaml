@@ -119,6 +119,7 @@ blocks:
           will apply until the TRANSIENT keyword is specified in a subsequent BEGIN PERIOD block. If the
           CSUB Package is included in the GWF model, only the first and last stress period can be steady-state.
         optional: true
+        tagged: false
         valid:
           - steady-state
           - transient

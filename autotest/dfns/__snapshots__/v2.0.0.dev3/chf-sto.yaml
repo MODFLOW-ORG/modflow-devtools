@@ -25,6 +25,7 @@ blocks:
         description: keyword to indicate that stress period IPER is steady-state. Steady-state conditions
           will apply until the TRANSIENT keyword is specified in a subsequent BEGIN PERIOD block.
         optional: true
+        tagged: false
         valid:
           - steady-state
           - transient

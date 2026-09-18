@@ -866,6 +866,10 @@ def _collapse_sto_keywords(
             longname="storage state",
             description=fields["steady-state"].description,
             optional=True,
+            # The v1 fields this replaces are plain Keywords, which are inherently
+            # untagged: PERIOD writes a bare STEADY-STATE/TRANSIENT line, no STORAGE
+            # prefix. Synthesized here, so there's no .dfn `tagged` line to inherit from.
+            tagged=False,
             valid=["steady-state", "transient"],
         )
         result[bname] = block.model_copy(update={"fields": {**non_sto, "storage": storage}})
