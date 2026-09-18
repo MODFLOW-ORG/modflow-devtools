@@ -1489,8 +1489,8 @@ def to_v2_0_0_dev3(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     # left untouched -- it still correctly documents the real runtime value
     # (readonly, set_in="ar"), just no longer as something a caller provides.
     blocks = component.blocks
-    _options_fields = blocks.get("options").fields if blocks and "options" in blocks else {}
-    _dims_fields = blocks.get("dimensions").fields if blocks and "dimensions" in blocks else {}
+    _options_fields = blocks["options"].fields if blocks and "options" in blocks else {}
+    _dims_fields = blocks["dimensions"].fields if blocks and "dimensions" in blocks else {}
     if (
         isinstance(component, v2.Package)
         and component.subtype == "stress"
