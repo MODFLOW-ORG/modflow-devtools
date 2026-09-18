@@ -1152,7 +1152,7 @@ def _fix_prt_fmi(component: v2.Component) -> v2.Component:
     return component.model_copy(update={"blocks": new_blocks})
 
 
-def _is_unsized_readarray(f: dict) -> bool:
+def _is_unsized_readarray(f: Mapping[str, object]) -> bool:
     """Return True for a U2DREL (`reader readarray`) field whose v1 shape is `(unknown)`.
 
     Unlike genuinely self-sizing fields (`reader urword` trailing tokens), a readarray
