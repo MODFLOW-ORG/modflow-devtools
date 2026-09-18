@@ -1152,15 +1152,30 @@ def _fix_prt_fmi(component: v2.Component) -> v2.Component:
     return component.model_copy(update={"blocks": new_blocks})
 
 
+def _is_unsized_readarray(f: dict) -> bool:
+    """Return True for a U2DREL (`reader readarray`) field whose v1 shape is `(unknown)`.
+
+    Unlike genuinely self-sizing fields (`reader urword` trailing tokens), a readarray
+    control record is never self-sizing: the caller must supply its length. Every other
+    readarray field in the v1 corpus declares one; `utl-tas.tas_array` is the sole
+    exception, and its length is one layer's worth of cells (`ncpl`), since time-array
+    series only feed 2-D array input in structured models.
+    """
+    return f.get("reader") == "readarray" and str(f.get("shape") or "").strip() in (
+        "(unknown)",
+        "unknown",
+    )
+
+
 def _has_grid_dependent_shapes(fields: OMD) -> bool:
-    """Return True if any field uses a semicolon grid-type-dependent shape or references
-    ncelldim."""
+    """Return True if any field uses a semicolon grid-type-dependent shape, references
+    ncelldim, or is an unsized readarray (implicitly per-cell)."""
 
     def _field_has_grid_shape(f: dict) -> bool:
         shape = str(f.get("shape") or "")
         if ";" in shape or "ncelldim" in shape:
             return True
-        return False
+        return _is_unsized_readarray(f)
 
     for field in fields.values():
         if _field_has_grid_shape(field):
@@ -1569,6 +1584,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     # not an array dimension; fall through to _to_scalar() below.
                 else:
                     parsed_shape = _parse_shape(shape_str)
+                    if _is_unsized_readarray(f):
+                        parsed_shape = ["ncpl"]
                     return v2.Array(
                         name=_name,
                         longname=longname,

@@ -1,7 +1,7 @@
 type = "package"
 schema_version = "2.0.0.dev3"
 name = "utl-tas"
-parent = "sim-nam"
+parent = "package"
 multi = true
 subtype = "utility"
 
@@ -64,6 +64,9 @@ type = "array"
 description = "An array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility."
 tagged = false
 dtype = "double"
+shape = [
+    "ncpl",
+]
 
 [blocks.time.header]
 name = "time_from_model_start"

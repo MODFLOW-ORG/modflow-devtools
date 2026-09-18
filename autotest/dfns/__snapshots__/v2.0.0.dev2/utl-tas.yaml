@@ -1,7 +1,7 @@
 type: package
 schema_version: 2.0.0.dev2
 name: utl-tas
-parent: sim-nam
+parent: package
 multi: true
 subtype: utility
 dims:
@@ -63,6 +63,8 @@ blocks:
           U2DREL array-reading utility.
         tagged: false
         dtype: double
+        shape:
+          - ncpl
     header:
       name: time_from_model_start
       type: double

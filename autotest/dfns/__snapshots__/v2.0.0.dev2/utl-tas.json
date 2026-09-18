@@ -2,7 +2,7 @@
   "type": "package",
   "schema_version": "2.0.0.dev2",
   "name": "utl-tas",
-  "parent": "sim-nam",
+  "parent": "package",
   "multi": true,
   "subtype": "utility",
   "dims": {
@@ -78,7 +78,10 @@
           "type": "array",
           "description": "An array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility.",
           "tagged": false,
-          "dtype": "double"
+          "dtype": "double",
+          "shape": [
+            "ncpl"
+          ]
         }
       },
       "header": {
