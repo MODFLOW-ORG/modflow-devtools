@@ -1049,13 +1049,16 @@ class PoochRegistry(ModelRegistry):
 
         # pooch.registry maps names to hashes; URLs are in pooch.urls, and
         # only files with an explicit URL are in there, hence .get()
-        urls = [self.pooch.urls.get(fname) for fname in file_names]
-        if not any(url for url in urls) or set(urls) == {
-            f"{_DEFAULT_BASE_URL}/{_DEFAULT_ZIP_NAME}"
-        }:
-            fetch = partial(_fetch_zip, zip_name=_DEFAULT_ZIP_NAME)
-        else:
-            fetch = _fetch_files  # type: ignore
+        urls = {self.pooch.urls.get(fname) for fname in file_names}
+        zip_name = None
+        if not any(urls):
+            # no explicit URLs, fall back to the default source's zip
+            zip_name = _DEFAULT_ZIP_NAME
+        elif len(urls) == 1 and (url := next(iter(urls))).endswith(".zip"):
+            # all files share a zip. As in index(), the zip is registered
+            # under the last component of its URL.
+            zip_name = url.rpartition("/")[2]
+        fetch = partial(_fetch_zip, zip_name=zip_name) if zip_name else _fetch_files  # type: ignore
         fetch.__name__ = model_name  # type: ignore
         return fetch
 

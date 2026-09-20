@@ -814,7 +814,7 @@ class TestFetcherSelection:
         zip_bytes = buf.getvalue()
 
         def fake_downloader(url, output_file, pooch, check_only=False):
-            Path(output_file).write_bytes(zip_bytes if url == self.ZIP_URL else self.CONTENT)
+            Path(output_file).write_bytes(zip_bytes if url.endswith(".zip") else self.CONTENT)
 
         monkeypatch.setattr(PoochRegistry, "_load", lambda self: None)
         monkeypatch.setattr(pooch.core, "choose_downloader", lambda *a, **kw: fake_downloader)
@@ -825,8 +825,8 @@ class TestFetcherSelection:
         registry.models[self.MODEL] = list(self.FILES)
         return registry
 
-    def _unzipped(self, registry):
-        return registry.pooch.abspath / f"{_DEFAULT_ZIP_NAME}.unzip"
+    def _unzipped(self, registry, zip_name=_DEFAULT_ZIP_NAME):
+        return registry.pooch.abspath / f"{zip_name}.unzip"
 
     def test_zip_registry_as_indexed(self, registry):
         """A zip-based registry as index() writes it: no hashes, all files share the zip URL."""
@@ -863,4 +863,27 @@ class TestFetcherSelection:
         paths = registry._fetcher(self.MODEL, list(self.FILES))()
 
         assert paths == [registry.pooch.abspath / f for f in self.FILES]
+        assert all(p.is_file() for p in paths)
+
+    def test_zip_name_from_url(self, registry):
+        """The zip is named by the URL its files share, not assumed to be the default."""
+        zip_url = "https://example.invalid/releases/download/v1/models.zip"
+        registry.pooch.registry = {**dict.fromkeys(self.FILES), "models.zip": None}
+        registry.pooch.urls = {**dict.fromkeys(self.FILES, zip_url), "models.zip": zip_url}
+
+        paths = registry._fetcher(self.MODEL, list(self.FILES))()
+
+        unzipped = self._unzipped(registry, "models.zip")
+        assert sorted(paths) == sorted(unzipped / f for f in self.FILES)
+        assert all(p.is_file() for p in paths)
+        assert not self._unzipped(registry).exists()
+
+    def test_default_zip_without_urls(self, registry):
+        """Files with no URLs are assumed to be in the default zip."""
+        registry.pooch.registry = {**dict.fromkeys(self.FILES), _DEFAULT_ZIP_NAME: None}
+        registry.pooch.urls = {_DEFAULT_ZIP_NAME: self.ZIP_URL}
+
+        paths = registry._fetcher(self.MODEL, list(self.FILES))()
+
+        assert sorted(paths) == sorted(self._unzipped(registry) / f for f in self.FILES)
         assert all(p.is_file() for p in paths)
