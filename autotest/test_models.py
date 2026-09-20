@@ -4,21 +4,28 @@ Tests for the models API (dynamic registry).
 Tests can be configured via environment variables (loaded from .env file).
 """
 
+import hashlib
+import io
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
+import pooch
 import pytest
 from flaky import flaky
 
 from modflow_devtools.models import (
+    _DEFAULT_BASE_URL,
     _DEFAULT_CACHE,
+    _DEFAULT_ZIP_NAME,
     DiscoveredModelRegistry,
     ModelRegistry,
     ModelRegistryDiscoveryError,
     ModelSourceConfig,
     ModelSourceRepo,
+    PoochRegistry,
     get_user_config_path,
 )
 
@@ -787,3 +794,73 @@ class TestMakeRegistry:
             name="custom/models",
         )
         assert url == "https://github.com/username/my-models/releases/download/v1.0.0/models.zip"
+
+
+class TestFetcherSelection:
+    """Test that a model is fetched as loose files or from a zip according to its file URLs."""
+
+    MODEL = "mf6/example/ex"
+    FILES = ("ex/a.dat", "ex/b.dat")
+    CONTENT = b"data"
+    ZIP_URL = f"{_DEFAULT_BASE_URL}/{_DEFAULT_ZIP_NAME}"
+
+    @pytest.fixture
+    def registry(self, tmp_path, monkeypatch):
+        """A PoochRegistry on an empty tmp cache with a fake, offline downloader."""
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            for f in self.FILES:
+                zf.writestr(f, self.CONTENT)
+        zip_bytes = buf.getvalue()
+
+        def fake_downloader(url, output_file, pooch, check_only=False):
+            Path(output_file).write_bytes(zip_bytes if url == self.ZIP_URL else self.CONTENT)
+
+        monkeypatch.setattr(PoochRegistry, "_load", lambda self: None)
+        monkeypatch.setattr(pooch.core, "choose_downloader", lambda *a, **kw: fake_downloader)
+        # the zip lock is (for now) relative to the cwd
+        monkeypatch.chdir(tmp_path)
+
+        registry = PoochRegistry(path=tmp_path / "cache", base_url=_DEFAULT_BASE_URL)
+        registry.models[self.MODEL] = list(self.FILES)
+        return registry
+
+    def _unzipped(self, registry):
+        return registry.pooch.abspath / f"{_DEFAULT_ZIP_NAME}.unzip"
+
+    def test_zip_registry_as_indexed(self, registry):
+        """A zip-based registry as index() writes it: no hashes, all files share the zip URL."""
+        registry.pooch.registry = {**dict.fromkeys(self.FILES), _DEFAULT_ZIP_NAME: None}
+        registry.pooch.urls = {
+            **dict.fromkeys(self.FILES, self.ZIP_URL),
+            _DEFAULT_ZIP_NAME: self.ZIP_URL,
+        }
+
+        paths = registry._fetcher(self.MODEL, list(self.FILES))()
+
+        assert sorted(paths) == sorted(self._unzipped(registry) / f for f in self.FILES)
+        assert all(p.is_file() for p in paths)
+
+    def test_zip_selected_by_url_not_hash(self, registry):
+        """Files sharing the zip URL are fetched from the zip even if they have hashes."""
+        digest = hashlib.sha256(self.CONTENT).hexdigest()
+        registry.pooch.registry = {**dict.fromkeys(self.FILES, digest), _DEFAULT_ZIP_NAME: None}
+        registry.pooch.urls = {
+            **dict.fromkeys(self.FILES, self.ZIP_URL),
+            _DEFAULT_ZIP_NAME: self.ZIP_URL,
+        }
+
+        paths = registry._fetcher(self.MODEL, list(self.FILES))()
+
+        assert sorted(paths) == sorted(self._unzipped(registry) / f for f in self.FILES)
+        assert all(p.is_file() for p in paths)
+
+    def test_loose_files_selected_by_url_not_hash(self, registry):
+        """Files with their own URLs are fetched individually even if they have no hashes."""
+        registry.pooch.registry = dict.fromkeys(self.FILES)
+        registry.pooch.urls = {f: f"https://example.invalid/{f}" for f in self.FILES}
+
+        paths = registry._fetcher(self.MODEL, list(self.FILES))()
+
+        assert paths == [registry.pooch.abspath / f for f in self.FILES]
+        assert all(p.is_file() for p in paths)

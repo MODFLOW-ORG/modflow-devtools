@@ -1047,7 +1047,9 @@ class PoochRegistry(ModelRegistry):
                     )
                 ]
 
-        urls = [self.pooch.registry[fname] for fname in file_names]
+        # pooch.registry maps names to hashes; URLs are in pooch.urls, and
+        # only files with an explicit URL are in there, hence .get()
+        urls = [self.pooch.urls.get(fname) for fname in file_names]
         if not any(url for url in urls) or set(urls) == {
             f"{_DEFAULT_BASE_URL}/{_DEFAULT_ZIP_NAME}"
         }:
