@@ -63,6 +63,14 @@ Tests should be run from the `autotest` directory. To run the tests in parallel 
 pytest -v -n auto
 ```
 
+Some tests in `test_models.py` share an on-disk registry cache, and are marked with `xdist_group` so they run on the same worker. This only takes effect with `--dist loadgroup`. Without it, those tests can fail intermittently when run in parallel. To run them in parallel:
+
+```shell
+pytest -v -n auto --dist loadgroup test_models.py
+```
+
+CI runs `test_download.py`, `test_models.py` and `dfns/test_registry.py` this way, and everything else with `--dist loadfile`.
+
 ### Writing new tests
 
 Tests follow a few conventions for ease of use and maintenance.
