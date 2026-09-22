@@ -314,7 +314,7 @@ def _should_render(field: "InputField", *, developmode: bool) -> bool:
 def _render_block(block: "Block", indent: str = "  ", *, developmode: bool = False) -> str:
     begin = f"BEGIN {block.name.upper()}"
     if block.header is not None:
-        begin = f"{begin} {block.header.render(inline=True)}"
+        begin = f"{begin} {block.header.field.render(inline=True)}"
     lines = [begin]
     for field in block.fields.values():
         if not _should_render(field, developmode=developmode):
@@ -551,10 +551,30 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
     return order
 
 
+class BlockHeader(BaseModel):
+    """A repeating block's header field, plus whether a missing occurrence
+
+    means "reuse the prior occurrence's values" (`period` -- MF6 carries the
+    last stress period's data forward across gaps). `False` (the default)
+    covers every other case, including headers keyed by a non-temporal index
+    like `solutiongroup`'s `group_num` and headers where every occurrence is
+    independently meaningful, like `utl-tas`'s `time` block. `field.type`
+    alone can't distinguish fill-forward from these -- `group_num` is an
+    integer too, just like `period`'s `iper`. Kept nested here (rather than a
+    sibling flag on `Block`) so it can't be set on a block that has no header
+    to begin with.
+    """
+
+    field: InputField
+    # A real Fortran-level fact, verified per block against MF6 source --
+    # never inferred.
+    fill_forward: bool = False
+
+
 class Block(BaseModel):
     name: str
     fields: dict[str, InputField]
-    header: "InputField | None" = None
+    header: "BlockHeader | None" = None
     # Whether MF6 requires this block's header to appear in the input file even
     # when it has zero body lines. Distinct from (and not derivable from)
     # `optional`: a block can be required (`optional=False`, every field
@@ -590,11 +610,13 @@ class Block(BaseModel):
     def _serialize(self, handler: Any) -> dict[str, Any]:
         data = handler(self)
         data.pop("name", None)  # name is the dict key in ComponentBase.blocks
-        # Unlike `fields`, `header` isn't stored in a name-keyed dict, so its
+        # Unlike `fields`, `header.field` isn't stored in a name-keyed dict, so its
         # `name` (stripped by InputFieldBase._serialize under strip_names) must be
         # restored here or it can't be recovered on load.
         if self.header is not None and isinstance(data.get("header"), dict):
-            data["header"] = {"name": self.header.name, **data["header"]}
+            header_data = data["header"]
+            if isinstance(header_data.get("field"), dict):
+                header_data["field"] = {"name": self.header.field.name, **header_data["field"]}
         return data
 
     def dump(self, *, strip_names: bool = True, **kwargs) -> dict[str, Any]:
@@ -624,7 +646,7 @@ class Block(BaseModel):
         items: list[tuple[str, InputField]] = []
         _collect_fields(self.fields, items, recurse=recurse)
         if self.header is not None:
-            _collect_fields({self.header.name: self.header}, items, recurse=recurse)
+            _collect_fields({self.header.field.name: self.header.field}, items, recurse=recurse)
         return OMD(items)
 
 
@@ -700,7 +722,7 @@ class ComponentBase(BaseModel):
     def get_block(self, field_name: str) -> Block | None:
         for block in (self.blocks or {}).values():
             if block.fields.get(field_name, None) or (
-                block.header is not None and block.header.name == field_name
+                block.header is not None and block.header.field.name == field_name
             ):
                 return block
         return None
@@ -1211,11 +1233,13 @@ def _inject_names(comp_data: dict) -> None:
         _inject_field_names(block.get("fields") or {})
         header = block.get("header")
         if isinstance(header, dict):
-            # header's own name is preserved verbatim by Block._serialize (it
-            # isn't stored in a name-keyed dict like `fields`); only its nested
-            # children need names injected from their dict keys.
-            _inject_field_names(header.get("fields") or {})
-            _inject_field_names(header.get("arms") or {})
+            header_field = header.get("field")
+            if isinstance(header_field, dict):
+                # header.field's own name is preserved verbatim by Block._serialize
+                # (it isn't stored in a name-keyed dict like `fields`); only its
+                # nested children need names injected from their dict keys.
+                _inject_field_names(header_field.get("fields") or {})
+                _inject_field_names(header_field.get("arms") or {})
 
 
 class Dfns(BaseModel):

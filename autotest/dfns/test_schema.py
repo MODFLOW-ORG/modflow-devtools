@@ -8,6 +8,7 @@ from modflow_devtools.dfns import Dfns
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
+    BlockHeader,
     Double,
     File,
     Integer,
@@ -404,17 +405,33 @@ def test_block_header_scalar(dev3_spec):
     """A block_variable scalar (e.g. iper) attaches to the block as `header`, not a body field."""
     period = dev3_spec.components["gwf-wel"].blocks["period"]
     assert "iper" not in period.fields
-    assert isinstance(period.header, Integer)
-    assert period.header.name == "iper"
-    assert period.header.tagged is False
+    assert isinstance(period.header.field, Integer)
+    assert period.header.field.name == "iper"
+    assert period.header.field.tagged is False
+    assert period.header.fill_forward is True
 
 
 def test_block_header_record(dev3_spec):
     """A block_variable record (e.g. utl-obs's `output`) attaches to the block as `header`."""
     continuous = dev3_spec.components["utl-obs"].blocks["continuous"]
     assert "output" not in continuous.fields
-    assert isinstance(continuous.header, Record)
-    assert continuous.header.name == "output"
+    assert isinstance(continuous.header.field, Record)
+    assert continuous.header.field.name == "output"
+    assert continuous.header.fill_forward is False
+
+
+def test_block_header_time_does_not_fill_forward(dev3_spec):
+    """utl-tas's `time` block doesn't fill forward -- every occurrence is
+    independently meaningful."""
+    time = dev3_spec.components["utl-tas"].blocks["time"]
+    assert time.header.fill_forward is False
+
+
+def test_block_header_solutiongroup_does_not_fill_forward(dev3_spec):
+    """sim-nam's `solutiongroup` header (group_num) is int-typed like period's, but
+    doesn't fill forward."""
+    solutiongroup = dev3_spec.components["sim-nam"].blocks["solutiongroup"]
+    assert solutiongroup.header.fill_forward is False
 
 
 def test_get_fields_and_get_block_include_header(dev3_spec):
@@ -463,10 +480,10 @@ def test_block_get_fields_recurse_descends_list_item_union():
 
 
 def test_block_get_fields_recurse_includes_header():
-    header = Integer(name="iper", tagged=False)
-    block = Block(name="period", fields={}, header=header)
+    header_field = Integer(name="iper", tagged=False)
+    block = Block(name="period", fields={}, header=BlockHeader(field=header_field))
     fields = block.get_fields(recurse=True)
-    assert fields["iper"] is header
+    assert fields["iper"] is header_field
 
 
 def test_component_get_fields_matches_block_get_fields(dev3_spec):
@@ -754,7 +771,7 @@ def test_render_block_matches_per_field_assembly(dev3_spec):
         for block in (component.blocks or {}).values():
             begin = f"BEGIN {block.name.upper()}"
             if block.header is not None:
-                begin = f"{begin} {block.header.render(inline=True)}"
+                begin = f"{begin} {block.header.field.render(inline=True)}"
             lines = [begin]
             for field in block.fields.values():
                 if field.removed is not None or field.deprecated is not None:

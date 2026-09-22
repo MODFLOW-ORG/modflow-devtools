@@ -65,6 +65,9 @@ description = "is the new value to be assigned as the cell's hydraulic conductiv
 time_series = true
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"

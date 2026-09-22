@@ -204,6 +204,9 @@ description = "save for each step specified in STEPS. This keyword may be used i
 dtype = "integer"
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"

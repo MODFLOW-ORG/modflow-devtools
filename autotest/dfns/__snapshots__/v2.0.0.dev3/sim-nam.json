@@ -194,10 +194,12 @@
         }
       },
       "header": {
-        "name": "group_num",
-        "type": "integer",
-        "description": "is the group number of the solution group.  Solution groups must be numbered sequentially, starting with group number one.",
-        "tagged": false
+        "field": {
+          "name": "group_num",
+          "type": "integer",
+          "description": "is the group number of the solution group.  Solution groups must be numbered sequentially, starting with group number one.",
+          "tagged": false
+        }
       }
     }
   },

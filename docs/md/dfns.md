@@ -174,7 +174,8 @@ from modflow_devtools.dfns import Block, Keyword, Double, List, Record
 
 period = gwf_chd.blocks["period"]
 assert period.repeats is True
-assert period.header.name == "iper"
+assert period.header.field.name == "iper"
+assert period.header.fill_forward is True
 
 spd = period.fields["stress_period_data"]
 assert isinstance(spd, List)
@@ -224,7 +225,7 @@ print(wel.blocks["period"].render())
 # END PERIOD
 ```
 
-A block whose `header` is set (see [`header`](dfnspec.md#header)) has that field's token attached to the `BEGIN` line rather than rendered as a body row — `<iper>` above comes from `wel.blocks["period"].header`, not `.fields`.
+A block whose `header` is set (see [`header`](dfnspec.md#header)) has that field's token attached to the `BEGIN` line rather than rendered as a body row — `<iper>` above comes from `wel.blocks["period"].header.field`, not `.fields`. `header.fill_forward` says whether a missing occurrence of the block means "reuse the prior occurrence's values" — `True` for `period`, since MF6 reuses the prior stress period's data across gaps.
 
 `ComponentBase.render()` renders all blocks joined by blank lines:
 
@@ -260,7 +261,7 @@ Rendering rules by field type:
 | `List` (single row type) | row repeated twice + `...` | — |
 | `List` with `Record`-arm `Union` | one row per arm, no `...` | — |
 | `List` with scalar-arm `Union` | `<name>` twice + `...` | — |
-| `Block.header` (any field type) | attached to `BEGIN <NAME>` line, inline form | — |
+| `Block.header.field` (any field type) | attached to `BEGIN <NAME>` line, inline form | — |
 
 Optional fields are wrapped in `[...]`. Array shapes use the abstract dimension names from the specification (e.g. `ncelldim`, `naux`) rather than resolved grid-specific values.
 

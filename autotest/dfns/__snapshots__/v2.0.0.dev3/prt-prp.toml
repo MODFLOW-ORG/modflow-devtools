@@ -318,6 +318,9 @@ removed = "6.6.0"
 dtype = "double"
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"

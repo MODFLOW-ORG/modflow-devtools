@@ -70,6 +70,9 @@ description = "is the user-supplied boundary temperature. If the Options block i
 time_series = true
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"

@@ -47,17 +47,17 @@ description = "Text identifying cell adjacent to cell identified by ID. The form
 optional = true
 tagged = false
 
-[blocks.continuous.header]
+[blocks.continuous.header.field]
 name = "output"
 type = "record"
 
-[blocks.continuous.header.fields.obs_output_file_name]
+[blocks.continuous.header.field.fields.obs_output_file_name]
 type = "file"
 description = "Name of a file to which simulated values corresponding to observations in the block are to be written. The file name can be an absolute or relative path name. A unique output file must be specified for each CONTINUOUS block. If the 'BINARY' option is used, output is written in binary form. By convention, text output files have the extension 'csv' (for 'Comma-Separated Values') and binary output files have the extension 'bsv' (for 'Binary Simulated Values')."
 tagged = false
 direction = "out"
 
-[blocks.continuous.header.fields.binary]
+[blocks.continuous.header.field.fields.binary]
 type = "keyword"
 description = "an optional keyword used to indicate that the output file should be written in binary (unformatted) form."
 optional = true

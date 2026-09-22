@@ -151,6 +151,9 @@ description = "is the value to be used in the equation for calculating the amoun
 tagged = false
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"

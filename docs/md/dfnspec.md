@@ -246,9 +246,11 @@ Blocks are treated differently depending on the structural composition of their 
 
 #### `header`
 
-`InputField | null (default: null)`. A field whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value. The canonical repeating block is the period block, whose header is the stress period number `iper`.
+`BlockHeader | null (default: null)`. Wraps a field (`header.field`) whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value (`Block.repeats` is `True` iff `header is not None`). The canonical repeating block is the period block, whose header field is the stress period number `iper`.
 
-Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header` holds a single `InputField` directly since there is at most one per block.
+Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header.field` holds a single `InputField` directly since there is at most one per block.
+
+`header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block, where MF6 carries the last stress period's data forward across gaps. `False` covers every other case, including headers where every occurrence is independently meaningful (`utl-tas`'s `time` block) and headers that aren't a gap-prone sequence at all (`sim-nam`'s `solutiongroup`, `utl-obs`'s `continuous`). This is a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — an integer header alone doesn't imply fill-forward behavior (`solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`).
 
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 

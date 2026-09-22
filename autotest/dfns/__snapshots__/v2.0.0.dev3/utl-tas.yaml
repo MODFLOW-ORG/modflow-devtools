@@ -66,8 +66,9 @@ blocks:
         shape:
           - ncpl
     header:
-      name: time_from_model_start
-      type: double
-      description: A numeric time relative to the start of the simulation, in the time unit used in the
-        simulation. Times must be strictly increasing.
-      tagged: false
+      field:
+        name: time_from_model_start
+        type: double
+        description: A numeric time relative to the start of the simulation, in the time unit used in
+          the simulation. Times must be strictly increasing.
+        tagged: false

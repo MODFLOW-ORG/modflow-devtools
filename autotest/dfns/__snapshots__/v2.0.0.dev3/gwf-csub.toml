@@ -460,6 +460,9 @@ tagged = false
 time_series = true
 
 [blocks.period.header]
+fill_forward = true
+
+[blocks.period.header.field]
 name = "iper"
 type = "integer"
 longname = "stress period number"
