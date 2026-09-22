@@ -552,22 +552,12 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
 
 class BlockHeader(BaseModel):
-    """A repeating block's header field, plus whether a missing occurrence
-
-    means "reuse the prior occurrence's values" (`period` -- MF6 carries the
-    last stress period's data forward across gaps). `False` (the default)
-    covers every other case, including headers keyed by a non-temporal index
-    like `solutiongroup`'s `group_num` and headers where every occurrence is
-    independently meaningful, like `utl-tas`'s `time` block. `field.type`
-    alone can't distinguish fill-forward from these -- `group_num` is an
-    integer too, just like `period`'s `iper`. Kept nested here (rather than a
-    sibling flag on `Block`) so it can't be set on a block that has no header
-    to begin with.
+    """A repeating block's header field, plus whether a missing occurrence means
+    "reuse the prior occurrence's values" (`period`, e.g.). Nested here rather
+    than a sibling flag on `Block` so it can't be set without a header.
     """
 
     field: InputField
-    # A real Fortran-level fact, verified per block against MF6 source --
-    # never inferred.
     fill_forward: bool = False
 
 

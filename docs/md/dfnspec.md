@@ -250,7 +250,7 @@ Blocks are treated differently depending on the structural composition of their 
 
 Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header.field` holds a single `InputField` directly since there is at most one per block.
 
-`header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block, where MF6 carries the last stress period's data forward across gaps. `False` covers every other case, including headers where every occurrence is independently meaningful (`utl-tas`'s `time` block) and headers that aren't a gap-prone sequence at all (`sim-nam`'s `solutiongroup`, `utl-obs`'s `continuous`). This is a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — an integer header alone doesn't imply fill-forward behavior (`solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`).
+`header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block. It's a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — `solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`, but only the latter fill-forwards.
 
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 

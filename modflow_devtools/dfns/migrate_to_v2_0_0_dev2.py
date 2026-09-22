@@ -1639,15 +1639,10 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             # before the in_record skip below: block-attached scalars are marked
             # in_record=true in v1 even though they aren't a record subfield.
             #
-            # `fill_forward` has no v1 tag to source from, so it's hardcoded here
-            # by block name rather than inferred from the header field's type
-            # (e.g. `solutiongroup`'s `group_num` is an Integer too, like
-            # `period`'s `iper`, but doesn't fill forward -- see
-            # repeating-block-fill-forward-plan.md). Confirmed against MF6
-            # Fortran source: `period` is the only repeating-block header in the
-            # v1 corpus that fill-forwards; every other one (`time`,
-            # `solutiongroup`, `continuous`) keeps the `BlockHeader` default of
-            # `False`.
+            # No v1 tag for `fill_forward`, so it's hardcoded by block name:
+            # `period` is the only repeating-block header in the v1 corpus that
+            # fill-forwards (confirmed against MF6 source; see
+            # repeating-block-fill-forward-plan.md).
             block.header = v2.BlockHeader(
                 field=_map_field(field), fill_forward=field["block"] == "period"
             )
