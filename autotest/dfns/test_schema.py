@@ -434,6 +434,11 @@ def test_block_header_solutiongroup_does_not_fill_forward(dev3_spec):
     assert solutiongroup.header.fill_forward is False
 
 
+def test_block_header_fill_forward_requires_integer_field():
+    with pytest.raises(ValueError, match="fill_forward requires an Integer field"):
+        BlockHeader(field=Double(name="t"), fill_forward=True)
+
+
 def test_get_fields_and_get_block_include_header(dev3_spec):
     """get_fields()/get_block() must see block.header, not just block.fields."""
     wel = dev3_spec.components["gwf-wel"]

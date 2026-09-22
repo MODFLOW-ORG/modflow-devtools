@@ -560,6 +560,15 @@ class BlockHeader(BaseModel):
     field: InputField
     fill_forward: bool = False
 
+    @model_validator(mode="after")
+    def _check_fill_forward_requires_integer(self) -> "BlockHeader":
+        if self.fill_forward and not isinstance(self.field, Integer):
+            raise ValueError(
+                "BlockHeader: fill_forward requires an Integer field; "
+                f"got {type(self.field).__name__}"
+            )
+        return self
+
 
 class Block(BaseModel):
     name: str
