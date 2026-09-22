@@ -555,6 +555,11 @@ class BlockHeader(BaseModel):
     """A repeating block's header field, plus whether a missing occurrence means
     "reuse the prior occurrence's values" (`period`, e.g.). Nested here rather
     than a sibling flag on `Block` so it can't be set without a header.
+
+    An `Integer` header is inherently a sequential key -- both `period`'s
+    `iper` and `solutiongroup`'s `group_num` are documented as monotonically
+    increasing across occurrences, whether or not they fill forward. It's
+    only what a *gap* in that sequence means that varies.
     """
 
     field: InputField

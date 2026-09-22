@@ -252,6 +252,8 @@ Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, 
 
 `header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block. It's a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — `solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`, but only the latter fill-forwards.
 
+An `Integer` header is inherently a sequential key: `group_num` and `iper` are both documented as monotonically increasing across occurrences, whether or not they fill forward. Only the meaning of a *gap* in that sequence varies — which is what `fill_forward` distinguishes.
+
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 
 ### Field ordering
