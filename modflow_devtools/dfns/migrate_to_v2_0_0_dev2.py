@@ -837,6 +837,41 @@ def _wrap_oc_period_records(
     return result
 
 
+# Records MF6 accepts any number of times in a block, each occurrence adding
+# another value (IDM's `load_io_tag` appends every `FILEIN` line it reads).
+# v1 has no attribute for this (its `repeating` flag marks unrelated fields), so
+# these are an explicit, audited allowlist of record names, backed by
+# mf6io's tsi.tex: "Any number of time-series files can be associated with a
+# given package; a TS6 entry is required for each time-series file", and the
+# same for TAS6. Other FILEIN records (OBS6, NCF6, ...) aren't documented as
+# repeatable and stay single records.
+_REPEATING_RECORDS = frozenset({"ts_filerecord", "tas_filerecord"})
+
+
+def _wrap_repeating_records(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Wrap each `_REPEATING_RECORDS` record in a List so its repetition is
+    explicit. The record's leading keyword (e.g. `TS6`) makes the list tagged,
+    so it can stay where it is among the block's other fields.
+    """
+    result = {}
+    for bname, block in blocks.items():
+        fields = {
+            fname: (
+                v2.List(
+                    name=fname,
+                    optional=f.optional,
+                    item=f.model_copy(update={"optional": False}),
+                )
+                if fname in _REPEATING_RECORDS and isinstance(f, v2.Record)
+                else f
+            )
+            for fname, f in block.fields.items()
+        }
+        result[bname] = block.model_copy(update={"fields": fields})
+    return result
+
+
 def _collapse_sto_keywords(
     blocks: dict[str, v2.Block],
 ) -> dict[str, v2.Block]:
@@ -1662,6 +1697,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _fill_named_list_shapes(blocks, explicit_dims)
     blocks, derived_dims = _infer_list_shape_dims(blocks, fields, _scope_for(parent), known_dims)
     blocks = _wrap_oc_period_records(blocks)
+    blocks = _wrap_repeating_records(blocks)
     blocks = _collapse_sto_keywords(blocks)
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)

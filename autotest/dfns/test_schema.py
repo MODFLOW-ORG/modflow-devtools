@@ -384,6 +384,142 @@ def test_tas_array_is_per_layer_model_attached(dev3_spec):
     assert tas.blocks["time"].fields["tas_array"].shape == ["ncpl"]
 
 
+def _ts_list(name="ts_filerecord", tag="ts6"):
+    return List(
+        name=name,
+        optional=True,
+        item=Record(
+            name=name,
+            fields={
+                tag: Keyword(name=tag),
+                f"{tag}_filename": File(name=f"{tag}_filename", tagged=False, direction="in"),
+            },
+        ),
+    )
+
+
+def _row_list(name="perioddata"):
+    return List(
+        name=name,
+        item=Record(
+            name=name, fields={"cellid": Array(name="cellid", dtype="integer", tagged=False)}
+        ),
+    )
+
+
+def test_list_tagged_derived_from_item():
+    """A list is tagged iff every row begins with a keyword."""
+    assert _ts_list().tagged is True
+    assert _ts_list().row_tags == ["ts6"]
+    assert _row_list().tagged is False
+    assert _row_list().row_tags == []
+    union = Union(
+        name="output",
+        arms={
+            "saverecord": Record(name="saverecord", fields={"save": Keyword(name="save")}),
+            "printrecord": Record(name="printrecord", fields={"print": Keyword(name="print")}),
+        },
+    )
+    assert List(name="output", item=union).tagged is True
+    mixed = Union(
+        name="mixed",
+        arms={"all": Keyword(name="all"), "frequency": Integer(name="frequency", tagged=False)},
+    )
+    assert List(name="mixed", item=mixed).tagged is False
+    # a tagged scalar arm begins with its own name, e.g. prt-prp's `FREQUENCY <n>`
+    settings = Union(
+        name="releasesetting",
+        arms={"all": Keyword(name="all"), "frequency": Integer(name="frequency")},
+    )
+    assert List(name="perioddata", item=settings).tagged is True
+    # every row must be keyword-led, including through a record's leading union
+    nested = Record(name="perioddata", fields={"setting": mixed, "value": Double(name="v")})
+    assert List(name="perioddata", item=nested).tagged is False
+
+
+def test_list_tagged_not_serialized_or_settable():
+    lst = _ts_list()
+    assert "tagged" not in lst.model_dump()
+    assert "tagged" not in lst.model_dump(exclude_defaults=True)
+    assert List.model_validate(lst.model_dump()).tagged is True
+    with pytest.raises(ValueError, match="contradicts"):
+        List(name="p", tagged=True, item=_row_list().item)
+    with pytest.raises(ValueError, match="derived"):
+        lst.model_copy(update={"tagged": False})
+
+
+def test_list_tagged_rederived_on_model_copy():
+    """model_copy skips validation, so List re-derives `tagged` itself."""
+    lst = _ts_list()
+    assert lst.model_copy(update={"item": _row_list().item}).tagged is False
+    assert _row_list().model_copy(update={"item": lst.item}).tagged is True
+
+
+def test_block_tagged_list_may_precede_fields_and_other_lists():
+    block = Block(
+        name="options",
+        fields={
+            "ts_filerecord": _ts_list(),
+            "tas_filerecord": _ts_list("tas_filerecord", "tas6"),
+            "print_input": Keyword(name="print_input", optional=True),
+            "perioddata": _row_list(),
+        },
+    )
+    assert list(block.fields) == ["ts_filerecord", "tas_filerecord", "print_input", "perioddata"]
+
+
+def test_block_untagged_list_must_be_last_and_only():
+    with pytest.raises(ValueError, match="must be last"):
+        Block(
+            name="period",
+            fields={"perioddata": _row_list(), "print_input": Keyword(name="print_input")},
+        )
+    with pytest.raises(ValueError, match="at most one untagged list"):
+        Block(name="period", fields={"a": _row_list("a"), "b": _row_list("b")})
+
+
+def test_block_tagged_list_row_keyword_must_be_unique():
+    with pytest.raises(ValueError, match="ambiguous"):
+        Block(name="options", fields={"ts_filerecord": _ts_list(), "ts6": Keyword(name="ts6")})
+    with pytest.raises(ValueError, match="ambiguous"):
+        Block(name="options", fields={"a": _ts_list("a"), "b": _ts_list("b")})
+
+
+def test_render_tagged_list_brackets_optional_rows():
+    assert _ts_list().render() == ("[TS6 FILEIN <ts6_filename>]\n[TS6 FILEIN <ts6_filename>]\n...")
+
+
+@pytest.mark.parametrize(
+    "name,field",
+    [
+        ("gwf-chd", "ts_filerecord"),
+        ("gwf-wel", "ts_filerecord"),
+        ("gwf-rcha", "tas_filerecord"),
+        ("gwf-evta", "tas_filerecord"),
+        ("utl-spca", "tas_filerecord"),
+    ],
+)
+def test_ts_tas_filerecords_are_tagged_lists(dev3_spec, name, field):
+    """MF6 accepts any number of TS6/TAS6 FILEIN lines per package (tsi.tex), so
+    these records migrate as tagged lists, left in place among the options."""
+    options = dev3_spec.components[name].blocks["options"]
+    lst = options.fields[field]
+    assert isinstance(lst, List)
+    assert lst.tagged and lst.optional
+    assert isinstance(lst.item, Record) and not lst.item.optional
+
+
+def test_tagged_list_keeps_its_place_in_options(dev3_spec):
+    names = list(dev3_spec.components["gwf-chd"].blocks["options"].fields)
+    assert names.index("ts_filerecord") < names.index("obs_filerecord")
+
+
+def test_obs_filerecord_stays_a_record(dev3_spec):
+    """OBS6 isn't documented as repeatable, so it isn't wrapped."""
+    field = dev3_spec.components["gwf-chd"].blocks["options"].fields["obs_filerecord"]
+    assert isinstance(field, Record)
+
+
 def test_render_respects_tagged_scalars_in_record(dev3_spec):
     """Tagged Integer/String subfields of a Record must keep their keyword on render()."""
     render = dev3_spec.components["gwf-oc"].blocks["options"].render()

@@ -205,56 +205,18 @@
         "header": {
           "anyOf": [
             {
-              "discriminator": {
-                "mapping": {
-                  "array": "#/$defs/Array",
-                  "double": "#/$defs/Double",
-                  "file": "#/$defs/File",
-                  "integer": "#/$defs/Integer",
-                  "keyword": "#/$defs/Keyword",
-                  "list": "#/$defs/List",
-                  "record": "#/$defs/Record",
-                  "string": "#/$defs/String",
-                  "union": "#/$defs/Union"
-                },
-                "propertyName": "type"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/Keyword"
-                },
-                {
-                  "$ref": "#/$defs/String"
-                },
-                {
-                  "$ref": "#/$defs/Integer"
-                },
-                {
-                  "$ref": "#/$defs/Double"
-                },
-                {
-                  "$ref": "#/$defs/File"
-                },
-                {
-                  "$ref": "#/$defs/Array"
-                },
-                {
-                  "$ref": "#/$defs/Record"
-                },
-                {
-                  "$ref": "#/$defs/Union"
-                },
-                {
-                  "$ref": "#/$defs/List"
-                }
-              ]
+              "$ref": "#/$defs/BlockHeader"
             },
             {
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Header"
+          "default": null
+        },
+        "write_if_empty": {
+          "default": false,
+          "title": "Write If Empty",
+          "type": "boolean"
         }
       },
       "required": [
@@ -264,54 +226,65 @@
       "title": "Block",
       "type": "object"
     },
-    "Dim": {
-      "description": "A named dimension backed by a field reference or derived from an expression.\n\n``value`` is a Python expression string:\n  - bare identifier ``nlay``         \u2192 integer field reference\n  - ``len(auxiliary)``               \u2192 self-sizing array field reference\n  - anything else, e.g. ``nlay * ncol`` \u2192 derived arithmetic expression\n\nIf ``value`` is None, the dimension is runtime-only: its value cannot be\nderived from DFN input fields. ``set_in`` then indicates the simulation hook\nin which the value is first established by MODFLOW (e.g. ``\"ar\"`` for dims\nset during grid allocation, ``\"rp\"`` for dims reset each stress period).\n\nRuntime dims are valid in memory variable shapes but not in input field shapes,\nsince a sequential parser must know an array's size before reading it.",
+    "BlockHeader": {
+      "description": "A repeating block's header field, plus whether a missing occurrence means\n\"reuse the prior occurrence's values\" (`period`, e.g.). Nested here rather\nthan a sibling flag on `Block` so it can't be set without a header.\n\nAn `Integer` header is inherently a sequential key -- both `period`'s\n`iper` and `solutiongroup`'s `group_num` are documented as monotonically\nincreasing across occurrences, whether or not they fill forward. It's\nonly what a *gap* in that sequence means that varies.",
       "properties": {
-        "value": {
-          "anyOf": [
+        "field": {
+          "discriminator": {
+            "mapping": {
+              "array": "#/$defs/Array",
+              "double": "#/$defs/Double",
+              "file": "#/$defs/File",
+              "integer": "#/$defs/Integer",
+              "keyword": "#/$defs/Keyword",
+              "list": "#/$defs/List",
+              "record": "#/$defs/Record",
+              "string": "#/$defs/String",
+              "union": "#/$defs/Union"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
             {
-              "type": "string"
+              "$ref": "#/$defs/Keyword"
             },
             {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Value"
-        },
-        "scope": {
-          "default": "component",
-          "enum": [
-            "component",
-            "model",
-            "simulation"
-          ],
-          "title": "Scope",
-          "type": "string"
-        },
-        "set_in": {
-          "anyOf": [
-            {
-              "enum": [
-                "ar",
-                "mc",
-                "rp",
-                "ad",
-                "fc",
-                "ca",
-                "cq"
-              ],
-              "type": "string"
+              "$ref": "#/$defs/String"
             },
             {
-              "type": "null"
+              "$ref": "#/$defs/Integer"
+            },
+            {
+              "$ref": "#/$defs/Double"
+            },
+            {
+              "$ref": "#/$defs/File"
+            },
+            {
+              "$ref": "#/$defs/Array"
+            },
+            {
+              "$ref": "#/$defs/Record"
+            },
+            {
+              "$ref": "#/$defs/Union"
+            },
+            {
+              "$ref": "#/$defs/List"
             }
           ],
-          "default": null,
-          "title": "Set In"
+          "title": "Field"
+        },
+        "fill_forward": {
+          "default": false,
+          "title": "Fill Forward",
+          "type": "boolean"
         }
       },
-      "title": "Dim",
+      "required": [
+        "field"
+      ],
+      "title": "BlockHeader",
       "type": "object"
     },
     "Double": {
@@ -520,6 +493,30 @@
         "direction"
       ],
       "title": "File",
+      "type": "object"
+    },
+    "InputDim": {
+      "description": "A named dimension resolvable from input fields at DFN-parse time.\n\n``value`` specifies the dimension size, directly or indirectly, and can be:\n  - ``nlay``: an integer field\n  - ``len(auxiliary)``: the runtime length of a self-sizing array field\n  - ``nlay * ncol``: the result of an arithmetic expression, e.g. of other dims\n\nValid in both input field shapes and memory variable shapes.",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "scope": {
+          "default": "component",
+          "enum": [
+            "component",
+            "model",
+            "simulation"
+          ],
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "InputDim",
       "type": "object"
     },
     "Integer": {
@@ -828,12 +825,6 @@
         "netcdf": {
           "default": false,
           "title": "Netcdf",
-          "type": "boolean"
-        },
-        "tagged": {
-          "const": false,
-          "default": false,
-          "title": "Tagged",
           "type": "boolean"
         },
         "removed": {
@@ -1201,7 +1192,7 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Dim"
+                "$ref": "#/$defs/InputDim"
               },
               "type": "object"
             },
@@ -1211,6 +1202,21 @@
           ],
           "default": null,
           "title": "Dims"
+        },
+        "runtime_dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/RuntimeDim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Dims"
         },
         "blocks": {
           "anyOf": [
@@ -1342,7 +1348,7 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Dim"
+                "$ref": "#/$defs/InputDim"
               },
               "type": "object"
             },
@@ -1352,6 +1358,21 @@
           ],
           "default": null,
           "title": "Dims"
+        },
+        "runtime_dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/RuntimeDim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Dims"
         },
         "blocks": {
           "anyOf": [
@@ -1580,6 +1601,39 @@
       "title": "Record",
       "type": "object"
     },
+    "RuntimeDim": {
+      "description": "A named dimension whose value is established by MODFLOW at runtime and\ncannot be derived from DFN input fields.\n\n``set_in`` indicates the simulation hook in which the value is first\nestablished (e.g. ``\"ar\"`` for dims set during grid allocation, ``\"rp\"``\nfor dims reset each stress period).\n\nValid only in memory variable shapes, never in input field shapes, since\na sequential parser must know an array's size before reading it.",
+      "properties": {
+        "set_in": {
+          "enum": [
+            "ar",
+            "mc",
+            "rp",
+            "ad",
+            "fc",
+            "ca",
+            "cq"
+          ],
+          "title": "Set In",
+          "type": "string"
+        },
+        "scope": {
+          "default": "component",
+          "enum": [
+            "component",
+            "model",
+            "simulation"
+          ],
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "set_in"
+      ],
+      "title": "RuntimeDim",
+      "type": "object"
+    },
     "Simulation": {
       "properties": {
         "schema_version": {
@@ -1620,7 +1674,7 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Dim"
+                "$ref": "#/$defs/InputDim"
               },
               "type": "object"
             },
@@ -1630,6 +1684,21 @@
           ],
           "default": null,
           "title": "Dims"
+        },
+        "runtime_dims": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/RuntimeDim"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Dims"
         },
         "blocks": {
           "anyOf": [

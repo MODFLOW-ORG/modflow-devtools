@@ -58,15 +58,18 @@ description = "keyword to indicate that precipitation flow terms will be written
 optional = true
 
 [blocks.options.fields.ts_filerecord]
-type = "record"
+type = "list"
 optional = true
 
-[blocks.options.fields.ts_filerecord.fields.ts6]
+[blocks.options.fields.ts_filerecord.item]
+type = "record"
+
+[blocks.options.fields.ts_filerecord.item.fields.ts6]
 type = "keyword"
 longname = "head keyword"
 description = "keyword to specify that record corresponds to a time-series file."
 
-[blocks.options.fields.ts_filerecord.fields.ts6_filename]
+[blocks.options.fields.ts_filerecord.item.fields.ts6_filename]
 type = "file"
 longname = "file name of time series information"
 description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."

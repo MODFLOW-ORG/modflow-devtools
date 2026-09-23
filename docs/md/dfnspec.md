@@ -262,7 +262,7 @@ Field order within a block can be significant.
 
 Tagged fields must precede untagged fields. Fields whose values are not preceded by their name (i.e., `tagged: false`) must come after all tagged fields. Among tagged fields, relative order is unconstrained. Untagged fields must appear in the same order of appearance as in the definition.
 
-**Note:** the `tagged` attribute does not apply to `list` fields. A list cannot be tagged because lists span multiple rows in the block body with no keyword delimiter; once a parser reaches a list, it must continue to read lines as list items until the block's end tag. Therefore a list must be the last field in its block and a block may have at most one list.
+**Note:** a list's `tagged` is derived from its `item`, never declared (see [List](#list)). An **untagged** list's rows begin with a value, so they have no keyword delimiter; once a parser reaches an untagged list, it must continue to read lines as list items until the block's end tag. Therefore an untagged list must be the last field in its block and a block may have at most one untagged list. A **tagged** list's rows each begin with a keyword, so a parser can recognize them anywhere in the block, like any other tagged field: it may appear anywhere among the block's tagged fields, and a block may have any number of them. No other field in the block may begin with one of a tagged list's row keywords.
 
 ## Fields
 
@@ -333,7 +333,7 @@ The field's default value. Only relevant for optional fields. TODO: determine wh
 
 #### `tagged`
 
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name.
+`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Not declared on lists, where it's derived instead; see [List](#list).
 
 ### Scalars
 
@@ -494,6 +494,10 @@ Type `union`. Sum type.
 #### List
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.
+
+A list is **tagged** if and only if every row begins with a keyword. A row begins with a keyword if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field begins with a keyword; a `union` item's rows are its arms, and each must qualify. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
+
+Untagged lists are tables: a block body of rows, e.g. a stress package's period data. Tagged lists also express a line that may be repeated among a block's other fields, e.g. `TS6 FILEIN <ts6_filename>`, which MODFLOW 6 accepts any number of times in a package's options block (one per time-series file).
 
 ##### Type-specific attributes
 

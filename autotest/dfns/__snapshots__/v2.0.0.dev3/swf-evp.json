@@ -65,20 +65,23 @@
           "optional": true
         },
         "ts_filerecord": {
-          "type": "record",
+          "type": "list",
           "optional": true,
-          "fields": {
-            "ts6": {
-              "type": "keyword",
-              "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a time-series file."
-            },
-            "ts6_filename": {
-              "type": "file",
-              "longname": "file name of time series information",
-              "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
-              "tagged": false,
-              "direction": "in"
+          "item": {
+            "type": "record",
+            "fields": {
+              "ts6": {
+                "type": "keyword",
+                "longname": "head keyword",
+                "description": "keyword to specify that record corresponds to a time-series file."
+              },
+              "ts6_filename": {
+                "type": "file",
+                "longname": "file name of time series information",
+                "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+                "tagged": false,
+                "direction": "in"
+              }
             }
           }
         },

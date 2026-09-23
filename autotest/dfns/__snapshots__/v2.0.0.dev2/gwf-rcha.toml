@@ -52,15 +52,18 @@ description = "keyword to indicate that recharge flow terms will be written to t
 optional = true
 
 [blocks.options.fields.tas_filerecord]
-type = "record"
+type = "list"
 optional = true
 
-[blocks.options.fields.tas_filerecord.fields.tas6]
+[blocks.options.fields.tas_filerecord.item]
+type = "record"
+
+[blocks.options.fields.tas_filerecord.item.fields.tas6]
 type = "keyword"
 longname = "head keyword"
 description = "keyword to specify that record corresponds to a time-array-series file."
 
-[blocks.options.fields.tas_filerecord.fields.tas6_filename]
+[blocks.options.fields.tas_filerecord.item.fields.tas6_filename]
 type = "file"
 longname = "file name of time series information"
 description = "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-array series capability."

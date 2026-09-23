@@ -57,20 +57,23 @@
           "optional": true
         },
         "tas_filerecord": {
-          "type": "record",
+          "type": "list",
           "optional": true,
-          "fields": {
-            "tas6": {
-              "type": "keyword",
-              "longname": "head keyword",
-              "description": "keyword to specify that record corresponds to a time-array-series file."
-            },
-            "tas6_filename": {
-              "type": "file",
-              "longname": "file name of time series information",
-              "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-array series capability.",
-              "tagged": false,
-              "direction": "in"
+          "item": {
+            "type": "record",
+            "fields": {
+              "tas6": {
+                "type": "keyword",
+                "longname": "head keyword",
+                "description": "keyword to specify that record corresponds to a time-array-series file."
+              },
+              "tas6_filename": {
+                "type": "file",
+                "longname": "file name of time series information",
+                "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-array series capability.",
+                "tagged": false,
+                "direction": "in"
+              }
             }
           }
         },
