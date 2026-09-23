@@ -157,15 +157,16 @@ class Union(InputFieldBase):
         return self.arms  # type: ignore[return-value]
 
 
-def _row_tags(item: "Record | Union") -> list[str] | None:
-    """The keyword(s) a list row can begin with, or None if some row can begin
-    with a value instead. Each row (a Record item, or each arm of a Union item)
-    must be keyword-led in the `_leading_tags` sense."""
+def _item_tags(item: "Record | Union") -> list[str] | None:
+    """The keyword(s) a list item type begins with, or None if it isn't
+    keyword-led. A Record item must be keyword-led in the `_leading_tags`
+    sense; so must every arm of a Union item, since each arm is a distinct
+    line form the item type allows."""
     tags = []
-    for row in [item] if isinstance(item, Record) else item.arms.values():
-        if not (row_tags := _leading_tags(row, every_line=True)):
+    for form in [item] if isinstance(item, Record) else item.arms.values():
+        if not (form_tags := _leading_tags(form, every_line=True)):
             return None
-        tags.extend(row_tags)
+        tags.extend(form_tags)
     return tags
 
 
@@ -187,13 +188,13 @@ def _leading_tags(field: "InputField", *, every_line: bool = False) -> list[str]
                 return []
             return [t for tags in arm_tags for t in tags]
         case List():
-            return field.row_tags
+            return field.item_tags
 
 
 class List(InputFieldBase):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
-    # Derived from `item`, like `Block.optional`: a list is tagged iff every row
-    # begins with a keyword (see `_row_tags`). A tagged list's rows can be told
+    # Derived from `item`, like `Block.optional`: a list is tagged iff its item
+    # type is keyword-led (see `_item_tags`). A tagged list's items can be told
     # apart from the block's other fields, so unlike an untagged list it needn't
     # be the last or only list in its block. Never serialized. A hidden field
     # rather than a property because pydantic can't override an inherited field
@@ -205,11 +206,11 @@ class List(InputFieldBase):
 
     @model_validator(mode="after")
     def _derive_tagged(self) -> "List":
-        tagged = _row_tags(self.item) is not None
+        tagged = _item_tags(self.item) is not None
         if "tagged" in self.model_fields_set and self.tagged != tagged:
             raise ValueError(
                 f"List {self.name!r}: tagged={self.tagged!r} contradicts its item, "
-                f"whose rows {'all' if tagged else 'do not all'} begin with a keyword"
+                f"whose type {'is' if tagged else 'is not'} keyword-led"
             )
         object.__setattr__(self, "tagged", tagged)
         return self
@@ -218,13 +219,13 @@ class List(InputFieldBase):
         if update and "tagged" in update:
             raise ValueError(f"List {self.name!r}: tagged is derived from item, not settable")
         copy = super().model_copy(update=update, deep=deep)
-        object.__setattr__(copy, "tagged", _row_tags(copy.item) is not None)
+        object.__setattr__(copy, "tagged", _item_tags(copy.item) is not None)
         return copy
 
     @property
-    def row_tags(self) -> list[str]:
-        """The keywords this list's rows can begin with (empty if untagged)."""
-        return _row_tags(self.item) or []
+    def item_tags(self) -> list[str]:
+        """The keywords this list's item type begins with (empty if untagged)."""
+        return _item_tags(self.item) or []
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
@@ -664,7 +665,7 @@ class Block(BaseModel):
     @model_validator(mode="after")
     def _check_field_order(self) -> "Block":
         # Only untagged lists are restricted: they consume all remaining block
-        # content. A tagged list's rows are keyword-led, so they can sit anywhere.
+        # content. A tagged list's items are keyword-led, so they can sit anywhere.
         fields_list = list(self.fields.items())
         list_indices = [
             i for i, (_, f) in enumerate(fields_list) if isinstance(f, List) and not f.tagged
@@ -684,7 +685,7 @@ class Block(BaseModel):
 
     @model_validator(mode="after")
     def _check_list_tags_unique(self) -> "Block":
-        # A tagged list's rows are recognized by their leading keyword, so no
+        # A tagged list's items are recognized by their leading keyword, so no
         # other field in the block may begin with the same one.
         owners: dict[str, list[str]] = {}
         for name, f in self.fields.items():
@@ -693,10 +694,10 @@ class Block(BaseModel):
         for name, f in self.fields.items():
             if not (isinstance(f, List) and f.tagged):
                 continue
-            for tag in f.row_tags:
+            for tag in f.item_tags:
                 if len(owners[tag]) > 1:
                     raise ValueError(
-                        f"Block {self.name!r}: tagged list {name!r} row keyword "
+                        f"Block {self.name!r}: tagged list {name!r} item keyword "
                         f"{tag!r} is ambiguous with fields {owners[tag]!r}"
                     )
         return self

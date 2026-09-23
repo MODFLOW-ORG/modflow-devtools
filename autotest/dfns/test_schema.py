@@ -398,7 +398,7 @@ def _ts_list(name="ts_filerecord", tag="ts6"):
     )
 
 
-def _row_list(name="perioddata"):
+def _table_list(name="perioddata"):
     return List(
         name=name,
         item=Record(
@@ -408,11 +408,11 @@ def _row_list(name="perioddata"):
 
 
 def test_list_tagged_derived_from_item():
-    """A list is tagged iff every row begins with a keyword."""
+    """A list is tagged iff its item type is keyword-led."""
     assert _ts_list().tagged is True
-    assert _ts_list().row_tags == ["ts6"]
-    assert _row_list().tagged is False
-    assert _row_list().row_tags == []
+    assert _ts_list().item_tags == ["ts6"]
+    assert _table_list().tagged is False
+    assert _table_list().item_tags == []
     union = Union(
         name="output",
         arms={
@@ -432,7 +432,7 @@ def test_list_tagged_derived_from_item():
         arms={"all": Keyword(name="all"), "frequency": Integer(name="frequency")},
     )
     assert List(name="perioddata", item=settings).tagged is True
-    # every row must be keyword-led, including through a record's leading union
+    # the item type must be keyword-led in every arm, including through a record's leading union
     nested = Record(name="perioddata", fields={"setting": mixed, "value": Double(name="v")})
     assert List(name="perioddata", item=nested).tagged is False
 
@@ -443,7 +443,7 @@ def test_list_tagged_not_serialized_or_settable():
     assert "tagged" not in lst.model_dump(exclude_defaults=True)
     assert List.model_validate(lst.model_dump()).tagged is True
     with pytest.raises(ValueError, match="contradicts"):
-        List(name="p", tagged=True, item=_row_list().item)
+        List(name="p", tagged=True, item=_table_list().item)
     with pytest.raises(ValueError, match="derived"):
         lst.model_copy(update={"tagged": False})
 
@@ -451,8 +451,8 @@ def test_list_tagged_not_serialized_or_settable():
 def test_list_tagged_rederived_on_model_copy():
     """model_copy skips validation, so List re-derives `tagged` itself."""
     lst = _ts_list()
-    assert lst.model_copy(update={"item": _row_list().item}).tagged is False
-    assert _row_list().model_copy(update={"item": lst.item}).tagged is True
+    assert lst.model_copy(update={"item": _table_list().item}).tagged is False
+    assert _table_list().model_copy(update={"item": lst.item}).tagged is True
 
 
 def test_block_tagged_list_may_precede_fields_and_other_lists():
@@ -462,7 +462,7 @@ def test_block_tagged_list_may_precede_fields_and_other_lists():
             "ts_filerecord": _ts_list(),
             "tas_filerecord": _ts_list("tas_filerecord", "tas6"),
             "print_input": Keyword(name="print_input", optional=True),
-            "perioddata": _row_list(),
+            "perioddata": _table_list(),
         },
     )
     assert list(block.fields) == ["ts_filerecord", "tas_filerecord", "print_input", "perioddata"]
@@ -472,13 +472,13 @@ def test_block_untagged_list_must_be_last_and_only():
     with pytest.raises(ValueError, match="must be last"):
         Block(
             name="period",
-            fields={"perioddata": _row_list(), "print_input": Keyword(name="print_input")},
+            fields={"perioddata": _table_list(), "print_input": Keyword(name="print_input")},
         )
     with pytest.raises(ValueError, match="at most one untagged list"):
-        Block(name="period", fields={"a": _row_list("a"), "b": _row_list("b")})
+        Block(name="period", fields={"a": _table_list("a"), "b": _table_list("b")})
 
 
-def test_block_tagged_list_row_keyword_must_be_unique():
+def test_block_tagged_list_item_keyword_must_be_unique():
     with pytest.raises(ValueError, match="ambiguous"):
         Block(name="options", fields={"ts_filerecord": _ts_list(), "ts6": Keyword(name="ts6")})
     with pytest.raises(ValueError, match="ambiguous"):
