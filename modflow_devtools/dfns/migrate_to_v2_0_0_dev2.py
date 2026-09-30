@@ -13,6 +13,26 @@ _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
 
+# v1 shapes that are wrong at the source. `utl-ts` `sfacval` is `(<time_series_name)`,
+# naming a field that exists only in `utl-tas`; MF6 reads one SFACS value per
+# time series name, so the count is exactly `time_series_names`.
+_V1_SHAPE_FIXES: dict[tuple[str, str], str] = {
+    ("utl-ts", "sfacval"): "(time_series_names)",
+}
+
+
+def _split_v1_bound(elem: str) -> tuple[str, str]:
+    """
+    Split a v1 shape element into a v2 bound operator and the bounded expression.
+
+    v1 marks an upper bound with ``<`` (``shape (<nstp)``: at most ``nstp``)
+    and reserves ``>`` for a lower bound. v2 has the full set of inequalities,
+    where ``<`` is strict, so v1's markers become ``<=``/``>=``.
+    """
+    if elem[:1] in ("<", ">"):
+        return f"{elem[0]}=", elem[1:].lstrip("=").strip()
+    return "", elem
+
 
 def try_parse_bool(v: Any, default: bool = False) -> bool:
     """
@@ -89,16 +109,18 @@ def _parse_list_shape(s: str) -> list[str]:
     """
     Parse a v1 recarray shape string into a ``List.shape`` value.
 
-    Only a bare identifier is accepted — complex expressions such as
-    ``sum(nlakeconn)`` cannot be represented in ``List.shape`` and are dropped.
+    Only a bare identifier, optionally bound-marked (``<maxats``), is accepted —
+    complex expressions such as ``sum(nlakeconn)`` are handled separately by
+    ``_infer_list_shape_dims``.
     """
     if not s:
         return []
     s_clean = s.strip()
     if s_clean.startswith("(") and s_clean.endswith(")"):
         s_clean = s_clean[1:-1].strip()
+    op, s_clean = _split_v1_bound(s_clean)
     if _IDENT_RE.fullmatch(s_clean):
-        return [s_clean]
+        return [f"{op}{s_clean}"]
     return []
 
 
@@ -141,11 +163,11 @@ def _normalize_n_prefix_shapes(
     def _fn(bname, fname, field):
         if not field.shape:
             return None
-        elem = field.shape[0]
+        op, elem = v2.split_bound(field.shape[0])
         if elem not in raw_dim_names and elem.startswith("n") and len(elem) > 1:
             candidate = "max" + elem[1:]
             if candidate in raw_dim_names:
-                return [candidate]
+                return [f"{op or ''}{candidate}"]
         return None
 
     return _remap_list_shapes(blocks, _fn)
@@ -207,7 +229,10 @@ def _sanitize_list_shapes(
     return _remap_list_shapes(
         blocks,
         lambda bname, fname, field: (
-            [] if field.shape and any(elem not in known_dims for elem in field.shape) else None
+            []
+            if field.shape
+            and any(v2.split_bound(elem)[1] not in known_dims for elem in field.shape)
+            else None
         ),
     )
 
@@ -232,6 +257,7 @@ def _resolve_dimensions(
                     self_sizing.add(name)
                 else:
                     for elem in field.shape:
+                        _, elem = v2.split_bound(elem)
                         if _IDENT_RE.fullmatch(elem):
                             shape_refs.add(elem)
             if isinstance(field, v2.Record):
@@ -317,7 +343,7 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             for field in record.fields.values():
                 if isinstance(field, v2.Array):
                     for dim in field.shape:
-                        if m := _LOOKUP_RE.fullmatch(dim):
+                        if m := _LOOKUP_RE.fullmatch(v2.split_bound(dim)[1]):
                             pk_block, _, fk_fname = m.groups()
                             sibling = record.fields.get(fk_fname)
                             if sibling is not None and getattr(sibling, "fk", None) is None:
@@ -628,7 +654,7 @@ def _item_array_dims(field: v2.List) -> set[str]:
     item_fields = item.fields if isinstance(item, v2.Record) else item.arms
     for f in item_fields.values():
         if isinstance(f, v2.Array):
-            dims.update(f.shape)
+            dims.update(v2.split_bound(elem)[1] for elem in f.shape)
     return dims
 
 
@@ -660,7 +686,7 @@ def _fill_named_list_shapes(
         if "period" not in bname
         for field in block.fields.values()
         if isinstance(field, v2.List)
-        for dim in field.shape
+        for dim in (v2.split_bound(elem)[1] for elem in field.shape)
     }
     _SKIP = {"auxiliary"}
 
@@ -792,7 +818,11 @@ def _infer_list_shape_dims(
             shape_str = v1_shapes.get((bname, fname))
             if not shape_str:
                 continue
-            result = _translate_v1_shape_expr(shape_str, col_to_list)
+            s = shape_str.strip()
+            if s.startswith("(") and s.endswith(")"):
+                s = s[1:-1].strip()
+            op, s = _split_v1_bound(s)
+            result = _translate_v1_shape_expr(s, col_to_list)
             if not result:
                 continue
             dim_name, v2_expr = result
@@ -800,7 +830,7 @@ def _infer_list_shape_dims(
             if dim_name in existing_dims or dim_name in derived:
                 continue
             derived[dim_name] = v2.InputDim(value=v2_expr, scope=scope)
-            new_fields[fname] = field.model_copy(update={"shape": [dim_name]})
+            new_fields[fname] = field.model_copy(update={"shape": [f"{op}{dim_name}"]})
             changed = True
         if changed:
             new_blocks[bname] = block.model_copy(update={"fields": new_fields})
@@ -1179,6 +1209,62 @@ def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> d
     return {**blocks, "sources": sources.model_copy(update={"write_if_empty": True})}
 
 
+# List dims that MF6 treats as an upper bound (it reads up to that many rows and
+# uses the count read), though v1 doesn't mark them `<`. Each is confirmed in the
+# MF6 source: IDM's period list loader sets `nbound` from the rows read (every
+# `maxbound`), HFB sets `nhfb` likewise, CSUB loops over the `nbound` read, and
+# ATS reads PERIODDATA until the block ends. Unmarked dims are exact, whatever
+# their name: MVR errors unless there are exactly `maxpackages` PACKAGES rows.
+_UPPER_BOUND_LIST_DIMS = frozenset({"maxbound", "maxhfb", "maxsig0", "maxats"})
+
+# Lists whose v1 recarray has no shape, though a declared dim counts its rows.
+_MISSING_LIST_SHAPES: dict[tuple[str, str], str] = {
+    ("sim-tdis", "perioddata"): "nper",
+    ("utl-ats", "perioddata"): "maxats",
+}
+
+
+def _fix_list_shapes(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Fill in list shapes v1 omits and mark upper bounds v1 leaves unmarked.
+
+    Stopgap until the modflow6 DFNs carry ``shape (nper)``, ``shape (<maxbound)``
+    and so on; then the per-field shape parsing picks them up directly.
+    """
+
+    def _fn(bname, fname, field):
+        shape = field.shape
+        if not shape and (dim := _MISSING_LIST_SHAPES.get((name, fname))):
+            shape = [dim]
+        shape = [f"<={elem}" if elem in _UPPER_BOUND_LIST_DIMS else elem for elem in shape]
+        return shape if shape != field.shape else None
+
+    return _remap_list_shapes(blocks, _fn)
+
+
+def _fix_ts_sfac(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Make ``utl-ts``'s SFAC scale factor a scalar.
+
+    v1 shares one ``sfacval`` between the SFACS record (one factor per time
+    series) and the SFAC record (a single factor for all of them), so both map
+    to the SFACS array. MF6 reads one value after SFAC.
+    """
+    if name != "utl-ts" or "attributes" not in blocks:
+        return blocks
+    block = blocks["attributes"]
+    record = block.fields.get("sfacrecord_single")
+    if not isinstance(record, v2.Record) or not isinstance(
+        sfacval := record.fields.get("sfacval"), v2.Array
+    ):
+        return blocks
+    shared = (set(v2.Double.model_fields) & sfacval.model_fields_set) - {"type"}
+    scalar = v2.Double(**{k: getattr(sfacval, k) for k in shared})
+    record = record.model_copy(update={"fields": {**record.fields, "sfacval": scalar}})
+    fields = {**block.fields, "sfacrecord_single": record}
+    return {**blocks, "attributes": block.model_copy(update={"fields": fields})}
+
+
 def _parse_valid(valid: Any, coerce=None) -> list | None:
     """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
     parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
@@ -1273,7 +1359,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     def _map_field(f: v1.Field) -> v2.InputField:
         _name: str = f["name"]
         _type: str | None = f.get("type")
-        shape_str: str | None = f.get("shape") or None
+        shape_str: str | None = _V1_SHAPE_FIXES.get((name, _name), f.get("shape") or None)
         description: str | None = f.get("description") or None
         longname: str | None = f.get("longname") or None
         optional: bool = try_parse_bool(f.get("optional"), False)
@@ -1304,41 +1390,48 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 else _default_raw
             )
 
+        def _parse_shape_elem(elem: str) -> str | None:
+            if ";" in elem:
+                return "ncpl"
+            if elem in ("any1d", "unknown"):
+                return None
+            if m := _COL_FK_RE.fullmatch(elem):
+                col_name = m.group(1)
+                block_name = next(
+                    (
+                        fi["block"]
+                        for fi in fields.values(multi=True)
+                        if fi["name"] == col_name
+                        and fi["type"] == "integer"
+                        and try_parse_bool(fi.get("in_record", False))
+                    ),
+                    None,
+                )
+                return f"{block_name}.{elem}" if block_name else None
+            # A dim that isn't itself a field (e.g. `naux`) is named for the
+            # string array it counts (`auxiliary`, shape `(naux)`).
+            if any(fi["name"] == elem for fi in fields.values(multi=True)):
+                return elem
+            provider = next(
+                (
+                    fi["name"]
+                    for fi in fields.values(multi=True)
+                    if fi["type"] == "string"
+                    and (fi.get("shape") or "").strip() in (f"({elem})", elem)
+                ),
+                None,
+            )
+            return provider if provider else elem
+
         def _parse_shape(s: str) -> list[str]:
             result = []
             s_clean = s.strip()
             if s_clean.startswith("(") and s_clean.endswith(")"):
                 s_clean = s_clean[1:-1]
             for elem in (x.strip() for x in s_clean.split(",") if x.strip()):
-                if ";" in elem:
-                    result.append("ncpl")
-                elif elem in ("any1d", "unknown") or elem.startswith("<") or elem.startswith(">"):
-                    pass
-                elif m := _COL_FK_RE.fullmatch(elem):
-                    col_name = m.group(1)
-                    block_name = next(
-                        (
-                            fi["block"]
-                            for fi in fields.values(multi=True)
-                            if fi["name"] == col_name
-                            and fi["type"] == "integer"
-                            and try_parse_bool(fi.get("in_record", False))
-                        ),
-                        None,
-                    )
-                    if block_name:
-                        result.append(f"{block_name}.{elem}")
-                else:
-                    provider = next(
-                        (
-                            fi["name"]
-                            for fi in fields.values(multi=True)
-                            if fi["type"] == "string"
-                            and (fi.get("shape") or "").strip() in (f"({elem})", elem)
-                        ),
-                        None,
-                    )
-                    result.append(provider if provider else elem)
+                op, elem = _split_v1_bound(elem)
+                if (parsed := _parse_shape_elem(elem)) is not None:
+                    result.append(f"{op}{parsed}")
             return result
 
         def _to_scalar() -> v2.Scalar:
@@ -1634,7 +1727,9 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                             time_series=time_series,
                             layered=layered,
                             dtype="string",
-                            shape=[],
+                            # A string array is self-sizing unless another field
+                            # counts it: `auxiliary`'s `(naux)` names itself.
+                            shape=[e for e in _parse_shape(shape_str) if e != _name],
                         )
                     # lenbigline is a character-length constraint (v1 overloading),
                     # not an array dimension; fall through to _to_scalar() below.
@@ -1696,6 +1791,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
     blocks = _fill_named_list_shapes(blocks, explicit_dims)
     blocks, derived_dims = _infer_list_shape_dims(blocks, fields, _scope_for(parent), known_dims)
+    blocks = _fix_list_shapes(name, blocks)
+    blocks = _fix_ts_sfac(name, blocks)
     blocks = _wrap_oc_period_records(blocks)
     blocks = _wrap_repeating_records(blocks)
     blocks = _collapse_sto_keywords(blocks)

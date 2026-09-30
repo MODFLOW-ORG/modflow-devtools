@@ -17,6 +17,9 @@ default = 1
 [blocks.perioddata.fields.perioddata]
 type = "list"
 longname = "stress period ats time information"
+shape = [
+    "<=maxats",
+]
 
 [blocks.perioddata.fields.perioddata.item]
 type = "record"

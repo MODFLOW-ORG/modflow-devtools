@@ -262,7 +262,10 @@
                       "steps": {
                         "type": "array",
                         "description": "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps.",
-                        "dtype": "integer"
+                        "dtype": "integer",
+                        "shape": [
+                          "<=nstp"
+                        ]
                       }
                     }
                   }
@@ -309,7 +312,10 @@
                       "steps": {
                         "type": "array",
                         "description": "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps.",
-                        "dtype": "integer"
+                        "dtype": "integer",
+                        "shape": [
+                          "<=nstp"
+                        ]
                       }
                     }
                   }

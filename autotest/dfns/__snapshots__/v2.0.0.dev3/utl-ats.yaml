@@ -80,6 +80,8 @@ blocks:
                 tests with this variable should be set to 5.0 or larger to determine if convergence can
                 be achieved.
               tagged: false
+        shape:
+          - <=maxats
 memory:
   maxats:
     set_in: ar

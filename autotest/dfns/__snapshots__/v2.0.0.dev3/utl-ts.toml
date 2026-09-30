@@ -5,8 +5,8 @@ parent = "sim-nam"
 multi = true
 subtype = "utility"
 
-[dims.interpolation_method]
-value = "len(interpolation_method)"
+[dims.time_series_names]
+value = "len(time_series_names)"
 
 [blocks.attributes.fields.time_series_namerecord]
 type = "record"
@@ -36,6 +36,9 @@ type = "array"
 description = "Interpolation method, which is either STEPWISE or LINEAR."
 tagged = false
 dtype = "string"
+shape = [
+    "time_series_names",
+]
 
 [blocks.attributes.fields.interpolation_methodrecord_single]
 type = "record"
@@ -70,6 +73,9 @@ type = "array"
 description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
 tagged = false
 dtype = "double"
+shape = [
+    "time_series_names",
+]
 
 [blocks.attributes.fields.sfacrecord_single]
 type = "record"
@@ -77,10 +83,9 @@ description = "xxx"
 optional = true
 
 [blocks.attributes.fields.sfacrecord_single.fields.sfacval]
-type = "array"
+type = "double"
 description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
 tagged = false
-dtype = "double"
 
 [blocks.attributes.fields.sfac]
 type = "keyword"
@@ -105,5 +110,5 @@ description = "A 2-D array of numeric, floating-point values, or a constant valu
 tagged = false
 dtype = "double"
 shape = [
-    "interpolation_method",
+    "time_series_names",
 ]

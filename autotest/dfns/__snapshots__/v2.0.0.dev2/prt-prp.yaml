@@ -351,6 +351,8 @@ blocks:
               description: release at the start of each step specified in STEPS. This option may be used
                 in conjunction with other RELEASESETTING options.
               dtype: integer
+              shape:
+                - <=nstp
             fraction:
               type: array
               description: 'release particles after the specified fraction of the time step has elapsed.
@@ -363,6 +365,8 @@ blocks:
               optional: true
               removed: 6.6.0
               dtype: double
+              shape:
+                - <=nstp
     header:
       fill_forward: true
       field:

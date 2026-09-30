@@ -133,7 +133,7 @@ description = "integer value specifying the maximum number of wells cells that w
 [blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
-    "maxbound",
+    "<=maxbound",
 ]
 
 [blocks.period.fields.stress_period_data.item]

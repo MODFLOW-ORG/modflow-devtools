@@ -80,7 +80,7 @@ blocks:
                     default, the TEMPERATURE for each boundary feature is zero.
                   time_series: true
         shape:
-          - maxbound
+          - <=maxbound
     header:
       fill_forward: true
       field:

@@ -174,7 +174,7 @@
             }
           },
           "shape": [
-            "maxbound"
+            "<=maxbound"
           ]
         }
       },

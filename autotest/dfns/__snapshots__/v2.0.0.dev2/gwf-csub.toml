@@ -433,7 +433,7 @@ tagged = false
 [blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
-    "maxsig0",
+    "<=maxsig0",
 ]
 
 [blocks.period.fields.stress_period_data.item]

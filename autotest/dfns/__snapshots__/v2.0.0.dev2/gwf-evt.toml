@@ -112,7 +112,7 @@ description = "number of ET segments.  Default is one.  When NSEG is greater tha
 [blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
-    "maxbound",
+    "<=maxbound",
 ]
 
 [blocks.period.fields.stress_period_data.item]

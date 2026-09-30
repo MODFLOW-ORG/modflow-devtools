@@ -8,6 +8,7 @@ import yaml
 
 from modflow_devtools.dfn.schema import Dfn
 from modflow_devtools.dfns import fetch_dfns, migrate
+from modflow_devtools.dfns import schema as v2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
@@ -202,3 +203,81 @@ def test_migrate_ssm_sources_write_if_empty_without_tag(name):
     fields, meta = _load_sources_fields(dfn_without_tag)
     component = to_v2_0_0_dev2(name, fields, meta)
     assert component.blocks["sources"].write_if_empty is True
+
+
+def _migrate_dev3(dfn_dir: Path, name: str):
+    from modflow_devtools.dfn import schema as v1
+
+    with (dfn_dir / "common.dfn").open() as f:
+        common, _ = v1.Dfn.load_dfn(f)
+    with (dfn_dir / f"{name}.dfn").open() as f:
+        fields, meta = v1.Dfn.load_dfn(f, common=common)
+    return to_v2_0_0_dev3(name, fields, meta)
+
+
+def _list_shape(component, block: str) -> list[str]:
+    return component.blocks[block].fields[block].shape
+
+
+@pytest.mark.parametrize("name", ["gwf-oc", "gwt-oc", "gwe-oc", "prt-oc"])
+def test_migrate_keeps_v1_upper_bound(dfn_dir, name):
+    # v1's `shape (<nstp)` means at most nstp, i.e. v2's `<=`
+    component = _migrate_dev3(dfn_dir, name)
+    shapes = [
+        f.shape
+        for f in component.get_fields(recurse=True).values(multi=True)
+        if isinstance(f, v2.Array) and f.name == "steps"
+    ]
+    assert shapes and all(shape == ["<=nstp"] for shape in shapes)
+
+
+def test_migrate_keeps_v1_upper_bound_prp(dfn_dir):
+    fields = _migrate_dev3(dfn_dir, "prt-prp").get_fields(recurse=True)
+    for name in ("steps", "fraction"):
+        shapes = [
+            f.shape for f in fields.values(multi=True) if isinstance(f, v2.Array) and f.name == name
+        ]
+        assert shapes and all(shape == ["<=nstp"] for shape in shapes)
+
+
+@pytest.mark.parametrize("name", ["gwf-chd", "gwf-wel", "gwt-src", "olf-flw", "utl-spc"])
+def test_migrate_maxbound_is_upper_bound(dfn_dir, name):
+    component = _migrate_dev3(dfn_dir, name)
+    lists = [
+        f for b in component.blocks.values() for f in b.fields.values() if isinstance(f, v2.List)
+    ]
+    assert [f.shape for f in lists if f.shape] == [["<=maxbound"]]
+
+
+@pytest.mark.parametrize(
+    "name,block,shape",
+    [
+        ("gwf-hfb", "period", ["<=maxhfb"]),
+        ("gwf-csub", "period", ["<=maxsig0"]),
+        ("utl-ats", "perioddata", ["<=maxats"]),
+        ("sim-tdis", "perioddata", ["nper"]),
+        ("gwf-mvr", "packages", ["maxpackages"]),
+    ],
+)
+def test_migrate_list_shape_bounds(dfn_dir, name, block, shape):
+    component = _migrate_dev3(dfn_dir, name)
+    fields = {f.name: f for f in component.blocks[block].fields.values()}
+    assert next(f for f in fields.values() if isinstance(f, v2.List)).shape == shape
+
+
+def test_migrate_ts_shapes(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "utl-ts")
+    attrs = component.blocks["attributes"].fields
+    assert component.dims["time_series_names"].value == "len(time_series_names)"
+    assert attrs["time_series_namerecord"].fields["time_series_names"].shape == []
+    method = attrs["interpolation_methodrecord"].fields["interpolation_method"]
+    assert method.shape == ["time_series_names"]
+    assert attrs["sfacrecord"].fields["sfacval"].shape == ["time_series_names"]
+    assert isinstance(attrs["sfacrecord_single"].fields["sfacval"], v2.Double)
+    ts = component.blocks["timeseries"].fields["timeseries"].item.fields["ts_array"]
+    assert ts.shape == ["time_series_names"]
+
+
+def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-chd")
+    assert component.blocks["options"].fields["auxiliary"].shape == []

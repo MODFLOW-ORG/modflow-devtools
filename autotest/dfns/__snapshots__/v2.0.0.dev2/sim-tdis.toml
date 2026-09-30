@@ -51,6 +51,9 @@ default = [
         1.0,
     ],
 ]
+shape = [
+    "nper",
+]
 
 [blocks.perioddata.fields.perioddata.item]
 type = "record"

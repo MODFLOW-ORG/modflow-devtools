@@ -309,6 +309,9 @@ description = "release at the specified time step frequency. This keyword may be
 type = "array"
 description = "release at the start of each step specified in STEPS. This option may be used in conjunction with other RELEASESETTING options."
 dtype = "integer"
+shape = [
+    "<=nstp",
+]
 
 [blocks.period.fields.perioddata.item.arms.fraction]
 type = "array"
@@ -316,6 +319,9 @@ description = "release particles after the specified fraction of the time step h
 optional = true
 removed = "6.6.0"
 dtype = "double"
+shape = [
+    "<=nstp",
+]
 
 [blocks.period.header]
 fill_forward = true

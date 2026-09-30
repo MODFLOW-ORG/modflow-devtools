@@ -805,6 +805,12 @@ def test_render_scalar_time_series():
     assert untagged.render(inline=True) == "<@head@>"
 
 
+def test_render_array_bounded_inline():
+    """A bounded extent renders with its operator."""
+    field = Array(name="steps", dtype="integer", shape=["<=nstp"], tagged=False)
+    assert field.render(inline=True) == "<steps(<=nstp)>"
+
+
 def test_render_array_time_series_inline():
     """A time-series-enabled Array wraps name+shape in `@...@` when rendered inline
     (i.e. embedded in a Record row); the marker never appears on the READARRAY

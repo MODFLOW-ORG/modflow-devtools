@@ -42,7 +42,7 @@ description = "integer value specifying the maximum number of spc cells that wil
 [blocks.period.fields.perioddata]
 type = "list"
 shape = [
-    "maxbound",
+    "<=maxbound",
 ]
 
 [blocks.period.fields.perioddata.item]

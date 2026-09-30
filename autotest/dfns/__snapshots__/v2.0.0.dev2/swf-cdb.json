@@ -129,7 +129,7 @@
             }
           },
           "shape": [
-            "maxbound"
+            "<=maxbound"
           ]
         }
       },

@@ -194,7 +194,7 @@ blocks:
               optional: true
               tagged: false
         shape:
-          - maxbound
+          - <=maxbound
     header:
       fill_forward: true
       field:

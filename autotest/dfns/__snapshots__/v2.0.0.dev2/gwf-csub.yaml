@@ -498,7 +498,7 @@ blocks:
               tagged: false
               time_series: true
         shape:
-          - maxsig0
+          - <=maxsig0
     header:
       fill_forward: true
       field:

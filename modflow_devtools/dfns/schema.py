@@ -857,6 +857,19 @@ _BOUND_RE = re.compile(r"^[<>]=?")
 _ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
 
 
+def split_bound(element: str) -> "tuple[str | None, str]":
+    """
+    Split a shape element into its bound operator and the expression it bounds.
+
+    A bare element (``"nper"``) is an exact extent; an element prefixed with an
+    inequality operator (``"<=maxbound"``) bounds the extent instead. Returns
+    ``(operator, expression)``, with ``operator`` ``None`` for an exact extent.
+    """
+    if m := _BOUND_RE.match(element):
+        return m.group(), element[m.end() :].strip()
+    return None, element
+
+
 def _find_list_in_block(component: "ComponentBase", block_name: str) -> "List | None":
     """Return the first List field in the named block, or None."""
     block = (component.blocks or {}).get(block_name)
@@ -884,27 +897,21 @@ def _validate_shape_element(
         Must resolve in the 3-level scope: explicit → derived → grid dims.
       - Row-level column lookup  ``^(\\w+)\\.(\\w+)\\((\\w+)\\)$``
         Structural checks (see plan §Shape element parsing).
+      - Arithmetic offset (dim [+-] integer)
+      - Any of the above prefixed with a bound operator (<, >, <=, >=)
 
     Raises ValueError on any violation.
     """
-    # strip bounds (<, >, <=, >=) and validate the core identifier
-    if bound_m := _BOUND_RE.match(element):
-        core = element[bound_m.end() :]
-        if not _DIM_RE.fullmatch(core):
+    # a bound (<, >, <=, >=) may prefix any expression valid on its own
+    op, core = split_bound(element)
+    if op is not None:
+        if split_bound(core)[0] is not None:
             raise ValueError(
                 f"Array {array_field.name!r} has invalid shape element {element!r}: "
-                f"must be a plain identifier after the bound operator"
+                f"at most one bound operator is allowed"
             )
-        if core in known_dims:
-            return
-        if enclosing_record is not None:
-            sibling = enclosing_record.fields.get(core)
-            if isinstance(sibling, Integer):
-                return
-        raise ValueError(
-            f"Array {array_field.name!r} shape element {element!r}: "
-            f"{core!r} does not resolve to a known dim (explicit, derived, or grid)"
-        )
+        _validate_shape_element(core, array_field, component, enclosing_record, known_dims, spec)
+        return
 
     if _DIM_RE.fullmatch(element):
         if element in known_dims:
@@ -1012,7 +1019,8 @@ def _validate_shape_element(
     raise ValueError(
         f"Array {array_field.name!r} has invalid shape element {element!r}: "
         f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
-        f"(dim [+-] integer), or a row-level lookup (block.column(fk_field))"
+        f"(dim [+-] integer), or a row-level lookup (block.column(fk_field)), "
+        f"optionally prefixed by a bound (<, <=, >, >=)"
     )
 
 
@@ -1027,21 +1035,17 @@ def _validate_list_shape_element(
     Valid forms are a strict subset of array shape forms — no row-level lookup
     and no intra-record sibling reference, since lists are not inside records:
       - Plain dim reference
-      - Bound-annotated dim reference (<, >, <=, >=)
       - Arithmetic offset (dim [+-] integer)
+      - Any of the above prefixed with a bound operator (<, >, <=, >=)
     """
-    if bound_m := _BOUND_RE.match(element):
-        core = element[bound_m.end() :]
-        if not _DIM_RE.fullmatch(core):
+    op, core = split_bound(element)
+    if op is not None:
+        if split_bound(core)[0] is not None:
             raise ValueError(
                 f"List {list_field.name!r} has invalid shape element {element!r}: "
-                f"must be a plain identifier after the bound operator"
+                f"at most one bound operator is allowed"
             )
-        if core not in known_dims:
-            raise ValueError(
-                f"List {list_field.name!r} shape element {element!r}: "
-                f"{core!r} does not resolve to a known dim"
-            )
+        _validate_list_shape_element(core, list_field, known_dims)
         return
 
     if _DIM_RE.fullmatch(element):
@@ -1064,7 +1068,7 @@ def _validate_list_shape_element(
     raise ValueError(
         f"List {list_field.name!r} has invalid shape element {element!r}: "
         f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
-        f"(dim [+-] integer), or a bound-annotated dim (</<=/>/>=dim)"
+        f"(dim [+-] integer), optionally prefixed by a bound (<, <=, >, >=)"
     )
 
 

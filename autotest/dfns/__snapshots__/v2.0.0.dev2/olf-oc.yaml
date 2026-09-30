@@ -148,6 +148,8 @@ blocks:
                       description: save for each step specified in STEPS. This keyword may be used in
                         conjunction with other keywords to print or save results for multiple time steps.
                       dtype: integer
+                      shape:
+                        - <=nstp
             printrecord:
               type: record
               optional: true
@@ -191,6 +193,8 @@ blocks:
                       description: save for each step specified in STEPS. This keyword may be used in
                         conjunction with other keywords to print or save results for multiple time steps.
                       dtype: integer
+                      shape:
+                        - <=nstp
     header:
       fill_forward: true
       field:

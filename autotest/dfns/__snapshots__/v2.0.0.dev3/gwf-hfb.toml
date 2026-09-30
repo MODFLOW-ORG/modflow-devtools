@@ -21,7 +21,7 @@ description = "integer value specifying the maximum number of hydraulic flow bar
 [blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
-    "maxhfb",
+    "<=maxhfb",
 ]
 
 [blocks.period.fields.stress_period_data.item]

@@ -76,3 +76,5 @@ blocks:
                 The length of the first time step, $Delta t_1$, is related to PERLEN, NSTP, and TSMULT
                 by the relation $Delta t_1= perlen frac{tsmult - 1}{tsmult^{nstp}-1}$.
               tagged: false
+        shape:
+          - nper

@@ -64,7 +64,7 @@ blocks:
                 calculated for the two cells would be multiplied by 1.5.
               tagged: false
         shape:
-          - maxhfb
+          - <=maxhfb
     header:
       fill_forward: true
       field:

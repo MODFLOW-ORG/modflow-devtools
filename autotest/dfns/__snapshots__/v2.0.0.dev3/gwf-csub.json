@@ -508,7 +508,7 @@
             }
           },
           "shape": [
-            "maxsig0"
+            "<=maxsig0"
           ]
         }
       },

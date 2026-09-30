@@ -6,8 +6,8 @@
   "multi": true,
   "subtype": "utility",
   "dims": {
-    "interpolation_method": {
-      "value": "len(interpolation_method)"
+    "time_series_names": {
+      "value": "len(time_series_names)"
     }
   },
   "blocks": {
@@ -42,7 +42,10 @@
               "type": "array",
               "description": "Interpolation method, which is either STEPWISE or LINEAR.",
               "tagged": false,
-              "dtype": "string"
+              "dtype": "string",
+              "shape": [
+                "time_series_names"
+              ]
             }
           }
         },
@@ -78,7 +81,10 @@
               "type": "array",
               "description": "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0.",
               "tagged": false,
-              "dtype": "double"
+              "dtype": "double",
+              "shape": [
+                "time_series_names"
+              ]
             }
           }
         },
@@ -88,10 +94,9 @@
           "optional": true,
           "fields": {
             "sfacval": {
-              "type": "array",
+              "type": "double",
               "description": "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0.",
-              "tagged": false,
-              "dtype": "double"
+              "tagged": false
             }
           }
         },
@@ -121,7 +126,7 @@
                 "tagged": false,
                 "dtype": "double",
                 "shape": [
-                  "interpolation_method"
+                  "time_series_names"
                 ]
               }
             }

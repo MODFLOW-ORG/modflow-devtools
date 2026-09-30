@@ -20,8 +20,10 @@ from modflow_devtools.dfns.schema import (
     _names_in_expr,
     _resolve_derived_dims,
     _validate_len_call,
+    _validate_list_shape_element,
     _validate_shape_element,
     _validate_sum_call,
+    split_bound,
 )
 
 
@@ -355,6 +357,66 @@ def test_validate_shape_element_bound_unknown_dim():
         _validate_shape_element("<unknown_dim", arr, pkg, None, known)
 
 
+@pytest.mark.parametrize(
+    "element,expected",
+    [
+        ("nper", (None, "nper")),
+        ("<nper", ("<", "nper")),
+        ("<=nper", ("<=", "nper")),
+        (">nper", (">", "nper")),
+        (">= nper", (">=", "nper")),
+        ("<=packagedata.ncon(ifno)", ("<=", "packagedata.ncon(ifno)")),
+    ],
+)
+def test_split_bound(element, expected):
+    assert split_bound(element) == expected
+
+
+def test_validate_shape_element_bound_arithmetic():
+    arr, pkg, known = _make_shape_validation_ctx({"ncol"})
+    _validate_shape_element("<=ncol + 1", arr, pkg, None, known)
+
+
+def test_validate_shape_element_bound_derived_dim():
+    arr, pkg, known = _make_shape_validation_ctx({"nrow", "ncol"}, derived={"ncpl": "nrow * ncol"})
+    _validate_shape_element("<=ncpl", arr, pkg, None, known)
+
+
+def test_validate_shape_element_bound_invalid_expression():
+    arr, pkg, known = _make_shape_validation_ctx({"nrow"})
+    with pytest.raises(ValueError, match="invalid shape element"):
+        _validate_shape_element("<=nrow * 2", arr, pkg, None, known)
+
+
+def test_validate_shape_element_bound_repeated_operator():
+    arr, pkg, known = _make_shape_validation_ctx({"nrow"})
+    with pytest.raises(ValueError, match="at most one bound operator"):
+        _validate_shape_element("<=<nrow", arr, pkg, None, known)
+
+
+@pytest.mark.parametrize("element", ["maxbound", "<maxbound", "<=maxbound", ">=maxbound"])
+def test_validate_list_shape_element_bound(element):
+    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    _validate_list_shape_element(element, lst, {"maxbound"})
+
+
+def test_validate_list_shape_element_bound_arithmetic():
+    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    _validate_list_shape_element(">=maxbound - 1", lst, {"maxbound"})
+
+
+def test_validate_list_shape_element_bound_unknown_dim():
+    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    with pytest.raises(ValueError, match="does not resolve"):
+        _validate_list_shape_element("<=nope", lst, {"maxbound"})
+
+
+def test_validate_list_shape_element_bound_repeated_operator():
+    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    with pytest.raises(ValueError, match="at most one bound operator"):
+        _validate_list_shape_element("<<=maxbound", lst, {"maxbound"})
+
+
 def _lookup_ctx():
     """
     Returns (array, enclosing_record, component, known_dims) for a valid
@@ -387,6 +449,11 @@ def _lookup_ctx():
 def test_validate_shape_element_row_level_lookup():
     arr, enc, pkg, known = _lookup_ctx()
     _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, pkg, enc, known)
+
+
+def test_validate_shape_element_bound_row_level_lookup():
+    arr, enc, pkg, known = _lookup_ctx()
+    _validate_shape_element("<=packagedata.nlakeconn(lakeno)", arr, pkg, enc, known)
 
 
 def test_validate_shape_element_on_top_level_array():

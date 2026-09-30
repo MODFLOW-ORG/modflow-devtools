@@ -118,7 +118,7 @@ description = "integer value specifying the maximum number of drains cells that 
 [blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
-    "maxbound",
+    "<=maxbound",
 ]
 
 [blocks.period.fields.stress_period_data.item]

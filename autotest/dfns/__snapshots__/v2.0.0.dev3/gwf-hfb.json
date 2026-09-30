@@ -65,7 +65,7 @@
             }
           },
           "shape": [
-            "maxhfb"
+            "<=maxhfb"
           ]
         }
       },
