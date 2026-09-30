@@ -217,7 +217,7 @@ Optional discriminator indicating the package's functional role. Several package
   2. Has dynamic state variables. Advanced packages compute a dependent variable (e.g., lake stage, well head, reach stage) that is part of the solution. Traditional stress packages use fixed/user-specified values.
   3. Stress periods have feature replacement rather than block replacement semantics: when a new period block configuration is provided, traditional stress packages replace the entire previous configuration; advanced packages perform partial updates, modifying only features explicitly appearing in the new period block. **Note:** both simple and advanced packages fill-forward across omitted stress periods; the distinction is only in what happens when a new period block configuration is specified.
 
-  Advanced packages do **not** declare a `maxbound` dimension. Lists counted by a declared dimension carry it as their shape, e.g. LAK `packagedata` (`["nlakes"]`), `outlets` (`["noutlets"]`) and `connectiondata` (`["nlakeconn"]`, derived as `sum(packagedata.nlakeconn)`), or MAW/SFR/UZF `packagedata` (`["nmawwells"]`, `["nreaches"]`, `["nuzfcells"]`). Lists whose length isn't declared in the DFN carry `shape: []`, e.g. period lists, or the `packagedata` of a transport-side package, whose features are counted by the linked flow package.
+  Advanced packages do **not** declare a `maxbound` dimension. Like any other list, a list whose row count is given by a declared or derived dimension carries it as its shape, and one whose length isn't declared in the DFN carries `shape: []`.
 - `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi`.
 
 `subtype: null` (the default) covers packages that don't fall into any named category, such as output control packages.
@@ -454,7 +454,7 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 
 ###### `shape`
 
-`[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each extent is exact unless its expression is prefixed with an inequality operator (e.g. `"<=nstp"`); see [Bounds](#bounds).
+`[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each extent is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
 
 ###### `time_series`
 
@@ -510,9 +510,9 @@ Untagged lists are tables: a block body of items, one per line, e.g. a stress pa
 
 `[string] (default: [])`. The list's shape, as a list of at most one shape expression (lists are necessarily 1-dimensional).
 
-An **empty `shape`** means the list length is unconstrained at schema-definition time. This is the correct representation for any list whose length is determined at runtime rather than from a declared dimension, e.g. an advanced package's period list or a transport-side advanced package's `packagedata`, whose rows are counted by the linked flow package.
+An **empty `shape`** means the list length is unconstrained at schema-definition time. This is the correct representation for any list whose length is determined at runtime, or by another component, rather than by a declared dimension.
 
-A **non-empty `shape`** (exactly one element) relates the list's row count to a declared dimension. A bare expression means *exactly* that many rows, e.g. `sim-tdis` `perioddata` (`["nper"]`) or `gwf-mvr` `packages` (`["maxpackages"]`: MF6 requires exactly `maxpackages` rows despite the name). An expression prefixed with an inequality operator is a bound; see [Bounds](#bounds). The canonical case is a stress package's period block list, which carries `shape: ["<=maxbound"]`: at most `maxbound` rows per period. The `maxbound` dimension is explicitly declared in the stress package's `dimensions` block as an integer field the user must supply.
+A **non-empty `shape`** (exactly one element) relates the list's row count to a declared dimension. A bare expression means *exactly* that many rows (`["n"]`). An expression prefixed with an inequality operator is a bound (`["<=n"]`: at most `n` rows); see [Bounds](#bounds). Whether an extent is exact or a bound must be declared; it can't be inferred from the dimension's name.
 
 **Note:** Some non-period lists in stress-type packages (e.g. `utl-spc`) also reference `maxbound`; these follow the same rule — `maxbound` must be an explicitly declared dimension for the shape to be meaningful.
 
@@ -676,11 +676,9 @@ connectiondata:
 
 #### Bounds
 
-A shape expression gives an exact extent. Prefixed with one of the inequality operators `<`, `<=`, `>` or `>=`, it gives a bound on the extent instead: `"<=maxbound"` means at most `maxbound` rows. Any shape expression may be bounded, including a derived dimension, arithmetic offset, or row-level column lookup (`"<=packagedata.ncon(ifno)"`), with at most one operator per extent. Bounds apply to `list` and `array` shapes. Memory variable shapes can't be bounded; MF6 allocates memory arrays at a definite size.
+A shape expression gives an exact extent. Prefixed with one of the inequality operators `<`, `<=`, `>` or `>=`, it gives a bound on the extent instead: `"<=n"` means at most `n`. Any shape expression may be bounded, including a derived dimension, arithmetic offset, or row-level column lookup (`"<=block.column(fk_field)"`), with at most one operator per extent. Bounds apply to `list` and `array` shapes. Memory variable shapes can't be bounded; MF6 allocates memory arrays at a definite size.
 
-An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound.
-
-Legacy `.dfn` files use `<` to mean "at most", e.g. `shape (<nstp)` on output control's `steps` array. The migration translates it (and the unused `>`) to the inclusive operator, so `(<nstp)` becomes `["<=nstp"]`. The legacy format leaves most upper bounds unmarked (`shape (maxbound)`), so the migration also marks the confirmed ones: every `maxbound`, `gwf-hfb`'s `maxhfb`, `gwf-csub`'s `maxsig0` and `utl-ats`'s `maxats`.
+An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound, too few for a lower bound.
 
 #### Dimension scope
 

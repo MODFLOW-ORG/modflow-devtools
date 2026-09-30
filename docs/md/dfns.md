@@ -55,6 +55,8 @@ python -m modflow_devtools.dfns migrate -i <dfn path> -o <output path> -s <schem
 
 The migration tool may be used on directories or individual files.
 
+Legacy `.dfn` files mark an upper bound with `<`, meaning "at most" (`shape (<nstp)`). Schema 2's `<` is strict, so the migration translates the legacy `<` (and `>`) to `<=` (and `>=`). The legacy format leaves most upper bounds unmarked, so the migration also marks the ones confirmed against the MODFLOW 6 source, and fills in list shapes the legacy files omit. These fix-ups live in `migrate_to_v2_0_0_dev2.py` until the upstream `.dfn` files carry the markers.
+
 Supported schema versions are currently `"2.0.0.dev0"`, `"2.0.0.dev1"`, and `"2.0.0.dev2"` (`CURRENT_SCHEMA_VERSION`). Note that `2.0.0.dev2` is under active development and may change without warning.
 
 The default serialization format is YAML. Use `--format` / `-f` to select `yaml` (default), `toml`, or `json`.
