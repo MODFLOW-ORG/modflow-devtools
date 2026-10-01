@@ -1265,6 +1265,68 @@ def _fix_ts_sfac(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, "attributes": block.model_copy(update={"fields": fields})}
 
 
+def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Block]:
+    """
+    Make an array-based package's period ``aux`` field a list of
+    (auxiliary name, array) records.
+
+    The READASARRAYS (``gwf-rcha``, ``gwf-evta``) and READARRAYGRID
+    (``gwf-*g``) packages' v1 period ``aux`` is a single readarray tagged
+    ``AUX``, but the input file has zero or more grid arrays, each introduced
+    by one of the ``auxiliary`` names (MF6 treats any period tag matching one
+    as ``AUX``). The leading ``auxname`` is a dynamic keyword (an untagged
+    String with an ``fk`` to ``options.auxiliary``), which makes the list
+    tagged, so it mixes freely with the block's other arrays. Each auxiliary
+    variable is set at most once per period, so the list is bounded by the
+    ``auxiliary`` count, and is always optional (v1's ``gwf-evta`` says
+    otherwise). The outer name stays ``aux`` so memory variables sourced from
+    it still resolve.
+
+    Matched by ``mf6internal auxvar`` on a period readarray, in a component
+    with ``options.auxiliary``; list-based packages' aux columns are record
+    subfields, never top-level period fields.
+    """
+    options = blocks.get("options")
+    period = blocks.get("period")
+    if options is None or period is None or "auxiliary" not in options.fields:
+        return blocks
+    v1_names = {
+        f["name"]
+        for f in fields.values(multi=True)
+        if f.get("block") == "period"
+        and f.get("reader") == "readarray"
+        and f.get("mf6internal") == "auxvar"
+    }
+    updates: dict[str, v2.InputField] = {}
+    for fname, field in period.fields.items():
+        if fname not in v1_names or not isinstance(field, v2.Array):
+            continue
+        auxname = v2.String(
+            name="auxname",
+            longname="auxiliary variable name",
+            description="name of the auxiliary variable the following array sets; must be "
+            "one of the auxiliary variables.",
+            tagged=False,
+            fk="options.auxiliary",
+        )
+        array = field.model_copy(update={"tagged": False, "optional": False, "description": None})
+        updates[fname] = v2.List(
+            name=fname,
+            longname=field.longname,
+            description=field.description,
+            optional=True,
+            developmode=field.developmode,
+            removed=field.removed,
+            deprecated=field.deprecated,
+            shape=["<=auxiliary"],
+            item=v2.Record(name=fname, fields={"auxname": auxname, fname: array}),
+        )
+    if not updates:
+        return blocks
+    new_fields = {n: updates.get(n, f) for n, f in period.fields.items()}
+    return {**blocks, "period": period.model_copy(update={"fields": new_fields})}
+
+
 def _parse_valid(valid: Any, coerce=None) -> list | None:
     """Parse a v1 ``valid`` attribute to a list, optionally coercing each element."""
     parts = valid.split() if isinstance(valid, str) else (list(valid) if valid else [])
@@ -1800,6 +1862,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
+    blocks = _wrap_grid_aux(blocks, fields)
     # Must run after `_fix_lak_relations`: LAK's period `number` field looks
     # exactly like a lonely pk (leading required Integer, no fk) before it's
     # split into per-arm `lakeno`/`outletno` fk's — marking it pk here first

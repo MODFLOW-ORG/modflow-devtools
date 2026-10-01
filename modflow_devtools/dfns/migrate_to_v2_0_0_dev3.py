@@ -111,8 +111,10 @@ def _bound_cols(component: v2.Component) -> list[str]:
     for bname, block in (component.blocks or {}).items():
         if "period" not in bname:
             continue
-        for field in block.fields.values():
-            if not isinstance(field, v2.List):
+        for fname, field in block.fields.items():
+            # An array-based package's `aux` list holds auxiliary arrays, not
+            # BOUND columns.
+            if not isinstance(field, v2.List) or fname in _BOUND_SKIP:
                 continue
             item = field.item
             if not isinstance(item, v2.Record):

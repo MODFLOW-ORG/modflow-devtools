@@ -156,18 +156,35 @@ blocks:
         shape:
           - ncpl
       aux:
-        type: array
+        type: list
         longname: evapotranspiration auxiliary variable iaux
         description: is an array of values for auxiliary variable AUX(IAUX), where iaux is a value from
           1 to NAUX, and AUX(IAUX) must be listed as part of the auxiliary variables.  A separate array
           can be specified for each auxiliary variable.  If an array is not specified for an auxiliary
           variable, then a value of zero is assigned.  If the value specified here for the auxiliary variable
           is the same as auxmultname, then the evapotranspiration rate will be multiplied by this array.
-        netcdf: true
-        dtype: double
-        time_series: true
+        optional: true
+        item:
+          type: record
+          fields:
+            auxname:
+              type: string
+              longname: auxiliary variable name
+              description: name of the auxiliary variable the following array sets; must be one of the
+                auxiliary variables.
+              tagged: false
+              fk: options.auxiliary
+            aux:
+              type: array
+              longname: evapotranspiration auxiliary variable iaux
+              netcdf: true
+              tagged: false
+              dtype: double
+              time_series: true
+              shape:
+                - ncpl
         shape:
-          - ncpl
+          - <=auxiliary
     header:
       fill_forward: true
       field:

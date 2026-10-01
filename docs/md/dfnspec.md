@@ -224,7 +224,7 @@ Optional discriminator indicating the package's functional role. Several package
 
 ## Blocks
 
-A block is group of related fields, essentially a product type. Record fields are also product types; the distinction is that records occupy a single line in MF6 input files, while blocks are multiline constructs delimited by headers, e.g.
+A block is group of related fields, essentially a product type. Record fields are also product types; the distinction is that a record is a single line in MF6 input files (with one exception; see [Record](#record)), while blocks are multiline constructs delimited by headers, e.g.
 
 ```
 begin <block name>
@@ -263,7 +263,7 @@ Field order within a block can be significant.
 
 Tagged fields must precede untagged fields. Fields whose values are not preceded by their name (i.e., `tagged: false`) must come after all tagged fields. Among tagged fields, relative order is unconstrained. Untagged fields must appear in the same order of appearance as in the definition.
 
-**Note:** a list's `tagged` is derived from its `item`, never declared (see [List](#list)). An **untagged** list's item type begins with a value, so its items have no keyword delimiter; once a parser reaches an untagged list, it must continue to read lines as list items until the block's end tag. Therefore an untagged list must be the last field in its block and a block may have at most one untagged list. A **tagged** list's item type begins with a keyword, so a parser can recognize its items anywhere in the block, like any other tagged field: it may appear anywhere among the block's tagged fields, and a block may have any number of them. No other field in the block may begin with one of a tagged list's item keywords.
+**Note:** a list's `tagged` is derived from its `item`, never declared (see [List](#list)). An **untagged** list's item type begins with a value, so its items have no keyword delimiter; once a parser reaches an untagged list, it must continue to read lines as list items until the block's end tag. Therefore an untagged list must be the last field in its block and a block may have at most one untagged list. A **tagged** list's item type begins with a keyword, so a parser can recognize its items anywhere in the block, like any other tagged field: it may appear anywhere among the block's tagged fields, and a block may have any number of them. No other field in the block may begin with one of a tagged list's item keywords. For a list whose item begins with a dynamic keyword (see [List](#list)), this can only be checked at runtime: no value of the key's `fk` target may be the keyword of another field in the block.
 
 ## Fields
 
@@ -368,7 +368,7 @@ Type `string`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
+`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. A string's hierarchical path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
 
 ###### `fk_ref`
 
@@ -470,7 +470,7 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 
 #### Record
 
-Type `record`. Product type. In MF6 input files, records appear on a single line. Record subfields may or may not be `tagged`. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
+Type `record`. Product type. In MF6 input files, records appear on a single line, except for a record that consists of a dynamic keyword (see [List](#list)) followed by an array: it is read like a tagged array whose tag is the key's value, i.e. the key on its own line, then the array in READARRAY format on the following lines. Record subfields may or may not be `tagged`. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
 
 ##### Type-specific attributes
 
@@ -478,7 +478,7 @@ Type `record`. Product type. In MF6 input files, records appear on a single line
 
 `{string: Scalar | Array | Record | Union}`. Subfields, required.
 
-**Note:** An array appearing as a subfield of a record is read inline on the same line, not in the READARRAY format. If the array's `shape` uses a row-level column lookup, the record is effectively a variadic tuple: its width varies per row as determined by a column in a FK-linked list. See [Row-level column lookups](#row-level-column-lookups).
+**Note:** An array appearing as a subfield of a record is read inline on the same line, not in the READARRAY format, except as above. If the array's `shape` uses a row-level column lookup, the record is effectively a variadic tuple: its width varies per row as determined by a column in a FK-linked list. See [Row-level column lookups](#row-level-column-lookups).
 
 **Note:** if a nested record appears inside another record, the inner record's contents should appear inline inside the outer record's contents, on the same line.
 
@@ -496,9 +496,42 @@ Type `union`. Sum type.
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.
 
-A list is **tagged** if and only if its `item` type is keyword-led. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
+A list is **tagged** if and only if its `item` type is keyword-led. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led or is a **dynamic keyword**: an untagged `string` whose `fk` is a hierarchical path to a string array, so that its value is one of that array's entries. A dynamic keyword's possible values are known keywords once the array has been read, though not when the definition is written. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
 
-Untagged lists are tables: a block body of items, one per line, e.g. a stress package's period data. Tagged lists also express a line that may be repeated among a block's other fields, e.g. `TS6 FILEIN <ts6_filename>`, which MODFLOW 6 accepts any number of times in a package's options block (one per time-series file).
+Untagged lists are tables: a block body of items, one per line, e.g. a stress package's period data. Tagged lists also express a line that may be repeated among a block's other fields, e.g. `TS6 FILEIN <ts6_filename>`, which MODFLOW 6 accepts any number of times in a package's options block (one per time-series file). A tagged list whose item begins with a dynamic keyword expresses a field whose name is chosen by the user. For example, an array-based stress package (e.g. `gwf-rcha`) reads one grid array per auxiliary variable, each introduced by that variable's name:
+
+```yaml
+aux:
+  type: list
+  optional: true
+  shape: ["<=auxiliary"]
+  item:
+    type: record
+    fields:
+      auxname:
+        type: string
+        tagged: false
+        fk: options.auxiliary
+      aux:
+        type: array
+        dtype: double
+        tagged: false
+        shape: ["ncpl"]
+```
+
+```
+BEGIN OPTIONS
+  READASARRAYS
+  AUXILIARY CONC TEMP
+END OPTIONS
+
+BEGIN PERIOD 1
+  RECHARGE
+    CONSTANT 0.001
+  CONC
+    CONSTANT 10.0
+END PERIOD
+```
 
 ##### Type-specific attributes
 
@@ -702,7 +735,7 @@ Sometimes a column in one list identifies a row in another list. This can be con
 
 The `fk` attribute can take one of two forms:
 
-- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`.
+- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set; no `pk` is involved. A dynamic keyword (see [List](#list)) must use this form.
 - **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime.
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:

@@ -3,15 +3,18 @@
 import pytest
 
 from modflow_devtools.dfns.schema import (
+    Array,
     Block,
     Dfns,
     Double,
     Integer,
+    Keyword,
     List,
     Model,
     Package,
     Record,
     String,
+    Union,
     _validate_fk_fields,
 )
 
@@ -121,3 +124,65 @@ def test_dfns_validate_fk_fields_called_directly():
     lak, gwf = _fk_validation_ctx("packagedata", pk_on_item=True)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
     _validate_fk_fields(lak, spec)  # should not raise
+
+
+def _aux_ctx(fk="options.auxiliary", auxiliary_dtype="string", tagged=False):
+    """A grid-array package whose period `aux` list is keyed by an auxiliary name."""
+    auxiliary = Array(name="auxiliary", dtype=auxiliary_dtype, optional=True)
+    options = Block(name="options", fields={"auxiliary": auxiliary})
+    auxname = String(name="auxname", tagged=tagged, fk=fk)
+    array = Array(name="aux", dtype="double", tagged=False)
+    item = Record(name="aux", fields={"auxname": auxname, "aux": array})
+    period = Block(name="period", fields={"aux": List(name="aux", optional=True, item=item)})
+    pkg = Package(name="gwf-rcha", parent="gwf-nam", blocks={"options": options, "period": period})
+    return {"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-rcha": pkg}
+
+
+def test_dfns_validate_fk_to_string_array():
+    spec = Dfns(components=_aux_ctx())
+    assert "gwf-rcha" in spec.components
+
+
+def test_dfns_validate_fk_to_string_array_tagged_string():
+    """A tagged String may reference a string array too, without being a dynamic key."""
+    spec = Dfns(components=_aux_ctx(tagged=True))
+    assert "gwf-rcha" in spec.components
+
+
+def test_dfns_validate_fk_to_non_string_array_rejected():
+    with pytest.raises(ValueError, match="must name a string array"):
+        Dfns(components=_aux_ctx(auxiliary_dtype="double"))
+
+
+def test_dfns_validate_fk_to_missing_field_rejected():
+    with pytest.raises(ValueError, match="must name a string array"):
+        Dfns(components=_aux_ctx(fk="options.nosuchfield"))
+
+
+def _union_ctx(arm):
+    """A package whose period list's item is a union of `arm` and a keyword-led record."""
+    auxiliary = Array(name="auxiliary", dtype="string", optional=True)
+    options = Block(name="options", fields={"auxiliary": auxiliary})
+    other = Record(name="other", fields={"flag": Keyword(name="flag")})
+    item = Union(name="setting", arms={arm.name: arm, "other": other})
+    period = Block(name="period", fields={"setting": List(name="setting", item=item)})
+    pkg = Package(name="gwf-test", parent="gwf-nam", blocks={"options": options, "period": period})
+    return {"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-test": pkg}
+
+
+def _keyed_arm(fk):
+    auxname = String(name="auxname", tagged=False, fk=fk)
+    array = Array(name="aux", dtype="double", tagged=False)
+    return Record(name="aux", fields={"auxname": auxname, "aux": array})
+
+
+def test_dfns_validate_fk_in_union_item_record_arm():
+    assert "gwf-test" in Dfns(components=_union_ctx(_keyed_arm("options.auxiliary"))).components
+    with pytest.raises(ValueError, match="must name a string array"):
+        Dfns(components=_union_ctx(_keyed_arm("options.nosuchfield")))
+
+
+def test_dfns_validate_fk_in_union_item_scalar_arm():
+    arm = Integer(name="lakeno", fk="nosuchblock.lakeno")
+    with pytest.raises(ValueError, match="is not a list block"):
+        Dfns(components=_union_ctx(arm))

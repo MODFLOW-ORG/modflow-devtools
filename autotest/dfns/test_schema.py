@@ -485,6 +485,108 @@ def test_block_tagged_list_item_keyword_must_be_unique():
         Block(name="options", fields={"a": _ts_list("a"), "b": _ts_list("b")})
 
 
+def _aux_list(fk="options.auxiliary", tagged=False):
+    return List(
+        name="aux",
+        optional=True,
+        item=Record(
+            name="aux",
+            fields={
+                "auxname": String(name="auxname", tagged=tagged, fk=fk),
+                "aux": Array(name="aux", dtype="double", tagged=False, shape=["nodes"]),
+            },
+        ),
+    )
+
+
+def test_list_led_by_dynamic_key_is_tagged():
+    """A record led by an untagged String with a hierarchical-path fk is
+    keyword-led: its keywords are the fk target's entries, known at runtime."""
+    lst = _aux_list()
+    assert lst.tagged is True
+    assert lst.item_tags == []
+    assert List.model_validate(lst.model_dump()).tagged is True
+
+
+@pytest.mark.parametrize(
+    "auxname",
+    [
+        String(name="auxname", tagged=False),
+        String(name="auxname", tagged=False, fk="packagedata"),
+        String(name="auxname", tagged=False, fk_ref="pname"),
+        Integer(name="auxname", tagged=False, fk="options.auxiliary"),
+    ],
+)
+def test_list_led_by_other_untagged_value_is_untagged(auxname):
+    item = Record(name="aux", fields={"auxname": auxname, "v": Double(name="v", tagged=False)})
+    assert List(name="aux", item=item).tagged is False
+
+
+def test_block_dynamic_key_list_may_precede_fields():
+    block = Block(
+        name="period",
+        fields={
+            "aux": _aux_list(),
+            "head": Array(name="head", dtype="double", shape=["nodes"]),
+        },
+    )
+    assert list(block.fields) == ["aux", "head"]
+
+
+def test_render_dynamic_key_list_spans_lines():
+    """A dynamic key followed by an array reads like a tagged array whose tag
+    is the key's value: the key's line, then the array in READARRAY format."""
+    row = "[<auxname>\n  <aux(nodes)> -- READARRAY]"
+    assert _aux_list().render() == f"{row}\n{row}\n..."
+
+
+ARRAY_AUX_PACKAGES = {
+    "gwf-rcha": ["ncpl"],
+    "gwf-evta": ["ncpl"],
+    "gwf-chdg": ["nodes"],
+    "gwf-drng": ["nodes"],
+    "gwf-ghbg": ["nodes"],
+    "gwf-rivg": ["nodes"],
+    "gwf-welg": ["nodes"],
+}
+
+
+@pytest.mark.parametrize("name,shape", ARRAY_AUX_PACKAGES.items())
+def test_array_package_aux_is_list_of_named_arrays(dev3_spec, name, shape):
+    """An array-based package's period block has one grid array per auxiliary
+    variable, each introduced by the variable's name, so `aux` is an optional
+    tagged list of (auxname, array) records."""
+    component = dev3_spec.components[name]
+    aux = component.blocks["period"].fields["aux"]
+    assert isinstance(aux, List)
+    assert aux.tagged and aux.optional
+    assert aux.shape == ["<=auxiliary"]
+    assert isinstance(aux.item, Record)
+    assert list(aux.item.fields) == ["auxname", "aux"]
+    auxname, array = aux.item.fields.values()
+    assert isinstance(auxname, String)
+    assert not auxname.tagged
+    assert auxname.fk == "options.auxiliary"
+    assert isinstance(array, Array)
+    assert not array.tagged and not array.optional
+    assert array.dtype == "double"
+    assert array.shape == shape
+    assert component.memory["auxvar"].source == "aux"
+    assert "Columns" not in component.memory["bound"].description
+
+
+@pytest.mark.parametrize("name", ["gwf-chd", "gwf-wel", "gwf-rch", "gwf-evt"])
+def test_list_package_aux_stays_a_column(dev3_spec, name):
+    period = dev3_spec.components[name].blocks["period"]
+    perioddata = next(f for f in period.fields.values() if isinstance(f, List))
+    assert perioddata.item.fields["aux"].shape == ["auxiliary"]
+
+
+def test_render_array_package_aux(dev3_spec):
+    render = dev3_spec.components["gwf-chdg"].blocks["period"].render()
+    assert "[<auxname> [LAYERED] $[NETCDF]$\n    <aux(nodes)> -- READARRAY]" in render
+
+
 def test_render_tagged_list_brackets_optional_rows():
     assert _ts_list().render() == ("[TS6 FILEIN <ts6_filename>]\n[TS6 FILEIN <ts6_filename>]\n...")
 

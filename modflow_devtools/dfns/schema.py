@@ -157,13 +157,37 @@ class Union(InputFieldBase):
         return self.arms  # type: ignore[return-value]
 
 
+def _is_dynamic_key(field: "InputField | None") -> bool:
+    """Whether `field` is a dynamic keyword: an untagged String whose value is
+    one of the entries of a string array named by a hierarchical-path `fk`
+    (e.g. an auxiliary variable's name). Its possible values are known keywords
+    once that array has been read, so a record it leads is keyword-led. That
+    the `fk` target really is a string array is checked by `_validate_fk_fields`,
+    since it needs the enclosing component."""
+    return (
+        isinstance(field, String)
+        and not field.tagged
+        and field.fk is not None
+        and "." in field.fk
+        and field.fk_ref is None
+    )
+
+
+def _leads_with_dynamic_key(form: "InputField") -> bool:
+    return isinstance(form, Record) and _is_dynamic_key(next(iter(form.fields.values()), None))
+
+
 def _item_tags(item: "Record | Union") -> list[str] | None:
     """The keyword(s) a list item type begins with, or None if it isn't
     keyword-led. A Record item must be keyword-led in the `_leading_tags`
-    sense; so must every arm of a Union item, since each arm is a distinct
-    line form the item type allows."""
+    sense, or lead with a dynamic key (see `_is_dynamic_key`), whose keywords
+    aren't known statically and so contribute none here; so must every arm of
+    a Union item, since each arm is a distinct line form the item type allows.
+    An empty list thus still means tagged."""
     tags = []
     for form in [item] if isinstance(item, Record) else item.arms.values():
+        if _leads_with_dynamic_key(form):
+            continue
         if not (form_tags := _leading_tags(form, every_line=True)):
             return None
         tags.extend(form_tags)
@@ -224,7 +248,8 @@ class List(InputFieldBase):
 
     @property
     def item_tags(self) -> list[str]:
-        """The keywords this list's item type begins with (empty if untagged)."""
+        """The static keywords this list's item type begins with (empty if
+        untagged, or if its keywords are all dynamic; see `_is_dynamic_key`)."""
         return _item_tags(self.item) or []
 
     @model_serializer(mode="wrap")
@@ -291,8 +316,30 @@ def _ts_token(token: str, *, time_series: bool) -> str:
     return f"<@{token}@>" if time_series else f"<{token}>"
 
 
+def _keyed_array(record: "Record") -> "Array | None":
+    """The array of a record that's a dynamic key followed by one shaped array
+    (see `_is_dynamic_key`), else None. Such a record is a tagged array whose
+    tag is the key's value: it spans the key's line plus the array's
+    READARRAY control and data lines, rather than one line."""
+    if not _leads_with_dynamic_key(record) or len(record.fields) != 2:
+        return None
+    array = list(record.fields.values())[1]
+    return array if isinstance(array, Array) and array.shape else None
+
+
+def _render_array_body(field: "Array", name_line: str) -> str:
+    if field.layered:
+        name_line += " [LAYERED]"
+    if field.netcdf:
+        name_line += " $[NETCDF]$"
+    return f"{name_line}\n  <{field.name}{_render_shape(field)}> -- READARRAY"
+
+
 def _render_rows(item: "Record | Union") -> list[str]:
     if isinstance(item, Record):
+        if (array := _keyed_array(item)) is not None:
+            key = next(iter(item.fields.values()))
+            return [_render_array_body(array, f"<{key.name}>")]
         return [" ".join(_render_field(f, inline=True) for f in item.fields.values())]
     if all(isinstance(arm, Record) for arm in item.arms.values()):
         return [
@@ -329,13 +376,7 @@ def _render_field(field: "InputField", *, inline: bool = False) -> str:
                     f"{field.name}{_render_shape(field)}", time_series=field.time_series
                 )
                 return _wrap(_tag(field, token))
-            name_line = field.name.upper()
-            if field.layered:
-                name_line += " [LAYERED]"
-            if field.netcdf:
-                name_line += " $[NETCDF]$"
-            body = f"{name_line}\n  <{field.name}{_render_shape(field)}> -- READARRAY"
-            return _wrap(body)
+            return _wrap(_render_array_body(field, field.name.upper()))
         case Record():
             return _wrap(" ".join(_render_field(f, inline=True) for f in field.fields.values()))
         case Union():
@@ -686,7 +727,9 @@ class Block(BaseModel):
     @model_validator(mode="after")
     def _check_list_tags_unique(self) -> "Block":
         # A tagged list's items are recognized by their leading keyword, so no
-        # other field in the block may begin with the same one.
+        # other field in the block may begin with the same one. A dynamic key's
+        # keywords (see `_is_dynamic_key`) are only known at runtime, so its
+        # uniqueness can't be checked here.
         owners: dict[str, list[str]] = {}
         for name, f in self.fields.items():
             for tag in _leading_tags(f):
@@ -1084,10 +1127,13 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     `fk` value — see `Integer.node`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block whose item has a pk field. Unqualified
-      ("block.field"), the block is looked up in this component; qualified
+      block must be a list block whose item has a pk field, or, for a String,
+      the named field may instead be a string-dtype Array, whose entries are
+      then the key set (e.g. `options.auxiliary`). Unqualified ("block.field"),
+      the block is looked up in this component; qualified
       ("component.block.field"), it's looked up in the named component via
-      `spec.components` instead.
+      `spec.components` instead. A dynamic key (see `_is_dynamic_key`) must
+      take the string-array form.
     - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
       String field in the same record, whose runtime value identifies the
       target component (and, with fk, the pk field is looked up in the block
@@ -1099,7 +1145,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     if not component.blocks:
         return
 
-    def _check_fields(fields: dict) -> None:
+    def _check_fields(fields: dict, dynamic_key: "InputField | None" = None) -> None:
         for field in fields.values():
             fk: str | None = getattr(field, "fk", None)
             fk_ref: str | None = getattr(field, "fk_ref", None)
@@ -1142,6 +1188,18 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         f"must be a bare block name, 'block.field', or "
                         f"'component.block.field'"
                     )
+                is_dynamic_key = field is dynamic_key
+                if is_dynamic_key or (isinstance(field, String) and len(parts) > 1):
+                    target_block = (target.blocks or {}).get(block_name)
+                    target_field = target_block.fields.get(parts[-1]) if target_block else None
+                    if isinstance(target_field, Array) and target_field.dtype == "string":
+                        continue
+                    if is_dynamic_key:
+                        raise ValueError(
+                            f"Field {field.name!r} fk={fk!r}: leads a tagged list's "
+                            f"item as a dynamic keyword, so must name a string array "
+                            f"in {where}"
+                        )
                 list_field = _find_list_in_block(target, block_name)
                 if list_field is None:
                     raise ValueError(
@@ -1163,8 +1221,14 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 _check_fields(field.arms)
             elif isinstance(field, List):
                 item = field.item
-                if isinstance(item, Record):
-                    _check_fields(item.fields)
+                # Each arm of a Union item is a distinct line form, checked like
+                # a Record item of its own (a scalar arm has no siblings).
+                for form in [item] if isinstance(item, Record) else item.arms.values():
+                    if isinstance(form, Record):
+                        lead = next(iter(form.fields.values()), None)
+                        _check_fields(form.fields, lead if _is_dynamic_key(lead) else None)
+                    else:
+                        _check_fields({form.name: form})
 
     for block in component.blocks.values():
         _check_fields(block.fields)
