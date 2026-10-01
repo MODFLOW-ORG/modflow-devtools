@@ -82,12 +82,8 @@ blocks:
               type: keyword
               longname: head keyword
               description: keyword to specify that record corresponds to a source sink mixing input file.
-            filein:
-              type: keyword
-              longname: file keyword
-              description: keyword to specify that an input filename is expected next.
             spc6_filename:
-              type: string
+              type: file
               longname: spc file name
               description: character string that defines the path and filename for the file containing
                 source and sink input data for the flow package. The SPC6_FILENAME file is a flexible
@@ -95,7 +91,7 @@ blocks:
                 Instructions for creating the SPC6_FILENAME input file are provided in the next section
                 on file input for boundary concentrations.
               tagged: false
-              case_sensitive: true
+              direction: in
             mixed:
               type: keyword
               longname: mixed keyword

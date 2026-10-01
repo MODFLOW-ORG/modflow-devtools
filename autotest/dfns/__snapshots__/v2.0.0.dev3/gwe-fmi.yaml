@@ -40,17 +40,13 @@ blocks:
                 file must be a mover file.  If an advanced GWF stress package name appears then the corresponding
                 file must be the budget file saved by a LAK, SFR, MAW or UZF Package.
               tagged: false
-            filein:
-              type: keyword
-              longname: file keyword
-              description: keyword to specify that an input filename is expected next.
             fname:
-              type: string
+              type: file
               longname: file name
               description: is the name of the file containing flows.  The path to the file should be included
                 if the file is not located in the folder where the program was run.
               tagged: false
-              case_sensitive: true
+              direction: in
 memory:
   imbalancecorrect:
     set_in: ar

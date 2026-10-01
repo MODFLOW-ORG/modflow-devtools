@@ -335,17 +335,12 @@ type = "keyword"
 longname = "head keyword"
 description = "keyword to specify that record corresponds to a cross-section table file."
 
-[blocks.crosssections.fields.crosssections.item.fields.filein]
-type = "keyword"
-longname = "file keyword"
-description = "keyword to specify that an input filename is expected next."
-
 [blocks.crosssections.fields.crosssections.item.fields.tab6_filename]
-type = "string"
+type = "file"
 longname = "table file name"
 description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
 tagged = false
-case_sensitive = true
+direction = "in"
 
 [blocks.connectiondata.fields.connectiondata]
 type = "list"

@@ -1273,27 +1273,6 @@ def _parse_valid(valid: Any, coerce=None) -> list | None:
     return [coerce(x) for x in parts] if coerce else parts
 
 
-def _fix_prt_fmi(component: v2.Component) -> v2.Component:
-    """
-    Replace prt-fmi's heterogeneous packagedata recarray with three named
-    optional File fields — one per flow type (GWFHEAD, GWFBUDGET, GWFSPDIS).
-    """
-    block = (component.blocks or {}).get("packagedata")
-    if block is None:
-        return component
-    new_fields = {
-        name: v2.File(name=name, longname=longname, optional=True, tagged=True, direction="in")
-        for name, longname in (
-            ("gwfhead", "gwf head file"),
-            ("gwfbudget", "gwf budget file"),
-            ("gwfgrid", "gwf grid file"),
-        )
-    }
-    new_blocks = dict(component.blocks or {})
-    new_blocks["packagedata"] = block.model_copy(update={"fields": new_fields})
-    return component.model_copy(update={"blocks": new_blocks})
-
-
 def _is_unsized_readarray(f: Mapping[str, object]) -> bool:
     """Return True for a U2DREL (`reader readarray`) field whose v1 shape is `(unknown)`.
 
@@ -1525,7 +1504,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                 )
 
             if all(t in v1.SCALAR_TYPES for t in item_types):
-                rec_fields = _subfield_map()
+                rec_fields = _file_record_fields() or _subfield_map()
                 return v2.Record(
                     name=_name,
                     description=(
@@ -1565,6 +1544,104 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         break
             return result
 
+        def _file_record_fields() -> dict | None:
+            """Map this record's subfields, folding a `FILEIN|FILEOUT <path>` pair
+            into one File field, or return None if it isn't a file record."""
+            subnames = (_type or "").split()[1:]
+
+            # Detect filerecord from type string sub-field names
+            file_mode: str | None = None
+            for sname in subnames:
+                if sname in ("filein", "fileout"):
+                    m = next(
+                        (
+                            fi
+                            for fi in fields.values(multi=True)
+                            if fi["name"] == sname
+                            and try_parse_bool(fi.get("in_record", False))
+                            and fi.get("block") == f.get("block")
+                        ),
+                        None,
+                    )
+                    if m and (m.get("type") or "").strip() == "keyword":
+                        file_mode = sname
+                        break
+
+            if not file_mode:
+                return None
+
+            # Filerecord pattern: <tag...> <filein|fileout> <path_string> [<flag>...].
+            # The mode keyword and path string together denote one File value;
+            # tag keyword(s) before it and flag keyword(s) after it are ordinary
+            # sibling fields, mapped like any other tagged Record subfield -- no
+            # special-casing needed for render() to reconstruct the v1 text
+            # exactly (e.g. utl-obs's untagged `output` record already worked
+            # this way: `FILEOUT <path> [BINARY]`).
+            mode_idx = subnames.index(file_mode)
+
+            # The path is the first untagged string after the mode keyword; an
+            # untagged string before it is a variable tag (e.g. FMI's flowtype).
+            path_field_name: str | None = None
+            for sname in subnames[mode_idx + 1 :]:
+                m_s = next(
+                    (
+                        fi
+                        for fi in fields.values(multi=True)
+                        if fi["name"] == sname
+                        and try_parse_bool(fi.get("in_record", False))
+                        and fi.get("block") == f.get("block")
+                    ),
+                    None,
+                )
+                if (
+                    m_s
+                    and (m_s.get("type") or "").strip() == "string"
+                    and not try_parse_bool(m_s.get("tagged"), True)
+                ):
+                    path_field_name = sname
+                    break
+
+            def _lookup(rname: str) -> dict | None:
+                return next(
+                    (
+                        fi
+                        for fi in fields.values(multi=True)
+                        if fi["name"] == rname
+                        and try_parse_bool(fi.get("in_record", False))
+                        and fi.get("block") == f.get("block")
+                        and not (fi.get("type") or "").startswith("record")
+                    ),
+                    None,
+                )
+
+            rec_fields: dict[str, v2.InputField] = {}
+            for i, sname in enumerate(subnames):
+                if i == mode_idx:
+                    continue  # folded into the File field at the path's position
+                if sname == path_field_name:
+                    m = _lookup(sname)
+                    if m is None:
+                        continue
+                    rec_fields[sname] = v2.File(
+                        name=sname,
+                        longname=m.get("longname") or None,
+                        description=m.get("description") or None,
+                        optional=try_parse_bool(m.get("optional"), False),
+                        developmode=try_parse_bool(m.get("developmode"), False)
+                        or (m.get("name") or "").startswith("dev_"),
+                        netcdf=try_parse_bool(m.get("netcdf"), False),
+                        removed=m.get("removed") or None,
+                        deprecated=m.get("deprecated") or None,
+                        tagged=False,
+                        direction="in" if file_mode == "filein" else "out",
+                    )
+                    continue
+                m = _lookup(sname)
+                if m is None:
+                    continue
+                rec_fields[sname] = _map_field(m)  # type: ignore
+            return rec_fields
+
         if _type is None:
             raise ValueError(f"Missing type for v1 field: {_name!r}")
 
@@ -1600,94 +1677,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             )
 
         if _type.startswith("record"):
-            subnames = (_type or "").split()[1:]
-
-            # Detect filerecord from type string sub-field names
-            file_mode: str | None = None
-            for sname in subnames:
-                if sname in ("filein", "fileout"):
-                    m = next(
-                        (
-                            fi
-                            for fi in fields.values(multi=True)
-                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
-                        ),
-                        None,
-                    )
-                    if m and (m.get("type") or "").strip() == "keyword":
-                        file_mode = sname
-                        break
-
-            if file_mode:
-                # Filerecord pattern: <tag...> <filein|fileout> <path_string> [<flag>...].
-                # The mode keyword and path string together denote one File value;
-                # tag keyword(s) before it and flag keyword(s) after it are ordinary
-                # sibling fields, mapped like any other tagged Record subfield -- no
-                # special-casing needed for render() to reconstruct the v1 text
-                # exactly (e.g. utl-obs's untagged `output` record already worked
-                # this way: `FILEOUT <path> [BINARY]`).
-                mode_idx = subnames.index(file_mode)
-
-                path_field_name: str | None = None
-                for sname in subnames:
-                    if sname == file_mode:
-                        continue
-                    m_s = next(
-                        (
-                            fi
-                            for fi in fields.values(multi=True)
-                            if fi["name"] == sname and try_parse_bool(fi.get("in_record", False))
-                        ),
-                        None,
-                    )
-                    if (
-                        m_s
-                        and (m_s.get("type") or "").strip() == "string"
-                        and not try_parse_bool(m_s.get("tagged"), True)
-                    ):
-                        path_field_name = sname
-                        break
-
-                def _lookup(rname: str) -> dict | None:
-                    return next(
-                        (
-                            fi
-                            for fi in fields.values(multi=True)
-                            if fi["name"] == rname
-                            and try_parse_bool(fi.get("in_record", False))
-                            and not (fi.get("type") or "").startswith("record")
-                        ),
-                        None,
-                    )
-
-                rec_fields: dict[str, v2.InputField] = {}
-                for i, sname in enumerate(subnames):
-                    if i == mode_idx:
-                        continue  # folded into the File field at the path's position
-                    if sname == path_field_name:
-                        m = _lookup(sname)
-                        if m is None:
-                            continue
-                        rec_fields[sname] = v2.File(
-                            name=sname,
-                            longname=m.get("longname") or None,
-                            description=m.get("description") or None,
-                            optional=try_parse_bool(m.get("optional"), False),
-                            developmode=try_parse_bool(m.get("developmode"), False)
-                            or (m.get("name") or "").startswith("dev_"),
-                            netcdf=try_parse_bool(m.get("netcdf"), False),
-                            removed=m.get("removed") or None,
-                            deprecated=m.get("deprecated") or None,
-                            tagged=False,
-                            direction="in" if file_mode == "filein" else "out",
-                        )
-                        continue
-                    m = _lookup(sname)
-                    if m is None:
-                        continue
-                    rec_fields[sname] = _map_field(m)  # type: ignore
-            else:
-                rec_fields = _subfield_map()
+            rec_fields = _file_record_fields() or _subfield_map()
 
             return v2.Record(
                 name=_name,
@@ -1841,7 +1831,4 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         )
         is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
-    pkg = v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))
-    if name == "prt-fmi":
-        return _fix_prt_fmi(pkg)
-    return pkg
+    return v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))

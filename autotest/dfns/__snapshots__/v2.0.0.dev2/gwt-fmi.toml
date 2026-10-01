@@ -29,14 +29,9 @@ longname = "flow type"
 description = "is the word GWFBUDGET, GWFHEAD, GWFMOVER or the name of an advanced GWF stress package.  If GWFBUDGET is specified, then the corresponding file must be a budget file. If GWFHEAD is specified, the file must be a head file.  If GWFGRID is specified, the file must be a binary grid file.  If an advanced GWF stress package name appears then the corresponding file must be the budget file saved by a LAK, SFR, MAW or UZF Package."
 tagged = false
 
-[blocks.packagedata.fields.packagedata.item.fields.filein]
-type = "keyword"
-longname = "file keyword"
-description = "keyword to specify that an input filename is expected next."
-
 [blocks.packagedata.fields.packagedata.item.fields.fname]
-type = "string"
+type = "file"
 longname = "file name"
 description = "is the name of the file containing flows.  The path to the file should be included if the file is not located in the folder where the program was run."
 tagged = false
-case_sensitive = true
+direction = "in"

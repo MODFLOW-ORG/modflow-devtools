@@ -402,12 +402,8 @@ blocks:
               type: keyword
               longname: head keyword
               description: keyword to specify that record corresponds to a table file.
-            filein:
-              type: keyword
-              longname: file keyword
-              description: keyword to specify that an input filename is expected next.
             tab6_filename:
-              type: string
+              type: file
               longname: table file name
               description: character string that defines the path and filename for the file containing
                 lake table data for the lake connection. The TAB6_FILENAME file includes the number of
@@ -416,7 +412,7 @@ blocks:
                 include lake-GWF exchange area data for each entry in the file. Instructions for creating
                 the TAB6_FILENAME input file are provided in Lake Table Input File section.
               tagged: false
-              case_sensitive: true
+              direction: in
         shape:
           - ntables
   outlets:
