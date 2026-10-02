@@ -345,6 +345,8 @@ blocks:
                 one connection to the same CELLID.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             scrn_top:

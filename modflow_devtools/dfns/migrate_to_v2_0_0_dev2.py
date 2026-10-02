@@ -489,30 +489,42 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, **updated}
 
 
-# Integer columns in a list item record that reference a grid cell, resolved
-# from the parent model's grid (DIS/DISV/DISU) at runtime, rather than a pk/fk
-# relation to another list's row. v1 has no attribute that signals this
-# (`numeric_index` only means "needs 1-based/0-based conversion", not "is a
-# grid-cell reference"), so these are backfilled by an explicit, audited
-# per-field allowlist rather than derived mechanically. In every entry here the
-# list field's own name matches its enclosing block's name.
-_NODE_REF_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
+# Cellid columns in a list item record whose v1 shape omits the cellid's own
+# width: either declared as a plain integer (one cellid), or as an integer array
+# shaped only by the number of cellids (GNC's `cellidsj`). Everywhere else v1
+# writes a cellid as `shape (ncelldim)`, which `_mark_cellids` recognizes
+# mechanically; these are rewritten into that form by an explicit, audited
+# per-field allowlist, since v1 has no attribute that signals a cellid
+# (`numeric_index` only means "needs 1-based/0-based conversion"). In every
+# entry here the list field's own name matches its enclosing block's name.
+_CELLID_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
     "exg-chfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-gwegwe": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-gwfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-gwtgwt": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-olfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
-    "gwf-gnc": ("gncdata", ("cellidm", "cellidn")),
+    "gwf-gnc": ("gncdata", ("cellidm", "cellidn", "cellidsj")),
 }
 
 
-def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
-    """Mark this component's known grid-cell-reference columns `node=True`.
+def _as_cellid(field: v2.InputField) -> v2.InputField:
+    """Rewrite an integer column as an `ncelldim`-led integer array, the axis
+    `ncelldim` varying fastest (each cellid's components are contiguous)."""
+    if isinstance(field, v2.Integer):
+        base = field.model_dump(include=set(v2.InputFieldBase.model_fields))
+        base.pop("type", None)  # the serializer restores it
+        return v2.Array(**base, dtype="integer", shape=["ncelldim"])
+    if isinstance(field, v2.Array) and field.dtype == "integer":
+        if field.shape[:1] == ["ncelldim"]:
+            return field
+        return field.model_copy(update={"shape": ["ncelldim", *field.shape]})
+    return field
 
-    See `_NODE_REF_FIELDS` for why this is an explicit allowlist rather than a
-    derived/mechanical pass.
-    """
-    entry = _NODE_REF_FIELDS.get(name)
+
+def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Rewrite this component's known cellid columns into the standard
+    `ncelldim`-shaped form. See `_CELLID_FIELDS`."""
+    entry = _CELLID_FIELDS.get(name)
     if entry is None:
         return blocks
     block_name, field_names = entry
@@ -524,16 +536,43 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
         return blocks
     item = list_field.item
     updates = {
-        fname: f.model_copy(update={"node": True})
-        for fname in field_names
-        if isinstance(f := item.fields.get(fname), v2.Integer) and not f.node
+        fname: _as_cellid(item.fields[fname]) for fname in field_names if fname in item.fields
     }
-    if not updates:
-        return blocks
     new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
     new_list = list_field.model_copy(update={"item": new_item})
     new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
     return {**blocks, block_name: new_block}
+
+
+def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Mark every cellid column `index=True, node=True`: an integer array in a
+    list item whose first (fastest-varying) axis is `ncelldim`. Every v1 field
+    shaped by `ncelldim` is a cellid, so this needs no allowlist."""
+
+    def _mark(field: Any) -> Any:
+        if isinstance(field, v2.Array):
+            if field.dtype == "integer" and field.shape[:1] == ["ncelldim"]:
+                return field.model_copy(update={"index": True, "node": True})
+            return field
+        if isinstance(field, v2.Record):
+            fields = {n: _mark(f) for n, f in field.fields.items()}
+            return field.model_copy(update={"fields": fields})
+        if isinstance(field, v2.Union):
+            arms = {n: _mark(f) for n, f in field.arms.items()}
+            return field.model_copy(update={"arms": arms})
+        return field
+
+    def _walk(field: Any) -> Any:
+        if isinstance(field, v2.List):
+            return field.model_copy(update={"item": _mark(field.item)})
+        return field
+
+    return {
+        block_name: block.model_copy(
+            update={"fields": {n: _walk(f) for n, f in block.fields.items()}}
+        )
+        for block_name, block in blocks.items()
+    }
 
 
 # Real relational facts the general `_resolve_relations`/`_mark_lonely_pk`
@@ -1860,7 +1899,8 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     # the original field). No other pass between the old and new call sites
     # reads or depends on `pk`/`fk` state.
     blocks = _mark_lonely_pk(blocks)
-    blocks = _mark_node_refs(name, blocks)
+    blocks = _fix_cellid_fields(name, blocks)
+    blocks = _mark_cellids(blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None

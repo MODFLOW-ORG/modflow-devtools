@@ -138,6 +138,11 @@
           ],
           "default": null,
           "title": "Fk"
+        },
+        "node": {
+          "default": false,
+          "title": "Node",
+          "type": "boolean"
         }
       },
       "required": [
@@ -662,11 +667,6 @@
           ],
           "default": null,
           "title": "Fk Ref"
-        },
-        "node": {
-          "default": false,
-          "title": "Node",
-          "type": "boolean"
         }
       },
       "required": [

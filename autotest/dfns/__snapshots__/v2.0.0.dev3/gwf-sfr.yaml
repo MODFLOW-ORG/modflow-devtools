@@ -266,6 +266,8 @@ blocks:
                 and will cause MODFLOW 6 to terminate with an error.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             rlen:

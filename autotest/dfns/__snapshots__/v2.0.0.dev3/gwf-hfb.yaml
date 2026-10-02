@@ -43,6 +43,8 @@ blocks:
                 adjacent.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             cellid2:
@@ -51,6 +53,8 @@ blocks:
               description: identifier for the second cell. See CELLID1 for description of how to specify.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             hydchr:

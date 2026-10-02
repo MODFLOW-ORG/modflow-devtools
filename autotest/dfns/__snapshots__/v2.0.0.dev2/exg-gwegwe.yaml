@@ -140,7 +140,7 @@ blocks:
           type: record
           fields:
             cellidm1:
-              type: integer
+              type: array
               longname: cellid of first cell
               description: is the cellid of the cell in model 1 as specified in the simulation name file.
                 For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column
@@ -148,10 +148,13 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM1 is the node number for the cell.
               tagged: false
+              dtype: integer
               index: true
               node: true
+              shape:
+                - ncelldim
             cellidm2:
-              type: integer
+              type: array
               longname: cellid of second cell
               description: is the cellid of the cell in model 2 as specified in the simulation name file.
                 For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column
@@ -159,8 +162,11 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM2 is the node number for the cell.
               tagged: false
+              dtype: integer
               index: true
               node: true
+              shape:
+                - ncelldim
             ihc:
               type: integer
               longname: integer flag for connection type

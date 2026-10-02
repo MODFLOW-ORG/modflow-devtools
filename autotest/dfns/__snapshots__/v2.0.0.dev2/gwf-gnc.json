@@ -58,20 +58,28 @@
             "type": "record",
             "fields": {
               "cellidn": {
-                "type": "integer",
+                "type": "array",
                 "longname": "GNC cellid n",
                 "description": "is the cellid of the cell, $n$, in which the ghost node is located. For a structured grid that uses the DIS input file, CELLIDN is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDN is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDN is the node number for the cell.",
                 "tagged": false,
+                "dtype": "integer",
                 "index": true,
-                "node": true
+                "node": true,
+                "shape": [
+                  "ncelldim"
+                ]
               },
               "cellidm": {
-                "type": "integer",
+                "type": "array",
                 "longname": "GNC cellid n",
                 "description": "is the cellid of the connecting cell, $m$, to which flow occurs from the ghost node. For a structured grid that uses the DIS input file, CELLIDM is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM is the node number for the cell.",
                 "tagged": false,
+                "dtype": "integer",
                 "index": true,
-                "node": true
+                "node": true,
+                "shape": [
+                  "ncelldim"
+                ]
               },
               "cellidsj": {
                 "type": "array",
@@ -80,7 +88,9 @@
                 "tagged": false,
                 "dtype": "integer",
                 "index": true,
+                "node": true,
                 "shape": [
+                  "ncelldim",
                   "numalphaj"
                 ]
               },

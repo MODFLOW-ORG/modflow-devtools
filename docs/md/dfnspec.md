@@ -57,7 +57,6 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
         - [`fk_ref`](#fk_ref-1)
-        - [`node`](#node)
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
         - [`time_series`](#time_series-2)
@@ -72,6 +71,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`time_series`](#time_series-3)
         - [`index`](#index-1)
         - [`fk`](#fk-2)
+        - [`node`](#node)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -404,10 +404,6 @@ Type `integer`.
 
 `string | null (default: null)`. For FKs whose target component is only known at runtime. Names a sibling string field whose value identifies the target component. May be set alone (block within target also unknown) or together with `fk` as a bare block name (block known, component not). See "Primary/foreign keys".
 
-###### `node`
-
-`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars that are columns in a list item record.
-
 #### Double
 
 Type `double`.
@@ -444,7 +440,7 @@ Arrays are not proper composites. An array does not have an item subfield as doe
 
 A 1D array may have absent or empty `shape`, indicating no constraint on its size, in which case it is called **self-sizing**. Self-sizing arrays are parsed by MF6 dynamically at runtime. The size of a self-sizing array may serve as a dimension for other arrays (see below).
 
-A 1D array appearing as a subfield of a record is called an **inline array**. Inline arrays with a declared shape are self-explanatory. An inline array may only be self-sizing if it is the right-most subfield of the record; in this case the record is essentially a variadic tuple.
+An array appearing as a subfield of a record is called an **inline array**. Inline arrays with a declared shape are self-explanatory: their elements are written on the record's line, in [shape order](#shape). An inline array may only be self-sizing if it is the right-most subfield of the record; in this case the record is essentially a variadic tuple.
 
 ##### Type-specific attributes
 
@@ -455,6 +451,8 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 ###### `shape`
 
 `[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each extent is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
+
+Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`, and a cellid array's `ncelldim` axis comes first (see [`node`](#node)).
 
 ###### `time_series`
 
@@ -467,6 +465,12 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 ###### `fk`
 
 `string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key: a per-grid-cell reference to a row (by `pk`) in another list, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+
+###### `node`
+
+`boolean (default: false)`. Marks the array as a **cellid**, or several: a grid cell reference, resolved against the grid (DIS/DISV/DISU) the column refers to. The first axis must be `ncelldim`, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Any further axes count cellids. A single cellid has shape `["ncelldim"]`; `gwf-gnc`'s `cellidsj` has shape `["ncelldim", "numalphaj"]`, `numalphaj` cellids written one after another. Only valid when `dtype` is `"integer"`, `index` is set (cellids are 1-based), and the array is a column in a list item.
+
+The leading `ncelldim` is not resolved as a dim in the component's own scope: its value depends on the grid the column refers to, which in an exchange is one of two models' grids, neither of them the exchange's parent. Which model a column refers to is not yet expressed in the schema: in an exchange, `cellidm1` refers to model 1 and `cellidm2` to model 2; in `gwf-gnc` under an exchange, `cellidn` and `cellidsj` refer to model 1 and `cellidm` to model 2.
 
 #### Record
 
@@ -729,7 +733,7 @@ Examples:
 
 ### Primary and foreign keys
 
-Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the `node` attribute (see [Integer](#integer)) rather than `pk`/`fk` — grid cells are resolved from the parent model's grid (DIS/DISV/DISU) at runtime, not looked up via a `pk` column.
+Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the array [`node`](#node) attribute rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
 
 **Note**: `pk`/`fk_ref` are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type. `fk` is valid there too, and additionally on integer-`dtype` `Array` fields (see [Array](#array)) — there it references another list's row per grid cell rather than per list row, and only the hierarchical-path form applies (no `fk_ref` counterpart, since an array has no sibling record to carry a runtime component selector).
 

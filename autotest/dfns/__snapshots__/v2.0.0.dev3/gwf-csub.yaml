@@ -391,6 +391,8 @@ blocks:
                 the node number for the cell.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             cdelay:
@@ -490,6 +492,8 @@ blocks:
                 the node number for the cell.
               tagged: false
               dtype: integer
+              index: true
+              node: true
               shape:
                 - ncelldim
             sig0:

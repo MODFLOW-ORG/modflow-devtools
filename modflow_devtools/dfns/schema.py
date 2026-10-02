@@ -98,7 +98,6 @@ class Integer(InputFieldBase):
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
-    node: bool = False
 
 
 class Double(InputFieldBase):
@@ -125,12 +124,27 @@ class Array(InputFieldBase):
     layered: bool = False
     index: bool = False
     fk: str | None = None
+    # A cellid, or several: a grid cell reference resolved against the grid
+    # the column refers to (DIS/DISV/DISU). The first (fastest-varying) axis
+    # is `ncelldim`, one cellid's components; any further axes count cellids.
+    node: bool = False
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
         if self.index and self.dtype != "integer":
             raise ValueError(
                 f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+            )
+        if self.node and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: node=True requires dtype='integer', got {self.dtype!r}"
+            )
+        if self.node and not self.index:
+            raise ValueError(f"Array {self.name!r}: node=True requires index=True")
+        if self.node and self.shape[:1] != ["ncelldim"]:
+            raise ValueError(
+                f"Array {self.name!r}: node=True requires shape to start with "
+                f"'ncelldim', got {self.shape!r}"
             )
         if self.fk is not None and self.dtype != "integer":
             raise ValueError(
@@ -1124,7 +1138,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
 
     Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
     references are a separate mechanism entirely (the `node` attribute, not an
-    `fk` value — see `Integer.node`):
+    `fk` value — see `Array.node`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
       block must be a list block whose item has a pk field, or, for a String,
@@ -1234,6 +1248,34 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
         _check_fields(block.fields)
 
 
+def _validate_node_fields(component: "ComponentBase") -> None:
+    """
+    A cellid array (`node=True`, see `Array.node`) is only meaningful as a
+    column in a list item, where each row names its cell(s). Its dtype and
+    shape are checked by `Array` itself.
+    """
+    if not component.blocks:
+        return
+
+    def _check(field: "InputField", in_item: bool) -> None:
+        if isinstance(field, Array) and field.node and not in_item:
+            raise ValueError(
+                f"Array {field.name!r}: node=True is only valid on a column in a list item"
+            )
+        if isinstance(field, List):
+            _check(field.item, True)
+        elif isinstance(field, Record):
+            for subfield in field.fields.values():
+                _check(subfield, in_item)
+        elif isinstance(field, Union):
+            for arm in field.arms.values():
+                _check(arm, in_item)
+
+    for block in component.blocks.values():
+        for field in block.fields.values():
+            _check(field, False)
+
+
 def _validate_array_shapes(
     component: "ComponentBase",
     component_name: str,
@@ -1264,7 +1306,11 @@ def _validate_array_shapes(
                         f"have an undeclared shape (self-sizing)"
                     )
             return  # self-sizing: nothing to validate
-        for elem in arr.shape:
+        # A cellid's leading `ncelldim` is the width of a cell in the grid it
+        # refers to, not a dim in this component's scope (an exchange refers
+        # to two grids, neither its parent), so it's not resolved here.
+        shape = arr.shape[1:] if arr.node else arr.shape
+        for elem in shape:
             _validate_shape_element(elem, arr, component, enclosing, known_dims, spec)
 
     for block in component.blocks.values():
@@ -1516,6 +1562,8 @@ class Dfns(BaseModel):
                 _resolve_derived_dims(component, self.dims(name))
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
+        for name, component in self.components.items():
+            _validate_node_fields(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

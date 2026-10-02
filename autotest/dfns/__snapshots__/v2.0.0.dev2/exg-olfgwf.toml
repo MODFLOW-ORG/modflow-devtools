@@ -59,20 +59,28 @@ shape = [
 type = "record"
 
 [blocks.exchangedata.fields.exchangedata.item.fields.cellidm1]
-type = "integer"
+type = "array"
 longname = "cellid of cell in surface water model"
 description = "is the cellid of the cell in model 1, which must be the surface water model. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell."
 tagged = false
+dtype = "integer"
 index = true
 node = true
+shape = [
+    "ncelldim",
+]
 
 [blocks.exchangedata.fields.exchangedata.item.fields.cellidm2]
-type = "integer"
+type = "array"
 longname = "cellid of cell in groundwater model"
 description = "is the cellid of the cell in model 2, which must be the groundwater model. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell."
 tagged = false
+dtype = "integer"
 index = true
 node = true
+shape = [
+    "ncelldim",
+]
 
 [blocks.exchangedata.fields.exchangedata.item.fields.bedleak]
 type = "double"
