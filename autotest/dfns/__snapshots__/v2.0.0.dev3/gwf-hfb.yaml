@@ -44,7 +44,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              node: true
+              cellid: true
               shape:
                 - ncelldim
             cellid2:
@@ -54,7 +54,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              node: true
+              cellid: true
               shape:
                 - ncelldim
             hydchr:

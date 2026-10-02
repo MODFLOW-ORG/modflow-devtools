@@ -71,7 +71,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`time_series`](#time_series-3)
         - [`index`](#index-1)
         - [`fk`](#fk-2)
-        - [`node`](#node)
+        - [`cellid`](#cellid)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -452,7 +452,7 @@ An array appearing as a subfield of a record is called an **inline array**. Inli
 
 `[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each extent is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
 
-Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`, and a cellid array's `ncelldim` axis comes first (see [`node`](#node)).
+Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`, and a cellid array's `ncelldim` axis comes first (see [`cellid`](#cellid)).
 
 ###### `time_series`
 
@@ -466,7 +466,7 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 `string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key: a per-grid-cell reference to a row (by `pk`) in another list, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
-###### `node`
+###### `cellid`
 
 `boolean (default: false)`. Marks the array as a **cellid**, or several: a grid cell reference, resolved against the grid (DIS/DISV/DISU) the column refers to. The first axis must be `ncelldim`, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Any further axes count cellids. A single cellid has shape `["ncelldim"]`; `gwf-gnc`'s `cellidsj` has shape `["ncelldim", "numalphaj"]`, `numalphaj` cellids written one after another. Only valid when `dtype` is `"integer"`, `index` is set (cellids are 1-based), and the array is a column in a list item.
 
@@ -733,7 +733,7 @@ Examples:
 
 ### Primary and foreign keys
 
-Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the array [`node`](#node) attribute rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
+Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the array [`cellid`](#cellid) attribute rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
 
 **Note**: `pk`/`fk_ref` are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type. `fk` is valid there too, and additionally on integer-`dtype` `Array` fields (see [Array](#array)) — there it references another list's row per grid cell rather than per list row, and only the hierarchical-path form applies (no `fk_ref` counterpart, since an array has no sibling record to carry a runtime component selector).
 

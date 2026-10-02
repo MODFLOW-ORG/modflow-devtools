@@ -293,8 +293,13 @@ def test_migrate_gnc_cellids(dfn_dir):
     ]:
         field = item.fields[name]
         assert isinstance(field, v2.Array)
-        assert (field.dtype, field.shape, field.index, field.node) == ("integer", shape, True, True)
-    assert not item.fields["alphasj"].node
+        assert (field.dtype, field.shape, field.index, field.cellid) == (
+            "integer",
+            shape,
+            True,
+            True,
+        )
+    assert not item.fields["alphasj"].cellid
 
 
 @pytest.mark.parametrize("name", ["exg-gwfgwf", "exg-gwtgwt"])
@@ -304,7 +309,7 @@ def test_migrate_exchange_cellids(dfn_dir, name):
     for col in ("cellidm1", "cellidm2"):
         field = item.fields[col]
         assert isinstance(field, v2.Array)
-        assert (field.shape, field.index, field.node) == (["ncelldim"], True, True)
+        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)
 
 
 @pytest.mark.parametrize(
@@ -320,4 +325,4 @@ def test_migrate_marks_cellids(dfn_dir, name, block, cols):
     lst = next(f for f in component.blocks[block].fields.values() if isinstance(f, v2.List))
     for col in cols:
         field = lst.item.fields[col]
-        assert (field.shape, field.index, field.node) == (["ncelldim"], True, True)
+        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)

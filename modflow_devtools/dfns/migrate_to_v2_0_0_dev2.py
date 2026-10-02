@@ -545,14 +545,14 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
 
 def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
-    """Mark every cellid column `index=True, node=True`: an integer array in a
+    """Mark every cellid column `index=True, cellid=True`: an integer array in a
     list item whose first (fastest-varying) axis is `ncelldim`. Every v1 field
     shaped by `ncelldim` is a cellid, so this needs no allowlist."""
 
     def _mark(field: Any) -> Any:
         if isinstance(field, v2.Array):
             if field.dtype == "integer" and field.shape[:1] == ["ncelldim"]:
-                return field.model_copy(update={"index": True, "node": True})
+                return field.model_copy(update={"index": True, "cellid": True})
             return field
         if isinstance(field, v2.Record):
             fields = {n: _mark(f) for n, f in field.fields.items()}

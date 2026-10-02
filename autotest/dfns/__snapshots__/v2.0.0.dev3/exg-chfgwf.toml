@@ -65,7 +65,7 @@ description = "is the cellid of the cell in model 1, which must be the surface w
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]
@@ -77,7 +77,7 @@ description = "is the cellid of the cell in model 2, which must be the groundwat
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]

@@ -55,7 +55,7 @@ description = "is the cellid of the cell, $n$, in which the ghost node is locate
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]
@@ -67,7 +67,7 @@ description = "is the cellid of the connecting cell, $m$, to which flow occurs f
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]
@@ -79,7 +79,7 @@ description = "is the array of CELLIDS for the contributing j cells, which contr
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
     "numalphaj",

@@ -127,7 +127,7 @@ class Array(InputFieldBase):
     # A cellid, or several: a grid cell reference resolved against the grid
     # the column refers to (DIS/DISV/DISU). The first (fastest-varying) axis
     # is `ncelldim`, one cellid's components; any further axes count cellids.
-    node: bool = False
+    cellid: bool = False
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
@@ -135,15 +135,15 @@ class Array(InputFieldBase):
             raise ValueError(
                 f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
             )
-        if self.node and self.dtype != "integer":
+        if self.cellid and self.dtype != "integer":
             raise ValueError(
-                f"Array {self.name!r}: node=True requires dtype='integer', got {self.dtype!r}"
+                f"Array {self.name!r}: cellid=True requires dtype='integer', got {self.dtype!r}"
             )
-        if self.node and not self.index:
-            raise ValueError(f"Array {self.name!r}: node=True requires index=True")
-        if self.node and self.shape[:1] != ["ncelldim"]:
+        if self.cellid and not self.index:
+            raise ValueError(f"Array {self.name!r}: cellid=True requires index=True")
+        if self.cellid and self.shape[:1] != ["ncelldim"]:
             raise ValueError(
-                f"Array {self.name!r}: node=True requires shape to start with "
+                f"Array {self.name!r}: cellid=True requires shape to start with "
                 f"'ncelldim', got {self.shape!r}"
             )
         if self.fk is not None and self.dtype != "integer":
@@ -1137,8 +1137,8 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     counterpart (see `Array.fk`).
 
     Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
-    references are a separate mechanism entirely (the `node` attribute, not an
-    `fk` value — see `Array.node`):
+    references are a separate mechanism entirely (the `cellid` attribute, not an
+    `fk` value — see `Array.cellid`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
       block must be a list block whose item has a pk field, or, for a String,
@@ -1248,9 +1248,9 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
         _check_fields(block.fields)
 
 
-def _validate_node_fields(component: "ComponentBase") -> None:
+def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
-    A cellid array (`node=True`, see `Array.node`) is only meaningful as a
+    A cellid array (`cellid=True`, see `Array.cellid`) is only meaningful as a
     column in a list item, where each row names its cell(s). Its dtype and
     shape are checked by `Array` itself.
     """
@@ -1258,9 +1258,9 @@ def _validate_node_fields(component: "ComponentBase") -> None:
         return
 
     def _check(field: "InputField", in_item: bool) -> None:
-        if isinstance(field, Array) and field.node and not in_item:
+        if isinstance(field, Array) and field.cellid and not in_item:
             raise ValueError(
-                f"Array {field.name!r}: node=True is only valid on a column in a list item"
+                f"Array {field.name!r}: cellid=True is only valid on a column in a list item"
             )
         if isinstance(field, List):
             _check(field.item, True)
@@ -1309,7 +1309,7 @@ def _validate_array_shapes(
         # A cellid's leading `ncelldim` is the width of a cell in the grid it
         # refers to, not a dim in this component's scope (an exchange refers
         # to two grids, neither its parent), so it's not resolved here.
-        shape = arr.shape[1:] if arr.node else arr.shape
+        shape = arr.shape[1:] if arr.cellid else arr.shape
         for elem in shape:
             _validate_shape_element(elem, arr, component, enclosing, known_dims, spec)
 
@@ -1563,7 +1563,7 @@ class Dfns(BaseModel):
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
         for name, component in self.components.items():
-            _validate_node_fields(component)
+            _validate_cellid_fields(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

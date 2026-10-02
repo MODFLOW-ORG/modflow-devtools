@@ -34,7 +34,7 @@ description = "identifier for the first cell.  For a structured grid that uses t
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]
@@ -46,7 +46,7 @@ description = "identifier for the second cell. See CELLID1 for description of ho
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]

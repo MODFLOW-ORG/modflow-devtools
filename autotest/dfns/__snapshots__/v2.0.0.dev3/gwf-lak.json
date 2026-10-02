@@ -315,7 +315,7 @@
                 "tagged": false,
                 "dtype": "integer",
                 "index": true,
-                "node": true,
+                "cellid": true,
                 "shape": [
                   "ncelldim"
                 ]

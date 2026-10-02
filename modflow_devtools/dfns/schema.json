@@ -139,9 +139,9 @@
           "default": null,
           "title": "Fk"
         },
-        "node": {
+        "cellid": {
           "default": false,
-          "title": "Node",
+          "title": "Cellid",
           "type": "boolean"
         }
       },

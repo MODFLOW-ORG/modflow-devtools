@@ -118,7 +118,7 @@ description = "is the cell identifier, and depends on the type of grid that is u
 tagged = false
 dtype = "integer"
 index = true
-node = true
+cellid = true
 shape = [
     "ncelldim",
 ]

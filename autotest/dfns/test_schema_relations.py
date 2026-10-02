@@ -103,7 +103,7 @@ def test_dfns_validate_fk_fields_fk_ref_with_hierarchical_fk_rejected():
 
 def test_dfns_validate_fk_fields_fk_ref_with_node_not_special_cased():
     # "node" was formerly a reserved fk sentinel for grid-cell references (now
-    # replaced by the dedicated `Array.node` attribute); as a bare fk value
+    # replaced by the dedicated `Array.cellid` attribute); as a bare fk value
     # it's just an ordinary (if oddly named) block name like any other, so
     # combining it with fk_ref is unremarkable and must not raise.
     mvr, gwf = _mvr_id_ctx(fk_val="node")
@@ -201,11 +201,11 @@ def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
 @pytest.mark.parametrize(
     "field",
     [
-        Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, node=True),
-        Array(name="cellidsj", dtype="integer", shape=["ncelldim", "n"], index=True, node=True),
+        Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, cellid=True),
+        Array(name="cellidsj", dtype="integer", shape=["ncelldim", "n"], index=True, cellid=True),
     ],
 )
-def test_dfns_validate_node_in_list_item(field):
+def test_dfns_validate_cellid_in_list_item(field):
     # No component declares `ncelldim`: a cellid's width comes from the grid
     # it refers to, so it isn't resolved as a dim. Later axes still are.
     dims = {"n": InputDim(value="2", scope="model")}
@@ -213,30 +213,30 @@ def test_dfns_validate_node_in_list_item(field):
     assert "gwf-gnc" in spec.components
 
 
-def test_dfns_validate_node_in_exchange():
-    field = Array(name="cellidm1", dtype="integer", shape=["ncelldim"], index=True, node=True)
+def test_dfns_validate_cellid_in_exchange():
+    field = Array(name="cellidm1", dtype="integer", shape=["ncelldim"], index=True, cellid=True)
     spec = Dfns(components=_cellid_ctx(field, name="exg-gwfgwf", parent=None))
     assert "exg-gwfgwf" in spec.components
 
 
-def test_array_node_requires_integer_dtype():
-    with pytest.raises(ValueError, match="node=True requires dtype='integer'"):
-        Array(name="alphasj", dtype="double", shape=["ncelldim"], node=True)
+def test_array_cellid_requires_integer_dtype():
+    with pytest.raises(ValueError, match="cellid=True requires dtype='integer'"):
+        Array(name="alphasj", dtype="double", shape=["ncelldim"], cellid=True)
 
 
 @pytest.mark.parametrize("shape", [[], ["n"], ["n", "ncelldim"]])
-def test_array_node_requires_leading_ncelldim(shape):
-    with pytest.raises(ValueError, match="node=True requires shape to start with 'ncelldim'"):
-        Array(name="cellid", dtype="integer", shape=shape, index=True, node=True)
+def test_array_cellid_requires_leading_ncelldim(shape):
+    with pytest.raises(ValueError, match="cellid=True requires shape to start with 'ncelldim'"):
+        Array(name="cellid", dtype="integer", shape=shape, index=True, cellid=True)
 
 
-def test_array_node_requires_index():
-    with pytest.raises(ValueError, match="node=True requires index=True"):
-        Array(name="cellid", dtype="integer", shape=["ncelldim"], node=True)
+def test_array_cellid_requires_index():
+    with pytest.raises(ValueError, match="cellid=True requires index=True"):
+        Array(name="cellid", dtype="integer", shape=["ncelldim"], cellid=True)
 
 
-def test_dfns_validate_node_outside_list_item():
-    field = Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, node=True)
+def test_dfns_validate_cellid_outside_list_item():
+    field = Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, cellid=True)
     block = Block(name="options", fields={"cellid": field})
     pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"options": block})
     gwf = Model(name="gwf-nam", blocks=None)
