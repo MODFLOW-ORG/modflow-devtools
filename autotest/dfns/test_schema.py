@@ -1050,3 +1050,22 @@ def test_render_excludes_developmode_fields_by_default(dev3_spec):
     assert "CRS" not in render
     render_dev = dev3_spec.components["gwf-dis"].blocks["options"].render(developmode=True)
     assert "CRS <crs>" in render_dev
+
+
+@pytest.mark.parametrize("index", [False, True, "signed"])
+def test_index_round_trips(index):
+    for field in (
+        Integer(name="ic", index=index),
+        Array(name="ic", dtype="integer", shape=["ncon"], index=index),
+    ):
+        assert type(field).model_validate(field.model_dump()).index == index
+
+
+def test_index_rejects_unknown_kind():
+    with pytest.raises(ValueError):
+        Integer(name="ic", index="unsigned")
+
+
+def test_signed_index_requires_integer_array():
+    with pytest.raises(ValueError, match="requires dtype='integer'"):
+        Array(name="ic", dtype="double", shape=["ncon"], index="signed")

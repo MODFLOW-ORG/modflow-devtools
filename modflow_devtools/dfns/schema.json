@@ -123,9 +123,17 @@
           "type": "boolean"
         },
         "index": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "signed",
+              "type": "string"
+            }
+          ],
           "default": false,
-          "title": "Index",
-          "type": "boolean"
+          "title": "Index"
         },
         "fk": {
           "anyOf": [
@@ -635,9 +643,17 @@
           "type": "boolean"
         },
         "index": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "signed",
+              "type": "string"
+            }
+          ],
           "default": false,
-          "title": "Index",
-          "type": "boolean"
+          "title": "Index"
         },
         "pk": {
           "default": false,

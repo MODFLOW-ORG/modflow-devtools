@@ -424,7 +424,8 @@ blocks:
               optional: true
               tagged: false
               dtype: integer
-              index: true
+              index: signed
+              fk: packagedata.ifno
               shape:
                 - packagedata.ncon(ifno)
   diversions:

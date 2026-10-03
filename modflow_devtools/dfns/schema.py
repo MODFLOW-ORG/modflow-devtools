@@ -90,11 +90,17 @@ class String(InputFieldBase):
     fk_ref: str | None = None
 
 
+# `True`: a 1-based index in the file, 0-based in memory. `"signed"`: the
+# magnitude is such an index, and the sign carries a meaning of its own, which
+# only the field's description defines (e.g. SFR's `ic`).
+Index = bool | Literal["signed"]
+
+
 class Integer(InputFieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
     valid: list[int] | None = None
     time_series: bool = False
-    index: bool = False
+    index: Index = False
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
@@ -122,7 +128,7 @@ class Array(InputFieldBase):
     shape: list[str] = []
     time_series: bool = False
     layered: bool = False
-    index: bool = False
+    index: Index = False
     fk: str | None = None
     # A cellid, or several: a grid cell reference resolved against the grid
     # the column refers to (DIS/DISV/DISU). The first (fastest-varying) axis
@@ -133,7 +139,8 @@ class Array(InputFieldBase):
     def _check_index_dtype(self) -> "Array":
         if self.index and self.dtype != "integer":
             raise ValueError(
-                f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+                f"Array {self.name!r}: index={self.index!r} requires dtype='integer', "
+                f"got {self.dtype!r}"
             )
         if self.cellid and self.dtype != "integer":
             raise ValueError(

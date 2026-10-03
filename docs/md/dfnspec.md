@@ -390,7 +390,9 @@ Type `integer`.
 
 ###### `index`
 
-`boolean (default: false)`. Marks this scalar's value as a 1-based index requiring MF6's 1-based (file) <-> 0-based (Python) translation on read/write. A pure serialization fact, orthogonal to `pk`/`fk`: it does not claim the value identifies or points at a list row, only that it needs the numeric-base conversion. Not valid on `String` scalars — such fields (e.g. dynamic, name-resolved identifiers) never need this conversion.
+`boolean | "signed" (default: false)`. Marks this scalar's value as a 1-based index requiring MF6's 1-based (file) <-> 0-based (Python) translation on read/write. A pure serialization fact, orthogonal to `pk`/`fk`: it does not claim the value identifies or points at a list row, only that it needs the numeric-base conversion. Not valid on `String` scalars — such fields (e.g. dynamic, name-resolved identifiers) never need this conversion.
+
+`"signed"` marks a signed index: the value's magnitude is the 1-based index, and its sign carries a separate meaning, which only the field's description defines. There is no 0-based signed equivalent (index 0 has no negative), so a consumer must keep the sign apart from the magnitude rather than translate the value as a whole. A `fk` on a signed index applies to the magnitude.
 
 ###### `pk`
 
@@ -460,11 +462,11 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 ###### `index`
 
-`boolean (default: false)`. Marks the array's elements as 1-based indices requiring MF6's 1-based (file) <-> 0-based (Python) translation (e.g. `icvert`, `ja`, `irch`, `ievt`). Only valid when `dtype` is `"integer"`.
+`boolean | "signed" (default: false)`. Marks the array's elements as 1-based indices requiring MF6's 1-based (file) <-> 0-based (Python) translation (e.g. `icvert`, `ja`, `irch`, `ievt`). `"signed"` marks each element as a signed index, as for a scalar (e.g. SFR's `ic`). Only valid when `dtype` is `"integer"`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key: a per-grid-cell reference to a row (by `pk`) in another list, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
 ###### `cellid`
 

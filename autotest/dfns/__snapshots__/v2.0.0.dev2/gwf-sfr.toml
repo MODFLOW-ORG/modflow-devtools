@@ -365,7 +365,8 @@ description = "integer value that defines the reach number of the reach connecte
 optional = true
 tagged = false
 dtype = "integer"
-index = true
+index = "signed"
+fk = "packagedata.ifno"
 shape = [
     "packagedata.ncon(ifno)",
 ]

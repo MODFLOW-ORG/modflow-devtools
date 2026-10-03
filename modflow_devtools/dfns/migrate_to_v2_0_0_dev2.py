@@ -577,9 +577,10 @@ def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 
 # Real relational facts the general `_resolve_relations`/`_mark_lonely_pk`
 # passes can't infer, backfilled by an explicit, audited allowlist rather than
-# derived. Each entry: component -> (block name, list field name, {column:
-# fk target}). Unlike `_NODE_REF_FIELDS`, block name and list field name
+# derived. Each entry: component -> [(block name, list field name, {column:
+# fk target}), ...]. Unlike `_NODE_REF_FIELDS`, block name and list field name
 # aren't assumed equal (MF6's period/perioddata idiom applies to two of these).
+# A column may be an integer scalar or an integer array (each element a key).
 #
 # - UZF's `ivertcon` is a self-referential fk (a UZF cell may point to another
 #   UZF cell below it) -- a same-block relation `_resolve_relations`
@@ -587,6 +588,9 @@ def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 # - SFR's `iconr` is the downstream reach receiving diverted water -- a
 #   reference into `packagedata`'s reach numbers, not the record's leading
 #   field, so `_mark_lonely_pk` doesn't catch it either.
+# - SFR's `ic` lists the reaches connected to the current one. It's a signed
+#   index (`support_negative_index`): the sign says which end of the current
+#   reach, the magnitude which reach, so the fk applies to the magnitude.
 # - `chf-cdb`/`chf-zdg`/`olf-zdg`'s `idcxs` reference the cross-section
 #   defined by `chf-cxs`'s `packagedata.idcxs` -- a cross-component fk
 #   `_resolve_relations` structurally can't reach (single-component scope).
@@ -595,12 +599,15 @@ def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 #   cross-section object, so the fk target is `chf-cxs`. `chf/olf-dfw`'s
 #   `idcxs` is the same relation but is an `Array` field, not a list column
 #   -- see `_ARRAY_FK_BACKFILL` below, not here.
-_FK_BACKFILL: dict[str, tuple[str, str, dict[str, str]]] = {
-    "gwf-uzf": ("packagedata", "packagedata", {"ivertcon": "packagedata.ifno"}),
-    "gwf-sfr": ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
-    "chf-cdb": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
-    "chf-zdg": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
-    "olf-zdg": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
+_FK_BACKFILL: dict[str, list[tuple[str, str, dict[str, str]]]] = {
+    "gwf-uzf": [("packagedata", "packagedata", {"ivertcon": "packagedata.ifno"})],
+    "gwf-sfr": [
+        ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
+        ("connectiondata", "connectiondata", {"ic": "packagedata.ifno"}),
+    ],
+    "chf-cdb": [("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"})],
+    "chf-zdg": [("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"})],
+    "olf-zdg": [("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"})],
 }
 
 
@@ -610,28 +617,26 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     See `_FK_BACKFILL` for why this is an explicit allowlist rather than a
     derived/mechanical pass.
     """
-    entry = _FK_BACKFILL.get(name)
-    if entry is None:
-        return blocks
-    block_name, list_field_name, field_targets = entry
-    block = blocks.get(block_name)
-    if block is None:
-        return blocks
-    list_field = block.fields.get(list_field_name)
-    if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
-        return blocks
-    item = list_field.item
-    updates = {
-        fname: f.model_copy(update={"fk": target})
-        for fname, target in field_targets.items()
-        if isinstance(f := item.fields.get(fname), v2.Integer) and f.fk is None
-    }
-    if not updates:
-        return blocks
-    new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
-    new_list = list_field.model_copy(update={"item": new_item})
-    new_block = block.model_copy(update={"fields": {**block.fields, list_field_name: new_list}})
-    return {**blocks, block_name: new_block}
+    for block_name, list_field_name, field_targets in _FK_BACKFILL.get(name, []):
+        block = blocks.get(block_name)
+        if block is None:
+            continue
+        list_field = block.fields.get(list_field_name)
+        if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
+            continue
+        item = list_field.item
+        updates = {
+            fname: f.model_copy(update={"fk": target})
+            for fname, target in field_targets.items()
+            if isinstance(f := item.fields.get(fname), v2.Integer | v2.Array) and f.fk is None
+        }
+        if not updates:
+            continue
+        new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
+        new_list = list_field.model_copy(update={"item": new_item})
+        new_block = block.model_copy(update={"fields": {**block.fields, list_field_name: new_list}})
+        blocks = {**blocks, block_name: new_block}
+    return blocks
 
 
 # `chf-dfw`/`olf-dfw`'s `idcxs` is a per-cell grid array (`griddata` block,
@@ -1455,8 +1460,11 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         layered: bool = try_parse_bool(f.get("layered"), False)
         # Pure serialization fact (1-based/0-based conversion), orthogonal to pk/fk
         # relational identity. Direct copy from v1: valid on Integer/Array(dtype=
-        # "integer") only, never on String.
-        numeric_index: bool = try_parse_bool(f.get("numeric_index"), False)
+        # "integer") only, never on String. v1's `support_negative_index` (only
+        # SFR's `ic`) means the sign carries meaning and the magnitude is the index.
+        numeric_index: v2.Index = try_parse_bool(f.get("numeric_index"), False)
+        if numeric_index and try_parse_bool(f.get("support_negative_index"), False):
+            numeric_index = "signed"
         removed: str | None = f.get("removed") or None
         deprecated: str | None = f.get("deprecated") or None
         valid = f.get("valid")

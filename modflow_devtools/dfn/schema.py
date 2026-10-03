@@ -77,6 +77,7 @@ class Field(TypedDict):
     layered: NotRequired[bool | None]
     preserve_case: NotRequired[bool]
     numeric_index: NotRequired[bool]
+    support_negative_index: NotRequired[bool]
     # Whether MF6 requires this block's header to appear in the input file
     # even when it has zero body lines (e.g. an empty required recarray
     # block). Set explicitly on the block's aggregate field -- see

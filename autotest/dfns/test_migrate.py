@@ -326,3 +326,18 @@ def test_migrate_marks_cellids(dfn_dir, name, block, cols):
     for col in cols:
         field = lst.item.fields[col]
         assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)
+
+
+def test_migrate_sfr_ic_is_signed_index(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-sfr")
+    item = component.blocks["connectiondata"].fields["connectiondata"].item
+    ic = item.fields["ic"]
+    assert ic.index == "signed"
+    assert ic.fk == "packagedata.ifno"
+    # nothing else in the corpus supports negative indices
+    signed = [
+        f.name
+        for f in component.get_fields(recurse=True).values(multi=True)
+        if getattr(f, "index", False) == "signed"
+    ]
+    assert signed == ["ic"]
