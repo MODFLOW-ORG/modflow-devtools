@@ -7,12 +7,10 @@
   "subtype": "stress",
   "dims": {
     "maxbound": {
-      "value": "maxbound",
-      "scope": "model"
+      "value": "maxbound"
     },
     "nseg": {
-      "value": "nseg",
-      "scope": "model"
+      "value": "nseg"
     },
     "auxiliary": {
       "value": "len(auxiliary)"

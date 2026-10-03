@@ -7,10 +7,8 @@ subtype: stress
 dims:
   maxbound:
     value: maxbound
-    scope: model
   nseg:
     value: nseg
-    scope: model
   auxiliary:
     value: len(auxiliary)
 blocks:

@@ -7,13 +7,10 @@ subtype: advanced
 dims:
   nuzfcells:
     value: nuzfcells
-    scope: model
   ntrailwaves:
     value: ntrailwaves
-    scope: model
   nwavesets:
     value: nwavesets
-    scope: model
   auxiliary:
     value: len(auxiliary)
 blocks:

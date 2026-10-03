@@ -7,7 +7,6 @@ subtype = "exchange"
 
 [dims.nexg]
 value = "nexg"
-scope = "simulation"
 
 [dims.auxiliary]
 value = "len(auxiliary)"

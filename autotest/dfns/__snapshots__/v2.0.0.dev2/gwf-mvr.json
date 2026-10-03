@@ -5,12 +5,10 @@
   "parent": "gwf-nam",
   "dims": {
     "maxmvr": {
-      "value": "maxmvr",
-      "scope": "model"
+      "value": "maxmvr"
     },
     "maxpackages": {
-      "value": "maxpackages",
-      "scope": "model"
+      "value": "maxpackages"
     }
   },
   "blocks": {

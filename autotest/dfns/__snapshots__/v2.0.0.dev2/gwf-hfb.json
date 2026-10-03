@@ -5,8 +5,7 @@
   "parent": "gwf-nam",
   "dims": {
     "maxhfb": {
-      "value": "maxhfb",
-      "scope": "model"
+      "value": "maxhfb"
     }
   },
   "blocks": {

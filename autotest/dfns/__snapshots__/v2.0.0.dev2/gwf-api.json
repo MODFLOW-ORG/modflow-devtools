@@ -6,8 +6,7 @@
   "multi": true,
   "dims": {
     "maxbound": {
-      "value": "maxbound",
-      "scope": "model"
+      "value": "maxbound"
     }
   },
   "blocks": {

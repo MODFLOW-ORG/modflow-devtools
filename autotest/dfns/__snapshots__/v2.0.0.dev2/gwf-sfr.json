@@ -7,8 +7,7 @@
   "subtype": "advanced",
   "dims": {
     "nreaches": {
-      "value": "nreaches",
-      "scope": "model"
+      "value": "nreaches"
     },
     "auxiliary": {
       "value": "len(auxiliary)"

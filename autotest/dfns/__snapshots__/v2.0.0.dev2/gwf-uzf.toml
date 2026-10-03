@@ -7,15 +7,12 @@ subtype = "advanced"
 
 [dims.nuzfcells]
 value = "nuzfcells"
-scope = "model"
 
 [dims.ntrailwaves]
 value = "ntrailwaves"
-scope = "model"
 
 [dims.nwavesets]
 value = "nwavesets"
-scope = "model"
 
 [dims.auxiliary]
 value = "len(auxiliary)"

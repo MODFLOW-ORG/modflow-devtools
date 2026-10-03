@@ -5,11 +5,9 @@ parent = "gwf-nam"
 
 [dims.maxmvr]
 value = "maxmvr"
-scope = "model"
 
 [dims.maxpackages]
 value = "maxpackages"
-scope = "model"
 
 [blocks.options.fields.print_input]
 type = "keyword"

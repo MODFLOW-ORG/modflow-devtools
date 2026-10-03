@@ -5,10 +5,8 @@ parent: chf-nam
 dims:
   nsections:
     value: nsections
-    scope: model
   npoints:
     value: npoints
-    scope: model
 blocks:
   options:
     fields:

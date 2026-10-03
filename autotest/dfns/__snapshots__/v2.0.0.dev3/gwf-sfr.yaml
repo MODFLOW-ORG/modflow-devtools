@@ -7,7 +7,6 @@ subtype: advanced
 dims:
   nreaches:
     value: nreaches
-    scope: model
   auxiliary:
     value: len(auxiliary)
 runtime_dims:

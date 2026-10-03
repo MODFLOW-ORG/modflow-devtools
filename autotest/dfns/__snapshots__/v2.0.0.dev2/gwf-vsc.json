@@ -5,8 +5,7 @@
   "parent": "gwf-nam",
   "dims": {
     "nviscspecies": {
-      "value": "nviscspecies",
-      "scope": "model"
+      "value": "nviscspecies"
     }
   },
   "blocks": {

@@ -7,11 +7,9 @@ subtype = "stress"
 
 [dims.nreleasepts]
 value = "nreleasepts"
-scope = "model"
 
 [dims.nreleasetimes]
 value = "nreleasetimes"
-scope = "model"
 
 [blocks.options.fields.boundnames]
 type = "keyword"

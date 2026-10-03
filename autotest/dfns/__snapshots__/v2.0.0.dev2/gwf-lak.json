@@ -7,23 +7,19 @@
   "subtype": "advanced",
   "dims": {
     "nlakes": {
-      "value": "nlakes",
-      "scope": "model"
+      "value": "nlakes"
     },
     "noutlets": {
-      "value": "noutlets",
-      "scope": "model"
+      "value": "noutlets"
     },
     "ntables": {
-      "value": "ntables",
-      "scope": "model"
+      "value": "ntables"
     },
     "auxiliary": {
       "value": "len(auxiliary)"
     },
     "nlakeconn": {
-      "value": "sum(packagedata.nlakeconn)",
-      "scope": "model"
+      "value": "sum(packagedata.nlakeconn)"
     }
   },
   "blocks": {

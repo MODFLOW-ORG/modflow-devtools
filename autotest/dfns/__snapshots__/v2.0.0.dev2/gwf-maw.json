@@ -7,8 +7,7 @@
   "subtype": "advanced",
   "dims": {
     "nmawwells": {
-      "value": "nmawwells",
-      "scope": "model"
+      "value": "nmawwells"
     },
     "auxiliary": {
       "value": "len(auxiliary)"

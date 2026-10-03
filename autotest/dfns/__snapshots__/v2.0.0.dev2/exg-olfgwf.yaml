@@ -7,7 +7,6 @@ subtype: exchange
 dims:
   nexg:
     value: nexg
-    scope: simulation
 blocks:
   options:
     fields:

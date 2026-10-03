@@ -341,3 +341,21 @@ def test_migrate_sfr_ic_is_signed_index(dfn_dir):
         if getattr(f, "index", False) == "signed"
     ]
     assert signed == ["ic"]
+
+
+def test_migrate_package_dims_are_component_scoped(dev3):
+    out, _ = dev3
+    spec = v2.Dfns.load(out)
+    inherited = spec.inherited_dims("gwf-wel")
+    assert {"nlay", "nrow", "ncol", "ncpl", "nodes", "ncelldim", "nper"} <= inherited
+    assert not inherited & {"nseg", "numgnc", "numalphaj", "maxbound", "nexg", "maxats"}
+    shared = {
+        (name, dim)
+        for name, c in spec.components.items()
+        for dim, d in (c.dims or {}).items()
+        if d.scope != "component"
+    }
+    assert {name for name, _ in shared} - {"sim-tdis"} == {
+        name for name in spec.components if name.split("-")[1].startswith("dis")
+    }
+    assert ("sim-tdis", "nper") in shared

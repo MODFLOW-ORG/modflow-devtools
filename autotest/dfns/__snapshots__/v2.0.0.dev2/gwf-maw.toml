@@ -7,7 +7,6 @@ subtype = "advanced"
 
 [dims.nmawwells]
 value = "nmawwells"
-scope = "model"
 
 [dims.auxiliary]
 value = "len(auxiliary)"

@@ -5,10 +5,8 @@ parent: gwf-nam
 dims:
   numgnc:
     value: numgnc
-    scope: model
   numalphaj:
     value: numalphaj
-    scope: model
 blocks:
   options:
     fields:

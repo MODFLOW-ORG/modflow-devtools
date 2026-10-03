@@ -7,10 +7,8 @@ subtype: utility
 dims:
   nrow:
     value: nrow
-    scope: simulation
   ncol:
     value: ncol
-    scope: simulation
 blocks:
   dimensions:
     fields:

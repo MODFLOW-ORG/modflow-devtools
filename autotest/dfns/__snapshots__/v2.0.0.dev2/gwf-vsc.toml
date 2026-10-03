@@ -5,7 +5,6 @@ parent = "gwf-nam"
 
 [dims.nviscspecies]
 value = "nviscspecies"
-scope = "model"
 
 [blocks.options.fields.viscref]
 type = "double"

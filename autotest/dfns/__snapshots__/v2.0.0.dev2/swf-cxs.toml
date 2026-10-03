@@ -5,11 +5,9 @@ parent = "swf-nam"
 
 [dims.nsections]
 value = "nsections"
-scope = "model"
 
 [dims.npoints]
 value = "npoints"
-scope = "model"
 
 [blocks.options.fields.print_input]
 type = "keyword"

@@ -7,22 +7,18 @@ subtype = "advanced"
 
 [dims.nlakes]
 value = "nlakes"
-scope = "model"
 
 [dims.noutlets]
 value = "noutlets"
-scope = "model"
 
 [dims.ntables]
 value = "ntables"
-scope = "model"
 
 [dims.auxiliary]
 value = "len(auxiliary)"
 
 [dims.nlakeconn]
 value = "sum(packagedata.nlakeconn)"
-scope = "model"
 
 [blocks.options.fields.auxiliary]
 type = "array"

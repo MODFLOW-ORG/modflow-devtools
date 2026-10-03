@@ -5,7 +5,6 @@ parent: gwf-nam
 dims:
   nrhospecies:
     value: nrhospecies
-    scope: model
 blocks:
   options:
     fields:

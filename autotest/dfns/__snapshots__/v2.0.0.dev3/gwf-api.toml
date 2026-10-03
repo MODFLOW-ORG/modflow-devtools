@@ -6,7 +6,6 @@ multi = true
 
 [dims.maxbound]
 value = "maxbound"
-scope = "model"
 
 [blocks.options.fields.boundnames]
 type = "keyword"

@@ -7,7 +7,6 @@ subtype: utility
 dims:
   maxbound:
     value: maxbound
-    scope: simulation
 blocks:
   options:
     fields:

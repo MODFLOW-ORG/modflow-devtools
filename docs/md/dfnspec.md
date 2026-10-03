@@ -733,6 +733,8 @@ Examples:
 - `gwf-dis.dims.nrow`, `ncol`, `nlay` have `scope: "model"`: accessible to `gwf-chd`, `gwf-wel`, and any other component whose parent is `gwf-nam`, but also to e.g. `utl-spca` (which has `parent: "package"`).
 - `sim-tdis.dims.nper` has `scope: "simulation"`: accessible from all components.
 
+Only a dimension that every component in the model (or simulation) shares should be widened beyond `"component"`: in practice, the discretization's grid dims and TDIS's `nper`. Other package dimensions (`maxbound`, `nseg`, `numgnc`, `nexg`, ...) describe a single instance of their component, since two EVT packages in a model can have different `nseg`, so they keep the default `"component"` scope even when the component's parent is a model or the simulation.
+
 ### Primary and foreign keys
 
 Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the array [`cellid`](#cellid) attribute rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.

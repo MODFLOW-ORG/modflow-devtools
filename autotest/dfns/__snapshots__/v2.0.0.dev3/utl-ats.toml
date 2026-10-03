@@ -6,7 +6,6 @@ subtype = "utility"
 
 [dims.maxats]
 value = "maxats"
-scope = "simulation"
 
 [blocks.dimensions.fields.maxats]
 type = "integer"

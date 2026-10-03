@@ -5,12 +5,10 @@
   "parent": "olf-nam",
   "dims": {
     "nsections": {
-      "value": "nsections",
-      "scope": "model"
+      "value": "nsections"
     },
     "npoints": {
-      "value": "npoints",
-      "scope": "model"
+      "value": "npoints"
     }
   },
   "blocks": {

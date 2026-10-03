@@ -7,10 +7,8 @@ subtype: stress
 dims:
   nreleasepts:
     value: nreleasepts
-    scope: model
   nreleasetimes:
     value: nreleasetimes
-    scope: model
 blocks:
   options:
     fields:

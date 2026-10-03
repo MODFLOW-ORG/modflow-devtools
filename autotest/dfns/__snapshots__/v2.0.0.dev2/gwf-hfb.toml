@@ -5,7 +5,6 @@ parent = "gwf-nam"
 
 [dims.maxhfb]
 value = "maxhfb"
-scope = "model"
 
 [blocks.options.fields.print_input]
 type = "keyword"

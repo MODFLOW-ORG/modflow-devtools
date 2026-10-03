@@ -5,7 +5,6 @@ parent: prt-nam
 dims:
   ntracktimes:
     value: ntracktimes
-    scope: model
 blocks:
   options:
     fields:

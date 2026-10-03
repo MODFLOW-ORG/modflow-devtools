@@ -12,6 +12,7 @@ from modflow_devtools.misc import try_literal_eval
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
+_DIS_RE = re.compile(r"^[a-z0-9]+-dis(?:v|u|2d|v1d|v2d)?$")
 
 # v1 shapes that are wrong at the source. `utl-ts` `sfacval` is `(<time_series_name)`,
 # naming a field that exists only in `utl-tas`; MF6 reads one SFACS value per
@@ -97,6 +98,24 @@ def _scope_for(
     return "component"
 
 
+def _dims_scope(
+    name: str,
+    parent: "str | list[str] | None",
+) -> "Literal['component', 'model', 'simulation']":
+    """
+    Scope of the dims a component's dimensions block declares.
+
+    Only a model's discretization and the simulation's TDIS declare dims that
+    other components share (grid shape, ``nper``). Every other component's dims
+    describe one instance of it -- two EVT packages in a model can have
+    different ``nseg``, and every list package has its own ``maxbound`` -- so
+    they're ``"component"``-scoped regardless of where the component sits.
+    """
+    if name == "sim-tdis" or _DIS_RE.match(name):
+        return _scope_for(parent)
+    return "component"
+
+
 def _raw_dim_names(blocks: dict[str, v2.Block]) -> set[str]:
     """Names of all Integer fields in the dimensions block."""
     dim_block = blocks.get("dimensions")
@@ -174,6 +193,7 @@ def _normalize_n_prefix_shapes(
 
 
 def _build_explicit_dims(
+    name: str,
     parent: "str | list[str] | None",
     blocks: dict[str, v2.Block],
 ) -> dict[str, v2.InputDim]:
@@ -189,7 +209,7 @@ def _build_explicit_dims(
     if not dim_block:
         return dims
 
-    scope = _scope_for(parent)
+    scope = _dims_scope(name, parent)
     for fname, field in dim_block.fields.items():
         if isinstance(field, v2.Integer):
             dims[fname] = v2.InputDim(value=fname, scope=scope)
@@ -1884,12 +1904,14 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _resolve_relations(blocks)
     raw_dim_names = _raw_dim_names(blocks)
     blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
-    explicit_dims = _build_explicit_dims(parent, blocks)
+    explicit_dims = _build_explicit_dims(name, parent, blocks)
     known_dims = set(explicit_dims) | set(array_dims)
     blocks = _sanitize_list_shapes(blocks, known_dims)
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
     blocks = _fill_named_list_shapes(blocks, explicit_dims)
-    blocks, derived_dims = _infer_list_shape_dims(blocks, fields, _scope_for(parent), known_dims)
+    blocks, derived_dims = _infer_list_shape_dims(
+        blocks, fields, _dims_scope(name, parent), known_dims
+    )
     blocks = _fix_list_shapes(name, blocks)
     blocks = _fix_ts_sfac(name, blocks)
     blocks = _wrap_oc_period_records(blocks)

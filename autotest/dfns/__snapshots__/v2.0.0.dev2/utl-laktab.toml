@@ -7,11 +7,9 @@ subtype = "utility"
 
 [dims.nrow]
 value = "nrow"
-scope = "simulation"
 
 [dims.ncol]
 value = "ncol"
-scope = "simulation"
 
 [blocks.dimensions.fields.nrow]
 type = "integer"

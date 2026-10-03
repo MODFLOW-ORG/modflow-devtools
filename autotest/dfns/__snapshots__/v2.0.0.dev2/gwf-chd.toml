@@ -7,7 +7,6 @@ subtype = "stress"
 
 [dims.maxbound]
 value = "maxbound"
-scope = "model"
 
 [dims.auxiliary]
 value = "len(auxiliary)"

@@ -5,11 +5,9 @@ parent = "gwf-nam"
 
 [dims.numgnc]
 value = "numgnc"
-scope = "model"
 
 [dims.numalphaj]
 value = "numalphaj"
-scope = "model"
 
 [blocks.options.fields.print_input]
 type = "keyword"

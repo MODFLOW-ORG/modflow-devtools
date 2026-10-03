@@ -7,16 +7,13 @@
   "subtype": "advanced",
   "dims": {
     "nuzfcells": {
-      "value": "nuzfcells",
-      "scope": "model"
+      "value": "nuzfcells"
     },
     "ntrailwaves": {
-      "value": "ntrailwaves",
-      "scope": "model"
+      "value": "ntrailwaves"
     },
     "nwavesets": {
-      "value": "nwavesets",
-      "scope": "model"
+      "value": "nwavesets"
     },
     "auxiliary": {
       "value": "len(auxiliary)"

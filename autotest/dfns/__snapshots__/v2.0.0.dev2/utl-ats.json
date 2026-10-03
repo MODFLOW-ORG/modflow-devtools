@@ -6,8 +6,7 @@
   "subtype": "utility",
   "dims": {
     "maxats": {
-      "value": "maxats",
-      "scope": "simulation"
+      "value": "maxats"
     }
   },
   "blocks": {

@@ -5,12 +5,10 @@
   "parent": "gwf-nam",
   "dims": {
     "ninterbeds": {
-      "value": "ninterbeds",
-      "scope": "model"
+      "value": "ninterbeds"
     },
     "maxsig0": {
-      "value": "maxsig0",
-      "scope": "model"
+      "value": "maxsig0"
     }
   },
   "blocks": {

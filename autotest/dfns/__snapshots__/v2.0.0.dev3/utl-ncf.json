@@ -6,8 +6,7 @@
   "subtype": "utility",
   "dims": {
     "ncpl": {
-      "value": "ncpl",
-      "scope": "simulation"
+      "value": "ncpl"
     }
   },
   "blocks": {

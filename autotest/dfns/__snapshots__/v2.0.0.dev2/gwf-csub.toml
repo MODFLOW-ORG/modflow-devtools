@@ -5,11 +5,9 @@ parent = "gwf-nam"
 
 [dims.ninterbeds]
 value = "ninterbeds"
-scope = "model"
 
 [dims.maxsig0]
 value = "maxsig0"
-scope = "model"
 
 [blocks.options.fields.boundnames]
 type = "keyword"

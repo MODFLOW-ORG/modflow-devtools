@@ -5,10 +5,8 @@ parent: gwf-nam
 dims:
   ninterbeds:
     value: ninterbeds
-    scope: model
   maxsig0:
     value: maxsig0
-    scope: model
 runtime_dims:
   ncelldim:
     set_in: ar

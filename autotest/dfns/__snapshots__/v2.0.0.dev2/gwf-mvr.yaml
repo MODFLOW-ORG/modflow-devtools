@@ -5,10 +5,8 @@ parent: gwf-nam
 dims:
   maxmvr:
     value: maxmvr
-    scope: model
   maxpackages:
     value: maxpackages
-    scope: model
 blocks:
   options:
     fields:

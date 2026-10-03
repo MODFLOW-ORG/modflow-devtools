@@ -6,7 +6,6 @@ subtype = "utility"
 
 [dims.ncpl]
 value = "ncpl"
-scope = "simulation"
 
 [blocks.options.fields.wkt]
 type = "string"

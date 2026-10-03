@@ -7,12 +7,10 @@
   "subtype": "utility",
   "dims": {
     "nrow": {
-      "value": "nrow",
-      "scope": "simulation"
+      "value": "nrow"
     },
     "ncol": {
-      "value": "ncol",
-      "scope": "simulation"
+      "value": "ncol"
     }
   },
   "blocks": {

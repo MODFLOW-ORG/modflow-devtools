@@ -7,12 +7,10 @@
   "subtype": "stress",
   "dims": {
     "nreleasepts": {
-      "value": "nreleasepts",
-      "scope": "model"
+      "value": "nreleasepts"
     },
     "nreleasetimes": {
-      "value": "nreleasetimes",
-      "scope": "model"
+      "value": "nreleasetimes"
     }
   },
   "runtime_dims": {

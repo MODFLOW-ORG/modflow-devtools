@@ -5,12 +5,10 @@
   "parent": "gwf-nam",
   "dims": {
     "numgnc": {
-      "value": "numgnc",
-      "scope": "model"
+      "value": "numgnc"
     },
     "numalphaj": {
-      "value": "numalphaj",
-      "scope": "model"
+      "value": "numalphaj"
     }
   },
   "blocks": {

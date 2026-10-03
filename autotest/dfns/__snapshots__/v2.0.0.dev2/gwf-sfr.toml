@@ -7,7 +7,6 @@ subtype = "advanced"
 
 [dims.nreaches]
 value = "nreaches"
-scope = "model"
 
 [dims.auxiliary]
 value = "len(auxiliary)"
