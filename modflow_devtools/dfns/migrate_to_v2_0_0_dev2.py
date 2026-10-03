@@ -19,6 +19,7 @@ _DIS_RE = re.compile(r"^[a-z0-9]+-dis(?:v|u|2d|v1d|v2d)?$")
 # time series name, so the count is exactly `time_series_names`.
 _V1_SHAPE_FIXES: dict[tuple[str, str], str] = {
     ("utl-ts", "sfacval"): "(time_series_names)",
+    ("gwf-sfr", "ic"): "(ncon(ifno))",
 }
 
 

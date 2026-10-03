@@ -297,6 +297,17 @@ def test_migrate_ts_shapes(dfn_dir):
     assert ts.shape == ["time_series_names"]
 
 
+@pytest.mark.parametrize("v1_shape", ["(ncon(ifno))", "(:)"])
+def test_migrate_sfr_ic_shape(dfn_dir, tmp_path, v1_shape):
+    for name in ("common", "gwf-sfr"):
+        text = (dfn_dir / f"{name}.dfn").read_text()
+        text = text.replace("shape (ncon(ifno))", f"shape {v1_shape}")
+        (tmp_path / f"{name}.dfn").write_text(text)
+    component = _migrate_dev3(tmp_path, "gwf-sfr")
+    conn = component.blocks["connectiondata"].fields["connectiondata"].item
+    assert conn.fields["ic"].shape == ["packagedata.ncon(ifno)"]
+
+
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-chd")
     assert component.blocks["options"].fields["auxiliary"].shape == []
