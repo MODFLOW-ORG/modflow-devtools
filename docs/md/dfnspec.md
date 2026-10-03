@@ -348,7 +348,7 @@ Type `keyword`. Represents a boolean choice. In input files, the presence of a k
 
 ###### `aliases`
 
-`[string] (default: [])`. Other spellings MF6 accepts for the keyword, e.g. `name` for utl-ts's `names`. Writers use the field's `name`; readers accept the name or any alias.
+`[string] (default: [])`. Other spellings MF6 accepts for the keyword.
 
 #### String
 

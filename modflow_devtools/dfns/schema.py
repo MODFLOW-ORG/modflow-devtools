@@ -78,7 +78,6 @@ class InputFieldBase(BaseModel):
 
 class Keyword(InputFieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
-    # Other spellings MF6 accepts for the keyword (e.g. utl-ts's NAME for NAMES).
     aliases: list[str] = []
 
 
