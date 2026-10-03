@@ -15,6 +15,9 @@ description = "xxx"
 [blocks.attributes.fields.time_series_namerecord.fields.names]
 type = "keyword"
 description = "xxx"
+aliases = [
+    "name",
+]
 
 [blocks.attributes.fields.time_series_namerecord.fields.time_series_names]
 type = "array"

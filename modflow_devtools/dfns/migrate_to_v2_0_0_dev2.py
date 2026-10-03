@@ -1597,6 +1597,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     netcdf=netcdf,
                     removed=removed,
                     deprecated=deprecated,
+                    aliases=(f.get("other_names") or "").lower().split(),
                 )
             if _type == "string":
                 return v2.String(

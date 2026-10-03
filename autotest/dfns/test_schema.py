@@ -1069,3 +1069,9 @@ def test_index_rejects_unknown_kind():
 def test_signed_index_requires_integer_array():
     with pytest.raises(ValueError, match="requires dtype='integer'"):
         Array(name="ic", dtype="double", shape=["ncon"], index="signed")
+
+
+def test_keyword_aliases_round_trip():
+    field = Keyword(name="names", aliases=["name"])
+    assert Keyword.model_validate(field.model_dump()).aliases == ["name"]
+    assert "aliases" not in Keyword(name="names").model_dump(exclude_defaults=True)

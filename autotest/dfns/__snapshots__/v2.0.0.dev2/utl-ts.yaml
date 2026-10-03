@@ -17,6 +17,8 @@ blocks:
           names:
             type: keyword
             description: xxx
+            aliases:
+              - name
           time_series_names:
             type: array
             description: Name by which a package references a particular time-array series. The name must

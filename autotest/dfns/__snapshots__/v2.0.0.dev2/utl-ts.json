@@ -19,7 +19,10 @@
           "fields": {
             "names": {
               "type": "keyword",
-              "description": "xxx"
+              "description": "xxx",
+              "aliases": [
+                "name"
+              ]
             },
             "time_series_names": {
               "type": "array",

@@ -780,6 +780,14 @@
           "default": "keyword",
           "title": "Type",
           "type": "string"
+        },
+        "aliases": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
         }
       },
       "required": [

@@ -400,3 +400,9 @@ def test_migrate_package_dims_are_component_scoped(dev3):
         name for name in spec.components if name.split("-")[1].startswith("dis")
     }
     assert ("sim-tdis", "nper") in shared
+
+
+def test_migrate_keyword_aliases(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "utl-ts")
+    record = component.blocks["attributes"].fields["time_series_namerecord"]
+    assert record.fields["names"].aliases == ["name"]
