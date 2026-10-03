@@ -308,6 +308,17 @@ def test_migrate_sfr_ic_shape(dfn_dir, tmp_path, v1_shape):
     assert conn.fields["ic"].shape == ["packagedata.ncon(ifno)"]
 
 
+@pytest.mark.parametrize("v1_shape", ["(sum(nlakeconn))", "(nlakeconn)"])
+def test_migrate_lak_connectiondata_shape(dfn_dir, tmp_path, v1_shape):
+    for name in ("common", "gwf-lak"):
+        text = (dfn_dir / f"{name}.dfn").read_text()
+        text = text.replace("shape (sum(nlakeconn))", f"shape {v1_shape}")
+        (tmp_path / f"{name}.dfn").write_text(text)
+    component = _migrate_dev3(tmp_path, "gwf-lak")
+    assert component.blocks["connectiondata"].fields["connectiondata"].shape == ["nlakeconn"]
+    assert component.dims["nlakeconn"].value == "sum(packagedata.nlakeconn)"
+
+
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-chd")
     assert component.blocks["options"].fields["auxiliary"].shape == []

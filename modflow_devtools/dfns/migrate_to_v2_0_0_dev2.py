@@ -20,6 +20,7 @@ _DIS_RE = re.compile(r"^[a-z0-9]+-dis(?:v|u|2d|v1d|v2d)?$")
 _V1_SHAPE_FIXES: dict[tuple[str, str], str] = {
     ("utl-ts", "sfacval"): "(time_series_names)",
     ("gwf-sfr", "ic"): "(ncon(ifno))",
+    ("gwf-lak", "connectiondata"): "(sum(nlakeconn))",
 }
 
 
@@ -849,6 +850,7 @@ def _translate_v1_shape_expr(
 
 
 def _infer_list_shape_dims(
+    name: str,
     blocks: dict[str, v2.Block],
     v1_fields: OMD,
     scope: "Literal['component', 'model', 'simulation']",
@@ -867,7 +869,7 @@ def _infer_list_shape_dims(
     v1_shapes: dict[tuple[str, str], str] = {}
     for f in v1_fields.values(multi=True):
         if (f.get("type") or "").startswith("recarray"):
-            shape = (f.get("shape") or "").strip()
+            shape = _V1_SHAPE_FIXES.get((name, f["name"]), f.get("shape") or "").strip()
             if shape:
                 v1_shapes[(f["block"], f["name"])] = shape
 
@@ -1950,7 +1952,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
     blocks = _fill_named_list_shapes(blocks, explicit_dims)
     blocks, derived_dims = _infer_list_shape_dims(
-        blocks, fields, _dims_scope(name, parent), known_dims
+        name, blocks, fields, _dims_scope(name, parent), known_dims
     )
     blocks = _fix_list_shapes(name, blocks)
     blocks = _fix_ts_sfac(name, blocks)
