@@ -115,7 +115,8 @@
         "outer_dvclose": {
           "type": "double",
           "longname": "dependent-variable change criterion",
-          "description": "real value defining the dependent-variable (for example, head) change criterion for convergence of the outer (nonlinear) iterations, in units of the dependent-variable (for example, length for head). When the maximum absolute value of the dependent-variable change at all nodes during an iteration is less than or equal to OUTER_DVCLOSE, iteration stops. Commonly, OUTER_DVCLOSE equals 0.01. The keyword, OUTER_HCLOSE can be still be specified instead of OUTER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but eventually OUTER_HCLOSE will be deprecated and specification of OUTER_HCLOSE will cause MODFLOW 6 to terminate with an error."
+          "description": "real value defining the dependent-variable (for example, head) change criterion for convergence of the outer (nonlinear) iterations, in units of the dependent-variable (for example, length for head). When the maximum absolute value of the dependent-variable change at all nodes during an iteration is less than or equal to OUTER_DVCLOSE, iteration stops. Commonly, OUTER_DVCLOSE equals 0.01. The keyword, OUTER_HCLOSE can be still be specified instead of OUTER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but eventually OUTER_HCLOSE will be deprecated and specification of OUTER_HCLOSE will cause MODFLOW 6 to terminate with an error.",
+          "optional": true
         },
         "outer_rclosebnd": {
           "type": "double",
@@ -127,7 +128,8 @@
         "outer_maximum": {
           "type": "integer",
           "longname": "outer maximum iterations",
-          "description": "integer value defining the maximum number of outer (nonlinear) iterations -- that is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1."
+          "description": "integer value defining the maximum number of outer (nonlinear) iterations -- that is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1.",
+          "optional": true
         },
         "under_relaxation": {
           "type": "string",
@@ -190,7 +192,8 @@
         "inner_maximum": {
           "type": "integer",
           "longname": "maximum number of inner iterations",
-          "description": "integer value defining the maximum number of inner (linear) iterations. The number typically depends on the characteristics of the matrix solution scheme being used. For nonlinear problems, INNER_MAXIMUM usually ranges from 60 to 600; a value of 100 will be sufficient for most linear problems."
+          "description": "integer value defining the maximum number of inner (linear) iterations. The number typically depends on the characteristics of the matrix solution scheme being used. For nonlinear problems, INNER_MAXIMUM usually ranges from 60 to 600; a value of 100 will be sufficient for most linear problems.",
+          "optional": true
         },
         "inner_hclose": {
           "type": "double",
@@ -202,11 +205,13 @@
         "inner_dvclose": {
           "type": "double",
           "longname": "dependent-variable change tolerance",
-          "description": "real value defining the dependent-variable (for example, head) change criterion for convergence of the inner (linear) iterations, in units of the dependent-variable (for example, length for head). When the maximum absolute value of the dependent-variable change at all nodes during an iteration is less than or equal to INNER_DVCLOSE, the matrix solver assumes convergence. Commonly, INNER_DVCLOSE is set equal to or an order of magnitude less than the OUTER_DVCLOSE value specified for the NONLINEAR block. The keyword, INNER_HCLOSE can be still be specified instead of INNER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but eventually INNER_HCLOSE will be deprecated and specification of INNER_HCLOSE will cause MODFLOW 6 to terminate with an error."
+          "description": "real value defining the dependent-variable (for example, head) change criterion for convergence of the inner (linear) iterations, in units of the dependent-variable (for example, length for head). When the maximum absolute value of the dependent-variable change at all nodes during an iteration is less than or equal to INNER_DVCLOSE, the matrix solver assumes convergence. Commonly, INNER_DVCLOSE is set equal to or an order of magnitude less than the OUTER_DVCLOSE value specified for the NONLINEAR block. The keyword, INNER_HCLOSE can be still be specified instead of INNER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but eventually INNER_HCLOSE will be deprecated and specification of INNER_HCLOSE will cause MODFLOW 6 to terminate with an error.",
+          "optional": true
         },
         "rcloserecord": {
           "type": "record",
           "longname": "rclose record",
+          "optional": true,
           "fields": {
             "inner_rclose": {
               "type": "double",
@@ -225,7 +230,8 @@
         "linear_acceleration": {
           "type": "string",
           "longname": "linear acceleration method",
-          "description": "a keyword that defines the linear acceleration method used by the default IMS linear solvers.  CG - preconditioned conjugate gradient method.  BICGSTAB - preconditioned bi-conjugate gradient stabilized method."
+          "description": "a keyword that defines the linear acceleration method used by the default IMS linear solvers.  CG - preconditioned conjugate gradient method.  BICGSTAB - preconditioned bi-conjugate gradient stabilized method.",
+          "optional": true
         },
         "relaxation_factor": {
           "type": "double",

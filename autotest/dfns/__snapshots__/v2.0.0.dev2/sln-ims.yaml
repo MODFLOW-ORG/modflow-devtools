@@ -161,6 +161,7 @@ blocks:
           equals 0.01. The keyword, OUTER_HCLOSE can be still be specified instead of OUTER_DVCLOSE for
           backward compatibility with previous versions of MODFLOW 6 but eventually OUTER_HCLOSE will
           be deprecated and specification of OUTER_HCLOSE will cause MODFLOW 6 to terminate with an error.
+        optional: true
       outer_rclosebnd:
         type: double
         longname: boundary package flow residual tolerance
@@ -179,6 +180,7 @@ blocks:
         longname: outer maximum iterations
         description: integer value defining the maximum number of outer (nonlinear) iterations -- that
           is, calls to the solution routine. For a linear problem OUTER_MAXIMUM should be 1.
+        optional: true
       under_relaxation:
         type: string
         longname: under relaxation scheme
@@ -288,6 +290,7 @@ blocks:
           typically depends on the characteristics of the matrix solution scheme being used. For nonlinear
           problems, INNER_MAXIMUM usually ranges from 60 to 600; a value of 100 will be sufficient for
           most linear problems.
+        optional: true
       inner_hclose:
         type: double
         longname: head change tolerance
@@ -312,9 +315,11 @@ blocks:
           instead of INNER_DVCLOSE for backward compatibility with previous versions of MODFLOW 6 but
           eventually INNER_HCLOSE will be deprecated and specification of INNER_HCLOSE will cause MODFLOW
           6 to terminate with an error.
+        optional: true
       rcloserecord:
         type: record
         longname: rclose record
+        optional: true
         fields:
           inner_rclose:
             type: double
@@ -352,6 +357,7 @@ blocks:
         description: a keyword that defines the linear acceleration method used by the default IMS linear
           solvers.  CG - preconditioned conjugate gradient method.  BICGSTAB - preconditioned bi-conjugate
           gradient stabilized method.
+        optional: true
       relaxation_factor:
         type: double
         longname: relaxation factor used by ILU factorization

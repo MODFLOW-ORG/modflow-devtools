@@ -1209,6 +1209,45 @@ def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> d
     return {**blocks, "sources": sources.model_copy(update={"write_if_empty": True})}
 
 
+# Blocks MF6 reads with `GetBlock(..., blockRequired=.false.)` though their v1
+# fields aren't all marked optional, so the derived `Block.optional` comes out
+# false. SFR CROSSSECTIONS/DIVERSIONS/INITIALSTAGES (gwf-sfr.f90) and LAK
+# OUTLETS (gwf-lak.f90) each hold one list; IMS NONLINEAR (NumericalSolution.f90)
+# and LINEAR (ImsLinearSettings.f90) hold settings that all have defaults.
+# SFR DIVERSIONS and LAK OUTLETS are really conditional: present iff
+# `sum(packagedata.ndv) > 0` and `noutlets > 0` respectively. There's no way to
+# say that yet; optional is enough for a writer that omits empty blocks.
+_OPTIONAL_BLOCKS: dict[str, tuple[str, ...]] = {
+    "gwf-sfr": ("crosssections", "diversions", "initialstages"),
+    "gwf-lak": ("outlets",),
+    "sln-ims": ("nonlinear", "linear"),
+}
+
+
+def _fix_optional_blocks(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Mark every field in each of `_OPTIONAL_BLOCKS` optional, making the block
+    optional. Without this, a writer that emits required blocks even when empty
+    writes e.g. an empty SFR DIVERSIONS block, which MF6 rejects. Once modflow6
+    marks these fields `optional true`, this stopgap can be removed.
+    """
+    block_names = _OPTIONAL_BLOCKS.get(name)
+    if not block_names:
+        return blocks
+    missing = [b for b in block_names if b not in blocks]
+    if missing:
+        raise ValueError(f"{name}: expected optional block(s) not found: {missing!r}")
+    new_blocks = dict(blocks)
+    for b in block_names:
+        block = blocks[b]
+        fields = {
+            k: f if f.optional else f.model_copy(update={"optional": True})
+            for k, f in block.fields.items()
+        }
+        new_blocks[b] = block.model_copy(update={"fields": fields})
+    return new_blocks
+
+
 # List dims that MF6 treats as an upper bound (it reads up to that many rows and
 # uses the count read), though v1 doesn't mark them `<`. Each is confirmed in the
 # MF6 source: IDM's period list loader sets `nbound` from the rows read (every
@@ -1852,6 +1891,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
+    blocks = _fix_optional_blocks(name, blocks)
     blocks = _wrap_grid_aux(blocks, fields)
     # Must run after `_fix_lak_relations`: LAK's period `number` field looks
     # exactly like a lonely pk (leading required Integer, no fk) before it's

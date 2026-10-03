@@ -265,6 +265,25 @@ def test_migrate_list_shape_bounds(dfn_dir, name, block, shape):
     assert next(f for f in fields.values() if isinstance(f, v2.List)).shape == shape
 
 
+@pytest.mark.parametrize(
+    "name,optional,required",
+    [
+        (
+            "gwf-sfr",
+            ["crosssections", "diversions", "initialstages"],
+            ["packagedata", "connectiondata"],
+        ),
+        ("gwf-lak", ["outlets"], ["packagedata", "connectiondata"]),
+        ("sln-ims", ["nonlinear", "linear"], []),
+    ],
+)
+def test_migrate_optional_blocks(dfn_dir, name, optional, required):
+    # MF6 reads these with blockRequired=.false. though v1 marks fields required
+    component = _migrate_dev3(dfn_dir, name)
+    assert all(component.blocks[b].optional for b in optional)
+    assert not any(component.blocks[b].optional for b in required)
+
+
 def test_migrate_ts_shapes(dfn_dir):
     component = _migrate_dev3(dfn_dir, "utl-ts")
     attrs = component.blocks["attributes"].fields

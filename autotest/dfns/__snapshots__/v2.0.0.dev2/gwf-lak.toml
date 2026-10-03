@@ -358,6 +358,7 @@ direction = "in"
 
 [blocks.outlets.fields.outlets]
 type = "list"
+optional = true
 shape = [
     "noutlets",
 ]
