@@ -529,6 +529,8 @@ Type `union`. Sum type.
 
 `{string: Scalar | Array | Record}`. Subfields, required.
 
+A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. As with a runtime-resolved [foreign key](#primary-and-foreign-keys), the codec resolves which arm applies.
+
 #### List
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.

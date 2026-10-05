@@ -369,6 +369,23 @@ def test_migrate_marks_cellids(dfn_dir, name, block, cols):
         assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)
 
 
+@pytest.mark.parametrize("col, optional", [("id", False), ("id2", True)])
+def test_migrate_obs_id_union(dfn_dir, col, optional):
+    """A v1 string with numeric_index (utl-obs's id/id2) becomes an untagged
+    union of a cellid, a 1-based index, and a boundname."""
+    component = _migrate_dev3(dfn_dir, "utl-obs")
+    item = component.blocks["continuous"].fields["continuous"].item
+    field = item.fields[col]
+    assert isinstance(field, v2.Union)
+    assert (field.tagged, field.optional) == (False, optional)
+    cellid, index, boundname = field.arms.values()
+    assert isinstance(cellid, v2.Array)
+    assert (cellid.shape, cellid.index, cellid.cellid) == (["ncelldim"], True, True)
+    assert isinstance(index, v2.Integer) and index.index
+    assert isinstance(boundname, v2.String)
+    assert not any(arm.tagged for arm in field.arms.values())
+
+
 def test_migrate_sfr_ic_is_signed_index(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-sfr")
     item = component.blocks["connectiondata"].fields["connectiondata"].item

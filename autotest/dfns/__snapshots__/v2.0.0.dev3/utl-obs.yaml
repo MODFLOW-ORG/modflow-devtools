@@ -45,7 +45,7 @@ blocks:
               description: a string of characters used to identify the observation type.
               tagged: false
             id:
-              type: string
+              type: union
               longname: time
               description: Text identifying cell where observation is located. For packages other than
                 NPF, if boundary names are defined in the corresponding package input file, ID can be
@@ -53,8 +53,24 @@ blocks:
                 is three integers (layer, row, column). If the discretization is DISV, cellid is two integers
                 (layer, cell number). If the discretization is DISU, cellid is one integer (node number).
               tagged: false
+              arms:
+                cellid:
+                  type: array
+                  tagged: false
+                  dtype: integer
+                  index: true
+                  cellid: true
+                  shape:
+                    - ncelldim
+                index:
+                  type: integer
+                  tagged: false
+                  index: true
+                boundname:
+                  type: string
+                  tagged: false
             id2:
-              type: string
+              type: union
               longname: time
               description: Text identifying cell adjacent to cell identified by ID. The form of ID2 is
                 as described for ID. ID2 is used for intercell-flow observations of a GWF model, for three
@@ -62,6 +78,22 @@ blocks:
                 one observation type of the UZF Package.
               optional: true
               tagged: false
+              arms:
+                cellid:
+                  type: array
+                  tagged: false
+                  dtype: integer
+                  index: true
+                  cellid: true
+                  shape:
+                    - ncelldim
+                index:
+                  type: integer
+                  tagged: false
+                  index: true
+                boundname:
+                  type: string
+                  tagged: false
     header:
       field:
         name: output

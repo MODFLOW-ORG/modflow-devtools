@@ -1697,6 +1697,34 @@ def to_v2_0_0_dev2(
                     result.append(f"{op}{parsed}")
             return result
 
+        def _to_id_union() -> v2.Union:
+            # A v1 string with `numeric_index` (only utl-obs's `id`/`id2`)
+            # identifies something in the parent: a cell, a 1-based number
+            # (e.g. a lake or reach), or a boundname. Which one depends on the
+            # parent and is resolved by the codec, like an `fk_ref` target.
+            return v2.Union(
+                name=_name,
+                longname=longname,
+                description=description,
+                optional=optional,
+                developmode=developmode,
+                removed=removed,
+                deprecated=deprecated,
+                tagged=False,
+                arms={
+                    "cellid": v2.Array(
+                        name="cellid",
+                        tagged=False,
+                        dtype="integer",
+                        shape=["ncelldim"],
+                        index=True,
+                        cellid=True,
+                    ),
+                    "index": v2.Integer(name="index", tagged=False, index=True),
+                    "boundname": v2.String(name="boundname", tagged=False),
+                },
+            )
+
         def _to_scalar() -> v2.Scalar:
             assert _type is not None
             if _type == "keyword":
@@ -2035,6 +2063,8 @@ def to_v2_0_0_dev2(
                         index=numeric_index if dtype == "integer" else False,
                     )
 
+        if _type == "string" and numeric_index:
+            return _to_id_union()
         return _to_scalar()
 
     blocks: dict[str, v2.Block] = {}
