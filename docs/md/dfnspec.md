@@ -758,6 +758,8 @@ A shape expression gives an exact extent. Prefixed with one of the inequality op
 
 An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound, too few for a lower bound.
 
+`modflow_devtools.dfns` parses shape expressions with `parse_shape_element` and resolves them against their component with `resolve_shape_ref`; see [Parsing shape elements](dfns.md#parsing-shape-elements).
+
 #### Dimension scope
 
 Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension:

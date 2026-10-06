@@ -203,6 +203,45 @@ Available field types:
 
 See [DFN specification](dfnspec.md) for full attribute documentation.
 
+### Parsing shape elements
+
+`Array.shape` and `List.shape` elements are strings in a small grammar (see [Dimensions](dfnspec.md#dimensions) and [Bounds](dfnspec.md#bounds)). `parse_shape_element` parses one into a `ShapeRef`:
+
+```python
+from modflow_devtools.dfns import ShapeRef, parse_shape_element
+
+parse_shape_element("nseg-1")
+# ShapeRef(kind="dim", name="nseg", offset=-1)
+parse_shape_element("<=maxats")
+# ShapeRef(kind="dim", name="maxats", bound="<=")
+parse_shape_element("packagedata.ncon(ifno)")
+# ShapeRef(kind="lookup", name="ncon", block="packagedata", fk_field="ifno")
+```
+
+`kind` is `"dim"` for a name, with an optional arithmetic `offset`, and `"lookup"` for a row-level column lookup, which also sets `component` (for a cross-component lookup), `block` and `fk_field`. `bound` is the inequality operator, or `None` for an exact extent. `str(ref)` gives the element back in canonical form. A malformed element raises `ValueError`.
+
+Parsing can't tell whether a name means a dim or a sibling Integer in the same record (e.g. `ncvert` sizing `icvert`). `resolve_shape_ref` decides, and checks the reference against its context:
+
+```python
+from modflow_devtools.dfns import resolve_shape_ref
+
+sfr = spec.components["gwf-sfr"]
+connectiondata = sfr.blocks["connectiondata"].fields["connectiondata"]
+ic = connectiondata.item.fields["ic"]
+resolve_shape_ref(
+    parse_shape_element(ic.shape[0]),
+    ic,
+    known_dims=spec.input_dims("gwf-sfr"),
+    component=sfr,
+    enclosing_record=connectiondata.item,
+    spec=spec,
+)
+```
+
+A name in `known_dims` stays a `"dim"`. Otherwise, a name that is an Integer subfield of `enclosing_record` becomes a `"sibling"`. A lookup must be in an array inside a record, and name an Integer column in a list block, selected by a sibling whose `fk` references that block. Anything that doesn't resolve raises `ValueError`. Loading `Dfns` validates every shape this way.
+
+`split_bound` splits off just the bound: `split_bound("<=maxbound")` returns `("<=", "maxbound")`.
+
 ### Rendering block templates
 
 `Block.render()` produces a `BEGIN/END` template string showing the structure of a block — the same format used in the MODFLOW 6 user guide and in tooling such as IDE hover text:

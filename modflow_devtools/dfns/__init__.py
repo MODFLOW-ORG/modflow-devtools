@@ -29,9 +29,13 @@ from modflow_devtools.dfns.schema import (
     Record,
     RuntimeDim,
     Scalar,
+    ShapeRef,
     Simulation,
     String,
     Union,
+    parse_shape_element,
+    resolve_shape_ref,
+    split_bound,
 )
 
 # Experimental API warning
@@ -73,9 +77,13 @@ __all__ = [
     "RemoteDfnRegistry",
     "RuntimeDim",
     "Scalar",
+    "ShapeRef",
     "Simulation",
     "String",
     "Union",
     "fetch_dfns",
     "migrate",
+    "parse_shape_element",
+    "resolve_shape_ref",
+    "split_bound",
 ]
