@@ -4,7 +4,7 @@ import ast
 
 import pytest
 
-from autotest.dfns.test_schema import _pkg
+from autotest.dfns.test_schema import _DEV3_SNAPSHOT_DIR, _pkg
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
@@ -24,8 +24,8 @@ from modflow_devtools.dfns.schema import (
     _validate_list_shape_element,
     _validate_shape_element,
     _validate_sum_call,
+    evaluate_dim,
     parse_shape_element,
-    resolve_shape_ref,
     split_bound,
 )
 
@@ -558,9 +558,7 @@ def test_validate_shape_element_fk_block_mismatch():
     ],
 )
 def test_parse_shape_element(element, expected):
-    ref = parse_shape_element(element)
-    assert ref == expected
-    assert parse_shape_element(str(ref)) == ref
+    assert parse_shape_element(element) == expected
 
 
 @pytest.mark.parametrize(
@@ -580,56 +578,32 @@ def test_parse_shape_element_invalid(element, match):
         parse_shape_element(element)
 
 
-def test_shape_ref_str():
-    assert str(parse_shape_element("ncol + 1")) == "ncol+1"
-    assert str(parse_shape_element(">= nper")) == ">=nper"
-    assert str(parse_shape_element("gwf-x.block.col(fk)")) == "gwf-x.block.col(fk)"
+def test_parse_shape_element_sibling():
+    ncvert = Integer(name="ncvert")
+    arr = Array(name="icvert", dtype="integer", shape=["ncvert"])
+    enc = Record(name="item", fields={"ncvert": ncvert, "icvert": arr})
+    assert parse_shape_element("ncvert", enc) == ShapeRef("sibling", "ncvert")
+    assert parse_shape_element("ncvert") == ShapeRef("dim", "ncvert")
+    assert parse_shape_element("nvert", enc) == ShapeRef("dim", "nvert")
 
 
-def test_resolve_shape_ref_dim():
-    arr = Array(name="arr", dtype="double", shape=[])
-    ref = resolve_shape_ref(parse_shape_element("<=nseg-1"), arr, known_dims={"nseg"})
-    assert ref == ShapeRef("dim", "nseg", offset=-1, bound="<=")
-
-
-def test_resolve_shape_ref_sibling():
-    arr = Array(name="icvert", dtype="integer", shape=[])
-    enc = Record(name="item", fields={"ncvert": Integer(name="ncvert"), "icvert": arr})
-    ref = resolve_shape_ref(
-        parse_shape_element("ncvert"), arr, known_dims=set(), enclosing_record=enc
-    )
-    assert ref.kind == "sibling"
-    assert ref.name == "ncvert"
-
-
-def test_resolve_shape_ref_dim_shadows_sibling():
-    """A name that is both a dim and a sibling Integer resolves to the dim."""
-    arr = Array(name="icvert", dtype="integer", shape=[])
-    enc = Record(name="item", fields={"ncvert": Integer(name="ncvert"), "icvert": arr})
-    ref = resolve_shape_ref(
-        parse_shape_element("ncvert"), arr, known_dims={"ncvert"}, enclosing_record=enc
-    )
-    assert ref.kind == "dim"
-
-
-def test_resolve_shape_ref_non_integer_sibling():
-    arr = Array(name="vals", dtype="double", shape=[])
+def test_parse_shape_element_non_integer_not_sibling():
+    arr = Array(name="vals", dtype="double", shape=["n"])
     enc = Record(name="item", fields={"n": String(name="n"), "vals": arr})
-    with pytest.raises(ValueError, match="does not resolve to a known dim"):
-        resolve_shape_ref(parse_shape_element("n"), arr, known_dims=set(), enclosing_record=enc)
+    assert parse_shape_element("n", enc).kind == "dim"
 
 
-def test_resolve_shape_ref_unknown_dim():
-    arr = Array(name="arr", dtype="double", shape=[])
-    with pytest.raises(ValueError, match="'nseg' does not resolve to a known dim"):
-        resolve_shape_ref(parse_shape_element("nseg-1"), arr, known_dims=set())
+def test_validate_shape_element_sibling():
+    arr = Array(name="icvert", dtype="integer", shape=[])
+    enc = Record(name="item", fields={"ncvert": Integer(name="ncvert"), "icvert": arr})
+    _validate_shape_element("ncvert", arr, _pkg("test"), enc, set())
 
 
-def test_resolve_shape_ref_lookup():
-    arr, enc, pkg, known = _lookup_ctx()
-    ref = parse_shape_element("packagedata.nlakeconn(lakeno)")
-    resolved = resolve_shape_ref(ref, arr, known_dims=known, component=pkg, enclosing_record=enc)
-    assert resolved == ref
+def test_validate_shape_element_sibling_shadows_dim():
+    arr = Array(name="icvert", dtype="integer", shape=[])
+    enc = Record(name="item", fields={"ncvert": Integer(name="ncvert"), "icvert": arr})
+    with pytest.raises(ValueError, match="both a dim and a sibling field"):
+        _validate_shape_element("ncvert", arr, _pkg("test"), enc, {"ncvert"})
 
 
 def _cross_component_lookup_ctx():
@@ -644,40 +618,29 @@ def _cross_component_lookup_ctx():
     return arr, enc, other, spec
 
 
-def test_resolve_shape_ref_cross_component_lookup():
+def test_validate_shape_element_cross_component_lookup():
     arr, enc, other, spec = _cross_component_lookup_ctx()
-    ref = parse_shape_element("gwf-lak.packagedata.nlakeconn(lakeno)")
-    resolved = resolve_shape_ref(
-        ref, arr, known_dims=set(), component=other, enclosing_record=enc, spec=spec
-    )
-    assert resolved == ref
+    elem = "gwf-lak.packagedata.nlakeconn(lakeno)"
+    _validate_shape_element(elem, arr, other, enc, set(), spec)
 
 
-def test_resolve_shape_ref_cross_component_lookup_requires_spec():
+def test_validate_shape_element_cross_component_lookup_requires_spec():
     arr, enc, other, _spec = _cross_component_lookup_ctx()
-    ref = parse_shape_element("gwf-lak.packagedata.nlakeconn(lakeno)")
     with pytest.raises(ValueError, match="requires a Dfns spec"):
-        resolve_shape_ref(ref, arr, known_dims=set(), component=other, enclosing_record=enc)
+        _validate_shape_element("gwf-lak.packagedata.nlakeconn(lakeno)", arr, other, enc, set())
 
 
-def test_resolve_shape_ref_cross_component_lookup_unknown_component():
+def test_validate_shape_element_cross_component_lookup_unknown_component():
     arr, enc, other, spec = _cross_component_lookup_ctx()
-    ref = parse_shape_element("gwf-nope.packagedata.nlakeconn(lakeno)")
     with pytest.raises(ValueError, match="not found in spec"):
-        resolve_shape_ref(
-            ref, arr, known_dims=set(), component=other, enclosing_record=enc, spec=spec
+        _validate_shape_element(
+            "gwf-nope.packagedata.nlakeconn(lakeno)", arr, other, enc, set(), spec
         )
-
-
-def test_resolve_shape_ref_list_lookup():
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
-    with pytest.raises(ValueError, match="invalid shape element"):
-        resolve_shape_ref(parse_shape_element("packagedata.ncon(ifno)"), lst, known_dims=set())
 
 
 def test_validate_list_shape_element_lookup():
     lst = List(name="stress_period_data", item=Record(name="item", fields={}))
-    with pytest.raises(ValueError, match="invalid shape element"):
+    with pytest.raises(ValueError, match="not inside a record"):
         _validate_list_shape_element("packagedata.ncon(ifno)", lst, {"maxbound"})
 
 
@@ -1131,3 +1094,97 @@ def test_input_dims_visible_to_model_component_itself():
     gwf = Model(name="gwf-nam", parent="sim-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-dis": dis})
     assert "nodesuser" in spec.input_dims("gwf-nam")
+
+
+def test_input_dim_must_name_its_own_field():
+    pkg = Package(
+        name="test",
+        blocks={"dimensions": _dim_block("nlay")},
+        dims={"nlayers": InputDim(value="nlay", scope="component")},
+    )
+    with pytest.raises(ValueError, match="must be the dim's own name"):
+        Dfns(components={"test": pkg})
+
+
+_DIS_DIMS = {
+    "nlay": "nlay",
+    "nrow": "nrow",
+    "ncol": "ncol",
+    "ncpl": "nrow * ncol",
+    "nodes": "nlay * ncpl",
+    "ncelldim": "3",
+    "naux": "len(auxiliary)",
+    "nconn": "sum(packagedata.nlakeconn)",
+    "njas": "(nja - nodes) / 2",
+}
+_DIS_INPUTS = {
+    "nlay": 2,
+    "nrow": 3,
+    "ncol": 4,
+    "nja": 30,
+    "auxiliary": ["temp", "conc"],
+    "packagedata.nlakeconn": [1, 2, 3],
+}
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("nlay", 2),
+        ("ncpl", 12),
+        ("nodes", 24),
+        ("ncelldim", 3),
+        ("naux", 2),
+        ("nconn", 6),
+        ("njas", 3),
+        ("nja", 30),  # not a dim: an input field
+    ],
+)
+def test_evaluate_dim(name, expected):
+    assert evaluate_dim(name, _DIS_DIMS, _DIS_INPUTS.get) == expected
+
+
+@pytest.mark.parametrize("name", ["nlay", "nodes", "naux", "nconn"])
+def test_evaluate_dim_unset_input(name):
+    assert evaluate_dim(name, _DIS_DIMS, {}.get) is None
+
+
+def test_evaluate_dim_inexact_division():
+    with pytest.raises(ValueError, match="not an integer"):
+        evaluate_dim("njas", _DIS_DIMS, {**_DIS_INPUTS, "nja": 31}.get)
+
+
+def test_evaluate_dim_cycle():
+    with pytest.raises(ValueError, match="cycle"):
+        evaluate_dim("a", {"a": "b + 1", "b": "a * 2"}, {}.get)
+
+
+@pytest.mark.parametrize("expr", ["nlay ** 2", "max(nlay, 1)", "nlay if nlay else 1", "1.5"])
+def test_evaluate_dim_unsupported(expr):
+    with pytest.raises(ValueError, match="unsupported"):
+        evaluate_dim("d", {"d": expr}, {"nlay": 2}.get)
+
+
+class _One(int):
+    """1, usable as an Integer field, a self-sizing array, or a list column."""
+
+    def __new__(cls):
+        return super().__new__(cls, 1)
+
+    def __len__(self):
+        return 1
+
+    def __iter__(self):
+        return iter([1])
+
+
+def test_evaluate_dim_snapshot_dims():
+    """Every input dim in the current DFNs evaluates, given its inputs."""
+    spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
+    dis = spec.components["gwf-dis"]
+    dims = {n: d.value for n, d in dis.dims.items()}
+    assert evaluate_dim("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get) == 24
+    for component in spec.components.values():
+        dims = {n: d.value for n, d in (component.dims or {}).items()}
+        for name in dims:
+            assert evaluate_dim(name, dims, lambda _: _One()) is not None

@@ -33,8 +33,8 @@ from modflow_devtools.dfns.schema import (
     Simulation,
     String,
     Union,
+    evaluate_dim,
     parse_shape_element,
-    resolve_shape_ref,
     split_bound,
 )
 
@@ -81,9 +81,9 @@ __all__ = [
     "Simulation",
     "String",
     "Union",
+    "evaluate_dim",
     "fetch_dfns",
     "migrate",
     "parse_shape_element",
-    "resolve_shape_ref",
     "split_bound",
 ]

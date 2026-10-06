@@ -620,11 +620,14 @@ dims:
 
 `InputDim` entries may be used in the `shape` expression of `list` and `array` input fields, and in memory variable shapes.
 
-The `value` attribute defines the dimension source as a Python expression. Three forms are distinguished:
+The `value` attribute defines the dimension as a Python expression over the component's input:
 
-- **Bare identifier** `nlay` — backed by an integer field of that name in this component. The dimension takes the runtime value of that field.
-- **`len(name)`** — backed by a self-sizing array field of that name. The dimension equals the runtime length of the array.
-- **Arithmetic expression** `nlay * nrow * ncol` — derived from other dims. May not use bare field names; all operands must be declared dimensions.
+- **Bare identifier** `nlay` — an integer field in this component, which must have the dimension's own name. The dimension takes the runtime value of that field.
+- **`len(name)`** — the runtime length of a self-sizing array field.
+- **`sum(list.column)`** — the sum of an integer column over a list's rows (`sum(packagedata.nlakeconn)`).
+- **Arithmetic expression** `nlay * nrow * ncol` — integer literals and other dims, combined with `+`, `-`, `*`, `/` (exact) and `//`. May not use bare field names; all operands must be declared dimensions.
+
+A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. `modflow_devtools.dfns` evaluates any dimension with `evaluate_dim`; see [Evaluating dims](dfns.md#evaluating-dims).
 
 #### `runtime_dims` (RuntimeDim)
 
@@ -758,7 +761,7 @@ A shape expression gives an exact extent. Prefixed with one of the inequality op
 
 An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound, too few for a lower bound.
 
-`modflow_devtools.dfns` parses shape expressions with `parse_shape_element` and resolves them against their component with `resolve_shape_ref`; see [Parsing shape elements](dfns.md#parsing-shape-elements).
+`modflow_devtools.dfns` parses shape expressions with `parse_shape_element`; see [Parsing shape elements](dfns.md#parsing-shape-elements).
 
 #### Dimension scope
 
