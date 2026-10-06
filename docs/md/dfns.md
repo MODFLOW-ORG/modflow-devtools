@@ -205,44 +205,44 @@ See [DFN specification](dfnspec.md) for full attribute documentation.
 
 ### Evaluating dimensions and shapes
 
-A dim's `value` and an `Array`/`List` shape expression are both expressions over the component's input (see [`dims`](dfnspec.md#dims-inputdim) and [Dimensions](dfnspec.md#dimensions)). `evaluate_dim` evaluates either one, given the component's dim value expressions and a function looking up input field values:
+A dim's `value` and an `Array`/`List` shape expression are both expressions over the component's input (see [`dims`](dfnspec.md#dims-inputdim) and [Dimensions](dfnspec.md#dimensions)). `dim_value` evaluates either one, given the component's dim value expressions and a function looking up input field values:
 
 ```python
-from modflow_devtools.dfns import evaluate_dim, split_bound
+from modflow_devtools.dfns import dim_value, split_bound
 
 dis = spec.components["gwf-dis"]
 dims = {name: dim.value for name, dim in dis.dims.items()}
-evaluate_dim("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get)
+dim_value("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get)
 # 24
 ```
 
-A name that is a dim is evaluated in turn. Any other name, including an input dim's own name, goes to `lookup`. `sum(list.column)` passes `lookup` the dotted path and expects the column's values back, so how rows are stored is up to the caller. The result is `None` if an input it depends on isn't set.
+A name that is a dim is evaluated in turn. Any other name, including an input dim's own name, goes to `lookup`. `sum(list.column)` passes `lookup` the dotted path and expects the column's values back, so how rows are stored is up to the caller. The result is `None` if an input it depends on isn't set. `dims` and `lookup` are optional: without them, there are no dims and no input is set.
 
 For an inline array's shape, `lookup` should also see the fields of the array's row, since a shape may name one (cell2d's `icvert` has shape `["ncvert"]`). A row-level lookup like `packagedata.ncon(ifno)` also needs `select`, which gets the path (`"packagedata.ncon"`) and this row's `ifno` value, and returns the value from the referenced row:
 
 ```python
 from collections import ChainMap
 
-evaluate_dim("ncvert", {}, ChainMap(row, package).get)
-evaluate_dim("packagedata.ncon(ifno)", dims, row.get, select)
+dim_value("ncvert", lookup=ChainMap(row, package).get)
+dim_value("packagedata.ncon(ifno)", dims, row.get, select)
 ```
 
 A bounded shape expression (`"<=maxbound"`) is a relation, not a value. Split off the bound with `split_bound` (`("<=", "maxbound")`) and evaluate the rest.
 
-`solve_dim` is the inverse: given the extent data actually has, it returns the unset input that extent determines, and that input's value. Use it to fill in counts the user left out:
+`dim_input` is the inverse: given the length the data actually has along a dimension (how many values), it returns the unset input that length determines, and that input's value. Use it to fill in counts the user left out:
 
 ```python
-from modflow_devtools.dfns import solve_dim
+from modflow_devtools.dfns import dim_input
 
-solve_dim("nseg-1", dims, {}.get, 3)  # pxdp has 3 values
+dim_input("nseg-1", dims, length=3)  # pxdp has 3 values
 # ("nseg", 4)
-solve_dim("ncvert", {}, {}.get, 5)  # icvert has 5 values
+dim_input("ncvert", length=5)  # icvert has 5 values
 # ("ncvert", 5)
-solve_dim("auxiliary", dims, {}.get, 2)  # len(auxiliary): can't set names from a count
+dim_input("auxiliary", dims, length=2)  # len(auxiliary): can't set names from a count
 # None
 ```
 
-Only names, through dims, and adding or subtracting known values can be undone. The result is `None` if the expression has no unset input, more than one, or one under anything else (`len()`, `sum()`, `*`, a row-level lookup). In that case the data can only be checked, by evaluating the extent once its inputs are set.
+Only names, through dims, and adding or subtracting known values can be undone. The result is `None` if the expression has no unset input, more than one, or one under anything else (`len()`, `sum()`, `*`, a row-level lookup). In that case the data can only be checked, by evaluating the length once its inputs are set.
 
 Both functions work on the expression strings alone, without a loaded `Dfns`.
 

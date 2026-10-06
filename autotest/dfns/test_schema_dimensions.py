@@ -27,8 +27,8 @@ from modflow_devtools.dfns.schema import (
     _validate_list_shape_element,
     _validate_shape_element,
     _validate_sum_call,
-    evaluate_dim,
-    solve_dim,
+    dim_input,
+    dim_value,
     split_bound,
 )
 
@@ -1143,29 +1143,29 @@ _DIS_INPUTS = {
         ("nja", 30),  # not a dim: an input field
     ],
 )
-def test_evaluate_dim(name, expected):
-    assert evaluate_dim(name, _DIS_DIMS, _DIS_INPUTS.get) == expected
+def test_dim_value(name, expected):
+    assert dim_value(name, _DIS_DIMS, _DIS_INPUTS.get) == expected
 
 
 @pytest.mark.parametrize("name", ["nlay", "nodes", "naux", "nconn"])
-def test_evaluate_dim_unset_input(name):
-    assert evaluate_dim(name, _DIS_DIMS, {}.get) is None
+def test_dim_value_unset_input(name):
+    assert dim_value(name, _DIS_DIMS, {}.get) is None
 
 
-def test_evaluate_dim_inexact_division():
+def test_dim_value_inexact_division():
     with pytest.raises(ValueError, match="not an integer"):
-        evaluate_dim("njas", _DIS_DIMS, {**_DIS_INPUTS, "nja": 31}.get)
+        dim_value("njas", _DIS_DIMS, {**_DIS_INPUTS, "nja": 31}.get)
 
 
-def test_evaluate_dim_cycle():
+def test_dim_value_cycle():
     with pytest.raises(ValueError, match="cycle"):
-        evaluate_dim("a", {"a": "b + 1", "b": "a * 2"}, {}.get)
+        dim_value("a", {"a": "b + 1", "b": "a * 2"}, {}.get)
 
 
 @pytest.mark.parametrize("expr", ["nlay ** 2", "max(nlay, 1)", "nlay if nlay else 1", "1.5"])
-def test_evaluate_dim_unsupported(expr):
+def test_dim_value_unsupported(expr):
     with pytest.raises(ValueError, match="unsupported"):
-        evaluate_dim("d", {"d": expr}, {"nlay": 2}.get)
+        dim_value("d", {"d": expr}, {"nlay": 2}.get)
 
 
 class _One(int):
@@ -1181,16 +1181,16 @@ class _One(int):
         return iter([1])
 
 
-def test_evaluate_dim_snapshot_dims():
+def test_dim_value_snapshot_dims():
     """Every input dim in the current DFNs evaluates, given its inputs."""
     spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
     dis = spec.components["gwf-dis"]
     dims = {n: d.value for n, d in dis.dims.items()}
-    assert evaluate_dim("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get) == 24
+    assert dim_value("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get) == 24
     for component in spec.components.values():
         dims = {n: d.value for n, d in (component.dims or {}).items()}
         for name in dims:
-            assert evaluate_dim(name, dims, lambda _: _One()) is not None
+            assert dim_value(name, dims, lambda _: _One()) is not None
 
 
 def test_row_varying_array_must_be_rightmost():
@@ -1220,13 +1220,13 @@ _WEL_DIMS = {"maxbound": "maxbound", "auxiliary": "len(auxiliary)", "nseg": "nse
         ("ncvert", 5),  # a field in the row
     ],
 )
-def test_evaluate_dim_shape_expression(expr, expected):
+def test_dim_value_shape_expression(expr, expected):
     package = {"nseg": 4, "auxiliary": ["temp", "conc"]}
     row = {"ncvert": 5}
-    assert evaluate_dim(expr, _WEL_DIMS, ChainMap(row, package).get) == expected
+    assert dim_value(expr, _WEL_DIMS, ChainMap(row, package).get) == expected
 
 
-def test_evaluate_dim_row_lookup():
+def test_dim_value_row_lookup():
     packagedata = {1: {"ncon": 2}, 2: {"ncon": 3}}
     calls = []
 
@@ -1234,23 +1234,23 @@ def test_evaluate_dim_row_lookup():
         calls.append((path, key))
         return packagedata[key]["ncon"]
 
-    assert evaluate_dim("packagedata.ncon(ifno)", {}, {"ifno": 2}.get, select) == 3
-    assert evaluate_dim("gwf-x.packagedata.ncon(ifno)", {}, {"ifno": 1}.get, select) == 2
+    assert dim_value("packagedata.ncon(ifno)", {}, {"ifno": 2}.get, select) == 3
+    assert dim_value("gwf-x.packagedata.ncon(ifno)", {}, {"ifno": 1}.get, select) == 2
     assert calls == [("packagedata.ncon", 2), ("gwf-x.packagedata.ncon", 1)]
-    assert evaluate_dim("packagedata.ncon(ifno)", {}, {}.get, select) is None
+    assert dim_value("packagedata.ncon(ifno)", {}, {}.get, select) is None
 
 
-def test_evaluate_dim_row_lookup_needs_select():
+def test_dim_value_row_lookup_needs_select():
     with pytest.raises(ValueError, match="needs select"):
-        evaluate_dim("packagedata.ncon(ifno)", {}, {"ifno": 1}.get)
+        dim_value("packagedata.ncon(ifno)", {}, {"ifno": 1}.get)
 
 
-def test_evaluate_dim_bounded():
+def test_dim_value_bounded():
     with pytest.raises(ValueError, match="split_bound"):
-        evaluate_dim("<=maxbound", _WEL_DIMS, {"maxbound": 3}.get)
+        dim_value("<=maxbound", _WEL_DIMS, {"maxbound": 3}.get)
 
 
-def test_evaluate_dim_snapshot_shapes():
+def test_dim_value_snapshot_shapes():
     """Every array and list shape in the current DFNs evaluates, given its inputs."""
     spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
 
@@ -1269,12 +1269,12 @@ def test_evaluate_dim_snapshot_shapes():
             for field in block.fields.values():
                 for element in shapes(field):
                     _bound, expr = split_bound(element)
-                    value = evaluate_dim(expr, dims, lambda _: _One(), lambda _p, _k: 1)
+                    value = dim_value(expr, dims, lambda _: _One(), lambda _p, _k: 1)
                     assert value is not None, (component.name, element)
 
 
 @pytest.mark.parametrize(
-    "expr,inputs,value,expected",
+    "expr,inputs,length,expected",
     [
         ("ncvert", {}, 5, ("ncvert", 5)),  # a field in the row
         ("numalphaj", {}, 3, ("numalphaj", 3)),  # an input dim
@@ -1292,7 +1292,7 @@ def test_evaluate_dim_snapshot_shapes():
         ("packagedata.ncon(ifno)", {"ifno": 1}, 2, None),  # nor a row-level lookup
     ],
 )
-def test_solve_dim(expr, inputs, value, expected):
+def test_dim_input(expr, inputs, length, expected):
     dims = {
         "numalphaj": "numalphaj",
         "nseg": "nseg",
@@ -1302,12 +1302,12 @@ def test_solve_dim(expr, inputs, value, expected):
         "auxiliary": "len(auxiliary)",
         "nconn": "sum(packagedata.nlakeconn)",
     }
-    assert solve_dim(expr, dims, inputs.get, value) == expected
+    assert dim_input(expr, dims, inputs.get, length=length) == expected
 
 
-def test_solve_dim_snapshot_shapes():
+def test_dim_input_snapshot_shapes():
     """Solving any shape in the current DFNs for its sole unset input, then
-    evaluating it with that input set, gives back the extent."""
+    evaluating it with that input set, gives back the length."""
     spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
     solved = set()
     for component in spec.components.values():
@@ -1326,10 +1326,19 @@ def test_solve_dim_snapshot_shapes():
             for field in block.fields.values():
                 for element in shapes(field):
                     _bound, expr = split_bound(element)
-                    if (solution := solve_dim(expr, dims, {}.get, 7)) is None:
+                    if (solution := dim_input(expr, dims, length=7)) is None:
                         continue
                     name, n = solution
-                    assert evaluate_dim(expr, dims, {name: n}.get) == 7, (component.name, expr)
+                    assert dim_value(expr, dims, {name: n}.get) == 7, (component.name, expr)
                     solved.add(expr)
     assert {"ncvert", "numalphaj", "nseg-1", "maxbound"} <= solved
     assert "auxiliary" not in solved
+
+
+def test_dim_defaults():
+    """Without dims there are none; without a lookup no input is set."""
+    assert dim_value("2 * 3") == 6
+    assert dim_value("nlay") is None
+    assert dim_value("nlayp", {"nlayp": "nlay + 1"}) is None
+    assert dim_input("ncvert", length=5) == ("ncvert", 5)
+    assert dim_input("nlayp", {"nlayp": "nlay + 1"}, length=3) == ("nlay", 2)

@@ -32,8 +32,8 @@ from modflow_devtools.dfns.schema import (
     Simulation,
     String,
     Union,
-    evaluate_dim,
-    solve_dim,
+    dim_input,
+    dim_value,
     split_bound,
 )
 
@@ -79,9 +79,9 @@ __all__ = [
     "Simulation",
     "String",
     "Union",
-    "evaluate_dim",
+    "dim_input",
+    "dim_value",
     "fetch_dfns",
     "migrate",
-    "solve_dim",
     "split_bound",
 ]

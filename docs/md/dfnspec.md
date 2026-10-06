@@ -489,7 +489,7 @@ An array appearing as a subfield of a record is called an **inline array**. Inli
 
 ###### `shape`
 
-`[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each extent is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
+`[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each length is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
 
 Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`, and a cellid array's `ncelldim` axis comes first (see [`cellid`](#cellid)).
 
@@ -590,7 +590,7 @@ END PERIOD
 
 An **empty `shape`** means the list length is unconstrained at schema-definition time. This is the correct representation for any list whose length is determined at runtime, or by another component, rather than by a declared dimension.
 
-A **non-empty `shape`** (exactly one element) relates the list's row count to a declared dimension. A bare expression means *exactly* that many rows (`["n"]`). An expression prefixed with an inequality operator is a bound (`["<=n"]`: at most `n` rows); see [Bounds](#bounds). Whether an extent is exact or a bound must be declared; it can't be inferred from the dimension's name.
+A **non-empty `shape`** (exactly one element) relates the list's row count to a declared dimension. A bare expression means *exactly* that many rows (`["n"]`). An expression prefixed with an inequality operator is a bound (`["<=n"]`: at most `n` rows); see [Bounds](#bounds). Whether a length is exact or a bound must be declared; it can't be inferred from the dimension's name.
 
 **Note:** Some non-period lists in stress-type packages (e.g. `utl-spc`) also reference `maxbound`; these follow the same rule — `maxbound` must be an explicitly declared dimension for the shape to be meaningful.
 
@@ -627,7 +627,7 @@ The `value` attribute defines the dimension as a Python expression over the comp
 - **`sum(list.column)`** — the sum of an integer column over a list's rows (`sum(packagedata.nlakeconn)`).
 - **Arithmetic expression** `nlay * nrow * ncol` — integer literals and other dims, combined with `+`, `-`, `*`, `/` (exact) and `//`. May not use bare field names; all operands must be declared dimensions.
 
-A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. More generally, a consumer may set an unset input from data whenever an extent determines it uniquely: `nseg` from the width of an array with shape `["nseg-1"]`, or a row's `ncvert` from the length of its `icvert`. `modflow_devtools.dfns` evaluates any dimension or extent with `evaluate_dim`, and finds the input an extent determines with `solve_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
+A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. More generally, a consumer may set an unset input from data whenever a length determines it uniquely: `nseg` from the width of an array with shape `["nseg-1"]`, or a row's `ncvert` from the length of its `icvert`. `modflow_devtools.dfns` evaluates any dimension or shape expression with `dim_value`, and finds the input a length determines with `dim_input`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### `runtime_dims` (RuntimeDim)
 
@@ -757,11 +757,11 @@ connectiondata:
 
 #### Bounds
 
-A shape expression gives an exact extent. Prefixed with one of the inequality operators `<`, `<=`, `>` or `>=`, it gives a bound on the extent instead: `"<=n"` means at most `n`. Any shape expression may be bounded, including a derived dimension, arithmetic offset, or row-level column lookup (`"<=block.column(fk_field)"`), with at most one operator per extent. Bounds apply to `list` and `array` shapes. Memory variable shapes can't be bounded; MF6 allocates memory arrays at a definite size.
+A shape expression gives an exact length. Prefixed with one of the inequality operators `<`, `<=`, `>` or `>=`, it gives a bound on the length instead: `"<=n"` means at most `n`. Any shape expression may be bounded, including a derived dimension, arithmetic offset, or row-level column lookup (`"<=block.column(fk_field)"`), with at most one operator per length. Bounds apply to `list` and `array` shapes. Memory variable shapes can't be bounded; MF6 allocates memory arrays at a definite size.
 
-An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound, too few for a lower bound.
+An unprefixed length is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact length, too many for an upper bound, too few for a lower bound.
 
-`modflow_devtools.dfns` evaluates shape expressions with `evaluate_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
+`modflow_devtools.dfns` evaluates shape expressions with `dim_value`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### Dimension scope
 

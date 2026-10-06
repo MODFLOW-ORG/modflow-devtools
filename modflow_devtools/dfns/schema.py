@@ -754,11 +754,11 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
 class _DimExprs:
     """A component's dim value expressions, evaluated (and solved) over input
-    field values from ``lookup``; see :func:`evaluate_dim`."""
+    field values from ``lookup``; see :func:`dim_value`."""
 
-    def __init__(self, dims: Mapping[str, str], lookup: Callable[[str], Any]):
-        self.dims = dims
-        self.lookup = lookup
+    def __init__(self, dims: Mapping[str, str] | None, lookup: Callable[[str], Any] | None):
+        self.dims = dims or {}
+        self.lookup = lookup or (lambda _: None)
 
     def parse(self, expr: str) -> ast.expr:
         if _BOUND_RE.match(expr):
@@ -843,10 +843,10 @@ class _DimExprs:
         return None
 
 
-def evaluate_dim(
+def dim_value(
     expr: str,
-    dims: Mapping[str, str],
-    lookup: Callable[[str], Any],
+    dims: Mapping[str, str] | None = None,
+    lookup: Callable[[str], Any] | None = None,
     select: Callable[[str, Any], Any] | None = None,
 ) -> int | None:
     """
@@ -859,7 +859,8 @@ def evaluate_dim(
     gets an input field's value by name, or by dotted path for
     ``sum(list.column)`` (an iterable of the column's values), and returns None
     if the field isn't set. To evaluate an inline array's shape, ``lookup``
-    should see the fields of the array's row too.
+    should see the fields of the array's row too. Without ``dims`` there are
+    no dims; without ``lookup`` no input is set.
 
     A name that is a dim is evaluated in turn; any other name, like an input
     dim's own name, a field in the row, or a name not in ``dims``, is passed to
@@ -873,28 +874,30 @@ def evaluate_dim(
     Returns None if an input it depends on isn't set. Raises ValueError for a
     malformed expression, a cycle, or an inexact ``/``.
     """
+    exprs = _DimExprs(dims, lookup)
     if m := _LOOKUP_RE.fullmatch(expr):
         component_ref, block_name, col_name, fk_field_name = m.groups()
         if select is None:
             raise ValueError(f"{expr!r} is a row-level lookup, which needs select")
-        key = lookup(fk_field_name)
+        key = exprs.lookup(fk_field_name)
         if key is None:
             return None
         v = select(".".join(filter(None, (component_ref, block_name, col_name))), key)
         return None if v is None else int(v)
-    exprs = _DimExprs(dims, lookup)
     return exprs.evaluate(exprs.parse(expr), frozenset(), expr)
 
 
-def solve_dim(
+def dim_input(
     expr: str,
-    dims: Mapping[str, str],
-    lookup: Callable[[str], Any],
-    value: int,
+    dims: Mapping[str, str] | None = None,
+    lookup: Callable[[str], Any] | None = None,
+    *,
+    length: int,
 ) -> tuple[str, int] | None:
     """
-    The inverse of :func:`evaluate_dim`: the unset input, and its value, that
-    makes ``expr`` evaluate to ``value``. Arguments are as for ``evaluate_dim``.
+    The inverse of :func:`dim_value`: the unset input, and its value, that
+    gives ``expr`` the given ``length``: the number of values the data has
+    along that dimension. Other arguments are as for ``dim_value``.
 
     E.g. an inline array with shape ``["nseg-1"]`` and 3 values, with ``nseg``
     unset, gives ``("nseg", 4)``; one with shape ``["ncvert"]`` and 5 values,
@@ -903,13 +906,13 @@ def solve_dim(
     Only names, through dims, and ``+``/``-`` of known values can be undone.
     Returns None if ``expr`` has no unset input, more than one, or one under
     anything else, like ``len()``, ``sum()``, ``*`` or a row-level lookup, and
-    the caller can only check ``evaluate_dim`` against ``value`` once its
+    the caller can only check ``dim_value`` against ``length`` once its
     inputs are set.
     """
     if _LOOKUP_RE.fullmatch(expr):
         return None
     exprs = _DimExprs(dims, lookup)
-    return exprs.solve(exprs.parse(expr), value, frozenset(), expr)
+    return exprs.solve(exprs.parse(expr), length, frozenset(), expr)
 
 
 class BlockHeader(BaseModel):
@@ -1175,9 +1178,9 @@ def split_bound(element: str) -> "tuple[str | None, str]":
     """
     Split a shape element into its bound operator and the expression it bounds.
 
-    A bare element (``"nper"``) is an exact extent; an element prefixed with an
-    inequality operator (``"<=maxbound"``) bounds the extent instead. Returns
-    ``(operator, expression)``, with ``operator`` ``None`` for an exact extent.
+    A bare element (``"nper"``) is an exact length; an element prefixed with an
+    inequality operator (``"<=maxbound"``) bounds the length instead. Returns
+    ``(operator, expression)``, with ``operator`` ``None`` for an exact length.
     """
     if m := _BOUND_RE.match(element):
         return m.group(), element[m.end() :].strip()
@@ -1199,7 +1202,7 @@ class _ShapeRef:
     name: str
     # arithmetic offset: "nseg-1" -> -1
     offset: int = 0
-    # "<", "<=", ">" or ">=", or None for an exact extent
+    # "<", "<=", ">" or ">=", or None for an exact length
     bound: str | None = None
     # lookup only: "[component.]block.column(fk_field)"
     component: str | None = None
