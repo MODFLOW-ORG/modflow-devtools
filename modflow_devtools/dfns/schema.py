@@ -753,22 +753,31 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
 
 
 def evaluate_dim(
-    name: str,
+    expr: str,
     dims: Mapping[str, str],
     lookup: Callable[[str], Any],
+    select: Callable[[str, Any], Any] | None = None,
 ) -> int | None:
     """
-    Evaluate a dim, given its component's dim ``value`` expressions.
+    Evaluate a dimension expression: a dim's name or ``value``, or an
+    ``Array``/``List`` shape expression (without its bound; see
+    :func:`split_bound`).
 
-    ``dims`` maps dim names to value expressions (``{"nodes": "nlay * ncpl",
-    ...}``, as in ``InputDim.value``). ``lookup`` gets an input field's value
-    by name, or by dotted path for ``sum(list.column)`` (an iterable of the
-    column's values), and returns None if the field isn't set.
+    ``dims`` maps the component's dim names to their value expressions
+    (``{"nodes": "nlay * ncpl", ...}``, as in ``InputDim.value``). ``lookup``
+    gets an input field's value by name, or by dotted path for
+    ``sum(list.column)`` (an iterable of the column's values), and returns None
+    if the field isn't set. To evaluate an inline array's shape, ``lookup``
+    should see the fields of the array's row too.
 
-    A name in an expression that is another dim is evaluated in turn; any
-    other name, like an input dim's own name or one not in ``dims``, is an
-    input field, passed to ``lookup``. Expressions may use integer literals,
-    ``+``, ``-``, ``*``, ``/`` (exact), ``//``, ``len()`` and ``sum()``.
+    A name that is a dim is evaluated in turn; any other name, like an input
+    dim's own name, a field in the row, or a name not in ``dims``, is passed to
+    ``lookup``. Expressions may use integer literals, ``+``, ``-``, ``*``,
+    ``/`` (exact), ``//``, ``len()`` and ``sum()``.
+
+    A row-level lookup, ``[component.]block.column(fk_field)``, needs
+    ``select``: given the path ``"[component.]block.column"`` and the row's
+    ``fk_field`` value, it returns that column's value in the referenced row.
 
     Returns None if an input it depends on isn't set. Raises ValueError for a
     malformed expression, a cycle, or an inexact ``/``.
@@ -830,7 +839,22 @@ def evaluate_dim(
             return len(v) if node.func.id == "len" else int(sum(v))
         raise ValueError(f"unsupported expression in {expr!r}: {ast.unparse(node)!r}")
 
-    return dim(name, frozenset())
+    if _BOUND_RE.match(expr):
+        raise ValueError(f"{expr!r} is bounded; split off the bound with split_bound")
+    if m := _LOOKUP_RE.fullmatch(expr):
+        component_ref, block_name, col_name, fk_field_name = m.groups()
+        if select is None:
+            raise ValueError(f"{expr!r} is a row-level lookup, which needs select")
+        key = lookup(fk_field_name)
+        if key is None:
+            return None
+        v = select(".".join(filter(None, (component_ref, block_name, col_name))), key)
+        return None if v is None else int(v)
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError as e:
+        raise ValueError(f"invalid expression {expr!r}: {e}") from e
+    return ev(tree.body, frozenset(), expr)
 
 
 class BlockHeader(BaseModel):
@@ -1106,9 +1130,9 @@ def split_bound(element: str) -> "tuple[str | None, str]":
 
 
 @dataclass(frozen=True)
-class ShapeRef:
+class _ShapeRef:
     """
-    A parsed shape element; see :func:`parse_shape_element`.
+    A parsed shape element; see :func:`_parse_shape_element`.
 
     ``kind`` is ``"dim"`` for a dim reference, ``"sibling"`` for a reference
     to an Integer subfield of the same record (an inline count on the same
@@ -1128,7 +1152,7 @@ class ShapeRef:
     fk_field: str | None = None
 
 
-def parse_shape_element(element: str, record: "Record | None" = None) -> ShapeRef:
+def _parse_shape_element(element: str, record: "Record | None" = None) -> _ShapeRef:
     """
     Parse one element of an ``Array.shape`` or ``List.shape``.
 
@@ -1147,7 +1171,7 @@ def parse_shape_element(element: str, record: "Record | None" = None) -> ShapeRe
         )
     if m := _LOOKUP_RE.fullmatch(core):
         component_ref, block_name, col_name, fk_field_name = m.groups()
-        return ShapeRef(
+        return _ShapeRef(
             "lookup",
             col_name,
             bound=bound,
@@ -1163,7 +1187,7 @@ def parse_shape_element(element: str, record: "Record | None" = None) -> ShapeRe
     else:
         raise ValueError(f"invalid shape element {element!r}: {_SHAPE_FORMS}")
     sibling = record is not None and isinstance(record.fields.get(name), Integer)
-    return ShapeRef("sibling" if sibling else "dim", name, offset=offset, bound=bound)
+    return _ShapeRef("sibling" if sibling else "dim", name, offset=offset, bound=bound)
 
 
 def _find_list_in_block(component: "ComponentBase", block_name: str) -> "List | None":
@@ -1191,18 +1215,27 @@ def _check_shape_element(
     column in a list block (in ``component``, or with ``spec`` another
     component), selected by a sibling whose ``fk`` references that block.
 
+    A sibling or lookup varies by row, so the array must be the rightmost
+    field in its record, like a self-sizing array: a reader can't know where
+    fields after it start.
+
     Raises ValueError on any violation.
     """
     try:
-        ref = parse_shape_element(element, enclosing_record)
+        ref = _parse_shape_element(element, enclosing_record)
         _check_shape_ref(element, ref, known_dims, component, enclosing_record, spec)
+        if ref.kind != "dim" and list(enclosing_record.fields)[-1] != field.name:  # type: ignore
+            raise ValueError(
+                f"invalid shape element {element!r}: it varies by row, so "
+                f"{field.name!r} must be the rightmost field in its record"
+            )
     except ValueError as e:
         raise ValueError(f"{type(field).__name__} {field.name!r} has {e}") from None
 
 
 def _check_shape_ref(
     element: str,
-    ref: ShapeRef,
+    ref: _ShapeRef,
     known_dims: set[str],
     component: "ComponentBase | None",
     enclosing_record: "Record | None",

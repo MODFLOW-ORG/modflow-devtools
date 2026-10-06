@@ -479,7 +479,7 @@ Arrays are not proper composites. An array does not have an item subfield as doe
 
 A 1D array may have absent or empty `shape`, indicating no constraint on its size, in which case it is called **self-sizing**. Self-sizing arrays are parsed by MF6 dynamically at runtime. The size of a self-sizing array may serve as a dimension for other arrays (see below).
 
-An array appearing as a subfield of a record is called an **inline array**. Inline arrays with a declared shape are self-explanatory: their elements are written on the record's line, in [shape order](#shape). An inline array may only be self-sizing if it is the right-most subfield of the record; in this case the record is essentially a variadic tuple.
+An array appearing as a subfield of a record is called an **inline array**. Inline arrays with a declared shape are self-explanatory: their elements are written on the record's line, in [shape order](#shape). An inline array may only be self-sizing if it is the right-most subfield of the record; in this case the record is essentially a variadic tuple. The same goes for an inline array whose size varies by row, i.e. whose shape names a sibling field or a column of another list's row (see [Dimensions](#dimensions)): a reader couldn't tell where fields after it start.
 
 ##### Type-specific attributes
 
@@ -627,7 +627,7 @@ The `value` attribute defines the dimension as a Python expression over the comp
 - **`sum(list.column)`** — the sum of an integer column over a list's rows (`sum(packagedata.nlakeconn)`).
 - **Arithmetic expression** `nlay * nrow * ncol` — integer literals and other dims, combined with `+`, `-`, `*`, `/` (exact) and `//`. May not use bare field names; all operands must be declared dimensions.
 
-A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. `modflow_devtools.dfns` evaluates any dimension with `evaluate_dim`; see [Evaluating dims](dfns.md#evaluating-dims).
+A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. `modflow_devtools.dfns` evaluates any dimension with `evaluate_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### `runtime_dims` (RuntimeDim)
 
@@ -761,7 +761,7 @@ A shape expression gives an exact extent. Prefixed with one of the inequality op
 
 An unprefixed extent is exact, so a DFN must mark every bound. A consumer may reject input that doesn't satisfy the relation: too many or too few rows for an exact extent, too many for an upper bound, too few for a lower bound.
 
-`modflow_devtools.dfns` parses shape expressions with `parse_shape_element`; see [Parsing shape elements](dfns.md#parsing-shape-elements).
+`modflow_devtools.dfns` evaluates shape expressions with `evaluate_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### Dimension scope
 

@@ -203,41 +203,12 @@ Available field types:
 
 See [DFN specification](dfnspec.md) for full attribute documentation.
 
-### Parsing shape elements
+### Evaluating dimensions and shapes
 
-`Array.shape` and `List.shape` elements are strings in a small grammar (see [Dimensions](dfnspec.md#dimensions) and [Bounds](dfnspec.md#bounds)). `parse_shape_element` parses one into a `ShapeRef`:
-
-```python
-from modflow_devtools.dfns import parse_shape_element
-
-parse_shape_element("nseg-1")
-# ShapeRef(kind="dim", name="nseg", offset=-1)
-parse_shape_element("<=maxats")
-# ShapeRef(kind="dim", name="maxats", bound="<=")
-parse_shape_element("packagedata.ncon(ifno)")
-# ShapeRef(kind="lookup", name="ncon", block="packagedata", fk_field="ifno")
-```
-
-`bound` is the inequality operator, or `None` for an exact extent. A `"lookup"` also sets `block`, `fk_field` and, for a cross-component lookup, `component`.
-
-For an inline array, pass the record it's in: a name that is an Integer subfield of the record is a `"sibling"`, an inline count on the same row, rather than a `"dim"`:
+A dim's `value` and an `Array`/`List` shape expression are both expressions over the component's input (see [`dims`](dfnspec.md#dims-inputdim) and [Dimensions](dfnspec.md#dimensions)). `evaluate_dim` evaluates either one, given the component's dim value expressions and a function looking up input field values:
 
 ```python
-cell2d = spec.components["gwf-disv"].blocks["cell2d"].fields["cell2d"].item
-parse_shape_element("ncvert", cell2d)
-# ShapeRef(kind="sibling", name="ncvert")
-```
-
-A malformed element raises `ValueError`. Whether a reference resolves (the dim exists, the lookup's column and foreign key line up) is checked when `Dfns` loads. Loading also rejects a name that is both a dim and a sibling, so the record is all the context `parse_shape_element` needs.
-
-`split_bound` splits off just the bound: `split_bound("<=maxbound")` returns `("<=", "maxbound")`.
-
-### Evaluating dims
-
-A dim's `value` is an expression over the component's input (see [`dims`](dfnspec.md#dims-inputdim)). `evaluate_dim` evaluates one, given the dim value expressions and a function looking up input field values:
-
-```python
-from modflow_devtools.dfns import evaluate_dim
+from modflow_devtools.dfns import evaluate_dim, split_bound
 
 dis = spec.components["gwf-dis"]
 dims = {name: dim.value for name, dim in dis.dims.items()}
@@ -245,7 +216,18 @@ evaluate_dim("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get)
 # 24
 ```
 
-A name that is another dim is evaluated in turn. Any other name, including an input dim's own name or a name not in `dims`, goes to `lookup`. `sum(list.column)` passes `lookup` the dotted path and expects the column's values back, so how rows are stored is up to the caller. The result is `None` if an input it depends on isn't set.
+A name that is a dim is evaluated in turn. Any other name, including an input dim's own name, goes to `lookup`. `sum(list.column)` passes `lookup` the dotted path and expects the column's values back, so how rows are stored is up to the caller. The result is `None` if an input it depends on isn't set.
+
+For an inline array's shape, `lookup` should also see the fields of the array's row, since a shape may name one (cell2d's `icvert` has shape `["ncvert"]`). A row-level lookup like `packagedata.ncon(ifno)` also needs `select`, which gets the path (`"packagedata.ncon"`) and this row's `ifno` value, and returns the value from the referenced row:
+
+```python
+from collections import ChainMap
+
+evaluate_dim("ncvert", {}, ChainMap(row, package).get)
+evaluate_dim("packagedata.ncon(ifno)", dims, row.get, select)
+```
+
+A bounded shape expression (`"<=maxbound"`) is a relation, not a value. Split off the bound with `split_bound` (`("<=", "maxbound")`) and evaluate the rest.
 
 It works on the expression strings alone, without a loaded `Dfns`.
 

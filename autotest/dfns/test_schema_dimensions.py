@@ -1,6 +1,7 @@
 """Tests for DFN schema array shape expressions and dimension resolution"""
 
 import ast
+from collections import ChainMap
 
 import pytest
 
@@ -9,6 +10,7 @@ from modflow_devtools.dfns.schema import (
     Array,
     Block,
     Dfns,
+    Double,
     InputDim,
     Integer,
     List,
@@ -16,16 +18,16 @@ from modflow_devtools.dfns.schema import (
     Package,
     Record,
     RuntimeDim,
-    ShapeRef,
     String,
     _names_in_expr,
+    _parse_shape_element,
     _resolve_derived_dims,
+    _ShapeRef,
     _validate_len_call,
     _validate_list_shape_element,
     _validate_shape_element,
     _validate_sum_call,
     evaluate_dim,
-    parse_shape_element,
     split_bound,
 )
 
@@ -537,28 +539,28 @@ def test_validate_shape_element_fk_block_mismatch():
 @pytest.mark.parametrize(
     "element,expected",
     [
-        ("nvert", ShapeRef("dim", "nvert")),
-        ("nseg-1", ShapeRef("dim", "nseg", offset=-1)),
-        ("ncol + 1", ShapeRef("dim", "ncol", offset=1)),
-        ("<=maxats", ShapeRef("dim", "maxats", bound="<=")),
-        (">= nper", ShapeRef("dim", "nper", bound=">=")),
-        ("<ncol - 2", ShapeRef("dim", "ncol", offset=-2, bound="<")),
+        ("nvert", _ShapeRef("dim", "nvert")),
+        ("nseg-1", _ShapeRef("dim", "nseg", offset=-1)),
+        ("ncol + 1", _ShapeRef("dim", "ncol", offset=1)),
+        ("<=maxats", _ShapeRef("dim", "maxats", bound="<=")),
+        (">= nper", _ShapeRef("dim", "nper", bound=">=")),
+        ("<ncol - 2", _ShapeRef("dim", "ncol", offset=-2, bound="<")),
         (
             "packagedata.ncon(ifno)",
-            ShapeRef("lookup", "ncon", block="packagedata", fk_field="ifno"),
+            _ShapeRef("lookup", "ncon", block="packagedata", fk_field="ifno"),
         ),
         (
             "gwf-x.block.col(fk)",
-            ShapeRef("lookup", "col", component="gwf-x", block="block", fk_field="fk"),
+            _ShapeRef("lookup", "col", component="gwf-x", block="block", fk_field="fk"),
         ),
         (
             "<=packagedata.ncon(ifno)",
-            ShapeRef("lookup", "ncon", bound="<=", block="packagedata", fk_field="ifno"),
+            _ShapeRef("lookup", "ncon", bound="<=", block="packagedata", fk_field="ifno"),
         ),
     ],
 )
 def test_parse_shape_element(element, expected):
-    assert parse_shape_element(element) == expected
+    assert _parse_shape_element(element) == expected
 
 
 @pytest.mark.parametrize(
@@ -575,22 +577,22 @@ def test_parse_shape_element(element, expected):
 )
 def test_parse_shape_element_invalid(element, match):
     with pytest.raises(ValueError, match=match):
-        parse_shape_element(element)
+        _parse_shape_element(element)
 
 
 def test_parse_shape_element_sibling():
     ncvert = Integer(name="ncvert")
     arr = Array(name="icvert", dtype="integer", shape=["ncvert"])
     enc = Record(name="item", fields={"ncvert": ncvert, "icvert": arr})
-    assert parse_shape_element("ncvert", enc) == ShapeRef("sibling", "ncvert")
-    assert parse_shape_element("ncvert") == ShapeRef("dim", "ncvert")
-    assert parse_shape_element("nvert", enc) == ShapeRef("dim", "nvert")
+    assert _parse_shape_element("ncvert", enc) == _ShapeRef("sibling", "ncvert")
+    assert _parse_shape_element("ncvert") == _ShapeRef("dim", "ncvert")
+    assert _parse_shape_element("nvert", enc) == _ShapeRef("dim", "nvert")
 
 
 def test_parse_shape_element_non_integer_not_sibling():
     arr = Array(name="vals", dtype="double", shape=["n"])
     enc = Record(name="item", fields={"n": String(name="n"), "vals": arr})
-    assert parse_shape_element("n", enc).kind == "dim"
+    assert _parse_shape_element("n", enc).kind == "dim"
 
 
 def test_validate_shape_element_sibling():
@@ -1188,3 +1190,83 @@ def test_evaluate_dim_snapshot_dims():
         dims = {n: d.value for n, d in (component.dims or {}).items()}
         for name in dims:
             assert evaluate_dim(name, dims, lambda _: _One()) is not None
+
+
+def test_row_varying_array_must_be_rightmost():
+    ncvert = Integer(name="ncvert")
+    icvert = Array(name="icvert", dtype="integer", shape=["ncvert"])
+    xc = Double(name="xc")
+    enc = Record(name="item", fields={"ncvert": ncvert, "icvert": icvert, "xc": xc})
+    with pytest.raises(ValueError, match="must be the rightmost field"):
+        _validate_shape_element("ncvert", icvert, _pkg("test"), enc, set())
+
+
+def test_row_varying_lookup_must_be_rightmost():
+    arr, enc, pkg, known = _lookup_ctx()
+    enc = Record(name="item", fields={**enc.fields, "after": Double(name="after")})
+    with pytest.raises(ValueError, match="must be the rightmost field"):
+        _validate_shape_element("packagedata.nlakeconn(lakeno)", arr, pkg, enc, known)
+
+
+_WEL_DIMS = {"maxbound": "maxbound", "auxiliary": "len(auxiliary)", "nseg": "nseg"}
+
+
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        ("nseg-1", 3),  # a dim, offset
+        ("auxiliary", 2),  # a derived dim
+        ("ncvert", 5),  # a field in the row
+    ],
+)
+def test_evaluate_dim_shape_expression(expr, expected):
+    package = {"nseg": 4, "auxiliary": ["temp", "conc"]}
+    row = {"ncvert": 5}
+    assert evaluate_dim(expr, _WEL_DIMS, ChainMap(row, package).get) == expected
+
+
+def test_evaluate_dim_row_lookup():
+    packagedata = {1: {"ncon": 2}, 2: {"ncon": 3}}
+    calls = []
+
+    def select(path, key):
+        calls.append((path, key))
+        return packagedata[key]["ncon"]
+
+    assert evaluate_dim("packagedata.ncon(ifno)", {}, {"ifno": 2}.get, select) == 3
+    assert evaluate_dim("gwf-x.packagedata.ncon(ifno)", {}, {"ifno": 1}.get, select) == 2
+    assert calls == [("packagedata.ncon", 2), ("gwf-x.packagedata.ncon", 1)]
+    assert evaluate_dim("packagedata.ncon(ifno)", {}, {}.get, select) is None
+
+
+def test_evaluate_dim_row_lookup_needs_select():
+    with pytest.raises(ValueError, match="needs select"):
+        evaluate_dim("packagedata.ncon(ifno)", {}, {"ifno": 1}.get)
+
+
+def test_evaluate_dim_bounded():
+    with pytest.raises(ValueError, match="split_bound"):
+        evaluate_dim("<=maxbound", _WEL_DIMS, {"maxbound": 3}.get)
+
+
+def test_evaluate_dim_snapshot_shapes():
+    """Every array and list shape in the current DFNs evaluates, given its inputs."""
+    spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
+
+    def shapes(field):
+        if isinstance(field, (Array, List)):
+            yield from field.shape
+        if isinstance(field, List):
+            yield from shapes(field.item)
+        children = getattr(field, "fields", None) or getattr(field, "arms", None) or {}
+        for child in children.values():
+            yield from shapes(child)
+
+    for component in spec.components.values():
+        dims = {n: d.value for n, d in (component.dims or {}).items()}
+        for block in (component.blocks or {}).values():
+            for field in block.fields.values():
+                for element in shapes(field):
+                    _bound, expr = split_bound(element)
+                    value = evaluate_dim(expr, dims, lambda _: _One(), lambda _p, _k: 1)
+                    assert value is not None, (component.name, element)

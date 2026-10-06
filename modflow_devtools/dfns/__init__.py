@@ -29,12 +29,10 @@ from modflow_devtools.dfns.schema import (
     Record,
     RuntimeDim,
     Scalar,
-    ShapeRef,
     Simulation,
     String,
     Union,
     evaluate_dim,
-    parse_shape_element,
     split_bound,
 )
 
@@ -77,13 +75,11 @@ __all__ = [
     "RemoteDfnRegistry",
     "RuntimeDim",
     "Scalar",
-    "ShapeRef",
     "Simulation",
     "String",
     "Union",
     "evaluate_dim",
     "fetch_dfns",
     "migrate",
-    "parse_shape_element",
     "split_bound",
 ]
