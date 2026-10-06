@@ -28,6 +28,7 @@ from modflow_devtools.dfns.schema import (
     _validate_shape_element,
     _validate_sum_call,
     evaluate_dim,
+    solve_dim,
     split_bound,
 )
 
@@ -1270,3 +1271,65 @@ def test_evaluate_dim_snapshot_shapes():
                     _bound, expr = split_bound(element)
                     value = evaluate_dim(expr, dims, lambda _: _One(), lambda _p, _k: 1)
                     assert value is not None, (component.name, element)
+
+
+@pytest.mark.parametrize(
+    "expr,inputs,value,expected",
+    [
+        ("ncvert", {}, 5, ("ncvert", 5)),  # a field in the row
+        ("numalphaj", {}, 3, ("numalphaj", 3)),  # an input dim
+        ("nseg-1", {}, 3, ("nseg", 4)),
+        ("1 + nseg", {}, 3, ("nseg", 2)),
+        ("10 - nseg", {}, 3, ("nseg", 7)),
+        ("-nseg", {}, -3, ("nseg", 3)),
+        ("nlay", {}, 2, ("nlay", 2)),
+        ("nlayp", {}, 3, ("nlay", 2)),  # through a derived dim
+        ("nseg-1", {"nseg": 4}, 3, None),  # nothing unset
+        ("auxiliary", {}, 2, None),  # len() can't be undone
+        ("nconn", {}, 6, None),  # nor sum()
+        ("ncpl", {"nrow": 3}, 12, None),  # nor *
+        ("nlay + nseg", {}, 5, None),  # two unset inputs
+        ("packagedata.ncon(ifno)", {"ifno": 1}, 2, None),  # nor a row-level lookup
+    ],
+)
+def test_solve_dim(expr, inputs, value, expected):
+    dims = {
+        "numalphaj": "numalphaj",
+        "nseg": "nseg",
+        "nlay": "nlay",
+        "nlayp": "nlay + 1",
+        "ncpl": "nrow * ncol",
+        "auxiliary": "len(auxiliary)",
+        "nconn": "sum(packagedata.nlakeconn)",
+    }
+    assert solve_dim(expr, dims, inputs.get, value) == expected
+
+
+def test_solve_dim_snapshot_shapes():
+    """Solving any shape in the current DFNs for its sole unset input, then
+    evaluating it with that input set, gives back the extent."""
+    spec = Dfns.load(_DEV3_SNAPSHOT_DIR)
+    solved = set()
+    for component in spec.components.values():
+        dims = {n: d.value for n, d in (component.dims or {}).items()}
+
+        def shapes(field):
+            if isinstance(field, (Array, List)):
+                yield from field.shape
+            if isinstance(field, List):
+                yield from shapes(field.item)
+            children = getattr(field, "fields", None) or getattr(field, "arms", None) or {}
+            for child in children.values():
+                yield from shapes(child)
+
+        for block in (component.blocks or {}).values():
+            for field in block.fields.values():
+                for element in shapes(field):
+                    _bound, expr = split_bound(element)
+                    if (solution := solve_dim(expr, dims, {}.get, 7)) is None:
+                        continue
+                    name, n = solution
+                    assert evaluate_dim(expr, dims, {name: n}.get) == 7, (component.name, expr)
+                    solved.add(expr)
+    assert {"ncvert", "numalphaj", "nseg-1", "maxbound"} <= solved
+    assert "auxiliary" not in solved

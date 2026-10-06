@@ -627,7 +627,7 @@ The `value` attribute defines the dimension as a Python expression over the comp
 - **`sum(list.column)`** — the sum of an integer column over a list's rows (`sum(packagedata.nlakeconn)`).
 - **Arithmetic expression** `nlay * nrow * ncol` — integer literals and other dims, combined with `+`, `-`, `*`, `/` (exact) and `//`. May not use bare field names; all operands must be declared dimensions.
 
-A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. `modflow_devtools.dfns` evaluates any dimension with `evaluate_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
+A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. More generally, a consumer may set an unset input from data whenever an extent determines it uniquely: `nseg` from the width of an array with shape `["nseg-1"]`, or a row's `ncvert` from the length of its `icvert`. `modflow_devtools.dfns` evaluates any dimension or extent with `evaluate_dim`, and finds the input an extent determines with `solve_dim`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### `runtime_dims` (RuntimeDim)
 

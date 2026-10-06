@@ -229,7 +229,22 @@ evaluate_dim("packagedata.ncon(ifno)", dims, row.get, select)
 
 A bounded shape expression (`"<=maxbound"`) is a relation, not a value. Split off the bound with `split_bound` (`("<=", "maxbound")`) and evaluate the rest.
 
-It works on the expression strings alone, without a loaded `Dfns`.
+`solve_dim` is the inverse: given the extent data actually has, it returns the unset input that extent determines, and that input's value. Use it to fill in counts the user left out:
+
+```python
+from modflow_devtools.dfns import solve_dim
+
+solve_dim("nseg-1", dims, {}.get, 3)  # pxdp has 3 values
+# ("nseg", 4)
+solve_dim("ncvert", {}, {}.get, 5)  # icvert has 5 values
+# ("ncvert", 5)
+solve_dim("auxiliary", dims, {}.get, 2)  # len(auxiliary): can't set names from a count
+# None
+```
+
+Only names, through dims, and adding or subtracting known values can be undone. The result is `None` if the expression has no unset input, more than one, or one under anything else (`len()`, `sum()`, `*`, a row-level lookup). In that case the data can only be checked, by evaluating the extent once its inputs are set.
+
+Both functions work on the expression strings alone, without a loaded `Dfns`.
 
 ### Rendering block templates
 

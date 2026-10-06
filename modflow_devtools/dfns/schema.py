@@ -752,6 +752,97 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
     return order
 
 
+class _DimExprs:
+    """A component's dim value expressions, evaluated (and solved) over input
+    field values from ``lookup``; see :func:`evaluate_dim`."""
+
+    def __init__(self, dims: Mapping[str, str], lookup: Callable[[str], Any]):
+        self.dims = dims
+        self.lookup = lookup
+
+    def parse(self, expr: str) -> ast.expr:
+        if _BOUND_RE.match(expr):
+            raise ValueError(f"{expr!r} is bounded; split off the bound with split_bound")
+        try:
+            return ast.parse(expr, mode="eval").body
+        except SyntaxError as e:
+            raise ValueError(f"invalid expression {expr!r}: {e}") from e
+
+    def dim(self, name: str, seen: frozenset[str]) -> "tuple[str, ast.expr] | None":
+        """A dim's value expression and its tree, or None for an input."""
+        expr = self.dims.get(name, name)
+        if expr == name:
+            return None
+        if name in seen:
+            raise ValueError(f"cycle in dims at {name!r}")
+        return expr, self.parse(expr)
+
+    def path(self, node: ast.expr, expr: str) -> str:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return f"{self.path(node.value, expr)}.{node.attr}"
+        raise ValueError(f"unsupported argument in {expr!r}: {ast.unparse(node)!r}")
+
+    def evaluate(self, node: ast.expr, seen: frozenset[str], expr: str) -> int | None:
+        if isinstance(node, ast.Constant) and type(node.value) is int:
+            return node.value
+        if isinstance(node, ast.Name):
+            if (d := self.dim(node.id, seen)) is None:
+                v = self.lookup(node.id)
+                return None if v is None else int(v)
+            return self.evaluate(d[1], seen | {node.id}, d[0])
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            v = self.evaluate(node.operand, seen, expr)
+            return None if v is None else -v
+        if isinstance(node, ast.BinOp) and isinstance(
+            node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv)
+        ):
+            a, b = self.evaluate(node.left, seen, expr), self.evaluate(node.right, seen, expr)
+            if a is None or b is None:
+                return None
+            if isinstance(node.op, ast.Add):
+                return a + b
+            if isinstance(node.op, ast.Sub):
+                return a - b
+            if isinstance(node.op, ast.Mult):
+                return a * b
+            if isinstance(node.op, ast.Div) and a % b:
+                raise ValueError(f"{a} / {b} is not an integer in {expr!r}")
+            return a // b
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in ("len", "sum")
+            and len(node.args) == 1
+            and not node.keywords
+        ):
+            v = self.lookup(self.path(node.args[0], expr))
+            if v is None:
+                return None
+            return len(v) if node.func.id == "len" else int(sum(v))
+        raise ValueError(f"unsupported expression in {expr!r}: {ast.unparse(node)!r}")
+
+    def solve(
+        self, node: ast.expr, value: int, seen: frozenset[str], expr: str
+    ) -> "tuple[str, int] | None":
+        if isinstance(node, ast.Name):
+            if (d := self.dim(node.id, seen)) is None:
+                return (node.id, value) if self.lookup(node.id) is None else None
+            return self.solve(d[1], value, seen | {node.id}, d[0])
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            return self.solve(node.operand, -value, seen, expr)
+        if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub)):
+            a, b = self.evaluate(node.left, seen, expr), self.evaluate(node.right, seen, expr)
+            add = isinstance(node.op, ast.Add)
+            if a is None and b is not None:
+                return self.solve(node.left, value - b if add else value + b, seen, expr)
+            if b is None and a is not None:
+                return self.solve(node.right, value - a if add else a - value, seen, expr)
+        # anything else (len(), sum(), *, /, ...) can't be undone
+        return None
+
+
 def evaluate_dim(
     expr: str,
     dims: Mapping[str, str],
@@ -782,65 +873,6 @@ def evaluate_dim(
     Returns None if an input it depends on isn't set. Raises ValueError for a
     malformed expression, a cycle, or an inexact ``/``.
     """
-
-    def dim(n: str, seen: frozenset[str]) -> int | None:
-        expr = dims.get(n, n)
-        if expr == n:
-            v = lookup(n)
-            return None if v is None else int(v)
-        if n in seen:
-            raise ValueError(f"cycle in dims at {n!r}")
-        try:
-            tree = ast.parse(expr, mode="eval")
-        except SyntaxError as e:
-            raise ValueError(f"invalid dim {n!r}: {expr!r}: {e}") from e
-        return ev(tree.body, seen | {n}, expr)
-
-    def path(node: ast.expr, expr: str) -> str:
-        if isinstance(node, ast.Name):
-            return node.id
-        if isinstance(node, ast.Attribute):
-            return f"{path(node.value, expr)}.{node.attr}"
-        raise ValueError(f"unsupported argument in {expr!r}: {ast.unparse(node)!r}")
-
-    def ev(node: ast.expr, seen: frozenset[str], expr: str) -> int | None:
-        if isinstance(node, ast.Constant) and type(node.value) is int:
-            return node.value
-        if isinstance(node, ast.Name):
-            return dim(node.id, seen)
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-            v = ev(node.operand, seen, expr)
-            return None if v is None else -v
-        if isinstance(node, ast.BinOp) and isinstance(
-            node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv)
-        ):
-            a, b = ev(node.left, seen, expr), ev(node.right, seen, expr)
-            if a is None or b is None:
-                return None
-            if isinstance(node.op, ast.Add):
-                return a + b
-            if isinstance(node.op, ast.Sub):
-                return a - b
-            if isinstance(node.op, ast.Mult):
-                return a * b
-            if isinstance(node.op, ast.Div) and a % b:
-                raise ValueError(f"{a} / {b} is not an integer in {expr!r}")
-            return a // b
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id in ("len", "sum")
-            and len(node.args) == 1
-            and not node.keywords
-        ):
-            v = lookup(path(node.args[0], expr))
-            if v is None:
-                return None
-            return len(v) if node.func.id == "len" else int(sum(v))
-        raise ValueError(f"unsupported expression in {expr!r}: {ast.unparse(node)!r}")
-
-    if _BOUND_RE.match(expr):
-        raise ValueError(f"{expr!r} is bounded; split off the bound with split_bound")
     if m := _LOOKUP_RE.fullmatch(expr):
         component_ref, block_name, col_name, fk_field_name = m.groups()
         if select is None:
@@ -850,11 +882,34 @@ def evaluate_dim(
             return None
         v = select(".".join(filter(None, (component_ref, block_name, col_name))), key)
         return None if v is None else int(v)
-    try:
-        tree = ast.parse(expr, mode="eval")
-    except SyntaxError as e:
-        raise ValueError(f"invalid expression {expr!r}: {e}") from e
-    return ev(tree.body, frozenset(), expr)
+    exprs = _DimExprs(dims, lookup)
+    return exprs.evaluate(exprs.parse(expr), frozenset(), expr)
+
+
+def solve_dim(
+    expr: str,
+    dims: Mapping[str, str],
+    lookup: Callable[[str], Any],
+    value: int,
+) -> tuple[str, int] | None:
+    """
+    The inverse of :func:`evaluate_dim`: the unset input, and its value, that
+    makes ``expr`` evaluate to ``value``. Arguments are as for ``evaluate_dim``.
+
+    E.g. an inline array with shape ``["nseg-1"]`` and 3 values, with ``nseg``
+    unset, gives ``("nseg", 4)``; one with shape ``["ncvert"]`` and 5 values,
+    with the row's ``ncvert`` unset, gives ``("ncvert", 5)``.
+
+    Only names, through dims, and ``+``/``-`` of known values can be undone.
+    Returns None if ``expr`` has no unset input, more than one, or one under
+    anything else, like ``len()``, ``sum()``, ``*`` or a row-level lookup, and
+    the caller can only check ``evaluate_dim`` against ``value`` once its
+    inputs are set.
+    """
+    if _LOOKUP_RE.fullmatch(expr):
+        return None
+    exprs = _DimExprs(dims, lookup)
+    return exprs.solve(exprs.parse(expr), value, frozenset(), expr)
 
 
 class BlockHeader(BaseModel):
