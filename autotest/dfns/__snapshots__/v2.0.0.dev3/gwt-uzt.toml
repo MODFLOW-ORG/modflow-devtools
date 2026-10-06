@@ -466,17 +466,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.flow-ja-face.arms.ifno]
+[observations.flow-ja-face.arms.ifno_ifno2]
 type = "record"
 tagged = false
 
-[observations.flow-ja-face.arms.ifno.fields.ifno]
+[observations.flow-ja-face.arms.ifno_ifno2.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.flow-ja-face.arms.ifno.fields.ifno2]
+[observations.flow-ja-face.arms.ifno_ifno2.fields.ifno2]
 type = "integer"
 tagged = false
 index = true

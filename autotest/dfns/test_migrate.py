@@ -425,8 +425,28 @@ _NAME = ("boundname",)
             [(("index", "packagedata.ifno"), ("double", "depth")), (_NAME, ("double", "depth"))],
         ),
         ("gwf-uzf", "uzet", [(("index", "packagedata.ifno"),), (_NAME,)]),
-        # a connection number follows a lake number, but not a boundname
-        ("gwf-lak", "lak", [(("index", "packagedata.ifno"), ("index", None)), (_NAME,)]),
+        # a connection number or a boundname follows a lake/well number,
+        # but nothing follows a boundname
+        (
+            "gwf-lak",
+            "lak",
+            [
+                (("index", "packagedata.ifno"), ("index", None)),
+                (("index", "packagedata.ifno"), _NAME),
+                (_NAME,),
+            ],
+        ),
+        (
+            "gwf-maw",
+            "conductance",
+            [
+                (("index", "packagedata.ifno"), ("index", None)),
+                (("index", "packagedata.ifno"), _NAME),
+                (_NAME,),
+            ],
+        ),
+        # APT packages read id2 as a number only
+        ("gwt-lkt", "lkt", [(("index", "packagedata.ifno"), ("index", None)), (_NAME,)]),
         ("gwf-lak", "outlet", [(("index", "outlets.outletno"),), (_NAME,)]),
         (
             "gwt-lkt",

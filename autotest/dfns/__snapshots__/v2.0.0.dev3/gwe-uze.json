@@ -539,7 +539,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "uzfno": {
+        "uzfno_uzfno2": {
           "type": "record",
           "tagged": false,
           "fields": {

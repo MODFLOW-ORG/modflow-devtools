@@ -997,7 +997,7 @@ observations:
     type: union
     tagged: false
     arms:
-      ifno:
+      ifno_iconn:
         type: record
         tagged: false
         fields:
@@ -1010,6 +1010,18 @@ observations:
             type: integer
             tagged: false
             index: true
+      ifno_boundname:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          boundname:
+            type: string
+            tagged: false
       boundname:
         type: string
         tagged: false
@@ -1017,7 +1029,7 @@ observations:
     type: union
     tagged: false
     arms:
-      ifno:
+      ifno_iconn:
         type: record
         tagged: false
         fields:
@@ -1030,6 +1042,18 @@ observations:
             type: integer
             tagged: false
             index: true
+      ifno_boundname:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          boundname:
+            type: string
+            tagged: false
       boundname:
         type: string
         tagged: false
@@ -1037,7 +1061,7 @@ observations:
     type: union
     tagged: false
     arms:
-      ifno:
+      ifno_iconn:
         type: record
         tagged: false
         fields:
@@ -1050,6 +1074,18 @@ observations:
             type: integer
             tagged: false
             index: true
+      ifno_boundname:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          boundname:
+            type: string
+            tagged: false
       boundname:
         type: string
         tagged: false

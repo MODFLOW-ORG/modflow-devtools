@@ -492,7 +492,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "ifno": {
+        "ifno_iconn": {
           "type": "record",
           "tagged": false,
           "fields": {

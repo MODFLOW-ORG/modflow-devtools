@@ -510,17 +510,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.flow-ja-face.arms.ifno]
+[observations.flow-ja-face.arms.ifno_ifno2]
 type = "record"
 tagged = false
 
-[observations.flow-ja-face.arms.ifno.fields.ifno]
+[observations.flow-ja-face.arms.ifno_ifno2.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.flow-ja-face.arms.ifno.fields.ifno2]
+[observations.flow-ja-face.arms.ifno_ifno2.fields.ifno2]
 type = "integer"
 tagged = false
 index = true
@@ -547,17 +547,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.lkt.arms.ifno]
+[observations.lkt.arms.ifno_iconn]
 type = "record"
 tagged = false
 
-[observations.lkt.arms.ifno.fields.ifno]
+[observations.lkt.arms.ifno_iconn.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.lkt.arms.ifno.fields.iconn]
+[observations.lkt.arms.ifno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true

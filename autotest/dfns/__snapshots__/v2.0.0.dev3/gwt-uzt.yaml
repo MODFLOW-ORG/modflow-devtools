@@ -478,7 +478,7 @@ observations:
     type: union
     tagged: false
     arms:
-      ifno:
+      ifno_ifno2:
         type: record
         tagged: false
         fields:

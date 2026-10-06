@@ -590,17 +590,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.flow-ja-face.arms.rno]
+[observations.flow-ja-face.arms.rno_rno2]
 type = "record"
 tagged = false
 
-[observations.flow-ja-face.arms.rno.fields.rno]
+[observations.flow-ja-face.arms.rno_rno2.fields.rno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.rno"
 
-[observations.flow-ja-face.arms.rno.fields.rno2]
+[observations.flow-ja-face.arms.rno_rno2.fields.rno2]
 type = "integer"
 tagged = false
 index = true

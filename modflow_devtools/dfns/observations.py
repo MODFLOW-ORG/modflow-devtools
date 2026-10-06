@@ -24,9 +24,13 @@ def _cellid(name: str = "cellid") -> v2.Array:
     )
 
 
-def _record(*fields: "v2.Integer | v2.Double | v2.Array | v2.Union") -> v2.Record:
-    """ID and ID2, named after the first."""
-    return v2.Record(name=fields[0].name, tagged=False, fields={f.name: f for f in fields})
+def _record(
+    *fields: "v2.Integer | v2.Double | v2.String | v2.Array | v2.Union",
+) -> v2.Record:
+    """ID and ID2, named after both (e.g. ``ifno_iconn``) so records that are
+    arms of the same union get distinct names."""
+    name = "_".join(f.name for f in fields)
+    return v2.Record(name=name, tagged=False, fields={f.name: f for f in fields})
 
 
 def _or_boundname(form: "v2.Integer | v2.Array | v2.Record") -> v2.Union:
@@ -53,6 +57,16 @@ def _feature(pk: str) -> v2.Union:
 def _connection(pk: str, iconn: str = "iconn") -> v2.Union:
     """A feature and one of its connections, or a boundname for all of them."""
     return _or_boundname(_record(_index(pk, fk=f"packagedata.{pk}"), _index(iconn)))
+
+
+def _connection_or_name(pk: str, iconn: str = "iconn") -> v2.Union:
+    """A feature and one of its connections, or a boundname for all of them,
+    after a feature number or not (MF6 then ignores the number). LAK and MAW
+    read a boundname as ID2; the APT packages read ID2 as a number only."""
+    feature = _index(pk, fk=f"packagedata.{pk}")
+    boundname = v2.String(name="boundname", tagged=False)
+    arms = (_record(feature, _index(iconn)), _record(feature, boundname), boundname)
+    return v2.Union(name=pk, tagged=False, arms={arm.name: arm for arm in arms})
 
 
 # Stress packages
@@ -157,7 +171,7 @@ _LAK = {
         "volume",
         "surface-area",
     ),
-    **_all(_connection("ifno"), "lak", "wetted-area", "conductance"),
+    **_all(_connection_or_name("ifno"), "lak", "wetted-area", "conductance"),
     **_all(_LAK_OUTLET, "ext-outflow", "to-mvr", "outlet"),
 }
 _MAW = {
@@ -173,7 +187,7 @@ _MAW = {
         "constant",
         "fw-conductance",
     ),
-    **_all(_connection("ifno", "icon"), "maw", "conductance"),
+    **_all(_connection_or_name("ifno", "icon"), "maw", "conductance"),
 }
 _SFR = _all(
     _feature("ifno"),

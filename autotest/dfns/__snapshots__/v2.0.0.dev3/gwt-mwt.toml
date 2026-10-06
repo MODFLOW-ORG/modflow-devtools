@@ -437,17 +437,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.mwt.arms.ifno]
+[observations.mwt.arms.ifno_iconn]
 type = "record"
 tagged = false
 
-[observations.mwt.arms.ifno.fields.ifno]
+[observations.mwt.arms.ifno_iconn.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.mwt.arms.ifno.fields.iconn]
+[observations.mwt.arms.ifno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true

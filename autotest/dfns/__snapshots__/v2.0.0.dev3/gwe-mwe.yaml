@@ -476,7 +476,7 @@ observations:
     type: union
     tagged: false
     arms:
-      mawno:
+      mawno_iconn:
         type: record
         tagged: false
         fields:

@@ -469,17 +469,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.mwe.arms.mawno]
+[observations.mwe.arms.mawno_iconn]
 type = "record"
 tagged = false
 
-[observations.mwe.arms.mawno.fields.mawno]
+[observations.mwe.arms.mawno_iconn.fields.mawno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.mawno"
 
-[observations.mwe.arms.mawno.fields.iconn]
+[observations.mwe.arms.mawno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true

@@ -556,17 +556,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.flow-ja-face.arms.lakeno]
+[observations.flow-ja-face.arms.lakeno_lakeno2]
 type = "record"
 tagged = false
 
-[observations.flow-ja-face.arms.lakeno.fields.lakeno]
+[observations.flow-ja-face.arms.lakeno_lakeno2.fields.lakeno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.lakeno"
 
-[observations.flow-ja-face.arms.lakeno.fields.lakeno2]
+[observations.flow-ja-face.arms.lakeno_lakeno2.fields.lakeno2]
 type = "integer"
 tagged = false
 index = true

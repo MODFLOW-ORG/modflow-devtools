@@ -617,7 +617,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "lakeno": {
+        "lakeno_lakeno2": {
           "type": "record",
           "tagged": false,
           "fields": {

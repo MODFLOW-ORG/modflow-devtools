@@ -988,7 +988,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "ifno": {
+        "ifno_iconn": {
           "type": "record",
           "tagged": false,
           "fields": {
@@ -1002,6 +1002,22 @@
               "type": "integer",
               "tagged": false,
               "index": true
+            }
+          }
+        },
+        "ifno_boundname": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "boundname": {
+              "type": "string",
+              "tagged": false
             }
           }
         },
@@ -1015,7 +1031,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "ifno": {
+        "ifno_iconn": {
           "type": "record",
           "tagged": false,
           "fields": {
@@ -1032,6 +1048,22 @@
             }
           }
         },
+        "ifno_boundname": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "boundname": {
+              "type": "string",
+              "tagged": false
+            }
+          }
+        },
         "boundname": {
           "type": "string",
           "tagged": false
@@ -1042,7 +1074,7 @@
       "type": "union",
       "tagged": false,
       "arms": {
-        "ifno": {
+        "ifno_iconn": {
           "type": "record",
           "tagged": false,
           "fields": {
@@ -1056,6 +1088,22 @@
               "type": "integer",
               "tagged": false,
               "index": true
+            }
+          }
+        },
+        "ifno_boundname": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "boundname": {
+              "type": "string",
+              "tagged": false
             }
           }
         },

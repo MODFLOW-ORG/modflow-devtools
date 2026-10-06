@@ -581,20 +581,34 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.maw.arms.ifno]
+[observations.maw.arms.ifno_icon]
 type = "record"
 tagged = false
 
-[observations.maw.arms.ifno.fields.ifno]
+[observations.maw.arms.ifno_icon.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.maw.arms.ifno.fields.icon]
+[observations.maw.arms.ifno_icon.fields.icon]
 type = "integer"
 tagged = false
 index = true
+
+[observations.maw.arms.ifno_boundname]
+type = "record"
+tagged = false
+
+[observations.maw.arms.ifno_boundname.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.maw.arms.ifno_boundname.fields.boundname]
+type = "string"
+tagged = false
 
 [observations.maw.arms.boundname]
 type = "string"
@@ -604,20 +618,34 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.conductance.arms.ifno]
+[observations.conductance.arms.ifno_icon]
 type = "record"
 tagged = false
 
-[observations.conductance.arms.ifno.fields.ifno]
+[observations.conductance.arms.ifno_icon.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.conductance.arms.ifno.fields.icon]
+[observations.conductance.arms.ifno_icon.fields.icon]
 type = "integer"
 tagged = false
 index = true
+
+[observations.conductance.arms.ifno_boundname]
+type = "record"
+tagged = false
+
+[observations.conductance.arms.ifno_boundname.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.conductance.arms.ifno_boundname.fields.boundname]
+type = "string"
+tagged = false
 
 [observations.conductance.arms.boundname]
 type = "string"

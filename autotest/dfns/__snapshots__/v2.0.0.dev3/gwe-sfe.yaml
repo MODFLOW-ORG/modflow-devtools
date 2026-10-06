@@ -587,7 +587,7 @@ observations:
     type: union
     tagged: false
     arms:
-      rno:
+      rno_rno2:
         type: record
         tagged: false
         fields:

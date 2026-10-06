@@ -877,20 +877,34 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.lak.arms.ifno]
+[observations.lak.arms.ifno_iconn]
 type = "record"
 tagged = false
 
-[observations.lak.arms.ifno.fields.ifno]
+[observations.lak.arms.ifno_iconn.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.lak.arms.ifno.fields.iconn]
+[observations.lak.arms.ifno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true
+
+[observations.lak.arms.ifno_boundname]
+type = "record"
+tagged = false
+
+[observations.lak.arms.ifno_boundname.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.lak.arms.ifno_boundname.fields.boundname]
+type = "string"
+tagged = false
 
 [observations.lak.arms.boundname]
 type = "string"
@@ -900,20 +914,34 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.wetted-area.arms.ifno]
+[observations.wetted-area.arms.ifno_iconn]
 type = "record"
 tagged = false
 
-[observations.wetted-area.arms.ifno.fields.ifno]
+[observations.wetted-area.arms.ifno_iconn.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.wetted-area.arms.ifno.fields.iconn]
+[observations.wetted-area.arms.ifno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true
+
+[observations.wetted-area.arms.ifno_boundname]
+type = "record"
+tagged = false
+
+[observations.wetted-area.arms.ifno_boundname.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.wetted-area.arms.ifno_boundname.fields.boundname]
+type = "string"
+tagged = false
 
 [observations.wetted-area.arms.boundname]
 type = "string"
@@ -923,20 +951,34 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.conductance.arms.ifno]
+[observations.conductance.arms.ifno_iconn]
 type = "record"
 tagged = false
 
-[observations.conductance.arms.ifno.fields.ifno]
+[observations.conductance.arms.ifno_iconn.fields.ifno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[observations.conductance.arms.ifno.fields.iconn]
+[observations.conductance.arms.ifno_iconn.fields.iconn]
 type = "integer"
 tagged = false
 index = true
+
+[observations.conductance.arms.ifno_boundname]
+type = "record"
+tagged = false
+
+[observations.conductance.arms.ifno_boundname.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.conductance.arms.ifno_boundname.fields.boundname]
+type = "string"
+tagged = false
 
 [observations.conductance.arms.boundname]
 type = "string"

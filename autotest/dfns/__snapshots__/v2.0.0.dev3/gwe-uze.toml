@@ -480,17 +480,17 @@ tagged = false
 type = "union"
 tagged = false
 
-[observations.flow-ja-face.arms.uzfno]
+[observations.flow-ja-face.arms.uzfno_uzfno2]
 type = "record"
 tagged = false
 
-[observations.flow-ja-face.arms.uzfno.fields.uzfno]
+[observations.flow-ja-face.arms.uzfno_uzfno2.fields.uzfno]
 type = "integer"
 tagged = false
 index = true
 fk = "packagedata.uzfno"
 
-[observations.flow-ja-face.arms.uzfno.fields.uzfno2]
+[observations.flow-ja-face.arms.uzfno_uzfno2.fields.uzfno2]
 type = "integer"
 tagged = false
 index = true
