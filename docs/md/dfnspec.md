@@ -101,7 +101,6 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`output`](#output)
     - [`budget`](#budget)
     - [`obs_type`](#obs_type)
-- [Observation types](#observation-types)
 
 ## Overview
 
@@ -189,7 +188,7 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 
 #### `observations`
 
-`{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name (MF6 matches them case-insensitively). See [Observation types](#observation-types).
+`{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name. Each is an untagged field for the values that follow the observation type: its ID and ID2.
 
 ### Component types
 
@@ -536,7 +535,7 @@ Type `union`. Sum type.
 
 `{string: Scalar | Array | Record}`. Subfields, required.
 
-A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [observation types](#observation-types) say which arms apply for each observation type.
+A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [`observations`](#observations) say which.
 
 #### List
 
@@ -868,40 +867,3 @@ Allowed values:
 #### `obs_type`
 
 `string | null (default: null)`. The OBS package observation type name for variables observable through the `utl-obs` utility package (e.g., `"HEAD"` on `x`, `"WEL"` on `simvals` in the WEL package). Absent means the variable is not directly observable via OBS. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
-
-The memory catalog's `obs_type` names the observation type a variable backs. A component's [`observations`](#observation-types) list every observation type it accepts; an `obs_type` matches one of them by name.
-
-## Observation types
-
-A component that supports observations lists the observation types it accepts in `observations`. Models list their model-level types (e.g. GWF's `head`, `drawdown` and `flow-ja-face`), since a model is the parent of its OBS file.
-
-`utl-obs`'s `id` and `id2` are an untagged union of a `cellid`, a 1-based `index` and a `boundname` (see [Union](#union)), and a value alone can't always say which: `3 4` may be one DISV cellid or two indices. Which applies depends on the observation type and its parent, so each observation type is itself an untagged field, giving what follows the observation type's name on an observation line. It's built from the field types above, so `index`, [`fk`](#primary-and-foreign-keys) and [`cellid`](#cellid) mean what they mean elsewhere.
-
-A reader parses the tokens after the observation type with this field, then fills `utl-obs`'s columns: a record's first field fills `id` and its second `id2`; any other field fills `id` alone. A union's arms are alternatives, each mapped the same way. So LAK's `lak`, a lake number and one of its connections or else a boundname, is:
-
-```toml
-[observations.lak]
-type = "union"
-tagged = false
-
-[observations.lak.arms.ifno]
-type = "record"
-tagged = false
-
-[observations.lak.arms.ifno.fields.ifno]
-type = "integer"
-tagged = false
-index = true
-fk = "packagedata.ifno"
-
-[observations.lak.arms.ifno.fields.iconn]
-type = "integer"
-tagged = false
-index = true
-
-[observations.lak.arms.boundname]
-type = "string"
-tagged = false
-```
-
-An observation field and every field in it must be untagged, and each form must fill `id` and at most `id2`. Not every observation value is an id: UZF's `water-content` is a record of a UZF cell number or boundname, then a double, the depth.

@@ -922,10 +922,6 @@ MemoryVariable = Annotated[
 ]
 
 
-# What follows an observation type in an OBS file: the observation's ID and
-# ID2, as one (untagged) field. A Record's first field fills `utl-obs`'s `id`
-# column and its second `id2`; any other field fills `id` alone. A Union's arms
-# map the same way, each on its own.
 ObservationField = Annotated[
     Integer | Double | String | Array | Record | Union,
     PydanticField(discriminator="type"),
