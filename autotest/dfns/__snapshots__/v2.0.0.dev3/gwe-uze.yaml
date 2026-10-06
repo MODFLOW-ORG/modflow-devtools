@@ -366,72 +366,143 @@ memory:
       - ncv
 observations:
   temperature:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   storage:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   constant:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   from-mvr:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   uze:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   thermal-equil:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   infiltration:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   rej-inf:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   uzet:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   rej-inf-to-mvr:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
   flow-ja-face:
-    id:
-      fk: packagedata.uzfno
-      arms:
-        - index
-        - boundname
-    id2:
-      fk: packagedata.uzfno
-      arms:
-        - index
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: record
+        tagged: false
+        fields:
+          uzfno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.uzfno
+          uzfno2:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false

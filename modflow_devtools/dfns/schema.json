@@ -1340,7 +1340,37 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Observation"
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
               },
               "type": "object"
             },
@@ -1392,99 +1422,6 @@
         "name"
       ],
       "title": "Model",
-      "type": "object"
-    },
-    "Observation": {
-      "description": "An observation type a component accepts in its OBS file.",
-      "properties": {
-        "description": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Description"
-        },
-        "id": {
-          "$ref": "#/$defs/ObservationId"
-        },
-        "id2": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ObservationId"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "title": "Observation",
-      "type": "object"
-    },
-    "ObservationId": {
-      "description": "What an observation type's ID or ID2 holds: some of `utl-obs`'s id\nunion arms, or (UZF's water-content depth) a plain value instead.",
-      "properties": {
-        "arms": {
-          "default": [],
-          "items": {
-            "type": "string"
-          },
-          "title": "Arms",
-          "type": "array"
-        },
-        "type": {
-          "anyOf": [
-            {
-              "const": "double",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Type"
-        },
-        "name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Name"
-        },
-        "fk": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Fk"
-        },
-        "with_boundname": {
-          "default": false,
-          "title": "With Boundname",
-          "type": "boolean"
-        }
-      },
-      "title": "ObservationId",
       "type": "object"
     },
     "Package": {
@@ -1616,7 +1553,37 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Observation"
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
               },
               "type": "object"
             },
@@ -1969,7 +1936,37 @@
           "anyOf": [
             {
               "additionalProperties": {
-                "$ref": "#/$defs/Observation"
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
               },
               "type": "object"
             },

@@ -272,8 +272,20 @@ shape = [
     "nbound",
 ]
 
-[observations.chd.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.chd]
+type = "union"
+tagged = false
+
+[observations.chd.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.chd.arms.boundname]
+type = "string"
+tagged = false

@@ -438,126 +438,222 @@
   },
   "observations": {
     "temperature": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "storage": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "constant": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "from-mvr": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "lke": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "rainfall": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "evaporation": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "runoff": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "ext-inflow": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "withdrawal": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "ext-outflow": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.lakeno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "flow-ja-face": {
-      "id": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
-      },
-      "id2": {
-        "fk": "packagedata.lakeno",
-        "arms": [
-          "index"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "lakeno": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "lakeno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.lakeno"
+            },
+            "lakeno2": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.lakeno"
+            }
+          }
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "to-mvr": {
-      "id": {
-        "name": "outletno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "outletno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     }
   }

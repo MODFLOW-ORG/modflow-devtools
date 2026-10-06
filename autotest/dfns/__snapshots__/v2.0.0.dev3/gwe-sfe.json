@@ -458,126 +458,223 @@
   },
   "observations": {
     "temperature": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "storage": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "constant": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "from-mvr": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "sfe": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "strmbd-cond": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "to-mvr": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "rainfall": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "evaporation": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "runoff": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "ext-inflow": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "ext-outflow": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.rno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     },
     "flow-ja-face": {
-      "id": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index",
-          "boundname"
-        ]
-      },
-      "id2": {
-        "fk": "packagedata.rno",
-        "arms": [
-          "index"
-        ]
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "rno": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "rno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.rno"
+            },
+            "rno2": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.rno"
+            }
+          }
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
       }
     }
   }

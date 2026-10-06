@@ -660,199 +660,321 @@ memory:
       - nodes
 observations:
   csub:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      boundname:
+        type: string
+        tagged: false
   inelastic-csub:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      boundname:
+        type: string
+        tagged: false
   elastic-csub:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      boundname:
+        type: string
+        tagged: false
   delay-flowtop:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      boundname:
+        type: string
+        tagged: false
   delay-flowbot:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      boundname:
+        type: string
+        tagged: false
   sk:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   ske:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   theta:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   thickness:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   interbed-compaction:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   interbed-compaction-pct:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   inelastic-compaction:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   elastic-compaction:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true
+    fk: packagedata.icsubno
   delay-head:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-gstress:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-estress:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-preconstress:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-compaction:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-thickness:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   delay-theta:
-    id:
-      fk: packagedata.icsubno
-      arms:
-        - index
-    id2:
-      name: idcellno
-      arms:
-        - index
+    type: record
+    tagged: false
+    fields:
+      icsubno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.icsubno
+      idcellno:
+        type: integer
+        tagged: false
+        index: true
   coarse-csub:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   csub-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   wcomp-csub-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   sk-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   ske-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   estress-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   gstress-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   preconstress-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   coarse-compaction:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   compaction-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   inelastic-compaction-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   elastic-compaction-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   coarse-thickness:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   thickness-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   coarse-theta:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   theta-cell:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim

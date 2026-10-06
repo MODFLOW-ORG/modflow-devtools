@@ -159,7 +159,6 @@ memory:
       - nodes
 observations:
   ext-outflow:
-    id:
-      name: node
-      arms:
-        - index
+    type: integer
+    tagged: false
+    index: true

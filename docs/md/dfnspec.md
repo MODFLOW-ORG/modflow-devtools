@@ -102,9 +102,6 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`budget`](#budget)
     - [`obs_type`](#obs_type)
 - [Observation types](#observation-types)
-  - [Attributes](#attributes-2)
-    - [`description`](#description-2)
-    - [`id`, `id2`](#id-id2)
 
 ## Overview
 
@@ -192,7 +189,7 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 
 #### `observations`
 
-`{string: Observation} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name (MF6 matches them case-insensitively). See [Observation types](#observation-types).
+`{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name (MF6 matches them case-insensitively). See [Observation types](#observation-types).
 
 ### Component types
 
@@ -878,38 +875,33 @@ The memory catalog's `obs_type` names the observation type a variable backs. A c
 
 A component that supports observations lists the observation types it accepts in `observations`. Models list their model-level types (e.g. GWF's `head`, `drawdown` and `flow-ja-face`), since a model is the parent of its OBS file.
 
-`utl-obs`'s `id` and `id2` are an untagged union of a `cellid`, a 1-based `index` and a `boundname` (see [Union](#union)), and a value alone can't always say which: `3 4` may be one DISV cellid or two indices. Which arms apply depends on the observation type and its parent, so each observation type narrows the union.
+`utl-obs`'s `id` and `id2` are an untagged union of a `cellid`, a 1-based `index` and a `boundname` (see [Union](#union)), and a value alone can't always say which: `3 4` may be one DISV cellid or two indices. Which applies depends on the observation type and its parent, so each observation type is itself an untagged field, giving what follows the observation type's name on an observation line. It's built from the field types above, so `index`, [`fk`](#primary-and-foreign-keys) and [`cellid`](#cellid) mean what they mean elsewhere.
+
+A reader parses the tokens after the observation type with this field, then fills `utl-obs`'s columns: a record's first field fills `id` and its second `id2`; any other field fills `id` alone. A union's arms are alternatives, each mapped the same way. So LAK's `lak`, a lake number and one of its connections or else a boundname, is:
 
 ```toml
-# gwf-csub
-[observations.csub.id]
-arms = ["index", "boundname"]
-fk = "packagedata.icsubno"
+[observations.lak]
+type = "union"
+tagged = false
 
-[observations.csub-cell.id]
-arms = ["cellid"]
+[observations.lak.arms.ifno]
+type = "record"
+tagged = false
 
-[observations.delay-head.id]
-arms = ["index"]
-fk = "packagedata.icsubno"
+[observations.lak.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
 
-[observations.delay-head.id2]
-arms = ["index"]
-name = "idcellno"
+[observations.lak.arms.ifno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
+
+[observations.lak.arms.boundname]
+type = "string"
+tagged = false
 ```
 
-### Attributes
-
-#### `description`
-
-`string | null (default: null)`. What the observation type observes.
-
-#### `id`, `id2`
-
-What the observation's ID and ID2 hold. `id` is required; `id2` absent means the observation type takes no ID2.
-
-- `arms`: `[string]`. The `utl-obs` id union arms the value may take.
-- `type`: `"double" | null`. A plain value instead of an id, e.g. UZF `water-content`'s depth. Exactly one of `arms` and `type` is given.
-- `name`: `string | null`. What MF6 calls the value, where `fk` doesn't say, e.g. LAK's connection number `iconn`.
-- `fk`: `string | null`. For an `index`, the `"block.field"` [primary key](#primary-and-foreign-keys) column in this component it refers to, e.g. `"packagedata.ifno"`. Absent if the index refers to something without a key column, such as an exchange's `exchangedata` row or a connection number.
-- `with_boundname`: `boolean (default: false)`. `id2` only. MF6 reads no ID2 after an ID given as a boundname, since a boundname may name several features; `true` means ID2 is read anyway (UZF's depth).
+An observation field and every field in it must be untagged, and each form must fill `id` and at most `id2`. Not every observation value is an id: UZF's `water-content` is a record of a UZF cell number or boundname, then a double, the depth.

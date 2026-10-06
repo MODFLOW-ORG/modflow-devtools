@@ -462,78 +462,153 @@ memory:
     type: integer
 observations:
   uzf-gwrch:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   uzf-gwd:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   uzf-gwd-to-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   uzf-gwet:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   infiltration:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   from-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rej-inf:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rej-inf-to-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   uzet:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   storage:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   net-infiltration:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   water-content:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
-    id2:
-      type: double
-      name: depth
-      with_boundname: true
+    type: record
+    tagged: false
+    fields:
+      ifno:
+        type: union
+        tagged: false
+        arms:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          boundname:
+            type: string
+            tagged: false
+      depth:
+        type: double
+        tagged: false

@@ -399,91 +399,178 @@ set_in = "ar"
 source = "nwavesets"
 type = "integer"
 
-[observations.uzf-gwrch.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.uzf-gwrch]
+type = "union"
+tagged = false
 
-[observations.uzf-gwd.id]
+[observations.uzf-gwrch.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.uzf-gwd-to-mvr.id]
+[observations.uzf-gwrch.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzf-gwd]
+type = "union"
+tagged = false
+
+[observations.uzf-gwd.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.uzf-gwet.id]
+[observations.uzf-gwd.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzf-gwd-to-mvr]
+type = "union"
+tagged = false
+
+[observations.uzf-gwd-to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.infiltration.id]
+[observations.uzf-gwd-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzf-gwet]
+type = "union"
+tagged = false
+
+[observations.uzf-gwet.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.from-mvr.id]
+[observations.uzf-gwet.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.infiltration]
+type = "union"
+tagged = false
+
+[observations.infiltration.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rej-inf.id]
+[observations.infiltration.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rej-inf-to-mvr.id]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf]
+type = "union"
+tagged = false
+
+[observations.rej-inf.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.uzet.id]
+[observations.rej-inf.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rej-inf-to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.storage.id]
+[observations.rej-inf-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzet]
+type = "union"
+tagged = false
+
+[observations.uzet.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.net-infiltration.id]
+[observations.uzet.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.water-content.id]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.net-infiltration]
+type = "union"
+tagged = false
+
+[observations.net-infiltration.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.water-content.id2]
+[observations.net-infiltration.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.water-content]
+type = "record"
+tagged = false
+
+[observations.water-content.fields.ifno]
+type = "union"
+tagged = false
+
+[observations.water-content.fields.ifno.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.water-content.fields.ifno.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.water-content.fields.depth]
 type = "double"
-name = "depth"
-with_boundname = true
+tagged = false

@@ -336,85 +336,166 @@ shape = [
     "ncv",
 ]
 
-[observations.temperature.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.temperature]
+type = "union"
+tagged = false
 
-[observations.storage.id]
+[observations.temperature.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.temperature.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.from-mvr.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage]
+type = "union"
+tagged = false
 
-[observations.uze.id]
+[observations.storage.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.thermal-equil.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.infiltration.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant]
+type = "union"
+tagged = false
 
-[observations.rej-inf.id]
+[observations.constant.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.uzet.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.rej-inf-to-mvr.id]
-fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr]
+type = "union"
+tagged = false
 
-[observations.flow-ja-face.id]
+[observations.from-mvr.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.uzfno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.flow-ja-face.id2]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uze]
+type = "union"
+tagged = false
+
+[observations.uze.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.uzfno"
-arms = [
-    "index",
-]
+
+[observations.uze.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.thermal-equil]
+type = "union"
+tagged = false
+
+[observations.thermal-equil.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.thermal-equil.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.infiltration]
+type = "union"
+tagged = false
+
+[observations.infiltration.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.infiltration.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf]
+type = "union"
+tagged = false
+
+[observations.rej-inf.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.rej-inf.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzet]
+type = "union"
+tagged = false
+
+[observations.uzet.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.uzet.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rej-inf-to-mvr.arms.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.rej-inf-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.flow-ja-face]
+type = "union"
+tagged = false
+
+[observations.flow-ja-face.arms.uzfno]
+type = "record"
+tagged = false
+
+[observations.flow-ja-face.arms.uzfno.fields.uzfno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.flow-ja-face.arms.uzfno.fields.uzfno2]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.uzfno"
+
+[observations.flow-ja-face.arms.boundname]
+type = "string"
+tagged = false

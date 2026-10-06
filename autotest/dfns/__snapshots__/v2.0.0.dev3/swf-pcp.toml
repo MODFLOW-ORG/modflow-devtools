@@ -282,8 +282,20 @@ shape = [
     "naux",
 ]
 
-[observations.pcp.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.pcp]
+type = "union"
+tagged = false
+
+[observations.pcp.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.pcp.arms.boundname]
+type = "string"
+tagged = false

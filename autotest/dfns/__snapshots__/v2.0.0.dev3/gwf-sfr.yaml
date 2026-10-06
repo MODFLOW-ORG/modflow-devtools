@@ -803,104 +803,206 @@ memory:
       - maxbound
 observations:
   stage:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   ext-inflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   inflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   from-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rainfall:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   runoff:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   sfr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   evaporation:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   outflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   ext-outflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   to-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   upstream-flow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   downstream-flow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   depth:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   wet-perimeter:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   wet-area:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   wet-width:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false

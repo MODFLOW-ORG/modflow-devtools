@@ -360,7 +360,13 @@ memory:
       - naux
 observations:
   flow-ja-face:
-    id:
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      iexg:
+        type: integer
+        tagged: false
+        index: true
+      boundname:
+        type: string
+        tagged: false

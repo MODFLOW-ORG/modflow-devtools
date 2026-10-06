@@ -418,99 +418,194 @@ shape = [
     "ncv",
 ]
 
-[observations.temperature.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.temperature]
+type = "union"
+tagged = false
 
-[observations.storage.id]
+[observations.temperature.arms.rno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.temperature.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.from-mvr.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage]
+type = "union"
+tagged = false
 
-[observations.sfe.id]
+[observations.storage.arms.rno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.strmbd-cond.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.to-mvr.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant]
+type = "union"
+tagged = false
 
-[observations.rainfall.id]
+[observations.constant.arms.rno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.evaporation.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.runoff.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr]
+type = "union"
+tagged = false
 
-[observations.ext-inflow.id]
+[observations.from-mvr.arms.rno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.ext-outflow.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.flow-ja-face.id]
-fk = "packagedata.rno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.sfe]
+type = "union"
+tagged = false
 
-[observations.flow-ja-face.id2]
+[observations.sfe.arms.rno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.rno"
-arms = [
-    "index",
-]
+
+[observations.sfe.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.strmbd-cond]
+type = "union"
+tagged = false
+
+[observations.strmbd-cond.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.strmbd-cond.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rainfall]
+type = "union"
+tagged = false
+
+[observations.rainfall.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.rainfall.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.evaporation]
+type = "union"
+tagged = false
+
+[observations.evaporation.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.evaporation.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.runoff]
+type = "union"
+tagged = false
+
+[observations.runoff.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.runoff.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-inflow]
+type = "union"
+tagged = false
+
+[observations.ext-inflow.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.ext-inflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-outflow]
+type = "union"
+tagged = false
+
+[observations.ext-outflow.arms.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.ext-outflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.flow-ja-face]
+type = "union"
+tagged = false
+
+[observations.flow-ja-face.arms.rno]
+type = "record"
+tagged = false
+
+[observations.flow-ja-face.arms.rno.fields.rno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.flow-ja-face.arms.rno.fields.rno2]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.rno"
+
+[observations.flow-ja-face.arms.boundname]
+type = "string"
+tagged = false

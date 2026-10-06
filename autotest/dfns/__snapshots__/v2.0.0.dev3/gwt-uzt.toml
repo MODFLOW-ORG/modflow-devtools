@@ -336,78 +336,152 @@ shape = [
     "ncv",
 ]
 
-[observations.concentration.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.concentration]
+type = "union"
+tagged = false
 
-[observations.storage.id]
+[observations.concentration.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.concentration.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.from-mvr.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage]
+type = "union"
+tagged = false
 
-[observations.uzt.id]
+[observations.storage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.infiltration.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.rej-inf.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant]
+type = "union"
+tagged = false
 
-[observations.uzet.id]
+[observations.constant.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rej-inf-to-mvr.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.flow-ja-face.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr]
+type = "union"
+tagged = false
 
-[observations.flow-ja-face.id2]
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-]
+
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzt]
+type = "union"
+tagged = false
+
+[observations.uzt.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.uzt.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.infiltration]
+type = "union"
+tagged = false
+
+[observations.infiltration.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.infiltration.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf]
+type = "union"
+tagged = false
+
+[observations.rej-inf.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.rej-inf.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.uzet]
+type = "union"
+tagged = false
+
+[observations.uzet.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.uzet.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rej-inf-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rej-inf-to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.rej-inf-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.flow-ja-face]
+type = "union"
+tagged = false
+
+[observations.flow-ja-face.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.flow-ja-face.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.flow-ja-face.arms.ifno.fields.ifno2]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.flow-ja-face.arms.boundname]
+type = "string"
+tagged = false

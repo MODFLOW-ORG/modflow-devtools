@@ -336,8 +336,15 @@ shape = [
     "naux",
 ]
 
-[observations.flow-ja-face.id]
-arms = [
-    "index",
-    "boundname",
-]
+[observations.flow-ja-face]
+type = "union"
+tagged = false
+
+[observations.flow-ja-face.arms.iexg]
+type = "integer"
+tagged = false
+index = true
+
+[observations.flow-ja-face.arms.boundname]
+type = "string"
+tagged = false

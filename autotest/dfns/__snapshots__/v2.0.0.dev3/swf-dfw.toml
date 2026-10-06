@@ -152,8 +152,7 @@ shape = [
     "nodes",
 ]
 
-[observations.ext-outflow.id]
-name = "node"
-arms = [
-    "index",
-]
+[observations.ext-outflow]
+type = "integer"
+tagged = false
+index = true

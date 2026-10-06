@@ -298,8 +298,20 @@ shape = [
     "naux",
 ]
 
-[observations.rch.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.rch]
+type = "union"
+tagged = false
+
+[observations.rch.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.rch.arms.boundname]
+type = "string"
+tagged = false

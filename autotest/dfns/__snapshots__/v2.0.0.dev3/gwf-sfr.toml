@@ -684,121 +684,240 @@ shape = [
     "maxbound",
 ]
 
-[observations.stage.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.stage]
+type = "union"
+tagged = false
 
-[observations.ext-inflow.id]
+[observations.stage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.inflow.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.stage.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.from-mvr.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.ext-inflow]
+type = "union"
+tagged = false
 
-[observations.rainfall.id]
+[observations.ext-inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.runoff.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.ext-inflow.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.sfr.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.inflow]
+type = "union"
+tagged = false
 
-[observations.evaporation.id]
+[observations.inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.outflow.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.inflow.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.ext-outflow.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr]
+type = "union"
+tagged = false
 
-[observations.to-mvr.id]
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.upstream-flow.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.downstream-flow.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.rainfall]
+type = "union"
+tagged = false
 
-[observations.depth.id]
+[observations.rainfall.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.wet-perimeter.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.rainfall.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.wet-area.id]
-fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.runoff]
+type = "union"
+tagged = false
 
-[observations.wet-width.id]
+[observations.runoff.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
+
+[observations.runoff.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.sfr]
+type = "union"
+tagged = false
+
+[observations.sfr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.sfr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.evaporation]
+type = "union"
+tagged = false
+
+[observations.evaporation.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.evaporation.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.outflow]
+type = "union"
+tagged = false
+
+[observations.outflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.outflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-outflow]
+type = "union"
+tagged = false
+
+[observations.ext-outflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.ext-outflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.upstream-flow]
+type = "union"
+tagged = false
+
+[observations.upstream-flow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.upstream-flow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.downstream-flow]
+type = "union"
+tagged = false
+
+[observations.downstream-flow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.downstream-flow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.depth]
+type = "union"
+tagged = false
+
+[observations.depth.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.depth.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.wet-perimeter]
+type = "union"
+tagged = false
+
+[observations.wet-perimeter.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.wet-perimeter.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.wet-area]
+type = "union"
+tagged = false
+
+[observations.wet-area.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.wet-area.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.wet-width]
+type = "union"
+tagged = false
+
+[observations.wet-width.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.wet-width.arms.boundname]
+type = "string"
+tagged = false

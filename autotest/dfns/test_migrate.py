@@ -386,53 +386,67 @@ def test_migrate_obs_id_union(dfn_dir, col, optional):
     assert not any(arm.tagged for arm in field.arms.values())
 
 
-def _obs_ids(component: v2.Component, obstype: str) -> tuple:
-    assert component.observations is not None
-    obs = component.observations[obstype]
-    id2 = obs.id2
-    return (obs.id.arms, obs.id.fk), None if id2 is None else (id2.arms, id2.type, id2.name)
+def _obs_forms(field) -> list[tuple]:
+    """The token sequences an observation field reads, each a tuple of
+    columns: ("cellid",), ("boundname",), ("double", name) or ("index", fk)."""
+    if isinstance(field, v2.Union):
+        return [f for arm in field.arms.values() for f in _obs_forms(arm)]
+    if isinstance(field, v2.Record):
+        forms: list[tuple] = [()]
+        for col in field.fields.values():
+            forms = [f + g for f in forms for g in _obs_forms(col)]
+        return forms
+    if isinstance(field, v2.Array) and field.cellid:
+        return [(("cellid",),)]
+    if isinstance(field, v2.String):
+        return [(("boundname",),)]
+    if isinstance(field, v2.Double):
+        return [(("double", field.name),)]
+    assert isinstance(field, v2.Integer) and field.index
+    return [(("index", field.fk),)]
+
+
+_CELL = ("cellid",)
+_NAME = ("boundname",)
 
 
 @pytest.mark.parametrize(
-    "name, obstype, ids",
+    "name, obstype, forms",
     [
         # CSUB mixes index- and cellid-keyed obstypes, some without boundnames
-        ("gwf-csub", "csub", ((["index", "boundname"], "packagedata.icsubno"), None)),
-        ("gwf-csub", "sk", ((["index"], "packagedata.icsubno"), None)),
-        ("gwf-csub", "csub-cell", ((["cellid"], None), None)),
-        (
-            "gwf-csub",
-            "delay-head",
-            ((["index"], "packagedata.icsubno"), (["index"], None, "idcellno")),
-        ),
-        # UZF's water-content id2 is a depth, not an id
+        ("gwf-csub", "csub", [(("index", "packagedata.icsubno"),), (_NAME,)]),
+        ("gwf-csub", "sk", [(("index", "packagedata.icsubno"),)]),
+        ("gwf-csub", "csub-cell", [(_CELL,)]),
+        ("gwf-csub", "delay-head", [(("index", "packagedata.icsubno"), ("index", None))]),
+        # UZF's water-content depth isn't an id, and follows a boundname too
         (
             "gwf-uzf",
             "water-content",
-            ((["index", "boundname"], "packagedata.ifno"), ([], "double", "depth")),
+            [(("index", "packagedata.ifno"), ("double", "depth")), (_NAME, ("double", "depth"))],
         ),
-        ("gwf-uzf", "uzet", ((["index", "boundname"], "packagedata.ifno"), None)),
-        (
-            "gwf-lak",
-            "lak",
-            ((["index", "boundname"], "packagedata.ifno"), (["index"], None, "iconn")),
-        ),
-        ("gwf-lak", "outlet", ((["index", "boundname"], "outlets.outletno"), None)),
+        ("gwf-uzf", "uzet", [(("index", "packagedata.ifno"),), (_NAME,)]),
+        # a connection number follows a lake number, but not a boundname
+        ("gwf-lak", "lak", [(("index", "packagedata.ifno"), ("index", None)), (_NAME,)]),
+        ("gwf-lak", "outlet", [(("index", "outlets.outletno"),), (_NAME,)]),
         (
             "gwt-lkt",
             "flow-ja-face",
-            ((["index", "boundname"], "packagedata.ifno"), (["index"], None, None)),
+            [(("index", "packagedata.ifno"), ("index", "packagedata.ifno")), (_NAME,)],
         ),
         # MF6 reads no id2 for lke, though its docs list one
-        ("gwe-lke", "lke", ((["index", "boundname"], "packagedata.lakeno"), None)),
-        ("gwf-wel", "wel", ((["cellid", "boundname"], None), None)),
-        ("gwf-nam", "flow-ja-face", ((["cellid"], None), (["cellid"], None, None))),
+        ("gwe-lke", "lke", [(("index", "packagedata.lakeno"),), (_NAME,)]),
+        ("gwf-wel", "wel", [(_CELL,), (_NAME,)]),
+        ("gwf-nam", "flow-ja-face", [(_CELL, _CELL)]),
         # an exchange id is a row number in exchangedata, which has no pk
-        ("exg-gwegwe", "flow-ja-face", ((["index", "boundname"], None), None)),
+        ("exg-gwegwe", "flow-ja-face", [(("index", None),), (_NAME,)]),
     ],
 )
-def test_migrate_observations(dfn_dir, name, obstype, ids):
-    assert _obs_ids(_migrate_dev3(dfn_dir, name), obstype) == ids
+def test_migrate_observations(dfn_dir, name, obstype, forms):
+    component = _migrate_dev3(dfn_dir, name)
+    assert component.observations is not None
+    field = component.observations[obstype]
+    assert field.name == obstype
+    assert _obs_forms(field) == forms
 
 
 def test_migrate_observations_on_obs_parents(dev3):

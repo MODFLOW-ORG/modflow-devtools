@@ -397,88 +397,174 @@ memory:
       - ncv
 observations:
   concentration:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   storage:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   constant:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   from-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rainfall:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   evaporation:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   runoff:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   ext-inflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   withdrawal:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   ext-outflow:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   flow-ja-face:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
-    id2:
-      fk: packagedata.ifno
-      arms:
-        - index
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          ifno2:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   to-mvr:
-    id:
-      name: outletno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      outletno:
+        type: integer
+        tagged: false
+        index: true
+      boundname:
+        type: string
+        tagged: false
   lkt:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
-    id2:
-      name: iconn
-      arms:
-        - index
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          iconn:
+            type: integer
+            tagged: false
+            index: true
+      boundname:
+        type: string
+        tagged: false

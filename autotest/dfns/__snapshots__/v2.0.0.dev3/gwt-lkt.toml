@@ -366,105 +366,202 @@ shape = [
     "ncv",
 ]
 
-[observations.concentration.id]
+[observations.concentration]
+type = "union"
+tagged = false
+
+[observations.concentration.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.storage.id]
+[observations.concentration.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.constant]
+type = "union"
+tagged = false
+
+[observations.constant.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.from-mvr.id]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rainfall.id]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rainfall]
+type = "union"
+tagged = false
+
+[observations.rainfall.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.evaporation.id]
+[observations.rainfall.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.evaporation]
+type = "union"
+tagged = false
+
+[observations.evaporation.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.runoff.id]
+[observations.evaporation.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.runoff]
+type = "union"
+tagged = false
+
+[observations.runoff.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.ext-inflow.id]
+[observations.runoff.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-inflow]
+type = "union"
+tagged = false
+
+[observations.ext-inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.withdrawal.id]
+[observations.ext-inflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.withdrawal]
+type = "union"
+tagged = false
+
+[observations.withdrawal.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.ext-outflow.id]
+[observations.withdrawal.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-outflow]
+type = "union"
+tagged = false
+
+[observations.ext-outflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.flow-ja-face.id]
+[observations.ext-outflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.flow-ja-face]
+type = "union"
+tagged = false
+
+[observations.flow-ja-face.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.flow-ja-face.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.flow-ja-face.id2]
+[observations.flow-ja-face.arms.ifno.fields.ifno2]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-]
 
-[observations.to-mvr.id]
-name = "outletno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.flow-ja-face.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.lkt.id]
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.outletno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.lkt]
+type = "union"
+tagged = false
+
+[observations.lkt.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.lkt.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.lkt.id2]
-name = "iconn"
-arms = [
-    "index",
-]
+[observations.lkt.arms.ifno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
+
+[observations.lkt.arms.boundname]
+type = "string"
+tagged = false

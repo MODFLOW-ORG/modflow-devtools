@@ -307,14 +307,38 @@ shape = [
     "naux",
 ]
 
-[observations.drn.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.drn]
+type = "union"
+tagged = false
+
+[observations.drn.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.to-mvr.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.drn.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false

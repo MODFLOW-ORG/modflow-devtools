@@ -205,13 +205,30 @@ memory:
       - nja
 observations:
   temperature:
-    id:
-      arms:
-        - cellid
+    type: array
+    tagged: false
+    dtype: integer
+    index: true
+    cellid: true
+    shape:
+      - ncelldim
   flow-ja-face:
-    id:
-      arms:
-        - cellid
-    id2:
-      arms:
-        - cellid
+    type: record
+    tagged: false
+    fields:
+      cellid:
+        type: array
+        tagged: false
+        dtype: integer
+        index: true
+        cellid: true
+        shape:
+          - ncelldim
+      cellid2:
+        type: array
+        tagged: false
+        dtype: integer
+        index: true
+        cellid: true
+        shape:
+          - ncelldim

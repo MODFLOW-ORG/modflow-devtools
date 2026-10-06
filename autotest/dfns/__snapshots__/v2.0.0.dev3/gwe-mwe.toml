@@ -353,71 +353,137 @@ shape = [
     "ncv",
 ]
 
-[observations.temperature.id]
-fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.temperature]
+type = "union"
+tagged = false
 
-[observations.storage.id]
+[observations.temperature.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
+[observations.temperature.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.from-mvr.id]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.constant]
+type = "union"
+tagged = false
+
+[observations.constant.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rate.id]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.fw-rate.id]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate]
+type = "union"
+tagged = false
+
+[observations.rate.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rate-to-mvr.id]
+[observations.rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-rate]
+type = "union"
+tagged = false
+
+[observations.fw-rate.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.fw-rate-to-mvr.id]
+[observations.fw-rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rate-to-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.mwe.id]
+[observations.rate-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-rate-to-mvr]
+type = "union"
+tagged = false
+
+[observations.fw-rate-to-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.mawno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.mwe.id2]
-name = "iconn"
-arms = [
-    "index",
-]
+[observations.fw-rate-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.mwe]
+type = "union"
+tagged = false
+
+[observations.mwe.arms.mawno]
+type = "record"
+tagged = false
+
+[observations.mwe.arms.mawno.fields.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.mwe.arms.mawno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
+
+[observations.mwe.arms.boundname]
+type = "string"
+tagged = false

@@ -647,249 +647,385 @@ shape = [
     "nodes",
 ]
 
-[observations.csub.id]
+[observations.csub]
+type = "union"
+tagged = false
+
+[observations.csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.inelastic-csub.id]
+[observations.csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.inelastic-csub]
+type = "union"
+tagged = false
+
+[observations.inelastic-csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.elastic-csub.id]
+[observations.inelastic-csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.elastic-csub]
+type = "union"
+tagged = false
+
+[observations.elastic-csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.delay-flowtop.id]
+[observations.elastic-csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.delay-flowtop]
+type = "union"
+tagged = false
+
+[observations.delay-flowtop.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.delay-flowbot.id]
+[observations.delay-flowtop.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.delay-flowbot]
+type = "union"
+tagged = false
+
+[observations.delay-flowbot.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.sk.id]
+[observations.delay-flowbot.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.sk]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.ske.id]
+[observations.ske]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.theta.id]
+[observations.theta]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.thickness.id]
+[observations.thickness]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.interbed-compaction.id]
+[observations.interbed-compaction]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.interbed-compaction-pct.id]
+[observations.interbed-compaction-pct]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.inelastic-compaction.id]
+[observations.inelastic-compaction]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.elastic-compaction.id]
+[observations.elastic-compaction]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-head.id]
+[observations.delay-head]
+type = "record"
+tagged = false
+
+[observations.delay-head.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-head.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-head.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-gstress.id]
+[observations.delay-gstress]
+type = "record"
+tagged = false
+
+[observations.delay-gstress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-gstress.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-gstress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-estress.id]
+[observations.delay-estress]
+type = "record"
+tagged = false
+
+[observations.delay-estress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-estress.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-estress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-preconstress.id]
+[observations.delay-preconstress]
+type = "record"
+tagged = false
+
+[observations.delay-preconstress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-preconstress.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-preconstress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-compaction.id]
+[observations.delay-compaction]
+type = "record"
+tagged = false
+
+[observations.delay-compaction.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-compaction.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-compaction.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-thickness.id]
+[observations.delay-thickness]
+type = "record"
+tagged = false
+
+[observations.delay-thickness.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
-]
 
-[observations.delay-thickness.id2]
-name = "idcellno"
-arms = [
-    "index",
-]
+[observations.delay-thickness.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
 
-[observations.delay-theta.id]
+[observations.delay-theta]
+type = "record"
+tagged = false
+
+[observations.delay-theta.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.icsubno"
-arms = [
-    "index",
+
+[observations.delay-theta.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.coarse-csub]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.delay-theta.id2]
-name = "idcellno"
-arms = [
-    "index",
+[observations.csub-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.coarse-csub.id]
-arms = [
-    "cellid",
+[observations.wcomp-csub-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.csub-cell.id]
-arms = [
-    "cellid",
+[observations.sk-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.wcomp-csub-cell.id]
-arms = [
-    "cellid",
+[observations.ske-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.sk-cell.id]
-arms = [
-    "cellid",
+[observations.estress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.ske-cell.id]
-arms = [
-    "cellid",
+[observations.gstress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.estress-cell.id]
-arms = [
-    "cellid",
+[observations.preconstress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.gstress-cell.id]
-arms = [
-    "cellid",
+[observations.coarse-compaction]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.preconstress-cell.id]
-arms = [
-    "cellid",
+[observations.compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.coarse-compaction.id]
-arms = [
-    "cellid",
+[observations.inelastic-compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.compaction-cell.id]
-arms = [
-    "cellid",
+[observations.elastic-compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.inelastic-compaction-cell.id]
-arms = [
-    "cellid",
+[observations.coarse-thickness]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.elastic-compaction-cell.id]
-arms = [
-    "cellid",
+[observations.thickness-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.coarse-thickness.id]
-arms = [
-    "cellid",
+[observations.coarse-theta]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.thickness-cell.id]
-arms = [
-    "cellid",
-]
-
-[observations.coarse-theta.id]
-arms = [
-    "cellid",
-]
-
-[observations.theta-cell.id]
-arms = [
-    "cellid",
+[observations.theta-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]

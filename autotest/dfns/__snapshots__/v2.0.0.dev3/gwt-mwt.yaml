@@ -349,60 +349,118 @@ memory:
       - ncv
 observations:
   concentration:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   storage:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   constant:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   from-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rate:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   fw-rate:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   rate-to-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   fw-rate-to-mvr:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.ifno
+      boundname:
+        type: string
+        tagged: false
   mwt:
-    id:
-      fk: packagedata.ifno
-      arms:
-        - index
-        - boundname
-    id2:
-      name: iconn
-      arms:
-        - index
+    type: union
+    tagged: false
+    arms:
+      ifno:
+        type: record
+        tagged: false
+        fields:
+          ifno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.ifno
+          iconn:
+            type: integer
+            tagged: false
+            index: true
+      boundname:
+        type: string
+        tagged: false

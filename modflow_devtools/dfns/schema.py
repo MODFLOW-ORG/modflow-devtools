@@ -922,49 +922,14 @@ MemoryVariable = Annotated[
 ]
 
 
-# The arms of `utl-obs`'s `id`/`id2` union, used when the corpus has no utl-obs.
-_OBS_ID_ARMS = ("cellid", "index", "boundname")
-
-
-class ObservationId(BaseModel):
-    """What an observation type's ID or ID2 holds: some of `utl-obs`'s id
-    union arms, or (UZF's water-content depth) a plain value instead."""
-
-    arms: list[str] = []
-    type: Literal["double"] | None = None
-    # What MF6 calls the value, where it isn't evident from `fk` (e.g. LAK's
-    # `iconn`, UZF's `depth`).
-    name: str | None = None
-    # For an index, the "block.field" pk it refers to.
-    fk: str | None = None
-    # ID2 only: whether ID2 still follows an ID given as a boundname. MF6
-    # otherwise reads no ID2 after a boundname.
-    with_boundname: bool = False
-
-    @model_validator(mode="after")
-    def _check(self) -> "ObservationId":
-        if bool(self.arms) == (self.type is not None):
-            raise ValueError("observation id needs exactly one of arms or type")
-        if self.fk is not None and "index" not in self.arms:
-            raise ValueError(f"observation id fk={self.fk!r} requires the 'index' arm")
-        return self
-
-
-class Observation(BaseModel):
-    """An observation type a component accepts in its OBS file."""
-
-    description: str | None = None
-    id: ObservationId
-    # Absent if the observation type takes no ID2.
-    id2: ObservationId | None = None
-
-    @model_validator(mode="after")
-    def _check(self) -> "Observation":
-        if self.id.with_boundname:
-            raise ValueError("with_boundname applies only to id2")
-        if self.id2 is not None and self.id2.with_boundname and "boundname" not in self.id.arms:
-            raise ValueError("id2 with_boundname requires id to admit a boundname")
-        return self
+# What follows an observation type in an OBS file: the observation's ID and
+# ID2, as one (untagged) field. A Record's first field fills `utl-obs`'s `id`
+# column and its second `id2`; any other field fills `id` alone. A Union's arms
+# map the same way, each on its own.
+ObservationField = Annotated[
+    Integer | Double | String | Array | Record | Union,
+    PydanticField(discriminator="type"),
+]
 
 
 class ComponentBase(BaseModel):
@@ -981,8 +946,8 @@ class ComponentBase(BaseModel):
     blocks: dict[str, Block] | None = None
     memory: dict[str, MemoryVariable] | None = None
     # Observation types this component accepts in its OBS file, keyed by
-    # (lower-case) name. See `Observation`.
-    observations: dict[str, Observation] | None = None
+    # (lower-case) name. See `ObservationField`.
+    observations: dict[str, ObservationField] | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
@@ -1280,9 +1245,9 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
       runtime, so no further structural check is possible statically.
 
     A hierarchical-path fk may not be combined with fk_ref.
+
+    Observation fields (see `ObservationField`) are checked like a list item's.
     """
-    if not component.blocks:
-        return
 
     def _check_fields(fields: dict, dynamic_key: "InputField | None" = None) -> None:
         for field in fields.values():
@@ -1369,8 +1334,9 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                     else:
                         _check_fields({form.name: form})
 
-    for block in component.blocks.values():
+    for block in (component.blocks or {}).values():
         _check_fields(block.fields)
+    _check_fields(component.observations or {})
 
 
 def _iter_files(fields: "Mapping[str, InputField]"):
@@ -1434,11 +1400,10 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
 def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
     A cellid array (`cellid=True`, see `Array.cellid`) is only meaningful as a
-    column in a list item, where each row names its cell(s). Its dtype and
-    shape are checked by `Array` itself.
+    column in a list item, where each row names its cell(s), or in an
+    observation field, which reads like one. Its dtype and shape are checked by
+    `Array` itself.
     """
-    if not component.blocks:
-        return
 
     def _check(field: "InputField", in_item: bool) -> None:
         if isinstance(field, Array) and field.cellid and not in_item:
@@ -1454,47 +1419,42 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
             for arm in field.arms.values():
                 _check(arm, in_item)
 
-    for block in component.blocks.values():
+    for block in (component.blocks or {}).values():
         for field in block.fields.values():
             _check(field, False)
+    for obs_field in (component.observations or {}).values():
+        _check(obs_field, True)
 
 
-def _obs_id_arms(spec: "Dfns") -> set[str]:
-    """The arms of `utl-obs`'s `id` union, or `_OBS_ID_ARMS` without utl-obs."""
-    obs = spec.components.get("utl-obs")
-    item = getattr(_find_list_in_block(obs, "continuous"), "item", None) if obs else None
-    id_field = item.fields.get("id") if isinstance(item, Record) else None
-    if isinstance(id_field, Union):
-        return set(id_field.arms)
-    return set(_OBS_ID_ARMS)
+def _obs_columns(field: "InputField") -> list[int]:
+    """How many `utl-obs` columns each form of an observation field fills."""
+    if isinstance(field, Union):
+        return [n for arm in field.arms.values() for n in _obs_columns(arm)]
+    return [len(field.fields) if isinstance(field, Record) else 1]
 
 
-def _validate_observations(component: "ComponentBase", spec: "Dfns") -> None:
+def _validate_observations(component: "ComponentBase") -> None:
     """
-    Each observation id's arms must be arms of `utl-obs`'s id union, and an
-    `fk` ("block.field") must name the pk column of a list in this component.
+    Each observation field (see `ObservationField`) must be untagged
+    throughout and fill one or two columns, `id` and optionally `id2`.
+    Its fks are checked by `_validate_fk_fields`.
     """
-    if not component.observations:
-        return
-    valid_arms = _obs_id_arms(spec)
-    for obstype, obs in component.observations.items():
+    for obstype, field in (component.observations or {}).items():
+        where = f"Observation {obstype!r}"
         if obstype != obstype.lower():
-            raise ValueError(f"Observation {obstype!r}: name must be lower case")
-        for col, obs_id in (("id", obs.id), ("id2", obs.id2)):
-            if obs_id is None:
-                continue
-            where = f"Observation {obstype!r} {col}"
-            unknown = sorted(set(obs_id.arms) - valid_arms)
-            if unknown:
-                raise ValueError(f"{where}: {unknown} are not utl-obs id arms")
-            if obs_id.fk is None:
-                continue
-            block_name, _, pk_name = obs_id.fk.partition(".")
-            list_field = _find_list_in_block(component, block_name)
-            item = list_field.item if list_field else None
-            pk = item.fields.get(pk_name) if isinstance(item, Record) else None
-            if not getattr(pk, "pk", False):
-                raise ValueError(f"{where}: fk={obs_id.fk!r} is not a pk column in this component")
+            raise ValueError(f"{where}: name must be lower case")
+        tagged = [f.name for f in _iter_subfields(field) if f.tagged]
+        if tagged:
+            raise ValueError(f"{where}: {tagged} must be untagged")
+        if any(n not in (1, 2) for n in _obs_columns(field)):
+            raise ValueError(f"{where}: each form must fill id and at most id2")
+
+
+def _iter_subfields(field: "InputField"):
+    """Yield ``field`` and every field nested in it."""
+    yield field
+    for child in getattr(field, "children", {}).values():
+        yield from _iter_subfields(child)
 
 
 def _validate_array_shapes(
@@ -1659,6 +1619,7 @@ def _inject_names(comp_data: dict) -> None:
     Necessary to compensate for field and block names being absent in
     serialized DFN file data.
     """
+    _inject_field_names(comp_data.get("observations") or {})
     for block_name, block in (comp_data.get("blocks") or {}).items():
         block.setdefault("name", block_name)
         _inject_field_names(block.get("fields") or {})
@@ -1822,7 +1783,7 @@ class Dfns(BaseModel):
         for name, component in self.components.items():
             _validate_cellid_fields(component)
         for name, component in self.components.items():
-            _validate_observations(component, self)
+            _validate_observations(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

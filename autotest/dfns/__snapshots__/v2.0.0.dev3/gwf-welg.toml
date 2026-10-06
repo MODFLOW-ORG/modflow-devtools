@@ -320,20 +320,56 @@ shape = [
     "naux",
 ]
 
-[observations.wel.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.wel]
+type = "union"
+tagged = false
+
+[observations.wel.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.to-mvr.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.wel.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.wel-reduction.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.wel-reduction]
+type = "union"
+tagged = false
+
+[observations.wel-reduction.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.wel-reduction.arms.boundname]
+type = "string"
+tagged = false

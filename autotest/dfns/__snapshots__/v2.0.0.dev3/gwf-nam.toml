@@ -210,22 +210,46 @@ shape = [
     "nja",
 ]
 
-[observations.head.id]
-arms = [
-    "cellid",
+[observations.head]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.drawdown.id]
-arms = [
-    "cellid",
+[observations.drawdown]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.flow-ja-face.id]
-arms = [
-    "cellid",
+[observations.flow-ja-face]
+type = "record"
+tagged = false
+
+[observations.flow-ja-face.fields.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
 
-[observations.flow-ja-face.id2]
-arms = [
-    "cellid",
+[observations.flow-ja-face.fields.cellid2]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]

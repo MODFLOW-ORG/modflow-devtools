@@ -320,8 +320,20 @@ shape = [
     "naux",
 ]
 
-[observations.evt.id]
-arms = [
-    "cellid",
-    "boundname",
+[observations.evt]
+type = "union"
+tagged = false
+
+[observations.evt.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
 ]
+
+[observations.evt.arms.boundname]
+type = "string"
+tagged = false

@@ -691,153 +691,295 @@ set_in = "ar"
 source = "ntables"
 type = "integer"
 
-[observations.stage.id]
+[observations.stage]
+type = "union"
+tagged = false
+
+[observations.stage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.ext-inflow.id]
+[observations.stage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-inflow]
+type = "union"
+tagged = false
+
+[observations.ext-inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.outlet-inflow.id]
+[observations.ext-inflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.outlet-inflow]
+type = "union"
+tagged = false
+
+[observations.outlet-inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.inflow.id]
+[observations.outlet-inflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.inflow]
+type = "union"
+tagged = false
+
+[observations.inflow.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.from-mvr.id]
+[observations.inflow.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.rainfall.id]
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rainfall]
+type = "union"
+tagged = false
+
+[observations.rainfall.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.runoff.id]
+[observations.rainfall.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.runoff]
+type = "union"
+tagged = false
+
+[observations.runoff.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.withdrawal.id]
+[observations.runoff.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.withdrawal]
+type = "union"
+tagged = false
+
+[observations.withdrawal.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.evaporation.id]
+[observations.withdrawal.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.evaporation]
+type = "union"
+tagged = false
+
+[observations.evaporation.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.storage.id]
+[observations.evaporation.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.constant.id]
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.constant]
+type = "union"
+tagged = false
+
+[observations.constant.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.volume.id]
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.volume]
+type = "union"
+tagged = false
+
+[observations.volume.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.surface-area.id]
+[observations.volume.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.surface-area]
+type = "union"
+tagged = false
+
+[observations.surface-area.arms.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.lak.id]
+[observations.surface-area.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.lak]
+type = "union"
+tagged = false
+
+[observations.lak.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.lak.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.lak.id2]
-name = "iconn"
-arms = [
-    "index",
-]
+[observations.lak.arms.ifno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
 
-[observations.wetted-area.id]
+[observations.lak.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.wetted-area]
+type = "union"
+tagged = false
+
+[observations.wetted-area.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.wetted-area.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.wetted-area.id2]
-name = "iconn"
-arms = [
-    "index",
-]
+[observations.wetted-area.arms.ifno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
 
-[observations.conductance.id]
+[observations.wetted-area.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.conductance]
+type = "union"
+tagged = false
+
+[observations.conductance.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.conductance.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
 fk = "packagedata.ifno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.conductance.id2]
-name = "iconn"
-arms = [
-    "index",
-]
+[observations.conductance.arms.ifno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
 
-[observations.ext-outflow.id]
+[observations.conductance.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.ext-outflow]
+type = "union"
+tagged = false
+
+[observations.ext-outflow.arms.outletno]
+type = "integer"
+tagged = false
+index = true
 fk = "outlets.outletno"
-arms = [
-    "index",
-    "boundname",
-]
 
-[observations.to-mvr.id]
-fk = "outlets.outletno"
-arms = [
-    "index",
-    "boundname",
-]
+[observations.ext-outflow.arms.boundname]
+type = "string"
+tagged = false
 
-[observations.outlet.id]
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.outletno]
+type = "integer"
+tagged = false
+index = true
 fk = "outlets.outletno"
-arms = [
-    "index",
-    "boundname",
-]
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.outlet]
+type = "union"
+tagged = false
+
+[observations.outlet.arms.outletno]
+type = "integer"
+tagged = false
+index = true
+fk = "outlets.outletno"
+
+[observations.outlet.arms.boundname]
+type = "string"
+tagged = false
