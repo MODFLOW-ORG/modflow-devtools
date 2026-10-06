@@ -398,3 +398,92 @@ type = "integer"
 set_in = "ar"
 source = "nwavesets"
 type = "integer"
+
+[observations.uzf-gwrch.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzf-gwd.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzf-gwd-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzf-gwet.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.infiltration.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzet.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.net-infiltration.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.water-content.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.water-content.id2]
+type = "double"
+name = "depth"
+with_boundname = true

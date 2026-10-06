@@ -646,3 +646,250 @@ dtype = "double"
 shape = [
     "nodes",
 ]
+
+[observations.csub.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.inelastic-csub.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.elastic-csub.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.delay-flowtop.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.delay-flowbot.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.sk.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.ske.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.theta.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.thickness.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.interbed-compaction.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.interbed-compaction-pct.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.inelastic-compaction.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.elastic-compaction.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-head.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-head.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-gstress.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-gstress.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-estress.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-estress.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-preconstress.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-preconstress.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-compaction.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-compaction.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-thickness.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-thickness.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.delay-theta.id]
+fk = "packagedata.icsubno"
+arms = [
+    "index",
+]
+
+[observations.delay-theta.id2]
+name = "idcellno"
+arms = [
+    "index",
+]
+
+[observations.coarse-csub.id]
+arms = [
+    "cellid",
+]
+
+[observations.csub-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.wcomp-csub-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.sk-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.ske-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.estress-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.gstress-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.preconstress-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.coarse-compaction.id]
+arms = [
+    "cellid",
+]
+
+[observations.compaction-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.inelastic-compaction-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.elastic-compaction-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.coarse-thickness.id]
+arms = [
+    "cellid",
+]
+
+[observations.thickness-cell.id]
+arms = [
+    "cellid",
+]
+
+[observations.coarse-theta.id]
+arms = [
+    "cellid",
+]
+
+[observations.theta-cell.id]
+arms = [
+    "cellid",
+]

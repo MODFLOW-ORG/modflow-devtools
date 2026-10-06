@@ -435,5 +435,130 @@
         "ncv"
       ]
     }
+  },
+  "observations": {
+    "temperature": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "lke": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rainfall": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "evaporation": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "runoff": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-inflow": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "withdrawal": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-outflow": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "flow-ja-face": {
+      "id": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "fk": "packagedata.lakeno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "name": "outletno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    }
   }
 }

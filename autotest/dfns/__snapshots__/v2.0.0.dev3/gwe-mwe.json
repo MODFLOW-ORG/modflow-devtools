@@ -390,5 +390,94 @@
         "ncv"
       ]
     }
+  },
+  "observations": {
+    "temperature": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-rate": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate-to-mvr": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-rate-to-mvr": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "mwe": {
+      "id": {
+        "fk": "packagedata.mawno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "name": "iconn",
+        "arms": [
+          "index"
+        ]
+      }
+    }
   }
 }

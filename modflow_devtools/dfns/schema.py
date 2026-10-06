@@ -922,6 +922,51 @@ MemoryVariable = Annotated[
 ]
 
 
+# The arms of `utl-obs`'s `id`/`id2` union, used when the corpus has no utl-obs.
+_OBS_ID_ARMS = ("cellid", "index", "boundname")
+
+
+class ObservationId(BaseModel):
+    """What an observation type's ID or ID2 holds: some of `utl-obs`'s id
+    union arms, or (UZF's water-content depth) a plain value instead."""
+
+    arms: list[str] = []
+    type: Literal["double"] | None = None
+    # What MF6 calls the value, where it isn't evident from `fk` (e.g. LAK's
+    # `iconn`, UZF's `depth`).
+    name: str | None = None
+    # For an index, the "block.field" pk it refers to.
+    fk: str | None = None
+    # ID2 only: whether ID2 still follows an ID given as a boundname. MF6
+    # otherwise reads no ID2 after a boundname.
+    with_boundname: bool = False
+
+    @model_validator(mode="after")
+    def _check(self) -> "ObservationId":
+        if bool(self.arms) == (self.type is not None):
+            raise ValueError("observation id needs exactly one of arms or type")
+        if self.fk is not None and "index" not in self.arms:
+            raise ValueError(f"observation id fk={self.fk!r} requires the 'index' arm")
+        return self
+
+
+class Observation(BaseModel):
+    """An observation type a component accepts in its OBS file."""
+
+    description: str | None = None
+    id: ObservationId
+    # Absent if the observation type takes no ID2.
+    id2: ObservationId | None = None
+
+    @model_validator(mode="after")
+    def _check(self) -> "Observation":
+        if self.id.with_boundname:
+            raise ValueError("with_boundname applies only to id2")
+        if self.id2 is not None and self.id2.with_boundname and "boundname" not in self.id.arms:
+            raise ValueError("id2 with_boundname requires id to admit a boundname")
+        return self
+
+
 class ComponentBase(BaseModel):
     schema_version: str | None = None
     name: str
@@ -935,6 +980,9 @@ class ComponentBase(BaseModel):
     runtime_dims: dict[str, RuntimeDim] | None = None
     blocks: dict[str, Block] | None = None
     memory: dict[str, MemoryVariable] | None = None
+    # Observation types this component accepts in its OBS file, keyed by
+    # (lower-case) name. See `Observation`.
+    observations: dict[str, Observation] | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
@@ -1411,6 +1459,44 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
             _check(field, False)
 
 
+def _obs_id_arms(spec: "Dfns") -> set[str]:
+    """The arms of `utl-obs`'s `id` union, or `_OBS_ID_ARMS` without utl-obs."""
+    obs = spec.components.get("utl-obs")
+    item = getattr(_find_list_in_block(obs, "continuous"), "item", None) if obs else None
+    id_field = item.fields.get("id") if isinstance(item, Record) else None
+    if isinstance(id_field, Union):
+        return set(id_field.arms)
+    return set(_OBS_ID_ARMS)
+
+
+def _validate_observations(component: "ComponentBase", spec: "Dfns") -> None:
+    """
+    Each observation id's arms must be arms of `utl-obs`'s id union, and an
+    `fk` ("block.field") must name the pk column of a list in this component.
+    """
+    if not component.observations:
+        return
+    valid_arms = _obs_id_arms(spec)
+    for obstype, obs in component.observations.items():
+        if obstype != obstype.lower():
+            raise ValueError(f"Observation {obstype!r}: name must be lower case")
+        for col, obs_id in (("id", obs.id), ("id2", obs.id2)):
+            if obs_id is None:
+                continue
+            where = f"Observation {obstype!r} {col}"
+            unknown = sorted(set(obs_id.arms) - valid_arms)
+            if unknown:
+                raise ValueError(f"{where}: {unknown} are not utl-obs id arms")
+            if obs_id.fk is None:
+                continue
+            block_name, _, pk_name = obs_id.fk.partition(".")
+            list_field = _find_list_in_block(component, block_name)
+            item = list_field.item if list_field else None
+            pk = item.fields.get(pk_name) if isinstance(item, Record) else None
+            if not getattr(pk, "pk", False):
+                raise ValueError(f"{where}: fk={obs_id.fk!r} is not a pk column in this component")
+
+
 def _validate_array_shapes(
     component: "ComponentBase",
     component_name: str,
@@ -1735,6 +1821,8 @@ class Dfns(BaseModel):
             _validate_file_links(component, self)
         for name, component in self.components.items():
             _validate_cellid_fields(component)
+        for name, component in self.components.items():
+            _validate_observations(component, self)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

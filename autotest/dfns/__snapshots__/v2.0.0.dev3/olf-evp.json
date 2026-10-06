@@ -307,5 +307,15 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "evp": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

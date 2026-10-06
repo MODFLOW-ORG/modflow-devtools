@@ -359,5 +359,31 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "wel": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    },
+    "wel-reduction": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

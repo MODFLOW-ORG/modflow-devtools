@@ -395,3 +395,90 @@ memory:
     dtype: double
     shape:
       - ncv
+observations:
+  concentration:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  storage:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  constant:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  from-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rainfall:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  evaporation:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  runoff:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  ext-inflow:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  withdrawal:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  ext-outflow:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  flow-ja-face:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      fk: packagedata.ifno
+      arms:
+        - index
+  to-mvr:
+    id:
+      name: outletno
+      arms:
+        - index
+        - boundname
+  lkt:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      name: iconn
+      arms:
+        - index

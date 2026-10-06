@@ -281,3 +281,9 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.pcp.id]
+arms = [
+    "cellid",
+    "boundname",
+]

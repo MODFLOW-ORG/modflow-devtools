@@ -417,3 +417,100 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.temperature.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.sfe.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.strmbd-cond.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rainfall.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.evaporation.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.runoff.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-inflow.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-outflow.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id]
+fk = "packagedata.rno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id2]
+fk = "packagedata.rno"
+arms = [
+    "index",
+]

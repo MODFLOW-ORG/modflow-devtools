@@ -358,5 +358,94 @@
         "ncv"
       ]
     }
+  },
+  "observations": {
+    "concentration": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-rate": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate-to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-rate-to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "mwt": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "name": "iconn",
+        "arms": [
+          "index"
+        ]
+      }
+    }
   }
 }

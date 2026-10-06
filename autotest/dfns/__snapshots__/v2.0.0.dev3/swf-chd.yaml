@@ -268,3 +268,9 @@ memory:
     shape:
       - naux
       - nbound
+observations:
+  chd:
+    id:
+      arms:
+        - cellid
+        - boundname

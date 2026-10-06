@@ -836,3 +836,130 @@ memory:
     set_in: ar
     source: ntables
     type: integer
+observations:
+  stage:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  ext-inflow:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  outlet-inflow:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  inflow:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  from-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rainfall:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  runoff:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  withdrawal:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  evaporation:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  storage:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  constant:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  volume:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  surface-area:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  lak:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      name: iconn
+      arms:
+        - index
+  wetted-area:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      name: iconn
+      arms:
+        - index
+  conductance:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      name: iconn
+      arms:
+        - index
+  ext-outflow:
+    id:
+      fk: outlets.outletno
+      arms:
+        - index
+        - boundname
+  to-mvr:
+    id:
+      fk: outlets.outletno
+      arms:
+        - index
+        - boundname
+  outlet:
+    id:
+      fk: outlets.outletno
+      arms:
+        - index
+        - boundname

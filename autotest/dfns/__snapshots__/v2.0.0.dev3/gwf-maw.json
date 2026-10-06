@@ -504,5 +504,118 @@
       "source": "nmawwells",
       "type": "integer"
     }
+  },
+  "observations": {
+    "head": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rate-to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-rate": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "fw-conductance": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "maw": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "name": "icon",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "conductance": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "name": "icon",
+        "arms": [
+          "index"
+        ]
+      }
+    }
   }
 }

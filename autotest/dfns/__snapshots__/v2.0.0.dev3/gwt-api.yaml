@@ -82,3 +82,14 @@ memory:
     set_in: ar
     source: maxbound
     type: integer
+observations:
+  api:
+    id:
+      arms:
+        - cellid
+        - boundname
+  to-mvr:
+    id:
+      arms:
+        - cellid
+        - boundname

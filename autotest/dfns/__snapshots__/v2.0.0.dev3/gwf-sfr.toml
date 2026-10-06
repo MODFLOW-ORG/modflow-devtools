@@ -683,3 +683,122 @@ dtype = "integer"
 shape = [
     "maxbound",
 ]
+
+[observations.stage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-inflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.inflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rainfall.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.runoff.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.sfr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.evaporation.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.outflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-outflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.upstream-flow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.downstream-flow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.depth.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.wet-perimeter.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.wet-area.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.wet-width.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]

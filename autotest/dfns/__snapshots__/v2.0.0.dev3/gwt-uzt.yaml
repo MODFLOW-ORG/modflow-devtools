@@ -365,3 +365,68 @@ memory:
     dtype: double
     shape:
       - ncv
+observations:
+  concentration:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  storage:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  constant:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  from-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzt:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  infiltration:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rej-inf:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzet:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rej-inf-to-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  flow-ja-face:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      fk: packagedata.ifno
+      arms:
+        - index

@@ -386,6 +386,74 @@ def test_migrate_obs_id_union(dfn_dir, col, optional):
     assert not any(arm.tagged for arm in field.arms.values())
 
 
+def _obs_ids(component: v2.Component, obstype: str) -> tuple:
+    assert component.observations is not None
+    obs = component.observations[obstype]
+    id2 = obs.id2
+    return (obs.id.arms, obs.id.fk), None if id2 is None else (id2.arms, id2.type, id2.name)
+
+
+@pytest.mark.parametrize(
+    "name, obstype, ids",
+    [
+        # CSUB mixes index- and cellid-keyed obstypes, some without boundnames
+        ("gwf-csub", "csub", ((["index", "boundname"], "packagedata.icsubno"), None)),
+        ("gwf-csub", "sk", ((["index"], "packagedata.icsubno"), None)),
+        ("gwf-csub", "csub-cell", ((["cellid"], None), None)),
+        (
+            "gwf-csub",
+            "delay-head",
+            ((["index"], "packagedata.icsubno"), (["index"], None, "idcellno")),
+        ),
+        # UZF's water-content id2 is a depth, not an id
+        (
+            "gwf-uzf",
+            "water-content",
+            ((["index", "boundname"], "packagedata.ifno"), ([], "double", "depth")),
+        ),
+        ("gwf-uzf", "uzet", ((["index", "boundname"], "packagedata.ifno"), None)),
+        (
+            "gwf-lak",
+            "lak",
+            ((["index", "boundname"], "packagedata.ifno"), (["index"], None, "iconn")),
+        ),
+        ("gwf-lak", "outlet", ((["index", "boundname"], "outlets.outletno"), None)),
+        (
+            "gwt-lkt",
+            "flow-ja-face",
+            ((["index", "boundname"], "packagedata.ifno"), (["index"], None, None)),
+        ),
+        # MF6 reads no id2 for lke, though its docs list one
+        ("gwe-lke", "lke", ((["index", "boundname"], "packagedata.lakeno"), None)),
+        ("gwf-wel", "wel", ((["cellid", "boundname"], None), None)),
+        ("gwf-nam", "flow-ja-face", ((["cellid"], None), (["cellid"], None, None))),
+        # an exchange id is a row number in exchangedata, which has no pk
+        ("exg-gwegwe", "flow-ja-face", ((["index", "boundname"], None), None)),
+    ],
+)
+def test_migrate_observations(dfn_dir, name, obstype, ids):
+    assert _obs_ids(_migrate_dev3(dfn_dir, name), obstype) == ids
+
+
+def test_migrate_observations_on_obs_parents(dev3):
+    """Every component with an OBS file gets observations, except the
+    SWF-GWF exchanges, which MF6 registers no observation types for."""
+    out, _ = dev3
+    spec = v2.Dfns.load(out)
+    obs_parents = {
+        name
+        for name, c in spec.components.items()
+        if isinstance(c, v2.Model)
+        or any(
+            getattr(f, "component", None) == "utl-obs"
+            for f in c.get_fields(recurse=True).values(multi=True)
+        )
+    }
+    with_obs = {name for name, c in spec.components.items() if c.observations}
+    assert obs_parents - with_obs == {"exg-chfgwf", "exg-olfgwf", "prt-nam"}
+    assert with_obs <= obs_parents
+
+
 def test_migrate_sfr_ic_is_signed_index(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-sfr")
     item = component.blocks["connectiondata"].fields["connectiondata"].item

@@ -335,3 +335,79 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.concentration.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzt.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.infiltration.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzet.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id2]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+]

@@ -209,3 +209,23 @@ dtype = "integer"
 shape = [
     "nja",
 ]
+
+[observations.head.id]
+arms = [
+    "cellid",
+]
+
+[observations.drawdown.id]
+arms = [
+    "cellid",
+]
+
+[observations.flow-ja-face.id]
+arms = [
+    "cellid",
+]
+
+[observations.flow-ja-face.id2]
+arms = [
+    "cellid",
+]

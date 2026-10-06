@@ -310,3 +310,9 @@ memory:
     dtype: string
     shape:
       - naux
+observations:
+  flow-ja-face:
+    id:
+      arms:
+        - index
+        - boundname

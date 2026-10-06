@@ -450,3 +450,92 @@ tagged = false
 set_in = "ar"
 source = "nmawwells"
 type = "integer"
+
+[observations.head.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-rate.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-conductance.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.maw.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.maw.id2]
+name = "icon"
+arms = [
+    "index",
+]
+
+[observations.conductance.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.conductance.id2]
+name = "icon"
+arms = [
+    "index",
+]

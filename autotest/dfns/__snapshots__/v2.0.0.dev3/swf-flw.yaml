@@ -270,3 +270,14 @@ memory:
     shape:
       - naux
       - nbound
+observations:
+  flw:
+    id:
+      arms:
+        - cellid
+        - boundname
+  to-mvr:
+    id:
+      arms:
+        - cellid
+        - boundname

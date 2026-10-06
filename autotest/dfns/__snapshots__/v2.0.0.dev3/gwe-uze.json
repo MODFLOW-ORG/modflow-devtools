@@ -373,5 +373,112 @@
         "ncv"
       ]
     }
+  },
+  "observations": {
+    "temperature": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "uze": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "thermal-equil": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "infiltration": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rej-inf": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "uzet": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rej-inf-to-mvr": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "flow-ja-face": {
+      "id": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "fk": "packagedata.uzfno",
+        "arms": [
+          "index"
+        ]
+      }
+    }
   }
 }

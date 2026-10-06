@@ -460,3 +460,80 @@ memory:
     set_in: ar
     source: nwavesets
     type: integer
+observations:
+  uzf-gwrch:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzf-gwd:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzf-gwd-to-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzf-gwet:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  infiltration:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  from-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rej-inf:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  rej-inf-to-mvr:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  uzet:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  storage:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  net-infiltration:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+  water-content:
+    id:
+      fk: packagedata.ifno
+      arms:
+        - index
+        - boundname
+    id2:
+      type: double
+      name: depth
+      with_boundname: true

@@ -438,3 +438,86 @@ memory:
     dtype: double
     shape:
       - ncv
+observations:
+  temperature:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  storage:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  constant:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  from-mvr:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  sfe:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  strmbd-cond:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  to-mvr:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  rainfall:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  evaporation:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  runoff:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  ext-inflow:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  ext-outflow:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+  flow-ja-face:
+    id:
+      fk: packagedata.rno
+      arms:
+        - index
+        - boundname
+    id2:
+      fk: packagedata.rno
+      arms:
+        - index

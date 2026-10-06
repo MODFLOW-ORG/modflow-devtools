@@ -755,5 +755,160 @@
         "maxbound"
       ]
     }
+  },
+  "observations": {
+    "stage": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-inflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "inflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rainfall": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "runoff": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "sfr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "evaporation": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "outflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-outflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "upstream-flow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "downstream-flow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "depth": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "wet-perimeter": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "wet-area": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "wet-width": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    }
   }
 }

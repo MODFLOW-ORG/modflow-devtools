@@ -423,5 +423,121 @@
         "ncv"
       ]
     }
+  },
+  "observations": {
+    "concentration": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "storage": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "constant": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "from-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "sft": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "rainfall": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "evaporation": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "runoff": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-inflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "ext-outflow": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "flow-ja-face": {
+      "id": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      },
+      "id2": {
+        "fk": "packagedata.ifno",
+        "arms": [
+          "index"
+        ]
+      }
+    }
   }
 }

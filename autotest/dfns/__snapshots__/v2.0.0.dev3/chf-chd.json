@@ -297,5 +297,15 @@
         "nbound"
       ]
     }
+  },
+  "observations": {
+    "chd": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

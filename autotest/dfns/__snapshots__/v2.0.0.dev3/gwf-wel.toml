@@ -331,3 +331,21 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.wel.id]
+arms = [
+    "cellid",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+arms = [
+    "cellid",
+    "boundname",
+]
+
+[observations.wel-reduction.id]
+arms = [
+    "cellid",
+    "boundname",
+]

@@ -18,6 +18,10 @@ derived from three sources:
 
 Package-specific variables that are not captured by the above (e.g. ``k → k11``,
 ``condsat``, ``area``) are hardcoded and override any entry with the same name.
+
+Components that accept an OBS file also get an ``observations`` table, the
+observation types they accept and what each one's IDs hold. See
+``modflow_devtools.dfns.observations``.
 """
 
 from collections.abc import Mapping
@@ -27,6 +31,7 @@ from boltons.dictutils import OMD
 
 from modflow_devtools.dfns import schema as v2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2, try_parse_bool
+from modflow_devtools.dfns.observations import OBSERVATIONS
 
 # ---------------------------------------------------------------------------
 # dtype translation
@@ -1479,6 +1484,7 @@ def to_v2_0_0_dev3(
         update={
             "schema_version": "2.0.0.dev3",
             "memory": memory or None,
+            "observations": OBSERVATIONS.get(name),
             "dims": existing_input_dims or None,
             "runtime_dims": existing_runtime_dims or None,
             "blocks": blocks,

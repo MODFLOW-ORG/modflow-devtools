@@ -273,3 +273,15 @@ shape = [
     "naux",
     "nbound",
 ]
+
+[observations.flw.id]
+arms = [
+    "cellid",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+arms = [
+    "cellid",
+    "boundname",
+]

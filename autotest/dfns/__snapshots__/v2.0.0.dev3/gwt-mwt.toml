@@ -320,3 +320,72 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.concentration.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-rate.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-rate-to-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.mwt.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.mwt.id2]
+name = "iconn"
+arms = [
+    "index",
+]

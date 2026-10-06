@@ -203,3 +203,18 @@ dtype = "integer"
 shape = [
     "nja",
 ]
+
+[observations.concentration.id]
+arms = [
+    "cellid",
+]
+
+[observations.flow-ja-face.id]
+arms = [
+    "cellid",
+]
+
+[observations.flow-ja-face.id2]
+arms = [
+    "cellid",
+]

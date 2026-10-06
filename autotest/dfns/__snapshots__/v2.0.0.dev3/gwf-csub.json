@@ -700,5 +700,326 @@
         "nodes"
       ]
     }
+  },
+  "observations": {
+    "csub": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "inelastic-csub": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "elastic-csub": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "delay-flowtop": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "delay-flowbot": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index",
+          "boundname"
+        ]
+      }
+    },
+    "sk": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "ske": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "theta": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "thickness": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "interbed-compaction": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "interbed-compaction-pct": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "inelastic-compaction": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "elastic-compaction": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-head": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-gstress": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-estress": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-preconstress": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-compaction": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-thickness": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "delay-theta": {
+      "id": {
+        "fk": "packagedata.icsubno",
+        "arms": [
+          "index"
+        ]
+      },
+      "id2": {
+        "name": "idcellno",
+        "arms": [
+          "index"
+        ]
+      }
+    },
+    "coarse-csub": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "csub-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "wcomp-csub-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "sk-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "ske-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "estress-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "gstress-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "preconstress-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "coarse-compaction": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "compaction-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "inelastic-compaction-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "elastic-compaction-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "coarse-thickness": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "thickness-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "coarse-theta": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    },
+    "theta-cell": {
+      "id": {
+        "arms": [
+          "cellid"
+        ]
+      }
+    }
   }
 }

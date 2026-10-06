@@ -352,3 +352,72 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.temperature.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-rate.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rate-to-mvr.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.fw-rate-to-mvr.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.mwe.id]
+fk = "packagedata.mawno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.mwe.id2]
+name = "iconn"
+arms = [
+    "index",
+]

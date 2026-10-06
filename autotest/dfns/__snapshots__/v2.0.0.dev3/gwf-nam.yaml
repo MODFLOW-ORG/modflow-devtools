@@ -213,3 +213,19 @@ memory:
     dtype: integer
     shape:
       - nja
+observations:
+  head:
+    id:
+      arms:
+        - cellid
+  drawdown:
+    id:
+      arms:
+        - cellid
+  flow-ja-face:
+    id:
+      arms:
+        - cellid
+    id2:
+      arms:
+        - cellid

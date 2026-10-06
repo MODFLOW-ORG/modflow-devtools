@@ -283,3 +283,15 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.esl.id]
+arms = [
+    "cellid",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+arms = [
+    "cellid",
+    "boundname",
+]

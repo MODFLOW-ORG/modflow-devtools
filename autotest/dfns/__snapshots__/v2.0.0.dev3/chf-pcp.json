@@ -307,5 +307,15 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "pcp": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

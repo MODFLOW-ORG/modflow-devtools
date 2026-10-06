@@ -335,3 +335,86 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.temperature.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uze.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.thermal-equil.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.infiltration.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.uzet.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rej-inf-to-mvr.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id2]
+fk = "packagedata.uzfno"
+arms = [
+    "index",
+]

@@ -319,5 +319,15 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "rch": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

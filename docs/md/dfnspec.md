@@ -13,6 +13,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`schema_version`](#schema_version)
     - [`dims`](#dims)
     - [`memory`](#memory)
+    - [`observations`](#observations)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -100,6 +101,10 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`output`](#output)
     - [`budget`](#budget)
     - [`obs_type`](#obs_type)
+- [Observation types](#observation-types)
+  - [Attributes](#attributes-2)
+    - [`description`](#description-2)
+    - [`id`, `id2`](#id-id2)
 
 ## Overview
 
@@ -122,6 +127,7 @@ Component definitions consist of a number of attributes:
 - `dims`: named dimensions resolvable from input fields, available for use in array shapes
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
 - `memory`: API-accessible runtime variable definitions
+- `observations`: the observation types the component accepts in its OBS file
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
@@ -183,6 +189,10 @@ A component that other components' input files link (see [File](#file)), such as
 `{string: MemoryVariable} (default: {})`. The component's memory catalog. See section below.
 
 If a component does not provide a `memory` catalog, all memory-managed variables in the component's runtime context will be readonly by default. To allow MODFLOW API access to runtime variables, they must be defined in the `memory` catalog.
+
+#### `observations`
+
+`{string: Observation} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name (MF6 matches them case-insensitively). See [Observation types](#observation-types).
 
 ### Component types
 
@@ -529,7 +539,7 @@ Type `union`. Sum type.
 
 `{string: Scalar | Array | Record}`. Subfields, required.
 
-A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. As with a runtime-resolved [foreign key](#primary-and-foreign-keys), the codec resolves which arm applies.
+A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [observation types](#observation-types) say which arms apply for each observation type.
 
 #### List
 
@@ -861,3 +871,45 @@ Allowed values:
 #### `obs_type`
 
 `string | null (default: null)`. The OBS package observation type name for variables observable through the `utl-obs` utility package (e.g., `"HEAD"` on `x`, `"WEL"` on `simvals` in the WEL package). Absent means the variable is not directly observable via OBS. Registers the variable as an output to be returned by [BMI's `get_output_var_names()`](https://bmi.csdms.io/en/stable/bmi.info_funcs.html#get-output-var-names).
+
+The memory catalog's `obs_type` names the observation type a variable backs. A component's [`observations`](#observation-types) list every observation type it accepts; an `obs_type` matches one of them by name.
+
+## Observation types
+
+A component that supports observations lists the observation types it accepts in `observations`. Models list their model-level types (e.g. GWF's `head`, `drawdown` and `flow-ja-face`), since a model is the parent of its OBS file.
+
+`utl-obs`'s `id` and `id2` are an untagged union of a `cellid`, a 1-based `index` and a `boundname` (see [Union](#union)), and a value alone can't always say which: `3 4` may be one DISV cellid or two indices. Which arms apply depends on the observation type and its parent, so each observation type narrows the union.
+
+```toml
+# gwf-csub
+[observations.csub.id]
+arms = ["index", "boundname"]
+fk = "packagedata.icsubno"
+
+[observations.csub-cell.id]
+arms = ["cellid"]
+
+[observations.delay-head.id]
+arms = ["index"]
+fk = "packagedata.icsubno"
+
+[observations.delay-head.id2]
+arms = ["index"]
+name = "idcellno"
+```
+
+### Attributes
+
+#### `description`
+
+`string | null (default: null)`. What the observation type observes.
+
+#### `id`, `id2`
+
+What the observation's ID and ID2 hold. `id` is required; `id2` absent means the observation type takes no ID2.
+
+- `arms`: `[string]`. The `utl-obs` id union arms the value may take.
+- `type`: `"double" | null`. A plain value instead of an id, e.g. UZF `water-content`'s depth. Exactly one of `arms` and `type` is given.
+- `name`: `string | null`. What MF6 calls the value, where `fk` doesn't say, e.g. LAK's connection number `iconn`.
+- `fk`: `string | null`. For an `index`, the `"block.field"` [primary key](#primary-and-foreign-keys) column in this component it refers to, e.g. `"packagedata.ifno"`. Absent if the index refers to something without a key column, such as an exchange's `exchangedata` row or a connection number.
+- `with_boundname`: `boolean (default: false)`. `id2` only. MF6 reads no ID2 after an ID given as a boundname, since a boundname may name several features; `true` means ID2 is read anyway (UZF's depth).

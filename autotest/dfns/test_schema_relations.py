@@ -13,6 +13,8 @@ from modflow_devtools.dfns.schema import (
     Keyword,
     List,
     Model,
+    Observation,
+    ObservationId,
     Package,
     Record,
     Simulation,
@@ -246,6 +248,84 @@ def test_dfns_validate_cellid_outside_list_item():
     gwf = Model(name="gwf-nam", blocks=None)
     with pytest.raises(ValueError, match="only valid on a column in a list item"):
         Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})
+
+
+# --- observation types ---
+
+
+def _obs_spec(observations: dict, obs_arms: tuple = ("cellid", "index", "boundname")) -> dict:
+    """gwf-lak with a packagedata list keyed by `ifno`, and utl-obs whose
+    `id` union has ``obs_arms``."""
+    pkg_item = Record(name="item", fields={"ifno": Integer(name="ifno", pk=True)})
+    pkg_block = Block(
+        name="packagedata", fields={"packagedata": List(name="packagedata", item=pkg_item)}
+    )
+    lak = Package(
+        name="gwf-lak",
+        parent="gwf-nam",
+        blocks={"packagedata": pkg_block},
+        observations=observations,
+    )
+    arms = {a: Integer(name=a) for a in obs_arms}
+    obs_item = Record(name="item", fields={"id": Union(name="id", arms=arms)})
+    obs_block = Block(
+        name="continuous", fields={"continuous": List(name="continuous", item=obs_item)}
+    )
+    obs = Package(name="utl-obs", parent="package", blocks={"continuous": obs_block})
+    return {"gwf-nam": Model(name="gwf-nam"), "gwf-lak": lak, "utl-obs": obs}
+
+
+def test_dfns_validate_observations():
+    observations = {
+        "lak": Observation(
+            id=ObservationId(arms=["index", "boundname"], fk="packagedata.ifno"),
+            id2=ObservationId(arms=["index"], name="iconn"),
+        ),
+    }
+    spec = Dfns(components=_obs_spec(observations))
+    assert spec.components["gwf-lak"].observations == observations
+
+
+def test_dfns_validate_observations_unknown_arm():
+    observations = {"stage": Observation(id=ObservationId(arms=["index", "boundname"]))}
+    with pytest.raises(ValueError, match=r"\['boundname'\] are not utl-obs id arms"):
+        Dfns(components=_obs_spec(observations, obs_arms=("cellid", "index")))
+
+
+@pytest.mark.parametrize("fk", ["packagedata.nosuch", "nosuch.ifno"])
+def test_dfns_validate_observations_unresolved_fk(fk):
+    observations = {"stage": Observation(id=ObservationId(arms=["index"], fk=fk))}
+    with pytest.raises(ValueError, match="is not a pk column in this component"):
+        Dfns(components=_obs_spec(observations))
+
+
+def test_dfns_validate_observations_lower_case():
+    observations = {"STAGE": Observation(id=ObservationId(arms=["index"]))}
+    with pytest.raises(ValueError, match="must be lower case"):
+        Dfns(components=_obs_spec(observations))
+
+
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({}, "exactly one of arms or type"),
+        ({"arms": ["index"], "type": "double"}, "exactly one of arms or type"),
+        ({"arms": ["cellid"], "fk": "packagedata.ifno"}, "requires the 'index' arm"),
+    ],
+)
+def test_observation_id_invalid(kwargs, match):
+    with pytest.raises(ValueError, match=match):
+        ObservationId(**kwargs)
+
+
+def test_observation_with_boundname_only_on_id2():
+    with pytest.raises(ValueError, match="applies only to id2"):
+        Observation(id=ObservationId(arms=["index", "boundname"], with_boundname=True))
+    with pytest.raises(ValueError, match="requires id to admit a boundname"):
+        Observation(
+            id=ObservationId(arms=["index"]),
+            id2=ObservationId(type="double", with_boundname=True),
+        )
 
 
 # --- file links (File.component / component_ftype) ---

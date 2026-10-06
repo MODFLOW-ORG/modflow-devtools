@@ -690,3 +690,154 @@ type = "integer"
 set_in = "ar"
 source = "ntables"
 type = "integer"
+
+[observations.stage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-inflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.outlet-inflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.inflow.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rainfall.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.runoff.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.withdrawal.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.evaporation.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.volume.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.surface-area.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.lak.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.lak.id2]
+name = "iconn"
+arms = [
+    "index",
+]
+
+[observations.wetted-area.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.wetted-area.id2]
+name = "iconn"
+arms = [
+    "index",
+]
+
+[observations.conductance.id]
+fk = "packagedata.ifno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.conductance.id2]
+name = "iconn"
+arms = [
+    "index",
+]
+
+[observations.ext-outflow.id]
+fk = "outlets.outletno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.to-mvr.id]
+fk = "outlets.outletno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.outlet.id]
+fk = "outlets.outletno"
+arms = [
+    "index",
+    "boundname",
+]

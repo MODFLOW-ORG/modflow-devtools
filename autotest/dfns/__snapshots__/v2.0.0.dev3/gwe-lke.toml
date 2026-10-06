@@ -397,3 +397,100 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.temperature.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.storage.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.constant.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.from-mvr.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.lke.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.rainfall.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.evaporation.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.runoff.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-inflow.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.withdrawal.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.ext-outflow.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+    "boundname",
+]
+
+[observations.flow-ja-face.id2]
+fk = "packagedata.lakeno"
+arms = [
+    "index",
+]
+
+[observations.to-mvr.id]
+name = "outletno"
+arms = [
+    "index",
+    "boundname",
+]

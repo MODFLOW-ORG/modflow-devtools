@@ -312,5 +312,15 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "ctp": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

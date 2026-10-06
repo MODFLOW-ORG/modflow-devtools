@@ -330,5 +330,23 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "drn": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

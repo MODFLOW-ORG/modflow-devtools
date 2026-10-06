@@ -284,3 +284,9 @@ memory:
     dtype: string
     shape:
       - naux
+observations:
+  rch:
+    id:
+      arms:
+        - cellid
+        - boundname

@@ -312,5 +312,15 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "cnc": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

@@ -321,5 +321,23 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "ghb": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    },
+    "to-mvr": {
+      "id": {
+        "arms": [
+          "cellid",
+          "boundname"
+        ]
+      }
+    }
   }
 }

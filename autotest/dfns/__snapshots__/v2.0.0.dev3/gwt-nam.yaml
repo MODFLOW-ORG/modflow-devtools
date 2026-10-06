@@ -203,3 +203,15 @@ memory:
     dtype: integer
     shape:
       - nja
+observations:
+  concentration:
+    id:
+      arms:
+        - cellid
+  flow-ja-face:
+    id:
+      arms:
+        - cellid
+    id2:
+      arms:
+        - cellid
