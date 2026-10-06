@@ -229,7 +229,7 @@ dim_value("packagedata.ncon(ifno)", dims, row.get, select)
 
 A bounded shape expression (`"<=maxbound"`) is a relation, not a value. Split off the bound with `split_bound` (`("<=", "maxbound")`) and evaluate the rest.
 
-`dim_input` is the inverse: given the length the data actually has along a dimension (how many values), it returns the unset input that length determines, and that input's value. Use it to fill in counts the user left out:
+`dim_input` is the inverse. Rather than plug inputs in, it finds the input to plug in so the expression gives the data's length, i.e. the input to sync to the data:
 
 ```python
 from modflow_devtools.dfns import dim_input
@@ -238,11 +238,11 @@ dim_input("nseg-1", dims, length=3)  # pxdp has 3 values
 # ("nseg", 4)
 dim_input("ncvert", length=5)  # icvert has 5 values
 # ("ncvert", 5)
-dim_input("auxiliary", dims, length=2)  # len(auxiliary): can't set names from a count
+dim_input("auxiliary", dims, length=2)  # len(auxiliary): no input to sync
 # None
 ```
 
-Only names, through dims, and adding or subtracting known values can be undone. The result is `None` if the expression has no unset input, more than one, or one under anything else (`len()`, `sum()`, `*`, a row-level lookup). In that case the data can only be checked, by evaluating the length once its inputs are set.
+It returns `None` when there's nothing to sync: no unset input, more than one, or one it can't solve for (under `len()`, `sum()`, `*` or a row-level lookup). Then the data can only be checked with `dim_value`.
 
 Both functions work on the expression strings alone, without a loaded `Dfns`.
 

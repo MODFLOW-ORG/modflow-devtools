@@ -895,19 +895,15 @@ def dim_input(
     length: int,
 ) -> tuple[str, int] | None:
     """
-    The inverse of :func:`dim_value`: the unset input, and its value, that
-    gives ``expr`` the given ``length``: the number of values the data has
-    along that dimension. Other arguments are as for ``dim_value``.
+    The inverse of :func:`dim_value`: rather than plug inputs into ``expr``,
+    find the input to plug in so that ``expr`` gives ``length``, the number of
+    values the data has. Returns ``(name, value)``, the input to sync to the
+    data, or None if there is none: no unset input, more than one, or one
+    that can't be solved for (under ``len()``, ``sum()``, ``*`` or a
+    row-level lookup). Then the data can only be checked with ``dim_value``.
 
-    E.g. an inline array with shape ``["nseg-1"]`` and 3 values, with ``nseg``
-    unset, gives ``("nseg", 4)``; one with shape ``["ncvert"]`` and 5 values,
-    with the row's ``ncvert`` unset, gives ``("ncvert", 5)``.
-
-    Only names, through dims, and ``+``/``-`` of known values can be undone.
-    Returns None if ``expr`` has no unset input, more than one, or one under
-    anything else, like ``len()``, ``sum()``, ``*`` or a row-level lookup, and
-    the caller can only check ``dim_value`` against ``length`` once its
-    inputs are set.
+    E.g. ``"nseg-1"`` with 3 values gives ``("nseg", 4)``. Other arguments are
+    as for ``dim_value``.
     """
     if _LOOKUP_RE.fullmatch(expr):
         return None
