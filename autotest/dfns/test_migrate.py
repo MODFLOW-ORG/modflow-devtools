@@ -640,7 +640,9 @@ def test_migrate_link_selectors_resolve(linked_spec):
 def test_migrate_model_packages_exclude_utilities(linked_spec):
     children = linked_spec.children("gwf-nam")
     assert {"gwf-dis", "gwf-gnc", "gwf-mvr"} <= set(children)
-    assert not any(n.startswith("utl-") for n in children)
+    # but a model with observations reads an OBS6 file
+    assert [n for n in children if n.startswith("utl-")] == ["utl-obs"]
+    assert linked_spec.ftype_family("OBS6", "gwf-nam") == ["utl-obs"]
 
 
 def test_migrate_unlinked_files(linked_spec):
@@ -657,7 +659,7 @@ def test_migrate_unlinked_files(linked_spec):
     "name, parent",
     [
         ("utl-ts", "package"),
-        ("utl-obs", "package"),
+        ("utl-obs", ["model", "package"]),
         (
             "utl-ncf",
             [f"{m}-{d}" for m in ("gwe", "gwf", "gwt", "prt") for d in ("dis", "disv")],
@@ -680,6 +682,17 @@ def test_migrate_unlinked_files(linked_spec):
 )
 def test_migrate_derives_parents_from_links(linked_spec, name, parent):
     assert linked_spec.components[name].parent == parent
+
+
+@pytest.mark.parametrize("name, multi", [("utl-obs", False), ("utl-ts", True)])
+def test_migrate_multi_overrides(linked_spec, name, multi):
+    # flopy3 marks both multi-package, but MF6 reads one OBS6 per parent
+    assert linked_spec.components[name].multi is multi
+
+
+def test_migrate_obs_keeps_any_model_dims(linked_spec):
+    # utl-obs's parent gains `model`; it still sees any model's dims
+    assert {"nodes", "nlay"} <= linked_spec.inherited_dims("utl-obs")
 
 
 def test_migrate_subpackage_keeps_model_dims(linked_spec):

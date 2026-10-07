@@ -7,6 +7,7 @@ from boltons.dictutils import OMD
 
 from modflow_devtools.dfn import schema as v1
 from modflow_devtools.dfns import schema as v2
+from modflow_devtools.dfns.observations import OBSERVATIONS
 from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
@@ -113,6 +114,11 @@ _LINKED_PARENTS: dict[str, list[str]] = {
 # Array-based variants, which share their base's ftype token: mf6 maps these
 # to the base type when matching name-file ftypes (InputLoadType.f90).
 _FTYPE_VARIANTS = frozenset({"evta", "rcha", "spca", "rivg", "chdg", "welg", "drng", "ghbg"})
+
+# Components flopy3 marks `multi-package` that MF6 reads at most once per
+# parent. utl-obs: one OBS6 per package (BoundaryPackage.f90 errors on a
+# second) and per model (the last row wins). The DFN header stays for flopy3.
+_SINGLE_INSTANCE = frozenset({"utl-obs"})
 
 _MODEL_TYPES = frozenset({*_DEPENDENT_VARS, "prt"})
 
@@ -2158,7 +2164,8 @@ def to_v2_0_0_dev2(
         )
         is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
-    return v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))
+    multi = is_multi_package(meta) and name not in _SINGLE_INSTANCE
+    return v2.Package(**d, subtype=subtype, multi=multi)
 
 
 def subpackage_keys(metas: Mapping[str, list[str]]) -> dict[str, str]:
@@ -2206,8 +2213,13 @@ def link_components(
     The links themselves are made per file, by `to_v2_0_0_dev2`. Only
     concrete links count: a name file's type selectors (``model``,
     ``package``, ...) pick among components whose parents are already known.
+    The exception is OBS: a model with observation types reads one OBS6 file
+    from its packages block, so it links ``utl-obs`` like a package does.
     """
     links = {name: _links(c) for name, c in components.items()}
+    for name in OBSERVATIONS:
+        if name.endswith("-nam") and name in components:
+            links[name] = [*links[name], "utl-obs"]
 
     for name, meta in metas.items():
         if name not in components:

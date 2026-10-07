@@ -409,6 +409,10 @@ def test_covering_selector():
     assert covering_selector([wel, spc], all_) == "package"
     # no single term covers a model and an exchange: concrete names
     assert covering_selector([nam, exg], all_) == ["exg-gwfgwf", "gwf-nam"]
+    # models and packages: their types
+    gwt = Model(name="gwt-nam")
+    all_[gwt.name] = gwt
+    assert covering_selector([wel, npf, nam, gwt], all_) == ["model", "package"]
 
 
 def test_children_list_parent():
