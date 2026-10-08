@@ -129,6 +129,7 @@ shape = [
 ]
 
 [blocks.exchangedata.fields.exchangedata.item]
+name = "exchangedata"
 type = "record"
 
 [blocks.exchangedata.fields.exchangedata.item.fields.cellidm1]

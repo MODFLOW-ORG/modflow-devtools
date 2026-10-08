@@ -25,6 +25,7 @@ shape = [
 ]
 
 [blocks.period.fields.stress_period_data.item]
+name = "stress_period_data"
 type = "record"
 
 [blocks.period.fields.stress_period_data.item.fields.cellid1]

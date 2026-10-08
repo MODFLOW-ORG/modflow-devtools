@@ -121,6 +121,7 @@ blocks:
           variable is the same as auxmultname, then the head array will be multiplied by this array.
         optional: true
         item:
+          name: aux
           type: record
           fields:
             auxname:

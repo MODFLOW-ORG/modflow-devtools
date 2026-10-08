@@ -28,6 +28,7 @@
           "type": "list",
           "longname": "package list",
           "item": {
+            "name": "sources",
             "type": "record",
             "fields": {
               "pname": {
@@ -59,6 +60,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "fileinput",
             "type": "record",
             "fields": {
               "pname": {

@@ -33,6 +33,7 @@ shape = [
 ]
 
 [blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
 type = "record"
 
 [blocks.packagedata.fields.packagedata.item.fields.idcxs]
@@ -56,6 +57,7 @@ shape = [
 ]
 
 [blocks.crosssectiondata.fields.crosssectiondata.item]
+name = "crosssectiondata"
 type = "record"
 
 [blocks.crosssectiondata.fields.crosssectiondata.item.fields.xfraction]

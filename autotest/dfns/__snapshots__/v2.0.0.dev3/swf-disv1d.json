@@ -148,6 +148,7 @@
           "type": "list",
           "longname": "vertices data",
           "item": {
+            "name": "vertices",
             "type": "record",
             "fields": {
               "iv": {
@@ -184,6 +185,7 @@
           "type": "list",
           "longname": "cell1d data",
           "item": {
+            "name": "cell1d",
             "type": "record",
             "fields": {
               "icell1d": {

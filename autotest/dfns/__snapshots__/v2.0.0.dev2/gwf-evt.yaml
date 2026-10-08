@@ -68,6 +68,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: ts_filerecord
           type: record
           fields:
             ts6:
@@ -126,6 +127,7 @@ blocks:
       stress_period_data:
         type: list
         item:
+          name: stress_period_data
           type: record
           fields:
             cellid:

@@ -140,6 +140,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "ts_filerecord",
             "type": "record",
             "fields": {
               "ts6": {
@@ -242,6 +243,7 @@
         "packagedata": {
           "type": "list",
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "ifno": {
@@ -360,6 +362,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "crosssections",
             "type": "record",
             "fields": {
               "ifno": {
@@ -393,6 +396,7 @@
         "connectiondata": {
           "type": "list",
           "item": {
+            "name": "connectiondata",
             "type": "record",
             "fields": {
               "ifno": {
@@ -427,6 +431,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "diversions",
             "type": "record",
             "fields": {
               "ifno": {
@@ -469,6 +474,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "initialstages",
             "type": "record",
             "fields": {
               "ifno": {
@@ -495,6 +501,7 @@
         "perioddata": {
           "type": "list",
           "item": {
+            "name": "perioddata",
             "type": "record",
             "fields": {
               "ifno": {

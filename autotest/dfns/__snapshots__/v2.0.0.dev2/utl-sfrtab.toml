@@ -29,6 +29,7 @@ shape = [
 ]
 
 [blocks.table.fields.table.item]
+name = "table"
 type = "record"
 
 [blocks.table.fields.table.item.fields.xfraction]

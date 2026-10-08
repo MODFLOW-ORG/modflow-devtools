@@ -18,6 +18,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "ts_filerecord",
             "type": "record",
             "fields": {
               "ts6": {
@@ -43,6 +44,7 @@
         "perioddata": {
           "type": "list",
           "item": {
+            "name": "perioddata",
             "type": "record",
             "fields": {
               "cellid": {

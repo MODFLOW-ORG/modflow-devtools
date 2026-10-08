@@ -12,6 +12,7 @@ from pydantic import (
     SerializationInfo,
     StrictBool,
     computed_field,
+    field_validator,
     model_serializer,
     model_validator,
 )
@@ -39,6 +40,17 @@ class InputFieldBase(BaseModel):
     # a linter that wants to warn on deprecated-but-still-accepted input).
     removed: str | None = None
     deprecated: str | None = None
+
+    @field_validator("default", mode="before")
+    @classmethod
+    def _freeze_default(cls, v: Any) -> Any:
+        # TOML/JSON/YAML have no tuples, so a tuple default (e.g. sim-tdis
+        # `perioddata`) comes back as a list. Normalize to tuples so a default
+        # is the same immutable value whichever format it was loaded from.
+        def freeze(x: Any) -> Any:
+            return tuple(freeze(i) for i in x) if isinstance(x, list) else x
+
+        return freeze(v)
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any, info: SerializationInfo) -> dict[str, Any]:
@@ -299,6 +311,11 @@ class List(InputFieldBase):
         data = handler(self)
         if info.context and info.context.get("strip_names"):
             data.pop("name", None)
+            # Unlike other fields, `item` isn't keyed by its name, which can
+            # differ from the list's (e.g. gwf-oc `output` / `output_record`),
+            # so keep it.
+            if isinstance(data.get("item"), dict):
+                data["item"] = {"name": self.item.name, **data["item"]}
         if "type" not in data:
             data = {"type": "list", **data}
         return data
@@ -1811,6 +1828,8 @@ def _inject_field_names(fields: dict) -> None:
         _inject_field_names(field.get("arms") or {})  # Union.arms
         item = field.get("item")
         if isinstance(item, dict):
+            # List._serialize keeps the item's name; fall back to the list's
+            # for files written without it.
             item.setdefault("name", field_name)
             _inject_field_names(item.get("fields") or {})
             _inject_field_names(item.get("arms") or {})

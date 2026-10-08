@@ -125,6 +125,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "ts_filerecord",
             "type": "record",
             "fields": {
               "ts6": {
@@ -169,6 +170,7 @@
         "packagedata": {
           "type": "list",
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "rno": {
@@ -226,6 +228,7 @@
         "reachperioddata": {
           "type": "list",
           "item": {
+            "name": "reachperioddata",
             "type": "record",
             "fields": {
               "rno": {

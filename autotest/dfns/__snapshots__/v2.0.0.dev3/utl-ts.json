@@ -116,6 +116,7 @@
           "type": "list",
           "description": "xxx",
           "item": {
+            "name": "timeseries",
             "type": "record",
             "description": "xxx",
             "fields": {

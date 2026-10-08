@@ -31,6 +31,7 @@
           "description": "is the list of zero-based partition numbers.",
           "optional": true,
           "item": {
+            "name": "partitions",
             "type": "record",
             "description": "is the record of zero-based partition numbers.",
             "fields": {

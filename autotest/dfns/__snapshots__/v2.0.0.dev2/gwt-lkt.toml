@@ -110,6 +110,7 @@ type = "list"
 optional = true
 
 [blocks.options.fields.ts_filerecord.item]
+name = "ts_filerecord"
 type = "record"
 
 [blocks.options.fields.ts_filerecord.item.fields.ts6]
@@ -146,6 +147,7 @@ component = "utl-obs"
 type = "list"
 
 [blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
 type = "record"
 
 [blocks.packagedata.fields.packagedata.item.fields.ifno]
@@ -185,6 +187,7 @@ tagged = false
 type = "list"
 
 [blocks.period.fields.lakeperioddata.item]
+name = "lakeperioddata"
 type = "record"
 
 [blocks.period.fields.lakeperioddata.item.fields.ifno]

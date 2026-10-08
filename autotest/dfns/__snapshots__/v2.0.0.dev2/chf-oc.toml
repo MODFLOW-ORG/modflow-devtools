@@ -114,6 +114,7 @@ type = "list"
 optional = true
 
 [blocks.period.fields.output.item]
+name = "output_record"
 type = "union"
 
 [blocks.period.fields.output.item.arms.saverecord]

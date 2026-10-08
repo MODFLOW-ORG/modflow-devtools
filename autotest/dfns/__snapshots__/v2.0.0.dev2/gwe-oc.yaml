@@ -90,6 +90,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: output_record
           type: union
           arms:
             saverecord:

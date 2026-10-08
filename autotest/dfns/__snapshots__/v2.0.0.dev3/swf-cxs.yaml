@@ -34,6 +34,7 @@ blocks:
       packagedata:
         type: list
         item:
+          name: packagedata
           type: record
           fields:
             idcxs:
@@ -63,6 +64,7 @@ blocks:
       crosssectiondata:
         type: list
         item:
+          name: crosssectiondata
           type: record
           fields:
             xfraction:

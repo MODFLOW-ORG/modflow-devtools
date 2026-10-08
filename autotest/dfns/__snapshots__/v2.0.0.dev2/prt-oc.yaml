@@ -169,6 +169,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: tracktimes
           type: record
           fields:
             time:
@@ -185,6 +186,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: output_record
           type: union
           arms:
             saverecord:

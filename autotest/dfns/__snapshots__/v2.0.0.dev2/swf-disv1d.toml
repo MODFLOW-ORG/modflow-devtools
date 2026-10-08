@@ -125,6 +125,7 @@ shape = [
 ]
 
 [blocks.vertices.fields.vertices.item]
+name = "vertices"
 type = "record"
 
 [blocks.vertices.fields.vertices.item.fields.iv]
@@ -155,6 +156,7 @@ shape = [
 ]
 
 [blocks.cell1d.fields.cell1d.item]
+name = "cell1d"
 type = "record"
 
 [blocks.cell1d.fields.cell1d.item.fields.icell1d]

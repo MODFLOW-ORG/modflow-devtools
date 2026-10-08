@@ -75,6 +75,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: tas_filerecord
           type: record
           fields:
             tas6:
@@ -168,6 +169,7 @@ blocks:
           is the same as auxmultname, then the evapotranspiration rate will be multiplied by this array.
         optional: true
         item:
+          name: aux
           type: record
           fields:
             auxname:

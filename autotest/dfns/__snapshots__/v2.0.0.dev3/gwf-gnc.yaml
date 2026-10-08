@@ -53,6 +53,7 @@ blocks:
       gncdata:
         type: list
         item:
+          name: gncdata
           type: record
           fields:
             cellidn:

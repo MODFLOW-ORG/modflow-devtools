@@ -30,6 +30,7 @@ blocks:
       table:
         type: list
         item:
+          name: table
           type: record
           fields:
             stage:

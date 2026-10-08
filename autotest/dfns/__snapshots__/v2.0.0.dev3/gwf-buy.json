@@ -66,6 +66,7 @@
         "packagedata": {
           "type": "list",
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "irhospec": {

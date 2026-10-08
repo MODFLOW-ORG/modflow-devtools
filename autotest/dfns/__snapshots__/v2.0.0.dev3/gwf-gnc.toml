@@ -48,6 +48,7 @@ shape = [
 ]
 
 [blocks.gncdata.fields.gncdata.item]
+name = "gncdata"
 type = "record"
 
 [blocks.gncdata.fields.gncdata.item.fields.cellidn]

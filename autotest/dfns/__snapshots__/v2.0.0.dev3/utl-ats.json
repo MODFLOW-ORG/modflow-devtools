@@ -27,6 +27,7 @@
           "type": "list",
           "longname": "stress period ats time information",
           "item": {
+            "name": "perioddata",
             "type": "record",
             "fields": {
               "iperats": {

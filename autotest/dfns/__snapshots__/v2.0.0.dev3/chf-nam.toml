@@ -58,6 +58,7 @@ type = "list"
 longname = "package list"
 
 [blocks.packages.fields.packages.item]
+name = "packages"
 type = "record"
 
 [blocks.packages.fields.packages.item.fields.ftype]

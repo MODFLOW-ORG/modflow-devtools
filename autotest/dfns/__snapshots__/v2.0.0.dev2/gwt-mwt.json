@@ -120,6 +120,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "ts_filerecord",
             "type": "record",
             "fields": {
               "ts6": {
@@ -164,6 +165,7 @@
         "packagedata": {
           "type": "list",
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "ifno": {
@@ -209,6 +211,7 @@
         "mwtperioddata": {
           "type": "list",
           "item": {
+            "name": "mwtperioddata",
             "type": "record",
             "fields": {
               "ifno": {

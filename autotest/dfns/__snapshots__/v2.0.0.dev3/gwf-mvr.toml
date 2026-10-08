@@ -80,6 +80,7 @@ shape = [
 ]
 
 [blocks.packages.fields.packages.item]
+name = "packages"
 type = "record"
 
 [blocks.packages.fields.packages.item.fields.mname]
@@ -98,6 +99,7 @@ pk = true
 type = "list"
 
 [blocks.period.fields.perioddata.item]
+name = "perioddata"
 type = "record"
 
 [blocks.period.fields.perioddata.item.fields.mname1]

@@ -53,6 +53,7 @@ type = "list"
 optional = true
 
 [blocks.options.fields.ts_filerecord.item]
+name = "ts_filerecord"
 type = "record"
 
 [blocks.options.fields.ts_filerecord.item.fields.ts6]
@@ -104,6 +105,7 @@ shape = [
 ]
 
 [blocks.period.fields.stress_period_data.item]
+name = "stress_period_data"
 type = "record"
 
 [blocks.period.fields.stress_period_data.item.fields.cellid]

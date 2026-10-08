@@ -23,6 +23,7 @@ optional = true
 type = "list"
 
 [blocks.continuous.fields.continuous.item]
+name = "continuous"
 type = "record"
 
 [blocks.continuous.fields.continuous.item.fields.obsname]

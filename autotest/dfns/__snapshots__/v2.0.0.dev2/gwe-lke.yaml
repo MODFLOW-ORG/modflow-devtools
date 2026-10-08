@@ -119,6 +119,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: ts_filerecord
           type: record
           fields:
             ts6:
@@ -156,6 +157,7 @@ blocks:
       packagedata:
         type: list
         item:
+          name: packagedata
           type: record
           fields:
             lakeno:
@@ -214,6 +216,7 @@ blocks:
       lakeperioddata:
         type: list
         item:
+          name: lakeperioddata
           type: record
           fields:
             lakeno:

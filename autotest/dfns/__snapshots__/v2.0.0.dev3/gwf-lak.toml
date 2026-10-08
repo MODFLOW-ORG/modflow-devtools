@@ -126,6 +126,7 @@ type = "list"
 optional = true
 
 [blocks.options.fields.ts_filerecord.item]
+name = "ts_filerecord"
 type = "record"
 
 [blocks.options.fields.ts_filerecord.item.fields.ts6]
@@ -215,6 +216,7 @@ shape = [
 ]
 
 [blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
 type = "record"
 
 [blocks.packagedata.fields.packagedata.item.fields.ifno]
@@ -263,6 +265,7 @@ shape = [
 ]
 
 [blocks.connectiondata.fields.connectiondata.item]
+name = "connectiondata"
 type = "record"
 
 [blocks.connectiondata.fields.connectiondata.item.fields.ifno]
@@ -335,6 +338,7 @@ shape = [
 ]
 
 [blocks.tables.fields.tables.item]
+name = "tables"
 type = "record"
 
 [blocks.tables.fields.tables.item.fields.ifno]
@@ -366,6 +370,7 @@ shape = [
 ]
 
 [blocks.outlets.fields.outlets.item]
+name = "outlets"
 type = "record"
 
 [blocks.outlets.fields.outlets.item.fields.outletno]
@@ -430,6 +435,7 @@ time_series = true
 type = "list"
 
 [blocks.period.fields.perioddata.item]
+name = "perioddata"
 type = "record"
 
 [blocks.period.fields.perioddata.item.fields.laksetting]

@@ -79,6 +79,7 @@ shape = [
 ]
 
 [blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
 type = "record"
 
 [blocks.packagedata.fields.packagedata.item.fields.iviscspec]

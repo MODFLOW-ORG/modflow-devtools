@@ -224,6 +224,7 @@
           "longname": "vertices data",
           "optional": true,
           "item": {
+            "name": "vertices",
             "type": "record",
             "fields": {
               "iv": {
@@ -261,6 +262,7 @@
           "longname": "cell2d data",
           "optional": true,
           "item": {
+            "name": "cell2d",
             "type": "record",
             "fields": {
               "icell2d": {

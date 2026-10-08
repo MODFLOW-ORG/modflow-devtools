@@ -126,6 +126,7 @@ type = "list"
 optional = true
 
 [blocks.options.fields.ts_filerecord.item]
+name = "ts_filerecord"
 type = "record"
 
 [blocks.options.fields.ts_filerecord.item.fields.ts6]
@@ -219,6 +220,7 @@ shape = [
 ]
 
 [blocks.packagedata.fields.packagedata.item]
+name = "packagedata"
 type = "record"
 
 [blocks.packagedata.fields.packagedata.item.fields.ifno]
@@ -328,6 +330,7 @@ type = "list"
 optional = true
 
 [blocks.crosssections.fields.crosssections.item]
+name = "crosssections"
 type = "record"
 
 [blocks.crosssections.fields.crosssections.item.fields.ifno]
@@ -355,6 +358,7 @@ component = "utl-sfrtab"
 type = "list"
 
 [blocks.connectiondata.fields.connectiondata.item]
+name = "connectiondata"
 type = "record"
 
 [blocks.connectiondata.fields.connectiondata.item.fields.ifno]
@@ -383,6 +387,7 @@ type = "list"
 optional = true
 
 [blocks.diversions.fields.diversions.item]
+name = "diversions"
 type = "record"
 
 [blocks.diversions.fields.diversions.item.fields.ifno]
@@ -419,6 +424,7 @@ type = "list"
 optional = true
 
 [blocks.initialstages.fields.initialstages.item]
+name = "initialstages"
 type = "record"
 
 [blocks.initialstages.fields.initialstages.item.fields.ifno]
@@ -439,6 +445,7 @@ tagged = false
 type = "list"
 
 [blocks.period.fields.perioddata.item]
+name = "perioddata"
 type = "record"
 
 [blocks.period.fields.perioddata.item.fields.ifno]

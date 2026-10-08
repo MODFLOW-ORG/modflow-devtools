@@ -249,6 +249,7 @@ blocks:
       packagedata:
         type: list
         item:
+          name: packagedata
           type: record
           fields:
             irptno:
@@ -313,6 +314,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: releasetimes
           type: record
           fields:
             time:
@@ -328,6 +330,7 @@ blocks:
       perioddata:
         type: list
         item:
+          name: releasesetting
           type: union
           description: specifies time steps at which to release a particle. A particle is released at
             the beginning of each specified time step. For fine control over release timing, specify times

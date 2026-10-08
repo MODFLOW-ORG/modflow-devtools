@@ -83,6 +83,7 @@
           "description": "is the list of model types, model name files, and model names.",
           "optional": true,
           "item": {
+            "name": "models",
             "type": "record",
             "description": "is the record of model types, model name files, and model names.",
             "fields": {
@@ -121,6 +122,7 @@
           "description": "is the list of exchange types, exchange files, and model names.",
           "optional": true,
           "item": {
+            "name": "exchanges",
             "type": "record",
             "description": "is the record of exchange types, exchange files, and model names.",
             "fields": {
@@ -170,6 +172,7 @@
           "longname": "solution type and models in the solution",
           "description": "is the list of solution types and models in the solution.",
           "item": {
+            "name": "solutiongroup",
             "type": "record",
             "description": "is the record of solution types and models in the solution.",
             "fields": {

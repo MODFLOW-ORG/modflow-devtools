@@ -239,6 +239,7 @@
         "packagedata": {
           "type": "list",
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "irptno": {
@@ -300,6 +301,7 @@
           "type": "list",
           "optional": true,
           "item": {
+            "name": "releasetimes",
             "type": "record",
             "fields": {
               "time": {
@@ -321,6 +323,7 @@
         "perioddata": {
           "type": "list",
           "item": {
+            "name": "releasesetting",
             "type": "union",
             "description": "specifies time steps at which to release a particle. A particle is released at the beginning of each specified time step. For fine control over release timing, specify times explicitly using the RELEASETIMES block. If the beginning of a specified time step coincides with a release time specified in the RELEASETIMES block or configured via RELEASE_TIME_FREQUENCY, only one particle is released at that time. Coincidence is evaluated up to the tolerance specified in RELEASE_TIME_TOLERANCE, or $epsilon times 10^{11}$ by default, where $epsilon$ is machine precision. If no release times are configured via this setting, the RELEASETIMES block, or the RELEASE_TIME_FREQUENCY option, a single release time is configured at the beginning of the first time step of the simulation's first stress period.",
             "arms": {

@@ -58,6 +58,7 @@ shape = [
 ]
 
 [blocks.perioddata.fields.perioddata.item]
+name = "perioddata"
 type = "record"
 
 [blocks.perioddata.fields.perioddata.item.fields.perlen]

@@ -168,6 +168,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: ts_filerecord
           type: record
           fields:
             ts6:
@@ -218,6 +219,7 @@ blocks:
       packagedata:
         type: list
         item:
+          name: packagedata
           type: record
           fields:
             ifno:
@@ -312,6 +314,7 @@ blocks:
       connectiondata:
         type: list
         item:
+          name: connectiondata
           type: record
           fields:
             ifno:
@@ -398,6 +401,7 @@ blocks:
       perioddata:
         type: list
         item:
+          name: perioddata
           type: record
           fields:
             ifno:

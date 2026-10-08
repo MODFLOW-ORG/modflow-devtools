@@ -118,6 +118,7 @@ shape = [
 ]
 
 [blocks.period.fields.aux.item]
+name = "aux"
 type = "record"
 
 [blocks.period.fields.aux.item.fields.auxname]

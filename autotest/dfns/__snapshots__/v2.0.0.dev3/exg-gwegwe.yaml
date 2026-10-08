@@ -141,6 +141,7 @@ blocks:
         type: list
         longname: exchange data
         item:
+          name: exchangedata
           type: record
           fields:
             cellidm1:

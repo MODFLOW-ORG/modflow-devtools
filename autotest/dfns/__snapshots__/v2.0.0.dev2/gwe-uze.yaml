@@ -120,6 +120,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: ts_filerecord
           type: record
           fields:
             ts6:
@@ -157,6 +158,7 @@ blocks:
       packagedata:
         type: list
         item:
+          name: packagedata
           type: record
           fields:
             uzfno:
@@ -204,6 +206,7 @@ blocks:
       uzeperioddata:
         type: list
         item:
+          name: uzeperioddata
           type: record
           fields:
             uzfno:

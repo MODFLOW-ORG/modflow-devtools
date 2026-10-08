@@ -358,6 +358,16 @@ def test_migrate_exchange_cellids(dfn_dir, name):
         assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, model)
 
 
+def test_migrate_round_trip_lossless(dfn_dir, dev3):
+    # Writing the current schema and loading it back reproduces the
+    # components loaded from the legacy DFNs exactly.
+    out, _ = dev3
+    a = v2.Dfns.load(dfn_dir).components
+    b = v2.Dfns.load(out).components
+    assert a.keys() == b.keys()
+    assert [k for k in a if a[k] != b[k]] == []
+
+
 def test_migrate_cellid_models_round_trip(dev3):
     # "1"/"2" stay strings on disk in every format, and load back as such.
     out, fmt = dev3

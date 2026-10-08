@@ -69,6 +69,7 @@
             ]
           ],
           "item": {
+            "name": "perioddata",
             "type": "record",
             "fields": {
               "perlen": {

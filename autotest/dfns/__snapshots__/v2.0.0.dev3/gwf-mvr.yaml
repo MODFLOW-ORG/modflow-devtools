@@ -80,6 +80,7 @@ blocks:
       packages:
         type: list
         item:
+          name: packages
           type: record
           fields:
             mname:
@@ -105,6 +106,7 @@ blocks:
       perioddata:
         type: list
         item:
+          name: perioddata
           type: record
           fields:
             mname1:

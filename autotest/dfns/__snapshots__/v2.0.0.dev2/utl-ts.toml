@@ -100,6 +100,7 @@ type = "list"
 description = "xxx"
 
 [blocks.timeseries.fields.timeseries.item]
+name = "timeseries"
 type = "record"
 description = "xxx"
 

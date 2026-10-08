@@ -66,6 +66,7 @@ type = "list"
 optional = true
 
 [blocks.options.fields.tas_filerecord.item]
+name = "tas_filerecord"
 type = "record"
 
 [blocks.options.fields.tas_filerecord.item.fields.tas6]
@@ -160,6 +161,7 @@ shape = [
 ]
 
 [blocks.period.fields.aux.item]
+name = "aux"
 type = "record"
 
 [blocks.period.fields.aux.item.fields.auxname]

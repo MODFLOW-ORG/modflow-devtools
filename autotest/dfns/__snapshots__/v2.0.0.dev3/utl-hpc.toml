@@ -25,6 +25,7 @@ description = "is the list of zero-based partition numbers."
 optional = true
 
 [blocks.partitions.fields.partitions.item]
+name = "partitions"
 type = "record"
 description = "is the record of zero-based partition numbers."
 

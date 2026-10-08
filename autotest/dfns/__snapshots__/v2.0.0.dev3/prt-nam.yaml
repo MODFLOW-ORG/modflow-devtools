@@ -44,6 +44,7 @@ blocks:
         type: list
         longname: package list
         item:
+          name: packages
           type: record
           fields:
             ftype:

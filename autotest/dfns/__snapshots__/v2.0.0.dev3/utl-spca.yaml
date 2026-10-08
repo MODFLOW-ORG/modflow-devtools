@@ -29,6 +29,7 @@ blocks:
         type: list
         optional: true
         item:
+          name: tas_filerecord
           type: record
           fields:
             tas6:

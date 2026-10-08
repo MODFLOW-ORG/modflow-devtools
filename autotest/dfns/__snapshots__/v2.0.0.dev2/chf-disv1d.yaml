@@ -132,6 +132,7 @@ blocks:
         type: list
         longname: vertices data
         item:
+          name: vertices
           type: record
           fields:
             iv:
@@ -160,6 +161,7 @@ blocks:
         type: list
         longname: cell1d data
         item:
+          name: cell1d
           type: record
           fields:
             icell1d:

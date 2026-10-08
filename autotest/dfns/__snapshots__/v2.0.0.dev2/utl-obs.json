@@ -29,6 +29,7 @@
         "continuous": {
           "type": "list",
           "item": {
+            "name": "continuous",
             "type": "record",
             "fields": {
               "obsname": {

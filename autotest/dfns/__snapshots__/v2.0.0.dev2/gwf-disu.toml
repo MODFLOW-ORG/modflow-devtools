@@ -205,6 +205,7 @@ shape = [
 ]
 
 [blocks.vertices.fields.vertices.item]
+name = "vertices"
 type = "record"
 
 [blocks.vertices.fields.vertices.item.fields.iv]
@@ -236,6 +237,7 @@ shape = [
 ]
 
 [blocks.cell2d.fields.cell2d.item]
+name = "cell2d"
 type = "record"
 
 [blocks.cell2d.fields.cell2d.item.fields.icell2d]

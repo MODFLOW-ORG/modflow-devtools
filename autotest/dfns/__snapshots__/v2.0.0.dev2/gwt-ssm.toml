@@ -24,6 +24,7 @@ type = "list"
 longname = "package list"
 
 [blocks.sources.fields.sources.item]
+name = "sources"
 type = "record"
 
 [blocks.sources.fields.sources.item.fields.pname]
@@ -49,6 +50,7 @@ type = "list"
 optional = true
 
 [blocks.fileinput.fields.fileinput.item]
+name = "fileinput"
 type = "record"
 
 [blocks.fileinput.fields.fileinput.item.fields.pname]

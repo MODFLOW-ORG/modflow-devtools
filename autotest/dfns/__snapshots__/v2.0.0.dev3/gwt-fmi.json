@@ -28,6 +28,7 @@
           "longname": "flowtype list",
           "optional": true,
           "item": {
+            "name": "packagedata",
             "type": "record",
             "fields": {
               "flowtype": {
