@@ -21,24 +21,32 @@ import argparse
 import sys
 
 
-def _sync_all():
+def _sync_all() -> int:
     """Sync all registries (dfns, models). The Programs API has no registry to sync -
-    it installs directly from GitHub releases and tracks installs in a local ledger."""
+    it installs directly from GitHub releases and tracks installs in a local ledger.
+    Returns 0 if everything synced, 1 if anything failed."""
     print("Syncing all registries...")
     print()
+    failed = False
 
     # Sync DFNs
     print("=== DFNs ===")
     try:
-        from modflow_devtools.dfns.registry import sync_dfns
+        from modflow_devtools.dfns.registry import RemoteDfnRegistry
 
-        registries = sync_dfns()
-        for registry in registries:
-            meta = registry.registry_meta
-            print(f"  {registry.ref}: {len(meta.files)} files")
+        registries = RemoteDfnRegistry.load_default()
+        for registry in registries.values():
+            try:
+                registry.sync()
+                n_files = len(list(registry.cache_path.glob("*.*")))
+                print(f"  {registry.release_id}: {n_files} files")
+            except Exception as e:
+                print(f"  [-] Failed to sync {registry.release_id}: {e}")
+                failed = True
         print(f"Synced {len(registries)} DFN registry(ies)")
     except Exception as e:
         print(f"Error syncing DFNs: {e}")
+        failed = True
     print()
 
     # Sync Models
@@ -47,13 +55,21 @@ def _sync_all():
         from modflow_devtools.models import ModelSourceConfig
 
         config = ModelSourceConfig.load()
-        config.sync()
-        print("Models synced successfully")
+        results = config.sync()
+        if any(result.failed for result in results.values()):
+            failed = True
+        else:
+            print("Models synced successfully")
     except Exception as e:
         print(f"Error syncing models: {e}")
+        failed = True
     print()
 
+    if failed:
+        print("Some registries failed to sync.")
+        return 1
     print("All registries synced!")
+    return 0
 
 
 def main():
@@ -85,7 +101,7 @@ def main():
 
     # Dispatch to the appropriate module CLI with remaining args
     if args.subcommand == "sync":
-        _sync_all()
+        sys.exit(_sync_all())
     elif args.subcommand == "dfns":
         from modflow_devtools.dfns.__main__ import main as dfns_main
 
