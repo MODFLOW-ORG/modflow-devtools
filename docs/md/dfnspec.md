@@ -341,6 +341,8 @@ Required. One of:
 
 The field's default value. Only relevant for optional fields. TODO: determine whether to keep. MF6 doesn't read DFN defaults, only flopy does. MF6 implements defaults internally, so care must be taken to keep DFNs in sync, or maybe IDM could read the default from the DFNs.
 
+A list's default value is interpreted as a single element. This allows consumers to broadcast the value to arbitrary shapes.
+
 #### `developmode`
 
 `boolean (default: false)`. Feature flag indicating that the field is not released yet, only allowed in develop mode builds.
