@@ -87,7 +87,9 @@ explicitly in `_fix_lak_relations` (`migrate_to_v2_0_0_dev2.py`):
 copy, pushed inside each `laksetting` union arm with a name and `fk`
 appropriate to that arm's category: `lakeno` / `fk: packagedata.ifno` for
 the 8 lake-setting arms, `outletno` / `fk: outlets.outletno` for the 5
-outlet-setting arms. (`outlets.outletno` is also newly marked `pk`, since
+outlet-setting arms. That leaves `laksetting` the only field of the period
+list's element, so the element becomes the union itself, as PRP's
+`releasesetting` is. (`outlets.outletno` is also newly marked `pk`, since
 nothing else previously pointed at it — needed for the new `outletno` fk to
 resolve.)
 

@@ -1328,7 +1328,8 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       fields nested inside the corresponding `laksetting` union arms, each
       carrying a correct, non-conditional `fk` (a single `fk` on the shared
       `number` field can't be correct for both arm categories at once, since
-      the target block depends on which arm is present).
+      the target block depends on which arm is present). The period list's
+      element is then `laksetting` itself.
     - Marks `outlets.outletno` as `pk` (the new `outletno` fk needs one).
     - Marks `outlets.lakein`/`outlets.lakeout` as `fk: packagedata.ifno` —
       unambiguous, but named differently from `ifno` so the general
@@ -1381,12 +1382,12 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             new_arms[arm_name] = arm
 
     new_setting = setting_field.model_copy(update={"arms": new_arms})
-    new_item = item.model_copy(
-        update={
-            "fields": {fn: f for fn, f in item.fields.items() if fn != "number"}
-            | {"laksetting": new_setting}
-        }
-    )
+    fields = {fn: f for fn, f in item.fields.items() if fn != "number"} | {
+        "laksetting": new_setting
+    }
+    # With `number` in its arms, a record of only the union is the union: the
+    # list's element is the union itself, as PRP's `releasesetting` is.
+    new_item = new_setting if len(fields) == 1 else item.model_copy(update={"fields": fields})
     new_perioddata = perioddata.model_copy(update={"item": new_item})
     new_period = period.model_copy(
         update={"fields": {**period.fields, "perioddata": new_perioddata}}

@@ -319,6 +319,20 @@ def test_migrate_lak_connectiondata_shape(dfn_dir, tmp_path, v1_shape):
     assert component.dims["nlakeconn"].value == "sum(packagedata.nlakeconn)"
 
 
+@pytest.mark.parametrize(
+    ("name", "setting"), [("gwf-lak", "laksetting"), ("prt-prp", "releasesetting")]
+)
+def test_migrate_period_union_element(dfn_dir, name, setting):
+    """A period list of only a union is a list of the union: PRP's, and LAK's
+    once its lake or outlet number moves into the arms."""
+    component = _migrate_dev3(dfn_dir, name)
+    item = component.blocks["period"].fields["perioddata"].item
+    assert isinstance(item, v2.Union) and item.name == setting
+    if name == "gwf-lak":
+        assert item.arms["stage"].fields["lakeno"].fk == "packagedata.ifno"
+        assert item.arms["rate"].fields["outletno"].fk == "outlets.outletno"
+
+
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-chd")
     assert component.blocks["options"].fields["auxiliary"].shape == []
