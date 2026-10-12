@@ -358,6 +358,70 @@ def test_migrate_exchange_cellids(dfn_dir, name):
         assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, model)
 
 
+def _number_or_word(field, word: str) -> None:
+    assert isinstance(field, v2.Union)
+    assert not field.tagged
+    assert list(field.arms) == [word, "value"]  # the word is tried first
+    assert isinstance(field.arms[word], v2.Keyword)
+    assert isinstance(value := field.arms["value"], v2.Double)
+    assert not value.tagged
+
+
+def test_migrate_lak_bedleak_number_or_none(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-lak")
+    item = component.blocks["connectiondata"].fields["connectiondata"].item
+    assert list(item.fields)[4] == "bedleak"  # still mid-row
+    bedleak = item.fields["bedleak"]
+    _number_or_word(bedleak, "none")
+    assert bedleak.longname == "bed leakance"
+    assert "NONE" in bedleak.description
+
+
+def test_migrate_maw_head_limit_number_or_off(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-maw")
+    item = component.blocks["period"].fields["perioddata"].item
+    arms = item.fields["mawsetting"].arms
+    assert "head_limit" not in arms
+    record = arms["head_limitrecord"]
+    assert isinstance(record, v2.Record)
+    assert list(record.fields) == ["head_limit", "head_limit_value"]
+    assert isinstance(record.fields["head_limit"], v2.Keyword)
+    value = record.fields["head_limit_value"]
+    _number_or_word(value, "off")
+    assert value.longname == "head limit"
+    assert record.render() == "HEAD_LIMIT <head_limit_value>"
+
+
+def test_migrate_uzf_time_series_are_doubles(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-uzf")
+    item = component.blocks["period"].fields["perioddata"].item
+    for name in ("finf", "pet", "extdp", "extwc", "ha", "hroot", "rootact"):
+        field = item.fields[name]
+        assert isinstance(field, v2.Double), name
+        assert field.time_series, name
+
+
+def test_migrate_number_or_word_fails_when_stale(dfn_dir, tmp_path, monkeypatch):
+    from modflow_devtools.dfns import migrate_to_v2_0_0_dev2 as dev2
+
+    monkeypatch.setitem(dev2._NUMBER_OR_WORD, "gwf-lak", [("connectiondata", "nope", "none")])
+    with pytest.raises(ValueError, match="nope"):
+        _migrate_dev3(dfn_dir, "gwf-lak")
+    monkeypatch.setitem(dev2._NUMBER_OR_WORD, "gwf-lak", [("connectiondata", "belev", "none")])
+    with pytest.raises(ValueError, match="expected 'string'"):
+        _migrate_dev3(dfn_dir, "gwf-lak")
+
+
+def test_migrate_number_or_word_round_trip(dev3):
+    out, _ = dev3
+    components = v2.Dfns.load(out).components
+    lak = components["gwf-lak"].blocks["connectiondata"].fields["connectiondata"].item
+    _number_or_word(lak.fields["bedleak"], "none")
+    maw = components["gwf-maw"].blocks["period"].fields["perioddata"].item
+    arm = maw.fields["mawsetting"].arms["head_limitrecord"]
+    _number_or_word(arm.fields["head_limit_value"], "off")
+
+
 def test_migrate_round_trip_lossless(dfn_dir, dev3):
     # Writing the current schema and loading it back reproduces the
     # components loaded from the legacy DFNs exactly.

@@ -543,6 +543,8 @@ Type `union`. Sum type.
 
 A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [`observations`](#observations) say which.
 
+A reader tries an untagged union's arms in order. A `keyword` arm is its own name as a literal token, matched case-insensitively, so a keyword arm before a number arm expresses "a number, or this word". For example, `gwf-lak`'s `bedleak` has arms `none` (a keyword) and `value` (a double), and `gwf-maw`'s `HEAD_LIMIT` takes `OFF` or a number. A union can't be another union's arm, so `HEAD_LIMIT`'s arm of `mawsetting` is a record of the `head_limit` keyword and such a union, `head_limit_value`: `HEAD_LIMIT <head_limit_value>`.
+
 #### List
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.

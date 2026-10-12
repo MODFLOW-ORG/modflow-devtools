@@ -643,6 +643,122 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, block_name: new_block}
 
 
+def _replace_named(
+    name: str,
+    blocks: dict[str, v2.Block],
+    block_name: str,
+    replace: Callable[[Any, bool], Any],
+    names: set[str],
+) -> dict[str, v2.Block]:
+    """Replace each field in ``block_name`` (at any depth) named in ``names``
+    with ``replace(field, in_union)``, ``in_union`` saying whether it's a
+    union's arm. Raise if the block or any of the names is missing, so a
+    fixup table can't silently go stale when the DFNs change."""
+    found: set[str] = set()
+
+    def _walk(field: Any, in_union: bool = False) -> Any:
+        if field.name in names and not isinstance(field, (v2.Record, v2.List)):
+            found.add(field.name)
+            return replace(field, in_union)
+        if isinstance(field, v2.Record):
+            return field.model_copy(
+                update={"fields": {n: _walk(f) for n, f in field.fields.items()}}
+            )
+        if isinstance(field, v2.Union):
+            arms = [_walk(f, True) for f in field.arms.values()]
+            return field.model_copy(update={"arms": {f.name: f for f in arms}})
+        if isinstance(field, v2.List):
+            return field.model_copy(update={"item": _walk(field.item)})
+        return field
+
+    block = blocks.get(block_name)
+    if block is None:
+        raise ValueError(f"{name}: no block {block_name!r}")
+    fields = {n: _walk(f) for n, f in block.fields.items()}
+    if missing := names - found:
+        raise ValueError(f"{name}: no field(s) {sorted(missing)} in block {block_name!r}")
+    return {**blocks, block_name: block.model_copy(update={"fields": fields})}
+
+
+# v1 fields typed `string` that MF6 reads as a number, or as the given word
+# (`gwf-lak.f90`'s `case ('NONE')`, `gwf-maw.f90`'s `trim(str) == 'OFF'`). v1
+# can't say "a number or this word", so the word is only in the description.
+# Each becomes an untagged union of the word (a keyword, tried first) and a
+# number. Entries are (block, field, word).
+_NUMBER_OR_WORD: dict[str, list[tuple[str, str, str]]] = {
+    "gwf-lak": [("connectiondata", "bedleak", "none")],
+    "gwf-maw": [("period", "head_limit", "off")],  # an arm of `mawsetting`
+}
+
+
+def _fix_number_or_word_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Retype this component's number-or-word fields. See `_NUMBER_OR_WORD`.
+
+    A union can't be a union's arm, so a tagged field that is one (MAW's
+    ``HEAD_LIMIT <head_limit>``) becomes a record arm instead: its keyword,
+    then the union, named ``<field>_value``. This is the form of the
+    keystring's other multi-token arms (``SHUT_OFF <minrate> <maxrate>``)."""
+    for block_name, field_name, word in _NUMBER_OR_WORD.get(name, []):
+
+        def _replace(field: Any, in_union: bool, word: str = word) -> Any:
+            if not isinstance(field, v2.String):
+                raise ValueError(f"{name}: {field.name!r} is {field.type!r}, expected 'string'")
+            if in_union != field.tagged:
+                raise ValueError(
+                    f"{name}: {field.name!r} is {'' if field.tagged else 'un'}tagged, "
+                    f"expected {'a union arm' if field.tagged else 'a record column'}"
+                )
+            data = {k: getattr(field, k) for k in v2.InputFieldBase.model_fields}
+            arms: dict[str, v2.Scalar | v2.Array | v2.Record] = {
+                word: v2.Keyword(name=word),
+                "value": v2.Double(name="value", tagged=False),
+            }
+            if not in_union:
+                return v2.Union(**{**data, "tagged": False}, arms=arms)
+            value = v2.Union(
+                **{**data, "name": f"{field.name}_value", "tagged": False, "optional": False},
+                arms=arms,
+            )
+            return v2.Record(
+                name=f"{field.name}record",
+                optional=field.optional,
+                fields={field.name: v2.Keyword(name=field.name), value.name: value},
+            )
+
+        blocks = _replace_named(name, blocks, block_name, _replace, {field_name})
+    return blocks
+
+
+# v1 time-series values typed `string` rather than `double` like every other
+# (`time_series` on a `double` already means "or a time series' name"). mf6
+# retyped these on develop after 6.8.1 (MODFLOW-ORG/modflow6#2786); drop the
+# entry once no supported DFNs predate that. Entries are (block, fields).
+_STRING_TIME_SERIES: dict[str, tuple[str, set[str]]] = {
+    "gwf-uzf": ("period", {"finf", "pet", "extdp", "extwc", "ha", "hroot", "rootact"}),
+}
+
+
+def _fix_string_time_series(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Retype this component's `string` time-series values as `double`. See
+    `_STRING_TIME_SERIES`."""
+    entry = _STRING_TIME_SERIES.get(name)
+    if entry is None:
+        return blocks
+    block_name, names = entry
+
+    def _replace(field: Any, in_union: bool) -> Any:
+        if isinstance(field, v2.Double) and field.time_series:
+            return field  # already retyped upstream
+        if not (isinstance(field, v2.String) and field.time_series):
+            raise ValueError(
+                f"{name}: {field.name!r} is {field.type!r}, expected a time-series 'string'"
+            )
+        shared = (set(v2.Double.model_fields) & field.model_fields_set) - {"type"}
+        return v2.Double(**{k: getattr(field, k) for k in shared})
+
+    return _replace_named(name, blocks, block_name, _replace, names)
+
+
 def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Turn a name file's filename columns (see `_NAMEFILE_LINKS`) from
     Strings into input Files linking the components they name. Name-file
@@ -2136,6 +2252,8 @@ def to_v2_0_0_dev2(
     # reads or depends on `pk`/`fk` state.
     blocks = _mark_lonely_pk(blocks)
     blocks = _fix_cellid_fields(name, blocks)
+    blocks = _fix_number_or_word_fields(name, blocks)
+    blocks = _fix_string_time_series(name, blocks)
     blocks = _mark_cellids(blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)

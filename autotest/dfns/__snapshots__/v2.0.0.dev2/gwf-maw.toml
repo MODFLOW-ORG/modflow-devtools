@@ -377,10 +377,24 @@ longname = "well head"
 description = "is the head in the multi-aquifer well. WELL_HEAD is only applied to constant head (STATUS is CONSTANT) and inactive (STATUS is INACTIVE) multi-aquifer wells. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. The program will terminate with an error if WELL_HEAD is less than the bottom of the well."
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limit]
-type = "string"
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord]
+type = "record"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit]
+type = "keyword"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value]
+type = "union"
 longname = "head limit"
 description = "is the limiting water level (head) in the well, which is the minimum of the well RATE or the well inflow rate from the aquifer. HEAD_LIMIT can be applied to extraction wells (RATE $<$ 0) or injection wells (RATE $>$ 0). HEAD_LIMIT can be deactivated by specifying the text string `OFF'. The HEAD_LIMIT option is based on the HEAD_LIMIT functionality available in the MNW2~citep{konikow2009} package for MODFLOW-2005. The HEAD_LIMIT option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended. By default, HEAD_LIMIT is `OFF'."
+tagged = false
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.off]
+type = "keyword"
+
+[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.value]
+type = "double"
+tagged = false
 
 [blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord]
 type = "record"
