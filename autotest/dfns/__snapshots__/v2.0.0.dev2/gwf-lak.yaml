@@ -349,7 +349,6 @@ blocks:
                 cell and lakebed sediments are assumed to be absent. Warning messages will be issued if
                 NONE is specified. Eventually the ability to specify NONE will be deprecated and cause
                 MODFLOW 6 to terminate with an error.
-              tagged: false
               arms:
                 none:
                   type: keyword

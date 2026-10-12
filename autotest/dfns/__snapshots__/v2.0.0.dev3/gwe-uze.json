@@ -380,7 +380,6 @@
   "observations": {
     "temperature": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -396,7 +395,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -412,7 +410,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -428,7 +425,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -444,7 +440,6 @@
     },
     "uze": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -460,7 +455,6 @@
     },
     "thermal-equil": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -476,7 +470,6 @@
     },
     "infiltration": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -492,7 +485,6 @@
     },
     "rej-inf": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -508,7 +500,6 @@
     },
     "uzet": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -524,7 +515,6 @@
     },
     "rej-inf-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno": {
           "type": "integer",
@@ -540,11 +530,9 @@
     },
     "flow-ja-face": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "uzfno_uzfno2": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "uzfno": {
               "type": "integer",

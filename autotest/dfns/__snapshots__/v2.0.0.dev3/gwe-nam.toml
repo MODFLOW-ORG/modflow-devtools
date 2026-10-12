@@ -217,7 +217,6 @@ shape = [
 
 [observations.flow-ja-face]
 type = "record"
-tagged = false
 
 [observations.flow-ja-face.fields.cellid]
 type = "array"

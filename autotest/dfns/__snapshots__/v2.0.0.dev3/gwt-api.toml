@@ -80,7 +80,6 @@ type = "integer"
 
 [observations.api]
 type = "union"
-tagged = false
 
 [observations.api.arms.cellid]
 type = "array"
@@ -98,7 +97,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.cellid]
 type = "array"

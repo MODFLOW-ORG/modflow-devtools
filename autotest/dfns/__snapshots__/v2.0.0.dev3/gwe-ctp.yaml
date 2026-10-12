@@ -285,7 +285,6 @@ memory:
 observations:
   ctp:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array

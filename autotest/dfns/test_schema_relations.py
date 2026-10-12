@@ -299,7 +299,6 @@ def test_dfns_validate_cellid_union_arms_are_alternatives():
     # is checked against the row's other cellid columns.
     union = Union(
         name="id",
-        tagged=False,
         arms={"x": _cellid_col("x", "1"), "y": _cellid_col("y", "2")},
     )
     item = Record(name="item", fields={"a": _cellid_col("a", "1"), "id": union})

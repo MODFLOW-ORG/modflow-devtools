@@ -30,13 +30,13 @@ def _record(
     """ID and ID2, named after both (e.g. ``ifno_iconn``) so records that are
     arms of the same union get distinct names."""
     name = "_".join(f.name for f in fields)
-    return v2.Record(name=name, tagged=False, fields={f.name: f for f in fields})
+    return v2.Record(name=name, fields={f.name: f for f in fields})
 
 
 def _or_boundname(form: "v2.Integer | v2.Array | v2.Record") -> v2.Union:
     """``form``, or a boundname instead, after which MF6 reads no ID2."""
     boundname = v2.String(name="boundname", tagged=False)
-    return v2.Union(name=form.name, tagged=False, arms={form.name: form, "boundname": boundname})
+    return v2.Union(name=form.name, arms={form.name: form, "boundname": boundname})
 
 
 def _all(field: _Field, *obstypes: str) -> dict[str, _Field]:
@@ -66,7 +66,7 @@ def _connection_or_name(pk: str, iconn: str = "iconn") -> v2.Union:
     feature = _index(pk, fk=f"packagedata.{pk}")
     boundname = v2.String(name="boundname", tagged=False)
     arms = (_record(feature, _index(iconn)), _record(feature, boundname), boundname)
-    return v2.Union(name=pk, tagged=False, arms={arm.name: arm for arm in arms})
+    return v2.Union(name=pk, arms={arm.name: arm for arm in arms})
 
 
 # Stress packages

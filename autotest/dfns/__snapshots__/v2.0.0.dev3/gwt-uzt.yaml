@@ -371,7 +371,6 @@ memory:
 observations:
   concentration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -383,7 +382,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -395,7 +393,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -407,7 +404,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -419,7 +415,6 @@ observations:
         tagged: false
   uzt:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -431,7 +426,6 @@ observations:
         tagged: false
   infiltration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -443,7 +437,6 @@ observations:
         tagged: false
   rej-inf:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -455,7 +448,6 @@ observations:
         tagged: false
   uzet:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -467,7 +459,6 @@ observations:
         tagged: false
   rej-inf-to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -479,11 +470,9 @@ observations:
         tagged: false
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       ifno_ifno2:
         type: record
-        tagged: false
         fields:
           ifno:
             type: integer

@@ -466,7 +466,6 @@ memory:
 observations:
   uzf-gwrch:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -478,7 +477,6 @@ observations:
         tagged: false
   uzf-gwd:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -490,7 +488,6 @@ observations:
         tagged: false
   uzf-gwd-to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -502,7 +499,6 @@ observations:
         tagged: false
   uzf-gwet:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -514,7 +510,6 @@ observations:
         tagged: false
   infiltration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -526,7 +521,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -538,7 +532,6 @@ observations:
         tagged: false
   rej-inf:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -550,7 +543,6 @@ observations:
         tagged: false
   rej-inf-to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -562,7 +554,6 @@ observations:
         tagged: false
   uzet:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -574,7 +565,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -586,7 +576,6 @@ observations:
         tagged: false
   net-infiltration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -598,11 +587,9 @@ observations:
         tagged: false
   water-content:
     type: record
-    tagged: false
     fields:
       ifno:
         type: union
-        tagged: false
         arms:
           ifno:
             type: integer

@@ -792,11 +792,6 @@
           "title": "Netcdf",
           "type": "boolean"
         },
-        "tagged": {
-          "default": true,
-          "title": "Tagged",
-          "type": "boolean"
-        },
         "removed": {
           "anyOf": [
             {
@@ -1697,11 +1692,6 @@
           "title": "Netcdf",
           "type": "boolean"
         },
-        "tagged": {
-          "default": true,
-          "title": "Tagged",
-          "type": "boolean"
-        },
         "removed": {
           "anyOf": [
             {
@@ -2205,11 +2195,6 @@
         "netcdf": {
           "default": false,
           "title": "Netcdf",
-          "type": "boolean"
-        },
-        "tagged": {
-          "default": true,
-          "title": "Tagged",
           "type": "boolean"
         },
         "removed": {

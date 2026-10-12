@@ -652,7 +652,6 @@ shape = [
 
 [observations.csub]
 type = "union"
-tagged = false
 
 [observations.csub.arms.icsubno]
 type = "integer"
@@ -666,7 +665,6 @@ tagged = false
 
 [observations.inelastic-csub]
 type = "union"
-tagged = false
 
 [observations.inelastic-csub.arms.icsubno]
 type = "integer"
@@ -680,7 +678,6 @@ tagged = false
 
 [observations.elastic-csub]
 type = "union"
-tagged = false
 
 [observations.elastic-csub.arms.icsubno]
 type = "integer"
@@ -694,7 +691,6 @@ tagged = false
 
 [observations.delay-flowtop]
 type = "union"
-tagged = false
 
 [observations.delay-flowtop.arms.icsubno]
 type = "integer"
@@ -708,7 +704,6 @@ tagged = false
 
 [observations.delay-flowbot]
 type = "union"
-tagged = false
 
 [observations.delay-flowbot.arms.icsubno]
 type = "integer"
@@ -770,7 +765,6 @@ fk = "packagedata.icsubno"
 
 [observations.delay-head]
 type = "record"
-tagged = false
 
 [observations.delay-head.fields.icsubno]
 type = "integer"
@@ -785,7 +779,6 @@ index = true
 
 [observations.delay-gstress]
 type = "record"
-tagged = false
 
 [observations.delay-gstress.fields.icsubno]
 type = "integer"
@@ -800,7 +793,6 @@ index = true
 
 [observations.delay-estress]
 type = "record"
-tagged = false
 
 [observations.delay-estress.fields.icsubno]
 type = "integer"
@@ -815,7 +807,6 @@ index = true
 
 [observations.delay-preconstress]
 type = "record"
-tagged = false
 
 [observations.delay-preconstress.fields.icsubno]
 type = "integer"
@@ -830,7 +821,6 @@ index = true
 
 [observations.delay-compaction]
 type = "record"
-tagged = false
 
 [observations.delay-compaction.fields.icsubno]
 type = "integer"
@@ -845,7 +835,6 @@ index = true
 
 [observations.delay-thickness]
 type = "record"
-tagged = false
 
 [observations.delay-thickness.fields.icsubno]
 type = "integer"
@@ -860,7 +849,6 @@ index = true
 
 [observations.delay-theta]
 type = "record"
-tagged = false
 
 [observations.delay-theta.fields.icsubno]
 type = "integer"

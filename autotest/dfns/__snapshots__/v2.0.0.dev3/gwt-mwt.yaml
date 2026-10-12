@@ -353,7 +353,6 @@ memory:
 observations:
   concentration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -365,7 +364,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -377,7 +375,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -389,7 +386,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -401,7 +397,6 @@ observations:
         tagged: false
   rate:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -413,7 +408,6 @@ observations:
         tagged: false
   fw-rate:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -425,7 +419,6 @@ observations:
         tagged: false
   rate-to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -437,7 +430,6 @@ observations:
         tagged: false
   fw-rate-to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -449,11 +441,9 @@ observations:
         tagged: false
   mwt:
     type: union
-    tagged: false
     arms:
       ifno_iconn:
         type: record
-        tagged: false
         fields:
           ifno:
             type: integer

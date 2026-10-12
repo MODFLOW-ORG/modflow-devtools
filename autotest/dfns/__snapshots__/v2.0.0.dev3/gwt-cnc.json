@@ -318,7 +318,6 @@
   "observations": {
     "cnc": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "cellid": {
           "type": "array",

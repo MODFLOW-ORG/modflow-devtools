@@ -307,7 +307,6 @@ shape = [
 
 [observations.riv]
 type = "union"
-tagged = false
 
 [observations.riv.arms.cellid]
 type = "array"
@@ -325,7 +324,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.cellid]
 type = "array"

@@ -326,7 +326,6 @@ shape = [
 
 [observations.concentration]
 type = "union"
-tagged = false
 
 [observations.concentration.arms.ifno]
 type = "integer"
@@ -340,7 +339,6 @@ tagged = false
 
 [observations.storage]
 type = "union"
-tagged = false
 
 [observations.storage.arms.ifno]
 type = "integer"
@@ -354,7 +352,6 @@ tagged = false
 
 [observations.constant]
 type = "union"
-tagged = false
 
 [observations.constant.arms.ifno]
 type = "integer"
@@ -368,7 +365,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.ifno]
 type = "integer"
@@ -382,7 +378,6 @@ tagged = false
 
 [observations.rate]
 type = "union"
-tagged = false
 
 [observations.rate.arms.ifno]
 type = "integer"
@@ -396,7 +391,6 @@ tagged = false
 
 [observations.fw-rate]
 type = "union"
-tagged = false
 
 [observations.fw-rate.arms.ifno]
 type = "integer"
@@ -410,7 +404,6 @@ tagged = false
 
 [observations.rate-to-mvr]
 type = "union"
-tagged = false
 
 [observations.rate-to-mvr.arms.ifno]
 type = "integer"
@@ -424,7 +417,6 @@ tagged = false
 
 [observations.fw-rate-to-mvr]
 type = "union"
-tagged = false
 
 [observations.fw-rate-to-mvr.arms.ifno]
 type = "integer"
@@ -438,11 +430,9 @@ tagged = false
 
 [observations.mwt]
 type = "union"
-tagged = false
 
 [observations.mwt.arms.ifno_iconn]
 type = "record"
-tagged = false
 
 [observations.mwt.arms.ifno_iconn.fields.ifno]
 type = "integer"

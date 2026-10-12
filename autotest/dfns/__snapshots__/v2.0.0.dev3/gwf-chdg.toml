@@ -285,7 +285,6 @@ shape = [
 
 [observations.chd]
 type = "union"
-tagged = false
 
 [observations.chd.arms.cellid]
 type = "array"

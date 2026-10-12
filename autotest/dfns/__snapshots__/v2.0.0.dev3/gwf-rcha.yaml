@@ -296,7 +296,6 @@ memory:
 observations:
   rch:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array

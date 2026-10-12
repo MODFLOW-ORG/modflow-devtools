@@ -278,9 +278,9 @@ A block has no explicit `optional` attribute. Its optionality is derived from it
 
 Field order within a block can be significant.
 
-Tagged fields must precede untagged fields. Fields whose values are not preceded by their name (i.e., `tagged: false`) must come after all tagged fields. Among tagged fields, relative order is unconstrained. Untagged fields must appear in the same order of appearance as in the definition.
+Tagged fields must precede untagged fields. Fields that don't begin with a keyword (i.e., `tagged: false`) must come after all tagged fields. Among tagged fields, relative order is unconstrained. Untagged fields must appear in the same order of appearance as in the definition.
 
-**Note:** a list's `tagged` is derived from its `item`, never declared (see [List](#list)). An **untagged** list's item type begins with a value, so its items have no keyword delimiter; once a parser reaches an untagged list, it must continue to read lines as list items until the block's end tag. Therefore an untagged list must be the last field in its block and a block may have at most one untagged list. A **tagged** list's item type begins with a keyword, so a parser can recognize its items anywhere in the block, like any other tagged field: it may appear anywhere among the block's tagged fields, and a block may have any number of them. No other field in the block may begin with one of a tagged list's item keywords. For a list whose item begins with a dynamic keyword (see [List](#list)), this can only be checked at runtime: no value of the key's `fk` target may be the keyword of another field in the block.
+**Note:** a list's `tagged` is derived from its `item`, never declared (see [`tagged`](#tagged) and [List](#list)). An **untagged** list's item type begins with a value, so its items have no keyword delimiter; once a parser reaches an untagged list, it must continue to read lines as list items until the block's end tag. Therefore an untagged list must be the last field in its block and a block may have at most one untagged list. A **tagged** list's item type begins with a keyword, so a parser can recognize its items anywhere in the block, like any other tagged field: it may appear anywhere among the block's tagged fields, and a block may have any number of them. No other field in the block may begin with one of a tagged list's item keywords. For a list whose item begins with a dynamic keyword (see [List](#list)), this can only be checked at runtime: no value of the key's `fk` target may be the keyword of another field in the block.
 
 ## Fields
 
@@ -353,7 +353,14 @@ A list's default value is interpreted as a single element. This allows consumers
 
 #### `tagged`
 
-`boolean (default: true)`. Indicates that the field value should be preceded by the field name. Not declared on lists, where it's derived instead; see [List](#list).
+`boolean (default: true)`. Whether the field begins with a keyword in input files. On a scalar or an array, it says whether the field's own name precedes its value, e.g. `MAXBOUND <maxbound>`. Other types derive it, so it is never declared on them:
+
+- A keyword always begins with itself, so it is always tagged.
+- A record is tagged if its first field is, or is a dynamic keyword (see [List](#list)).
+- A union is tagged if every arm is, so that the keyword picks the arm. This is a tagged union in the type-theory sense. An untagged union has an arm that begins with a value instead.
+- A list is tagged if its item is (see [List](#list)).
+
+A composite never begins with its own name. A keyword before a composite is a field of an enclosing record, e.g. `gwf-oc`'s `SAVE <rtype> <ocsetting>`, where `ocsetting` is a union.
 
 ### Scalars
 
@@ -519,7 +526,7 @@ The leading `ncelldim` is not resolved as a dim in the component's own scope: it
 
 #### Record
 
-Type `record`. Product type. In MF6 input files, records appear on a single line, except for a record that consists of a dynamic keyword (see [List](#list)) followed by an array: it is read like a tagged array whose tag is the key's value, i.e. the key on its own line, then the array in READARRAY format on the following lines. Record subfields may or may not be `tagged`. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
+Type `record`. Product type. In MF6 input files, records appear on a single line, except for a record that consists of a dynamic keyword (see [List](#list)) followed by an array: it is read like a tagged array whose tag is the key's value, i.e. the key on its own line, then the array in READARRAY format on the following lines. Record subfields may or may not be `tagged`, and the first decides whether the record is. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
 
 ##### Type-specific attributes
 
@@ -541,15 +548,15 @@ Type `union`. Sum type.
 
 `{string: Scalar | Array | Record}`. Subfields, required.
 
-A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [`observations`](#observations) say which.
+A union is usually tagged: each arm begins with its own keyword, which picks the arm. An untagged union has an arm that begins with a value instead, and the value alone may not pick the arm. A union can't be another union's arm: a tagged one's arms could be the outer union's own, and an untagged one has no keyword to pick it. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [`observations`](#observations) say which.
 
-A reader tries an untagged union's arms in order. A `keyword` arm is its own name as a literal token, matched case-insensitively, so a keyword arm before a number arm expresses "a number, or this word". For example, `gwf-lak`'s `bedleak` has arms `none` (a keyword) and `value` (a double), and `gwf-maw`'s `HEAD_LIMIT` takes `OFF` or a number. A union can't be another union's arm, so `HEAD_LIMIT`'s arm of `mawsetting` is a record of the `head_limit` keyword and such a union, `head_limit_value`: `HEAD_LIMIT <head_limit_value>`.
+A reader tries an untagged union's arms in order. A `keyword` arm is its own name as a literal token, matched case-insensitively, so a keyword arm before a number arm expresses "a number, or this word". For example, `gwf-lak`'s `bedleak` has arms `none` (a keyword) and `value` (a double), and `gwf-maw`'s `HEAD_LIMIT` takes `OFF` or a number. Since unions don't nest, `HEAD_LIMIT`'s arm of `mawsetting` is a tagged record of the `head_limit` keyword and such a union, `head_limit_value`: `HEAD_LIMIT <head_limit_value>`.
 
 #### List
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.
 
-A list is **tagged** if and only if its `item` type is keyword-led. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led or is a **dynamic keyword**: an untagged `string` whose `fk` is a hierarchical path to a string array, so that its value is one of that array's entries. A dynamic keyword's possible values are known keywords once the array has been read, though not when the definition is written. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
+A list is **tagged** if and only if its `item` type is keyword-led, i.e. tagged. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led or is a **dynamic keyword**: an untagged `string` whose `fk` is a hierarchical path to a string array, so that its value is one of that array's entries. A dynamic keyword's possible values are known keywords once the array has been read, though not when the definition is written. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
 
 Untagged lists are tables: a block body of items, one per line, e.g. a stress package's period data. Tagged lists also express a line that may be repeated among a block's other fields, e.g. `TS6 FILEIN <ts6_filename>`, which MODFLOW 6 accepts any number of times in a package's options block (one per time-series file). A tagged list whose item begins with a dynamic keyword expresses a field whose name is chosen by the user. For example, an array-based stress package (e.g. `gwf-rcha`) reads one grid array per auxiliary variable, each introduced by that variable's name:
 

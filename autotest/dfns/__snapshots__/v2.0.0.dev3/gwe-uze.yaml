@@ -370,7 +370,6 @@ memory:
 observations:
   temperature:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -382,7 +381,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -394,7 +392,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -406,7 +403,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -418,7 +414,6 @@ observations:
         tagged: false
   uze:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -430,7 +425,6 @@ observations:
         tagged: false
   thermal-equil:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -442,7 +436,6 @@ observations:
         tagged: false
   infiltration:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -454,7 +447,6 @@ observations:
         tagged: false
   rej-inf:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -466,7 +458,6 @@ observations:
         tagged: false
   uzet:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -478,7 +469,6 @@ observations:
         tagged: false
   rej-inf-to-mvr:
     type: union
-    tagged: false
     arms:
       uzfno:
         type: integer
@@ -490,11 +480,9 @@ observations:
         tagged: false
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       uzfno_uzfno2:
         type: record
-        tagged: false
         fields:
           uzfno:
             type: integer

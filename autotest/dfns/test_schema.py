@@ -448,6 +448,47 @@ def test_list_tagged_not_serialized_or_settable():
         lst.model_copy(update={"tagged": False})
 
 
+def test_composite_tagged_derived():
+    """A record is tagged iff its first field is, a union iff every arm is."""
+    assert _ts_list().item.tagged is True
+    assert _table_list().item.tagged is False
+    led = Record(name="r", fields={"head_limit": Keyword(name="head_limit"), "v": Double(name="v")})
+    assert led.tagged is True
+    assert Record(name="r", fields={"v": Double(name="v", tagged=False)}).tagged is False
+    assert Record(name="r", fields={"v": Double(name="v")}).tagged is True  # `V <v>`
+    assert Record(name="r").tagged is False
+    discriminated = Union(name="u", arms={"r": led, "all": Keyword(name="all")})
+    assert discriminated.tagged is True
+    number_or_word = Union(
+        name="u", arms={"off": Keyword(name="off"), "value": Double(name="value", tagged=False)}
+    )
+    assert number_or_word.tagged is False
+    assert Keyword(name="all").tagged is True
+
+
+@pytest.mark.parametrize("cls", [Record, Union, Keyword])
+def test_composite_tagged_not_serialized_or_settable(cls):
+    kwargs: dict = {"name": "x"}
+    if cls is Record:
+        kwargs["fields"] = {"v": Double(name="v", tagged=False)}
+    if cls is Union:
+        kwargs["arms"] = {"v": Double(name="v", tagged=False)}
+    field = cls(**kwargs)
+    assert "tagged" not in field.model_dump()
+    assert cls.model_validate(field.model_dump()).tagged is field.tagged
+    with pytest.raises(ValueError, match="contradicts"):
+        cls(**kwargs, tagged=not field.tagged)
+    with pytest.raises(ValueError, match="derived"):
+        field.model_copy(update={"tagged": not field.tagged})
+
+
+def test_composite_tagged_rederived_on_model_copy():
+    record = Record(name="r", fields={"v": Double(name="v", tagged=False)})
+    assert record.model_copy(update={"fields": {"k": Keyword(name="k")}}).tagged is True
+    union = Union(name="u", arms={"k": Keyword(name="k")})
+    assert union.model_copy(update={"arms": {"v": Double(name="v", tagged=False)}}).tagged is False
+
+
 def test_list_tagged_rederived_on_model_copy():
     """model_copy skips validation, so List re-derives `tagged` itself."""
     lst = _ts_list()

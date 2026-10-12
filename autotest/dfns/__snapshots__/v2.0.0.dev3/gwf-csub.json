@@ -707,7 +707,6 @@
   "observations": {
     "csub": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "icsubno": {
           "type": "integer",
@@ -723,7 +722,6 @@
     },
     "inelastic-csub": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "icsubno": {
           "type": "integer",
@@ -739,7 +737,6 @@
     },
     "elastic-csub": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "icsubno": {
           "type": "integer",
@@ -755,7 +752,6 @@
     },
     "delay-flowtop": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "icsubno": {
           "type": "integer",
@@ -771,7 +767,6 @@
     },
     "delay-flowbot": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "icsubno": {
           "type": "integer",
@@ -835,7 +830,6 @@
     },
     "delay-head": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -852,7 +846,6 @@
     },
     "delay-gstress": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -869,7 +862,6 @@
     },
     "delay-estress": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -886,7 +878,6 @@
     },
     "delay-preconstress": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -903,7 +894,6 @@
     },
     "delay-compaction": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -920,7 +910,6 @@
     },
     "delay-thickness": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",
@@ -937,7 +926,6 @@
     },
     "delay-theta": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "icsubno": {
           "type": "integer",

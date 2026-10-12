@@ -423,7 +423,6 @@ shape = [
 
 [observations.temperature]
 type = "union"
-tagged = false
 
 [observations.temperature.arms.rno]
 type = "integer"
@@ -437,7 +436,6 @@ tagged = false
 
 [observations.storage]
 type = "union"
-tagged = false
 
 [observations.storage.arms.rno]
 type = "integer"
@@ -451,7 +449,6 @@ tagged = false
 
 [observations.constant]
 type = "union"
-tagged = false
 
 [observations.constant.arms.rno]
 type = "integer"
@@ -465,7 +462,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.rno]
 type = "integer"
@@ -479,7 +475,6 @@ tagged = false
 
 [observations.sfe]
 type = "union"
-tagged = false
 
 [observations.sfe.arms.rno]
 type = "integer"
@@ -493,7 +488,6 @@ tagged = false
 
 [observations.strmbd-cond]
 type = "union"
-tagged = false
 
 [observations.strmbd-cond.arms.rno]
 type = "integer"
@@ -507,7 +501,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.rno]
 type = "integer"
@@ -521,7 +514,6 @@ tagged = false
 
 [observations.rainfall]
 type = "union"
-tagged = false
 
 [observations.rainfall.arms.rno]
 type = "integer"
@@ -535,7 +527,6 @@ tagged = false
 
 [observations.evaporation]
 type = "union"
-tagged = false
 
 [observations.evaporation.arms.rno]
 type = "integer"
@@ -549,7 +540,6 @@ tagged = false
 
 [observations.runoff]
 type = "union"
-tagged = false
 
 [observations.runoff.arms.rno]
 type = "integer"
@@ -563,7 +553,6 @@ tagged = false
 
 [observations.ext-inflow]
 type = "union"
-tagged = false
 
 [observations.ext-inflow.arms.rno]
 type = "integer"
@@ -577,7 +566,6 @@ tagged = false
 
 [observations.ext-outflow]
 type = "union"
-tagged = false
 
 [observations.ext-outflow.arms.rno]
 type = "integer"
@@ -591,11 +579,9 @@ tagged = false
 
 [observations.flow-ja-face]
 type = "union"
-tagged = false
 
 [observations.flow-ja-face.arms.rno_rno2]
 type = "record"
-tagged = false
 
 [observations.flow-ja-face.arms.rno_rno2.fields.rno]
 type = "integer"

@@ -397,7 +397,6 @@
   "observations": {
     "temperature": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -413,7 +412,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -429,7 +427,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -445,7 +442,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -461,7 +457,6 @@
     },
     "rate": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -477,7 +472,6 @@
     },
     "fw-rate": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -493,7 +487,6 @@
     },
     "rate-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -509,7 +502,6 @@
     },
     "fw-rate-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno": {
           "type": "integer",
@@ -525,11 +517,9 @@
     },
     "mwe": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "mawno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "mawno": {
               "type": "integer",

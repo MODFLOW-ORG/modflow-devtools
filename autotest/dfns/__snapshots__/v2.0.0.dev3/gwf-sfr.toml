@@ -693,7 +693,6 @@ shape = [
 
 [observations.stage]
 type = "union"
-tagged = false
 
 [observations.stage.arms.ifno]
 type = "integer"
@@ -707,7 +706,6 @@ tagged = false
 
 [observations.ext-inflow]
 type = "union"
-tagged = false
 
 [observations.ext-inflow.arms.ifno]
 type = "integer"
@@ -721,7 +719,6 @@ tagged = false
 
 [observations.inflow]
 type = "union"
-tagged = false
 
 [observations.inflow.arms.ifno]
 type = "integer"
@@ -735,7 +732,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.ifno]
 type = "integer"
@@ -749,7 +745,6 @@ tagged = false
 
 [observations.rainfall]
 type = "union"
-tagged = false
 
 [observations.rainfall.arms.ifno]
 type = "integer"
@@ -763,7 +758,6 @@ tagged = false
 
 [observations.runoff]
 type = "union"
-tagged = false
 
 [observations.runoff.arms.ifno]
 type = "integer"
@@ -777,7 +771,6 @@ tagged = false
 
 [observations.sfr]
 type = "union"
-tagged = false
 
 [observations.sfr.arms.ifno]
 type = "integer"
@@ -791,7 +784,6 @@ tagged = false
 
 [observations.evaporation]
 type = "union"
-tagged = false
 
 [observations.evaporation.arms.ifno]
 type = "integer"
@@ -805,7 +797,6 @@ tagged = false
 
 [observations.outflow]
 type = "union"
-tagged = false
 
 [observations.outflow.arms.ifno]
 type = "integer"
@@ -819,7 +810,6 @@ tagged = false
 
 [observations.ext-outflow]
 type = "union"
-tagged = false
 
 [observations.ext-outflow.arms.ifno]
 type = "integer"
@@ -833,7 +823,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.ifno]
 type = "integer"
@@ -847,7 +836,6 @@ tagged = false
 
 [observations.upstream-flow]
 type = "union"
-tagged = false
 
 [observations.upstream-flow.arms.ifno]
 type = "integer"
@@ -861,7 +849,6 @@ tagged = false
 
 [observations.downstream-flow]
 type = "union"
-tagged = false
 
 [observations.downstream-flow.arms.ifno]
 type = "integer"
@@ -875,7 +862,6 @@ tagged = false
 
 [observations.depth]
 type = "union"
-tagged = false
 
 [observations.depth.arms.ifno]
 type = "integer"
@@ -889,7 +875,6 @@ tagged = false
 
 [observations.wet-perimeter]
 type = "union"
-tagged = false
 
 [observations.wet-perimeter.arms.ifno]
 type = "integer"
@@ -903,7 +888,6 @@ tagged = false
 
 [observations.wet-area]
 type = "union"
-tagged = false
 
 [observations.wet-area.arms.ifno]
 type = "integer"
@@ -917,7 +901,6 @@ tagged = false
 
 [observations.wet-width]
 type = "union"
-tagged = false
 
 [observations.wet-width.arms.ifno]
 type = "integer"

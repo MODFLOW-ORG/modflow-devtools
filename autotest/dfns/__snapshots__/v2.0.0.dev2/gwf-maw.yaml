@@ -488,7 +488,6 @@ blocks:
                         for MODFLOW-2005. The HEAD_LIMIT option has been included to facilitate backward
                         compatibility with previous versions of MODFLOW but use of the RATE_SCALING option
                         instead of the HEAD_LIMIT option is recommended. By default, HEAD_LIMIT is `OFF'.
-                      tagged: false
                       arms:
                         'off':
                           type: keyword

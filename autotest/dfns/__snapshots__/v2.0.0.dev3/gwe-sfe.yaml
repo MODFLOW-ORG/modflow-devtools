@@ -444,7 +444,6 @@ memory:
 observations:
   temperature:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -456,7 +455,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -468,7 +466,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -480,7 +477,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -492,7 +488,6 @@ observations:
         tagged: false
   sfe:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -504,7 +499,6 @@ observations:
         tagged: false
   strmbd-cond:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -516,7 +510,6 @@ observations:
         tagged: false
   to-mvr:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -528,7 +521,6 @@ observations:
         tagged: false
   rainfall:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -540,7 +532,6 @@ observations:
         tagged: false
   evaporation:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -552,7 +543,6 @@ observations:
         tagged: false
   runoff:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -564,7 +554,6 @@ observations:
         tagged: false
   ext-inflow:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -576,7 +565,6 @@ observations:
         tagged: false
   ext-outflow:
     type: union
-    tagged: false
     arms:
       rno:
         type: integer
@@ -588,11 +576,9 @@ observations:
         tagged: false
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       rno_rno2:
         type: record
-        tagged: false
         fields:
           rno:
             type: integer

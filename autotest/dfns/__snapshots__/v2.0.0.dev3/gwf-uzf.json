@@ -443,7 +443,6 @@
   "observations": {
     "uzf-gwrch": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -459,7 +458,6 @@
     },
     "uzf-gwd": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -475,7 +473,6 @@
     },
     "uzf-gwd-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -491,7 +488,6 @@
     },
     "uzf-gwet": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -507,7 +503,6 @@
     },
     "infiltration": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -523,7 +518,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -539,7 +533,6 @@
     },
     "rej-inf": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -555,7 +548,6 @@
     },
     "rej-inf-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -571,7 +563,6 @@
     },
     "uzet": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -587,7 +578,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -603,7 +593,6 @@
     },
     "net-infiltration": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -619,11 +608,9 @@
     },
     "water-content": {
       "type": "record",
-      "tagged": false,
       "fields": {
         "ifno": {
           "type": "union",
-          "tagged": false,
           "arms": {
             "ifno": {
               "type": "integer",

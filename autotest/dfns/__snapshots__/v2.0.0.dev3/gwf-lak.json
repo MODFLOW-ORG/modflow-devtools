@@ -332,7 +332,6 @@
                 "type": "union",
                 "longname": "bed leakance",
                 "description": "real value or character string that defines the bed leakance for the lake-GWF connection. BEDLEAK must be greater than or equal to zero, equal to the DNODATA value (3.0E+30), or specified to be NONE. If DNODATA or NONE is specified for BEDLEAK, the lake-GWF connection conductance is solely a function of aquifer properties in the connected GWF cell and lakebed sediments are assumed to be absent. Warning messages will be issued if NONE is specified. Eventually the ability to specify NONE will be deprecated and cause MODFLOW 6 to terminate with an error.",
-                "tagged": false,
                 "arms": {
                   "none": {
                     "type": "keyword"
@@ -793,7 +792,6 @@
   "observations": {
     "stage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -809,7 +807,6 @@
     },
     "ext-inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -825,7 +822,6 @@
     },
     "outlet-inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -841,7 +837,6 @@
     },
     "inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -857,7 +852,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -873,7 +867,6 @@
     },
     "rainfall": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -889,7 +882,6 @@
     },
     "runoff": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -905,7 +897,6 @@
     },
     "withdrawal": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -921,7 +912,6 @@
     },
     "evaporation": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -937,7 +927,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -953,7 +942,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -969,7 +957,6 @@
     },
     "volume": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -985,7 +972,6 @@
     },
     "surface-area": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -1001,11 +987,9 @@
     },
     "lak": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1022,7 +1006,6 @@
         },
         "ifno_boundname": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1044,11 +1027,9 @@
     },
     "wetted-area": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1065,7 +1046,6 @@
         },
         "ifno_boundname": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1087,11 +1067,9 @@
     },
     "conductance": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1108,7 +1086,6 @@
         },
         "ifno_boundname": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -1130,7 +1107,6 @@
     },
     "ext-outflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "outletno": {
           "type": "integer",
@@ -1146,7 +1122,6 @@
     },
     "to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "outletno": {
           "type": "integer",
@@ -1162,7 +1137,6 @@
     },
     "outlet": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "outletno": {
           "type": "integer",

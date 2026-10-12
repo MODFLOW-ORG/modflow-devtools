@@ -366,7 +366,6 @@ memory:
 observations:
   evt:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array

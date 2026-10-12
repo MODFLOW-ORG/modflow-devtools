@@ -305,7 +305,6 @@ tagged = false
 type = "union"
 longname = "bed leakance"
 description = "real value or character string that defines the bed leakance for the lake-GWF connection. BEDLEAK must be greater than or equal to zero, equal to the DNODATA value (3.0E+30), or specified to be NONE. If DNODATA or NONE is specified for BEDLEAK, the lake-GWF connection conductance is solely a function of aquifer properties in the connected GWF cell and lakebed sediments are assumed to be absent. Warning messages will be issued if NONE is specified. Eventually the ability to specify NONE will be deprecated and cause MODFLOW 6 to terminate with an error."
-tagged = false
 
 [blocks.connectiondata.fields.connectiondata.item.fields.bedleak.arms.none]
 type = "keyword"
@@ -706,7 +705,6 @@ type = "integer"
 
 [observations.stage]
 type = "union"
-tagged = false
 
 [observations.stage.arms.ifno]
 type = "integer"
@@ -720,7 +718,6 @@ tagged = false
 
 [observations.ext-inflow]
 type = "union"
-tagged = false
 
 [observations.ext-inflow.arms.ifno]
 type = "integer"
@@ -734,7 +731,6 @@ tagged = false
 
 [observations.outlet-inflow]
 type = "union"
-tagged = false
 
 [observations.outlet-inflow.arms.ifno]
 type = "integer"
@@ -748,7 +744,6 @@ tagged = false
 
 [observations.inflow]
 type = "union"
-tagged = false
 
 [observations.inflow.arms.ifno]
 type = "integer"
@@ -762,7 +757,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.ifno]
 type = "integer"
@@ -776,7 +770,6 @@ tagged = false
 
 [observations.rainfall]
 type = "union"
-tagged = false
 
 [observations.rainfall.arms.ifno]
 type = "integer"
@@ -790,7 +783,6 @@ tagged = false
 
 [observations.runoff]
 type = "union"
-tagged = false
 
 [observations.runoff.arms.ifno]
 type = "integer"
@@ -804,7 +796,6 @@ tagged = false
 
 [observations.withdrawal]
 type = "union"
-tagged = false
 
 [observations.withdrawal.arms.ifno]
 type = "integer"
@@ -818,7 +809,6 @@ tagged = false
 
 [observations.evaporation]
 type = "union"
-tagged = false
 
 [observations.evaporation.arms.ifno]
 type = "integer"
@@ -832,7 +822,6 @@ tagged = false
 
 [observations.storage]
 type = "union"
-tagged = false
 
 [observations.storage.arms.ifno]
 type = "integer"
@@ -846,7 +835,6 @@ tagged = false
 
 [observations.constant]
 type = "union"
-tagged = false
 
 [observations.constant.arms.ifno]
 type = "integer"
@@ -860,7 +848,6 @@ tagged = false
 
 [observations.volume]
 type = "union"
-tagged = false
 
 [observations.volume.arms.ifno]
 type = "integer"
@@ -874,7 +861,6 @@ tagged = false
 
 [observations.surface-area]
 type = "union"
-tagged = false
 
 [observations.surface-area.arms.ifno]
 type = "integer"
@@ -888,11 +874,9 @@ tagged = false
 
 [observations.lak]
 type = "union"
-tagged = false
 
 [observations.lak.arms.ifno_iconn]
 type = "record"
-tagged = false
 
 [observations.lak.arms.ifno_iconn.fields.ifno]
 type = "integer"
@@ -907,7 +891,6 @@ index = true
 
 [observations.lak.arms.ifno_boundname]
 type = "record"
-tagged = false
 
 [observations.lak.arms.ifno_boundname.fields.ifno]
 type = "integer"
@@ -925,11 +908,9 @@ tagged = false
 
 [observations.wetted-area]
 type = "union"
-tagged = false
 
 [observations.wetted-area.arms.ifno_iconn]
 type = "record"
-tagged = false
 
 [observations.wetted-area.arms.ifno_iconn.fields.ifno]
 type = "integer"
@@ -944,7 +925,6 @@ index = true
 
 [observations.wetted-area.arms.ifno_boundname]
 type = "record"
-tagged = false
 
 [observations.wetted-area.arms.ifno_boundname.fields.ifno]
 type = "integer"
@@ -962,11 +942,9 @@ tagged = false
 
 [observations.conductance]
 type = "union"
-tagged = false
 
 [observations.conductance.arms.ifno_iconn]
 type = "record"
-tagged = false
 
 [observations.conductance.arms.ifno_iconn.fields.ifno]
 type = "integer"
@@ -981,7 +959,6 @@ index = true
 
 [observations.conductance.arms.ifno_boundname]
 type = "record"
-tagged = false
 
 [observations.conductance.arms.ifno_boundname.fields.ifno]
 type = "integer"
@@ -999,7 +976,6 @@ tagged = false
 
 [observations.ext-outflow]
 type = "union"
-tagged = false
 
 [observations.ext-outflow.arms.outletno]
 type = "integer"
@@ -1013,7 +989,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.outletno]
 type = "integer"
@@ -1027,7 +1002,6 @@ tagged = false
 
 [observations.outlet]
 type = "union"
-tagged = false
 
 [observations.outlet.arms.outletno]
 type = "integer"

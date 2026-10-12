@@ -365,7 +365,6 @@
   "observations": {
     "wel": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "cellid": {
           "type": "array",
@@ -385,7 +384,6 @@
     },
     "to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "cellid": {
           "type": "array",
@@ -405,7 +403,6 @@
     },
     "wel-reduction": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "cellid": {
           "type": "array",

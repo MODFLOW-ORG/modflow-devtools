@@ -283,7 +283,6 @@ memory:
 observations:
   evp:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array

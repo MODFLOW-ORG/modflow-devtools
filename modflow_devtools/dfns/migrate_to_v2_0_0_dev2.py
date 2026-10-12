@@ -708,15 +708,16 @@ def _fix_number_or_word_fields(name: str, blocks: dict[str, v2.Block]) -> dict[s
                     f"{name}: {field.name!r} is {'' if field.tagged else 'un'}tagged, "
                     f"expected {'a union arm' if field.tagged else 'a record column'}"
                 )
-            data = {k: getattr(field, k) for k in v2.InputFieldBase.model_fields}
+            # `tagged` is derived from the arms
+            data = {k: getattr(field, k) for k in v2.InputFieldBase.model_fields if k != "tagged"}
             arms: dict[str, v2.Scalar | v2.Array | v2.Record] = {
                 word: v2.Keyword(name=word),
                 "value": v2.Double(name="value", tagged=False),
             }
             if not in_union:
-                return v2.Union(**{**data, "tagged": False}, arms=arms)
+                return v2.Union(**data, arms=arms)
             value = v2.Union(
-                **{**data, "name": f"{field.name}_value", "tagged": False, "optional": False},
+                **{**data, "name": f"{field.name}_value", "optional": False},
                 arms=arms,
             )
             return v2.Record(
@@ -1840,7 +1841,6 @@ def to_v2_0_0_dev2(
                 developmode=developmode,
                 removed=removed,
                 deprecated=deprecated,
-                tagged=False,
                 arms={
                     "cellid": v2.Array(
                         name="cellid",

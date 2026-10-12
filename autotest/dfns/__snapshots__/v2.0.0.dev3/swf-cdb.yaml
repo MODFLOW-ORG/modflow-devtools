@@ -269,7 +269,6 @@ memory:
 observations:
   cdb:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array
@@ -284,7 +283,6 @@ observations:
         tagged: false
   to-mvr:
     type: union
-    tagged: false
     arms:
       cellid:
         type: array

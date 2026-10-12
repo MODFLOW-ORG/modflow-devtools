@@ -365,7 +365,6 @@
   "observations": {
     "concentration": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -381,7 +380,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -397,7 +395,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -413,7 +410,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -429,7 +425,6 @@
     },
     "rate": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -445,7 +440,6 @@
     },
     "fw-rate": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -461,7 +455,6 @@
     },
     "rate-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -477,7 +470,6 @@
     },
     "fw-rate-to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -493,11 +485,9 @@
     },
     "mwt": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",

@@ -269,7 +269,6 @@ shape = [
 
 [observations.cdb]
 type = "union"
-tagged = false
 
 [observations.cdb.arms.cellid]
 type = "array"
@@ -287,7 +286,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.cellid]
 type = "array"

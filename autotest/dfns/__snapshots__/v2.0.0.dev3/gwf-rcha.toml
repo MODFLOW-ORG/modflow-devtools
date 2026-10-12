@@ -302,7 +302,6 @@ shape = [
 
 [observations.rch]
 type = "union"
-tagged = false
 
 [observations.rch.arms.cellid]
 type = "array"

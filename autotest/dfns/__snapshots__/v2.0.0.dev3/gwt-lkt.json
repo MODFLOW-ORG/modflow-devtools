@@ -410,7 +410,6 @@
   "observations": {
     "concentration": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -426,7 +425,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -442,7 +440,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -458,7 +455,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -474,7 +470,6 @@
     },
     "rainfall": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -490,7 +485,6 @@
     },
     "evaporation": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -506,7 +500,6 @@
     },
     "runoff": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -522,7 +515,6 @@
     },
     "ext-inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -538,7 +530,6 @@
     },
     "withdrawal": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -554,7 +545,6 @@
     },
     "ext-outflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno": {
           "type": "integer",
@@ -570,11 +560,9 @@
     },
     "flow-ja-face": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_ifno2": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",
@@ -598,7 +586,6 @@
     },
     "to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "outletno": {
           "type": "integer",
@@ -613,11 +600,9 @@
     },
     "lkt": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "ifno_iconn": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "ifno": {
               "type": "integer",

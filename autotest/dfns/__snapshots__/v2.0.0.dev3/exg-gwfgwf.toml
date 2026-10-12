@@ -339,7 +339,6 @@ shape = [
 
 [observations.flow-ja-face]
 type = "union"
-tagged = false
 
 [observations.flow-ja-face.arms.iexg]
 type = "integer"

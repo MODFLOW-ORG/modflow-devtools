@@ -341,7 +341,6 @@ shape = [
 
 [observations.concentration]
 type = "union"
-tagged = false
 
 [observations.concentration.arms.ifno]
 type = "integer"
@@ -355,7 +354,6 @@ tagged = false
 
 [observations.storage]
 type = "union"
-tagged = false
 
 [observations.storage.arms.ifno]
 type = "integer"
@@ -369,7 +367,6 @@ tagged = false
 
 [observations.constant]
 type = "union"
-tagged = false
 
 [observations.constant.arms.ifno]
 type = "integer"
@@ -383,7 +380,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.ifno]
 type = "integer"
@@ -397,7 +393,6 @@ tagged = false
 
 [observations.uzt]
 type = "union"
-tagged = false
 
 [observations.uzt.arms.ifno]
 type = "integer"
@@ -411,7 +406,6 @@ tagged = false
 
 [observations.infiltration]
 type = "union"
-tagged = false
 
 [observations.infiltration.arms.ifno]
 type = "integer"
@@ -425,7 +419,6 @@ tagged = false
 
 [observations.rej-inf]
 type = "union"
-tagged = false
 
 [observations.rej-inf.arms.ifno]
 type = "integer"
@@ -439,7 +432,6 @@ tagged = false
 
 [observations.uzet]
 type = "union"
-tagged = false
 
 [observations.uzet.arms.ifno]
 type = "integer"
@@ -453,7 +445,6 @@ tagged = false
 
 [observations.rej-inf-to-mvr]
 type = "union"
-tagged = false
 
 [observations.rej-inf-to-mvr.arms.ifno]
 type = "integer"
@@ -467,11 +458,9 @@ tagged = false
 
 [observations.flow-ja-face]
 type = "union"
-tagged = false
 
 [observations.flow-ja-face.arms.ifno_ifno2]
 type = "record"
-tagged = false
 
 [observations.flow-ja-face.arms.ifno_ifno2.fields.ifno]
 type = "integer"

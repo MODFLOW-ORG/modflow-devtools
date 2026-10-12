@@ -462,7 +462,6 @@
   "observations": {
     "temperature": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -478,7 +477,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -494,7 +492,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -510,7 +507,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -526,7 +522,6 @@
     },
     "sfe": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -542,7 +537,6 @@
     },
     "strmbd-cond": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -558,7 +552,6 @@
     },
     "to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -574,7 +567,6 @@
     },
     "rainfall": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -590,7 +582,6 @@
     },
     "evaporation": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -606,7 +597,6 @@
     },
     "runoff": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -622,7 +612,6 @@
     },
     "ext-inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -638,7 +627,6 @@
     },
     "ext-outflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno": {
           "type": "integer",
@@ -654,11 +642,9 @@
     },
     "flow-ja-face": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "rno_rno2": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "rno": {
               "type": "integer",

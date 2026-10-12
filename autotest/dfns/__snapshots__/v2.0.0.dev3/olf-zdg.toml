@@ -304,7 +304,6 @@ shape = [
 
 [observations.zdg]
 type = "union"
-tagged = false
 
 [observations.zdg.arms.cellid]
 type = "array"
@@ -322,7 +321,6 @@ tagged = false
 
 [observations.to-mvr]
 type = "union"
-tagged = false
 
 [observations.to-mvr.arms.cellid]
 type = "array"

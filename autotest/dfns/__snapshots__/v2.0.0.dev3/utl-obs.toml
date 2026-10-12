@@ -42,7 +42,6 @@ tagged = false
 type = "union"
 longname = "time"
 description = "Text identifying cell where observation is located. For packages other than NPF, if boundary names are defined in the corresponding package input file, ID can be a boundary name. Otherwise ID is a cellid. If the model discretization is type DIS, cellid is three integers (layer, row, column). If the discretization is DISV, cellid is two integers (layer, cell number). If the discretization is DISU, cellid is one integer (node number)."
-tagged = false
 
 [blocks.continuous.fields.continuous.item.fields.id.arms.cellid]
 type = "array"
@@ -68,7 +67,6 @@ type = "union"
 longname = "time"
 description = "Text identifying cell adjacent to cell identified by ID. The form of ID2 is as described for ID. ID2 is used for intercell-flow observations of a GWF model, for three observation types of the LAK Package, for two observation types of the MAW Package, and one observation type of the UZF Package."
 optional = true
-tagged = false
 
 [blocks.continuous.fields.continuous.item.fields.id2.arms.cellid]
 type = "array"

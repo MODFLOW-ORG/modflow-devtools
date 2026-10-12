@@ -442,7 +442,6 @@
   "observations": {
     "temperature": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -458,7 +457,6 @@
     },
     "storage": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -474,7 +472,6 @@
     },
     "constant": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -490,7 +487,6 @@
     },
     "from-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -506,7 +502,6 @@
     },
     "lke": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -522,7 +517,6 @@
     },
     "rainfall": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -538,7 +532,6 @@
     },
     "evaporation": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -554,7 +547,6 @@
     },
     "runoff": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -570,7 +562,6 @@
     },
     "ext-inflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -586,7 +577,6 @@
     },
     "withdrawal": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -602,7 +592,6 @@
     },
     "ext-outflow": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno": {
           "type": "integer",
@@ -618,11 +607,9 @@
     },
     "flow-ja-face": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "lakeno_lakeno2": {
           "type": "record",
-          "tagged": false,
           "fields": {
             "lakeno": {
               "type": "integer",
@@ -646,7 +633,6 @@
     },
     "to-mvr": {
       "type": "union",
-      "tagged": false,
       "arms": {
         "outletno": {
           "type": "integer",

@@ -314,7 +314,6 @@ memory:
 observations:
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       iexg:
         type: integer

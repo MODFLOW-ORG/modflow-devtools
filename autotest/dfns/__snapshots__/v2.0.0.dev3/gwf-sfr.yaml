@@ -811,7 +811,6 @@ memory:
 observations:
   stage:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -823,7 +822,6 @@ observations:
         tagged: false
   ext-inflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -835,7 +833,6 @@ observations:
         tagged: false
   inflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -847,7 +844,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -859,7 +855,6 @@ observations:
         tagged: false
   rainfall:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -871,7 +866,6 @@ observations:
         tagged: false
   runoff:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -883,7 +877,6 @@ observations:
         tagged: false
   sfr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -895,7 +888,6 @@ observations:
         tagged: false
   evaporation:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -907,7 +899,6 @@ observations:
         tagged: false
   outflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -919,7 +910,6 @@ observations:
         tagged: false
   ext-outflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -931,7 +921,6 @@ observations:
         tagged: false
   to-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -943,7 +932,6 @@ observations:
         tagged: false
   upstream-flow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -955,7 +943,6 @@ observations:
         tagged: false
   downstream-flow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -967,7 +954,6 @@ observations:
         tagged: false
   depth:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -979,7 +965,6 @@ observations:
         tagged: false
   wet-perimeter:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -991,7 +976,6 @@ observations:
         tagged: false
   wet-area:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -1003,7 +987,6 @@ observations:
         tagged: false
   wet-width:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer

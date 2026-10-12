@@ -291,7 +291,6 @@ shape = [
 
 [observations.ctp]
 type = "union"
-tagged = false
 
 [observations.ctp.arms.cellid]
 type = "array"

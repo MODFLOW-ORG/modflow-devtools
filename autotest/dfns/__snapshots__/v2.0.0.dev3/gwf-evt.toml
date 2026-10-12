@@ -362,7 +362,6 @@ shape = [
 
 [observations.evt]
 type = "union"
-tagged = false
 
 [observations.evt.arms.cellid]
 type = "array"

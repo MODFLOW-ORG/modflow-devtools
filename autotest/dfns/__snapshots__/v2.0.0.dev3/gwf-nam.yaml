@@ -233,7 +233,6 @@ observations:
       - ncelldim
   flow-ja-face:
     type: record
-    tagged: false
     fields:
       cellid:
         type: array

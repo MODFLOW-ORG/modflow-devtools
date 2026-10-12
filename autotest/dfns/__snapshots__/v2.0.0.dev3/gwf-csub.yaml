@@ -664,7 +664,6 @@ memory:
 observations:
   csub:
     type: union
-    tagged: false
     arms:
       icsubno:
         type: integer
@@ -676,7 +675,6 @@ observations:
         tagged: false
   inelastic-csub:
     type: union
-    tagged: false
     arms:
       icsubno:
         type: integer
@@ -688,7 +686,6 @@ observations:
         tagged: false
   elastic-csub:
     type: union
-    tagged: false
     arms:
       icsubno:
         type: integer
@@ -700,7 +697,6 @@ observations:
         tagged: false
   delay-flowtop:
     type: union
-    tagged: false
     arms:
       icsubno:
         type: integer
@@ -712,7 +708,6 @@ observations:
         tagged: false
   delay-flowbot:
     type: union
-    tagged: false
     arms:
       icsubno:
         type: integer
@@ -764,7 +759,6 @@ observations:
     fk: packagedata.icsubno
   delay-head:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -777,7 +771,6 @@ observations:
         index: true
   delay-gstress:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -790,7 +783,6 @@ observations:
         index: true
   delay-estress:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -803,7 +795,6 @@ observations:
         index: true
   delay-preconstress:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -816,7 +807,6 @@ observations:
         index: true
   delay-compaction:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -829,7 +819,6 @@ observations:
         index: true
   delay-thickness:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer
@@ -842,7 +831,6 @@ observations:
         index: true
   delay-theta:
     type: record
-    tagged: false
     fields:
       icsubno:
         type: integer

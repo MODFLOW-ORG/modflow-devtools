@@ -291,7 +291,6 @@ shape = [
 
 [observations.cnc]
 type = "union"
-tagged = false
 
 [observations.cnc.arms.cellid]
 type = "array"

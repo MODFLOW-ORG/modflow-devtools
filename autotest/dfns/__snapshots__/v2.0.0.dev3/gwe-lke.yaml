@@ -428,7 +428,6 @@ memory:
 observations:
   temperature:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -440,7 +439,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -452,7 +450,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -464,7 +461,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -476,7 +472,6 @@ observations:
         tagged: false
   lke:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -488,7 +483,6 @@ observations:
         tagged: false
   rainfall:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -500,7 +494,6 @@ observations:
         tagged: false
   evaporation:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -512,7 +505,6 @@ observations:
         tagged: false
   runoff:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -524,7 +516,6 @@ observations:
         tagged: false
   ext-inflow:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -536,7 +527,6 @@ observations:
         tagged: false
   withdrawal:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -548,7 +538,6 @@ observations:
         tagged: false
   ext-outflow:
     type: union
-    tagged: false
     arms:
       lakeno:
         type: integer
@@ -560,11 +549,9 @@ observations:
         tagged: false
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       lakeno_lakeno2:
         type: record
-        tagged: false
         fields:
           lakeno:
             type: integer
@@ -581,7 +568,6 @@ observations:
         tagged: false
   to-mvr:
     type: union
-    tagged: false
     arms:
       outletno:
         type: integer

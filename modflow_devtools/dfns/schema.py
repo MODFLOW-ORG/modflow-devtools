@@ -90,9 +90,47 @@ class InputFieldBase(BaseModel):
         return _render_field(cast("InputField", self), inline=inline)
 
 
-class Keyword(InputFieldBase):
+class _DerivedTagged(InputFieldBase):
+    """A field whose `tagged` follows from its type, not declared. A field is
+    tagged iff it begins with a keyword: a scalar or array declares whether
+    its own name precedes it, but a keyword always begins with itself, and a
+    composite begins with whatever its parts begin with (see `_item_tags`).
+    Never serialized. A hidden field rather than a property because pydantic
+    can't override an inherited field with one, so it's re-derived wherever
+    pydantic skips validation (see `model_copy`)."""
+
+    tagged: SkipJsonSchema[bool] = PydanticField(default=False, exclude=True)
+
+    def _derive_tagged(self) -> bool:
+        raise NotImplementedError
+
+    @model_validator(mode="after")
+    def _set_tagged(self) -> "_DerivedTagged":
+        tagged = self._derive_tagged()
+        if "tagged" in self.model_fields_set and self.tagged != tagged:
+            raise ValueError(
+                f"{type(self).__name__} {self.name!r}: tagged={self.tagged!r} contradicts "
+                f"its type, which {'begins' if tagged else 'does not begin'} with a keyword"
+            )
+        object.__setattr__(self, "tagged", tagged)
+        return self
+
+    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False):
+        if update and "tagged" in update:
+            raise ValueError(
+                f"{type(self).__name__} {self.name!r}: tagged is derived, not settable"
+            )
+        copy = super().model_copy(update=update, deep=deep)
+        object.__setattr__(copy, "tagged", copy._derive_tagged())
+        return copy
+
+
+class Keyword(_DerivedTagged):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
     aliases: list[str] = []
+
+    def _derive_tagged(self) -> bool:
+        return True
 
 
 class String(InputFieldBase):
@@ -193,18 +231,26 @@ class Array(InputFieldBase):
         return self
 
 
-class Record(InputFieldBase):
+class Record(_DerivedTagged):
     type: Literal["record"] = PydanticField(default="record", frozen=True)
     fields: "dict[str, Scalar | Array | Record | Union]" = PydanticField(default_factory=dict)
+
+    def _derive_tagged(self) -> bool:
+        # Its first field begins with a keyword, or is a dynamic keyword.
+        return _item_tags(self) is not None
 
     @property
     def children(self) -> "dict[str, InputField]":
         return self.fields  # type: ignore[return-value]
 
 
-class Union(InputFieldBase):
+class Union(_DerivedTagged):
     type: Literal["union"] = PydanticField(default="union", frozen=True)
     arms: "dict[str, Scalar | Array | Record]" = PydanticField(default_factory=dict)
+
+    def _derive_tagged(self) -> bool:
+        # Every arm begins with a keyword, which picks the arm.
+        return _item_tags(self) is not None
 
     @property
     def children(self) -> "dict[str, InputField]":
@@ -269,36 +315,16 @@ def _leading_tags(field: "InputField", *, every_line: bool = False) -> list[str]
             return field.item_tags
 
 
-class List(InputFieldBase):
+class List(_DerivedTagged):
     type: Literal["list"] = PydanticField(default="list", frozen=True)
-    # Derived from `item`, like `Block.optional`: a list is tagged iff its item
-    # type is keyword-led (see `_item_tags`). A tagged list's items can be told
-    # apart from the block's other fields, so unlike an untagged list it needn't
-    # be the last or only list in its block. Never serialized. A hidden field
-    # rather than a property because pydantic can't override an inherited field
-    # with one, so it's re-derived wherever pydantic skips validation (see
-    # `model_copy`).
-    tagged: SkipJsonSchema[bool] = PydanticField(default=False, exclude=True)
     item: "Record | Union"
     shape: list[str] = []
 
-    @model_validator(mode="after")
-    def _derive_tagged(self) -> "List":
-        tagged = _item_tags(self.item) is not None
-        if "tagged" in self.model_fields_set and self.tagged != tagged:
-            raise ValueError(
-                f"List {self.name!r}: tagged={self.tagged!r} contradicts its item, "
-                f"whose type {'is' if tagged else 'is not'} keyword-led"
-            )
-        object.__setattr__(self, "tagged", tagged)
-        return self
-
-    def model_copy(self, *, update: Mapping[str, Any] | None = None, deep: bool = False) -> "List":
-        if update and "tagged" in update:
-            raise ValueError(f"List {self.name!r}: tagged is derived from item, not settable")
-        copy = super().model_copy(update=update, deep=deep)
-        object.__setattr__(copy, "tagged", _item_tags(copy.item) is not None)
-        return copy
+    def _derive_tagged(self) -> bool:
+        # Its item begins with a keyword. A tagged list's items can be told
+        # apart from the block's other fields, so unlike an untagged list it
+        # needn't be the last or only list in its block.
+        return self.item.tagged
 
     @property
     def item_tags(self) -> list[str]:

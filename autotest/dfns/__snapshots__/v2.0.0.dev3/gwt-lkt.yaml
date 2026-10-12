@@ -401,7 +401,6 @@ memory:
 observations:
   concentration:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -413,7 +412,6 @@ observations:
         tagged: false
   storage:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -425,7 +423,6 @@ observations:
         tagged: false
   constant:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -437,7 +434,6 @@ observations:
         tagged: false
   from-mvr:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -449,7 +445,6 @@ observations:
         tagged: false
   rainfall:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -461,7 +456,6 @@ observations:
         tagged: false
   evaporation:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -473,7 +467,6 @@ observations:
         tagged: false
   runoff:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -485,7 +478,6 @@ observations:
         tagged: false
   ext-inflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -497,7 +489,6 @@ observations:
         tagged: false
   withdrawal:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -509,7 +500,6 @@ observations:
         tagged: false
   ext-outflow:
     type: union
-    tagged: false
     arms:
       ifno:
         type: integer
@@ -521,11 +511,9 @@ observations:
         tagged: false
   flow-ja-face:
     type: union
-    tagged: false
     arms:
       ifno_ifno2:
         type: record
-        tagged: false
         fields:
           ifno:
             type: integer
@@ -542,7 +530,6 @@ observations:
         tagged: false
   to-mvr:
     type: union
-    tagged: false
     arms:
       outletno:
         type: integer
@@ -553,11 +540,9 @@ observations:
         tagged: false
   lkt:
     type: union
-    tagged: false
     arms:
       ifno_iconn:
         type: record
-        tagged: false
         fields:
           ifno:
             type: integer

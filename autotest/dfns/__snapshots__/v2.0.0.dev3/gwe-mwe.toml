@@ -358,7 +358,6 @@ shape = [
 
 [observations.temperature]
 type = "union"
-tagged = false
 
 [observations.temperature.arms.mawno]
 type = "integer"
@@ -372,7 +371,6 @@ tagged = false
 
 [observations.storage]
 type = "union"
-tagged = false
 
 [observations.storage.arms.mawno]
 type = "integer"
@@ -386,7 +384,6 @@ tagged = false
 
 [observations.constant]
 type = "union"
-tagged = false
 
 [observations.constant.arms.mawno]
 type = "integer"
@@ -400,7 +397,6 @@ tagged = false
 
 [observations.from-mvr]
 type = "union"
-tagged = false
 
 [observations.from-mvr.arms.mawno]
 type = "integer"
@@ -414,7 +410,6 @@ tagged = false
 
 [observations.rate]
 type = "union"
-tagged = false
 
 [observations.rate.arms.mawno]
 type = "integer"
@@ -428,7 +423,6 @@ tagged = false
 
 [observations.fw-rate]
 type = "union"
-tagged = false
 
 [observations.fw-rate.arms.mawno]
 type = "integer"
@@ -442,7 +436,6 @@ tagged = false
 
 [observations.rate-to-mvr]
 type = "union"
-tagged = false
 
 [observations.rate-to-mvr.arms.mawno]
 type = "integer"
@@ -456,7 +449,6 @@ tagged = false
 
 [observations.fw-rate-to-mvr]
 type = "union"
-tagged = false
 
 [observations.fw-rate-to-mvr.arms.mawno]
 type = "integer"
@@ -470,11 +462,9 @@ tagged = false
 
 [observations.mwe]
 type = "union"
-tagged = false
 
 [observations.mwe.arms.mawno_iconn]
 type = "record"
-tagged = false
 
 [observations.mwe.arms.mawno_iconn.fields.mawno]
 type = "integer"

@@ -286,7 +286,6 @@ shape = [
 
 [observations.pcp]
 type = "union"
-tagged = false
 
 [observations.pcp.arms.cellid]
 type = "array"

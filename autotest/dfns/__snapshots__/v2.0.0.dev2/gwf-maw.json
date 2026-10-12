@@ -425,7 +425,6 @@
                         "type": "union",
                         "longname": "head limit",
                         "description": "is the limiting water level (head) in the well, which is the minimum of the well RATE or the well inflow rate from the aquifer. HEAD_LIMIT can be applied to extraction wells (RATE $<$ 0) or injection wells (RATE $>$ 0). HEAD_LIMIT can be deactivated by specifying the text string `OFF'. The HEAD_LIMIT option is based on the HEAD_LIMIT functionality available in the MNW2~citep{konikow2009} package for MODFLOW-2005. The HEAD_LIMIT option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended. By default, HEAD_LIMIT is `OFF'.",
-                        "tagged": false,
                         "arms": {
                           "off": {
                             "type": "keyword"
