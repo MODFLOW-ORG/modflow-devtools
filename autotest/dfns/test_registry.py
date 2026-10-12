@@ -13,7 +13,12 @@ def test_latest_tag_exact_tag():
     assert registry._latest is None  # no network call, nothing cached
 
 
-def test_latest_tag_resolves_via_api():
+@pytest.mark.parametrize("token", [None, "abc"])
+def test_latest_tag_resolves_via_api(monkeypatch, token):
+    if token:
+        monkeypatch.setenv("GITHUB_TOKEN", token)
+    else:
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     registry = RemoteDfnRegistry(release_id="MODFLOW-ORG/modflow6@latest")
 
     mock_response = MagicMock()
@@ -29,9 +34,9 @@ def test_latest_tag_resolves_via_api():
 
     assert tag == "v6.6.1"
     assert registry._latest == "v6.6.1"
-    mock_open.assert_called_once_with(
-        "https://api.github.com/repos/MODFLOW-ORG/modflow6/releases/latest"
-    )
+    (request,), _ = mock_open.call_args
+    assert request.full_url == "https://api.github.com/repos/MODFLOW-ORG/modflow6/releases/latest"
+    assert request.get_header("Authorization") == (f"Bearer {token}" if token else None)
 
 
 def test_latest_tag_cached():

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 from modflow_devtools.dfn import schema as dfn
 from modflow_devtools.dfns import schema as dfns
+from modflow_devtools.download import get_request
 
 __all__ = [
     "DfnRegistry",
@@ -75,9 +76,9 @@ class RemoteDfnRegistry(DfnRegistry):
             return tag
         if self._latest is None:
             owner, name = repo.split("/")
-            with urllib.request.urlopen(
-                f"https://api.github.com/repos/{owner}/{name}/releases/latest"
-            ) as resp:
+            # authenticated if GITHUB_TOKEN is set, to bypass the rate limit
+            url = f"https://api.github.com/repos/{owner}/{name}/releases/latest"
+            with urllib.request.urlopen(get_request(url)) as resp:
                 self._latest = json.loads(resp.read())["tag_name"]
         return self._latest
 
