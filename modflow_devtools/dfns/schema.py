@@ -1323,8 +1323,8 @@ def _check_shape_element(
     component), selected by a sibling whose ``fk`` references that block.
 
     A sibling or lookup varies by row, so the array must be the rightmost
-    field in its record, like a self-sizing array: a reader can't know where
-    fields after it start.
+    field in its record, like a self-sizing array: a row's layout is fixed
+    by the component's dimensions, except for its last field.
 
     Raises ValueError on any violation.
     """
@@ -1723,8 +1723,8 @@ def _validate_array_shapes(
     def _check_array(arr: "Array", enclosing: "Record | None") -> None:
         if not arr.shape:
             # Self-sizing (shape=[]) is valid at the top level and as the rightmost
-            # subfield of a record. The only invalid case is non-rightmost in a record:
-            # subsequent fields on the same line would be unreadable.
+            # subfield of a record: a row's layout is fixed by the component's
+            # dimensions, except for its last field.
             if enclosing is not None:
                 fields_list = list(enclosing.fields.keys())
                 if not fields_list or fields_list[-1] != arr.name:
