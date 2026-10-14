@@ -306,14 +306,8 @@ shape = [
 type = "union"
 
 [observations.riv.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.riv.arms.boundname]
 type = "string"
@@ -323,14 +317,8 @@ tagged = false
 type = "union"
 
 [observations.to-mvr.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.to-mvr.arms.boundname]
 type = "string"

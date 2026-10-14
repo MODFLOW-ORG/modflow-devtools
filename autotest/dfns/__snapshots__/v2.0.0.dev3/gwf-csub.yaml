@@ -385,7 +385,7 @@ blocks:
               index: true
               pk: true
             cellid:
-              type: array
+              type: cellid
               longname: cell identifier
               description: is the cell identifier, and depends on the type of grid that is used for the
                 simulation.  For a structured grid that uses the DIS input file, CELLID is the layer,
@@ -393,11 +393,6 @@ blocks:
                 number.  If the model uses the unstructured discretization (DISU) input file, CELLID is
                 the node number for the cell.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             cdelay:
               type: string
               longname: delay type
@@ -487,7 +482,7 @@ blocks:
           type: record
           fields:
             cellid:
-              type: array
+              type: cellid
               longname: cell identifier
               description: is the cell identifier, and depends on the type of grid that is used for the
                 simulation.  For a structured grid that uses the DIS input file, CELLID is the layer,
@@ -495,11 +490,6 @@ blocks:
                 number.  If the model uses the unstructured discretization (DISU) input file, CELLID is
                 the node number for the cell.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             sig0:
               type: double
               longname: well stress offset
@@ -842,130 +832,50 @@ observations:
         tagged: false
         index: true
   coarse-csub:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   csub-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   wcomp-csub-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   sk-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   ske-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   estress-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   gstress-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   preconstress-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   coarse-compaction:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   compaction-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   inelastic-compaction-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   elastic-compaction-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   coarse-thickness:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   thickness-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   coarse-theta:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   theta-cell:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim

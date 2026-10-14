@@ -256,7 +256,7 @@ blocks:
               index: true
               pk: true
             cellid:
-              type: array
+              type: cellid
               longname: cell identifier
               description: is the cell identifier, and depends on the type of grid that is used for the
                 simulation. For a structured grid that uses the DIS input file, CELLID is the layer, row,
@@ -269,11 +269,7 @@ blocks:
                 compatibility with previous versions of MODFLOW 6 but eventually NONE will be deprecated
                 and will cause MODFLOW 6 to terminate with an error.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
+              allow_zero: true
             rlen:
               type: double
               longname: reach length

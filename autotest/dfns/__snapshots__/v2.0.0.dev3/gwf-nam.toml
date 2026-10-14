@@ -212,44 +212,20 @@ shape = [
 ]
 
 [observations.head]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.drawdown]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.flow-ja-face]
 type = "record"
 
 [observations.flow-ja-face.fields.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.flow-ja-face.fields.cellid2]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]

@@ -82,14 +82,8 @@ type = "integer"
 type = "union"
 
 [observations.api.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.api.arms.boundname]
 type = "string"
@@ -99,14 +93,8 @@ tagged = false
 type = "union"
 
 [observations.to-mvr.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.to-mvr.arms.boundname]
 type = "string"

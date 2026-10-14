@@ -99,7 +99,8 @@
             "keyword",
             "integer",
             "double",
-            "string"
+            "string",
+            "cellid"
           ],
           "title": "Dtype",
           "type": "string"
@@ -147,21 +148,26 @@
           "default": null,
           "title": "Fk"
         },
-        "cellid": {
+        "model": {
           "anyOf": [
-            {
-              "type": "boolean"
-            },
             {
               "enum": [
                 "1",
                 "2"
               ],
               "type": "string"
+            },
+            {
+              "type": "null"
             }
           ],
+          "default": null,
+          "title": "Model"
+        },
+        "allow_zero": {
           "default": false,
-          "title": "Cellid"
+          "title": "Allow Zero",
+          "type": "boolean"
         }
       },
       "required": [
@@ -182,6 +188,7 @@
             "discriminator": {
               "mapping": {
                 "array": "#/$defs/Array",
+                "cellid": "#/$defs/CellID",
                 "double": "#/$defs/Double",
                 "file": "#/$defs/File",
                 "integer": "#/$defs/Integer",
@@ -205,6 +212,9 @@
               },
               {
                 "$ref": "#/$defs/Double"
+              },
+              {
+                "$ref": "#/$defs/CellID"
               },
               {
                 "$ref": "#/$defs/File"
@@ -257,6 +267,7 @@
           "discriminator": {
             "mapping": {
               "array": "#/$defs/Array",
+              "cellid": "#/$defs/CellID",
               "double": "#/$defs/Double",
               "file": "#/$defs/File",
               "integer": "#/$defs/Integer",
@@ -280,6 +291,9 @@
             },
             {
               "$ref": "#/$defs/Double"
+            },
+            {
+              "$ref": "#/$defs/CellID"
             },
             {
               "$ref": "#/$defs/File"
@@ -309,6 +323,125 @@
         "field"
       ],
       "title": "BlockHeader",
+      "type": "object"
+    },
+    "CellID": {
+      "description": "A grid cell reference: `ncelldim` integers, its components in the grid\nit refers to (layer, row, col for DIS; layer, cell2d for DISV; node for\nDISU). Always 1-based in the file, 0-based in memory. Its width is the\ngrid's, so unlike an array it has no shape.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "longname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "default": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default"
+        },
+        "developmode": {
+          "default": false,
+          "title": "Developmode",
+          "type": "boolean"
+        },
+        "netcdf": {
+          "default": false,
+          "title": "Netcdf",
+          "type": "boolean"
+        },
+        "tagged": {
+          "default": true,
+          "title": "Tagged",
+          "type": "boolean"
+        },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
+        "type": {
+          "const": "cellid",
+          "default": "cellid",
+          "title": "Type",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "enum": [
+                "1",
+                "2"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "allow_zero": {
+          "default": false,
+          "title": "Allow Zero",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "CellID",
       "type": "object"
     },
     "Double": {
@@ -1349,6 +1482,7 @@
                 "discriminator": {
                   "mapping": {
                     "array": "#/$defs/Array",
+                    "cellid": "#/$defs/CellID",
                     "double": "#/$defs/Double",
                     "integer": "#/$defs/Integer",
                     "record": "#/$defs/Record",
@@ -1366,6 +1500,9 @@
                   },
                   {
                     "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/CellID"
                   },
                   {
                     "$ref": "#/$defs/Array"
@@ -1562,6 +1699,7 @@
                 "discriminator": {
                   "mapping": {
                     "array": "#/$defs/Array",
+                    "cellid": "#/$defs/CellID",
                     "double": "#/$defs/Double",
                     "integer": "#/$defs/Integer",
                     "record": "#/$defs/Record",
@@ -1579,6 +1717,9 @@
                   },
                   {
                     "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/CellID"
                   },
                   {
                     "$ref": "#/$defs/Array"
@@ -1728,6 +1869,7 @@
               {
                 "discriminator": {
                   "mapping": {
+                    "cellid": "#/$defs/CellID",
                     "double": "#/$defs/Double",
                     "file": "#/$defs/File",
                     "integer": "#/$defs/Integer",
@@ -1748,6 +1890,9 @@
                   },
                   {
                     "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/CellID"
                   },
                   {
                     "$ref": "#/$defs/File"
@@ -1940,6 +2085,7 @@
                 "discriminator": {
                   "mapping": {
                     "array": "#/$defs/Array",
+                    "cellid": "#/$defs/CellID",
                     "double": "#/$defs/Double",
                     "integer": "#/$defs/Integer",
                     "record": "#/$defs/Record",
@@ -1957,6 +2103,9 @@
                   },
                   {
                     "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/CellID"
                   },
                   {
                     "$ref": "#/$defs/Array"
@@ -2233,6 +2382,7 @@
               {
                 "discriminator": {
                   "mapping": {
+                    "cellid": "#/$defs/CellID",
                     "double": "#/$defs/Double",
                     "file": "#/$defs/File",
                     "integer": "#/$defs/Integer",
@@ -2253,6 +2403,9 @@
                   },
                   {
                     "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/CellID"
                   },
                   {
                     "$ref": "#/$defs/File"

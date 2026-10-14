@@ -304,14 +304,8 @@ shape = [
 type = "union"
 
 [observations.rch.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.rch.arms.boundname]
 type = "string"

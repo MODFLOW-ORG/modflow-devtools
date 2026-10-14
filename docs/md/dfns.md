@@ -172,7 +172,7 @@ assert gwf_chd.subtype == "stress"
 Each component has `blocks`, a dict mapping block names to `Block` objects. Each `Block` has a `fields` dict of typed field objects.
 
 ```python
-from modflow_devtools.dfns import Block, Keyword, Double, List, Record
+from modflow_devtools.dfns import CellID, List, Record
 
 period = gwf_chd.blocks["period"]
 assert period.repeats is True
@@ -184,7 +184,8 @@ assert isinstance(spd, List)
 assert isinstance(spd.item, Record)
 
 cellid = spd.item.fields["cellid"]
-assert isinstance(cellid, Array)
+assert isinstance(cellid, CellID)
+assert cellid.model is None  # the CHD's own model's grid
 ```
 
 Available field types:
@@ -195,6 +196,7 @@ Available field types:
 | `String` | `"string"` | String value |
 | `Integer` | `"integer"` | Integer value |
 | `Double` | `"double"` | Floating-point value |
+| `CellID` | `"cellid"` | Grid cell reference |
 | `File` | `"file"` | File path |
 | `Array` | `"array"` | Fixed or dynamic array |
 | `Record` | `"record"` | Single-line product type |

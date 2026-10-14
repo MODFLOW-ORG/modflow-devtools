@@ -32,7 +32,7 @@ blocks:
           type: record
           fields:
             cellid1:
-              type: array
+              type: cellid
               longname: first cell adjacent to barrier
               description: identifier for the first cell.  For a structured grid that uses the DIS input
                 file, CELLID1 is the layer, row, and column numbers of the cell.   For a grid that uses
@@ -43,21 +43,11 @@ blocks:
                 and CELLID2 must be the same.  For all grid types, cells must be horizontally or vertically
                 adjacent.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             cellid2:
-              type: array
+              type: cellid
               longname: second cell adjacent to barrier
               description: identifier for the second cell. See CELLID1 for description of how to specify.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             hydchr:
               type: double
               longname: barrier hydraulic characteristic

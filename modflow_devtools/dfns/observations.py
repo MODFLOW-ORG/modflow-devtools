@@ -18,14 +18,12 @@ def _index(name: str, fk: str | None = None) -> v2.Integer:
     return v2.Integer(name=name, tagged=False, index=True, fk=fk)
 
 
-def _cellid(name: str = "cellid") -> v2.Array:
-    return v2.Array(
-        name=name, tagged=False, dtype="integer", shape=["ncelldim"], index=True, cellid=True
-    )
+def _cellid(name: str = "cellid") -> v2.CellID:
+    return v2.CellID(name=name, tagged=False)
 
 
 def _record(
-    *fields: "v2.Integer | v2.Double | v2.String | v2.Array | v2.Union",
+    *fields: "v2.Integer | v2.Double | v2.String | v2.CellID | v2.Array | v2.Union",
 ) -> v2.Record:
     """ID and ID2, named after both (e.g. ``ifno_iconn``) so records that are
     arms of the same union get distinct names."""
@@ -33,7 +31,7 @@ def _record(
     return v2.Record(name=name, fields={f.name: f for f in fields})
 
 
-def _or_boundname(form: "v2.Integer | v2.Array | v2.Record") -> v2.Union:
+def _or_boundname(form: "v2.Integer | v2.CellID | v2.Array | v2.Record") -> v2.Union:
     """``form``, or a boundname instead, after which MF6 reads no ID2."""
     boundname = v2.String(name="boundname", tagged=False)
     return v2.Union(name=form.name, arms={form.name: form, "boundname": boundname})

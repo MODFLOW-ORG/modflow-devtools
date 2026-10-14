@@ -308,13 +308,8 @@ observations:
     type: union
     arms:
       cellid:
-        type: array
+        type: cellid
         tagged: false
-        dtype: integer
-        index: true
-        cellid: true
-        shape:
-          - ncelldim
       boundname:
         type: string
         tagged: false
@@ -322,13 +317,8 @@ observations:
     type: union
     arms:
       cellid:
-        type: array
+        type: cellid
         tagged: false
-        dtype: integer
-        index: true
-        cellid: true
-        shape:
-          - ncelldim
       boundname:
         type: string
         tagged: false

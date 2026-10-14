@@ -326,14 +326,8 @@ shape = [
 type = "union"
 
 [observations.evt.arms.cellid]
-type = "array"
+type = "cellid"
 tagged = false
-dtype = "integer"
-index = true
-cellid = true
-shape = [
-    "ncelldim",
-]
 
 [observations.evt.arms.boundname]
 type = "string"

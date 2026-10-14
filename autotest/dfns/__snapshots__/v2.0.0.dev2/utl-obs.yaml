@@ -56,13 +56,8 @@ blocks:
                 (layer, cell number). If the discretization is DISU, cellid is one integer (node number).
               arms:
                 cellid:
-                  type: array
+                  type: cellid
                   tagged: false
-                  dtype: integer
-                  index: true
-                  cellid: true
-                  shape:
-                    - ncelldim
                 index:
                   type: integer
                   tagged: false
@@ -80,13 +75,8 @@ blocks:
               optional: true
               arms:
                 cellid:
-                  type: array
+                  type: cellid
                   tagged: false
-                  dtype: integer
-                  index: true
-                  cellid: true
-                  shape:
-                    - ncelldim
                 index:
                   type: integer
                   tagged: false

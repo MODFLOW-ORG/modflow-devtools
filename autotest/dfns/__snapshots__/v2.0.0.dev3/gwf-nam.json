@@ -237,47 +237,23 @@
   },
   "observations": {
     "head": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "drawdown": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "flow-ja-face": {
       "type": "record",
       "fields": {
         "cellid": {
-          "type": "array",
-          "tagged": false,
-          "dtype": "integer",
-          "index": true,
-          "cellid": true,
-          "shape": [
-            "ncelldim"
-          ]
+          "type": "cellid",
+          "tagged": false
         },
         "cellid2": {
-          "type": "array",
-          "tagged": false,
-          "dtype": "integer",
-          "index": true,
-          "cellid": true,
-          "shape": [
-            "ncelldim"
-          ]
+          "type": "cellid",
+          "tagged": false
         }
       }
     }

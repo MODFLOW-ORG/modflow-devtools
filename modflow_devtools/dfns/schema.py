@@ -10,7 +10,6 @@ from boltons.dictutils import OMD
 from pydantic import (
     BaseModel,
     SerializationInfo,
-    StrictBool,
     computed_field,
     field_validator,
     model_serializer,
@@ -148,12 +147,11 @@ class String(InputFieldBase):
 # only the field's description defines (e.g. SFR's `ic`).
 Index = bool | Literal["signed"]
 
-# `True`: a cellid in the grid of the component's own model. `"1"` / `"2"`: a
-# cellid in the grid of the first / second model of the enclosing context, i.e.
+# Which model's grid a cellid refers to. `None`: the component's own model.
+# `"1"` / `"2"`: the first / second model of the enclosing context, i.e.
 # `EXGMNAMEA` / `EXGMNAMEB` under an exchange; under a single model both are
-# that model. Strings, not ints, since `True == 1`; and `StrictBool`, so an int
-# `1` is rejected rather than coerced to `True`.
-Cellid = StrictBool | Literal["1", "2"]
+# that model.
+CellModel = Literal["1", "2"] | None
 
 
 class Integer(InputFieldBase):
@@ -171,6 +169,20 @@ class Double(InputFieldBase):
     time_series: bool = False
 
 
+class CellID(InputFieldBase):
+    """A grid cell reference: `ncelldim` integers, its components in the grid
+    it refers to (layer, row, col for DIS; layer, cell2d for DISV; node for
+    DISU). Always 1-based in the file, 0-based in memory. Its width is the
+    grid's, so unlike an array it has no shape."""
+
+    type: Literal["cellid"] = PydanticField(default="cellid", frozen=True)
+    model: CellModel = None
+    # Whether it may refer to no cell, by giving zero for every component
+    # (MF6's `allow_zero` in `nodeu_from_cellid`). Not `optional`: the
+    # zeros are still written.
+    allow_zero: bool = False
+
+
 class File(InputFieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
     direction: Literal["in", "out"]
@@ -186,24 +198,22 @@ class File(InputFieldBase):
 
 
 Scalar = Annotated[
-    Keyword | String | Integer | Double | File,
+    Keyword | String | Integer | Double | CellID | File,
     PydanticField(discriminator="type"),
 ]
 
 
 class Array(InputFieldBase):
     type: Literal["array"] = PydanticField(default="array", frozen=True)
-    dtype: Literal["keyword", "integer", "double", "string"]
+    dtype: Literal["keyword", "integer", "double", "string", "cellid"]
     shape: list[str] = []
     time_series: bool = False
     layered: bool = False
     index: Index = False
     fk: str | None = None
-    # A cellid, or several: a grid cell reference resolved against the grid
-    # the column refers to (DIS/DISV/DISU). The first (fastest-varying) axis
-    # is `ncelldim`, one cellid's components; any further axes count cellids.
-    # See `Cellid` for which grid.
-    cellid: Cellid = False
+    # For dtype="cellid" only: each element is a `CellID` with these.
+    model: CellModel = None
+    allow_zero: bool = False
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
@@ -212,18 +222,18 @@ class Array(InputFieldBase):
                 f"Array {self.name!r}: index={self.index!r} requires dtype='integer', "
                 f"got {self.dtype!r}"
             )
-        if self.cellid and self.dtype != "integer":
-            raise ValueError(
-                f"Array {self.name!r}: cellid={self.cellid!r} requires dtype='integer', "
-                f"got {self.dtype!r}"
-            )
-        if self.cellid and not self.index:
-            raise ValueError(f"Array {self.name!r}: cellid={self.cellid!r} requires index=True")
-        if self.cellid and self.shape[:1] != ["ncelldim"]:
-            raise ValueError(
-                f"Array {self.name!r}: cellid={self.cellid!r} requires shape to start with "
-                f"'ncelldim', got {self.shape!r}"
-            )
+        if self.dtype != "cellid":
+            for attr in ("model", "allow_zero"):
+                if getattr(self, attr):
+                    raise ValueError(
+                        f"Array {self.name!r}: {attr} requires dtype='cellid', got {self.dtype!r}"
+                    )
+        else:
+            for attr in ("time_series", "layered", "netcdf"):
+                if getattr(self, attr):
+                    raise ValueError(
+                        f"Array {self.name!r}: {attr} is not valid with dtype='cellid'"
+                    )
         if self.fk is not None and self.dtype != "integer":
             raise ValueError(
                 f"Array {self.name!r}: fk requires dtype='integer', got {self.dtype!r}"
@@ -301,7 +311,7 @@ def _leading_tags(field: "InputField", *, every_line: bool = False) -> list[str]
     match field:
         case Keyword():
             return [field.name, *field.aliases]
-        case String() | Integer() | Double() | Array() | File():
+        case String() | Integer() | Double() | CellID() | Array() | File():
             return [field.name] if field.tagged else []
         case Record():
             first = next(iter(field.fields.values()), None)
@@ -362,7 +372,7 @@ class List(_DerivedTagged):
 
 
 InputField = Annotated[
-    Keyword | String | Integer | Double | File | Array | Record | Union | List,
+    Keyword | String | Integer | Double | CellID | File | Array | Record | Union | List,
     PydanticField(discriminator="type"),
 ]
 
@@ -382,7 +392,9 @@ def _collect_fields(
 
 
 def _render_shape(field: "Array") -> str:
-    return f"({', '.join(field.shape)})" if field.shape else ""
+    # A cellid's components vary fastest, so `ncelldim` comes first.
+    shape = ["ncelldim", *field.shape] if field.dtype == "cellid" else field.shape
+    return f"({', '.join(shape)})" if shape else ""
 
 
 def _render_file(field: "File") -> str:
@@ -453,6 +465,8 @@ def _render_field(field: "InputField", *, inline: bool = False) -> str:
         case String() | Integer() | Double():
             token = _ts_token(field.name, time_series=field.time_series)
             return _wrap(_tag(field, token))
+        case CellID():
+            return _wrap(_tag(field, f"<{field.name}(ncelldim)>"))
         case File():
             return _wrap(_render_file(field))
         case Array():
@@ -1140,7 +1154,7 @@ MemoryVariable = Annotated[
 
 
 ObservationField = Annotated[
-    Integer | Double | String | Array | Record | Union,
+    Integer | Double | String | CellID | Array | Record | Union,
     PydanticField(discriminator="type"),
 ]
 
@@ -1444,8 +1458,8 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     counterpart (see `Array.fk`).
 
     Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
-    references are a separate mechanism entirely (the `cellid` attribute, not an
-    `fk` value — see `Array.cellid`):
+    references are a separate mechanism entirely (the `cellid` type, not an
+    `fk` value — see `CellID`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
       block must be a list block whose item has a pk field, or, for a String,
@@ -1614,14 +1628,18 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
                 )
 
 
+def _is_cellid(field: "InputField") -> bool:
+    """Whether `field` is a cellid, or an array of them."""
+    return isinstance(field, CellID) or (isinstance(field, Array) and field.dtype == "cellid")
+
+
 def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
-    A cellid array (`cellid` set, see `Array.cellid`) is only meaningful as a
-    column in a list item, where each row names its cell(s), or in an
-    observation field, which reads like one. Its dtype and shape are checked by
-    `Array` itself.
+    A cellid (a `CellID`, or an `Array` with dtype="cellid") is only
+    meaningful as a column in a list item, where each row names its cell(s),
+    or in an observation field, which reads like one.
 
-    Which grid a cellid refers to (see `Cellid`) must be unambiguous: an
+    Which grid a cellid refers to (its `model`) must be unambiguous: an
     exchange's cellids refer to one of its two models, never its own, so each
     must say which (`"1"` / `"2"`); and a list item naming either model on one
     cellid column must name one on every cellid column (GNC's `cellidn`,
@@ -1629,25 +1647,26 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
     exchange = getattr(component, "subtype", None) == "exchange"
 
-    def _cellids(field: "InputField", in_item: bool) -> list[list[Array]]:
+    def _cellids(field: "InputField", in_item: bool) -> "list[list[CellID | Array]]":
         """The cellid columns of each way a row may read `field`: one
         alternative per union arm, combined with the cellids beside it."""
-        if isinstance(field, Array) and field.cellid:
+        if _is_cellid(field):
+            assert isinstance(field, (CellID, Array))
             if not in_item:
                 raise ValueError(
-                    f"Array {field.name!r}: cellid={field.cellid!r} is only valid on a "
+                    f"{type(field).__name__} {field.name!r}: a cellid is only valid as a "
                     f"column in a list item"
                 )
-            if exchange and field.cellid is True:
+            if exchange and field.model is None:
                 raise ValueError(
-                    f"Array {field.name!r}: an exchange's cellid must say which model's "
-                    f"grid it refers to (cellid='1' or '2'), got cellid=True"
+                    f"{type(field).__name__} {field.name!r}: an exchange's cellid must say "
+                    f"which model's grid it refers to (model='1' or '2')"
                 )
             return [[field]]
         if isinstance(field, List):
             _check_item(field.item)
         elif isinstance(field, Record):
-            rows: list[list[Array]] = [[]]
+            rows: list[list[CellID | Array]] = [[]]
             for subfield in field.fields.values():
                 rows = [row + alt for row in rows for alt in _cellids(subfield, in_item)]
             return rows
@@ -1658,10 +1677,10 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
 
     def _check_item(item: "InputField") -> None:
         for cellids in _cellids(item, True):
-            if len({c.cellid is True for c in cellids}) > 1:
-                names = {c.name: c.cellid for c in cellids}
+            if len({c.model is None for c in cellids}) > 1:
+                names = {c.name: c.model for c in cellids}
                 raise ValueError(
-                    f"Cellid columns {names!r} mix cellid=True with '1'/'2': if one names "
+                    f"Cellid columns {names!r} mix model=None with '1'/'2': if one names "
                     f"a model, every cellid column in the item must"
                 )
 
@@ -1733,11 +1752,7 @@ def _validate_array_shapes(
                         f"have an undeclared shape (self-sizing)"
                     )
             return  # self-sizing: nothing to validate
-        # A cellid's leading `ncelldim` is the width of a cell in the grid it
-        # refers to, not a dim in this component's scope (an exchange refers
-        # to two grids, neither its parent), so it's not resolved here.
-        shape = arr.shape[1:] if arr.cellid else arr.shape
-        for elem in shape:
+        for elem in arr.shape:
             _validate_shape_element(elem, arr, component, enclosing, known_dims, spec)
 
     for block in component.blocks.values():

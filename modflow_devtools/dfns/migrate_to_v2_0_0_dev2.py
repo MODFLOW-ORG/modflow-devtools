@@ -585,12 +585,12 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 # width: either declared as a plain integer (one cellid), or as an integer array
 # shaped only by the number of cellids (GNC's `cellidsj`). Everywhere else v1
 # writes a cellid as `shape (ncelldim)`, which `_mark_cellids` recognizes
-# mechanically; these are rewritten into that form by an explicit, audited
-# per-field allowlist, since v1 has no attribute that signals a cellid
-# (`numeric_index` only means "needs 1-based/0-based conversion"). In every
-# entry here the list field's own name matches its enclosing block's name.
+# mechanically; these are rewritten by an explicit, audited per-field
+# allowlist, since v1 has no attribute that signals a cellid (`numeric_index`
+# only means "needs 1-based/0-based conversion"). In every entry here the list
+# field's own name matches its enclosing block's name.
 #
-# Each column also refers to one of two models' grids (see `v2.Cellid`), which
+# Each column also refers to one of two models' grids (see `v2.CellModel`), which
 # v1 only says in prose and MF6 hard-codes (IDM's `StructArray.f90` maps
 # `CELLIDM1`/`CELLIDM2` to `EXGMNAMEA`/`EXGMNAMEB`; `GhostNode.f90` reads
 # `cellidn` and `cellidsj` in model 1's grid, `cellidm` in model 2's).
@@ -604,23 +604,33 @@ _CELLID_FIELDS: dict[str, tuple[str, dict[str, Literal["1", "2"]]]] = {
 }
 
 
-def _as_cellid(field: v2.InputField, model: Literal["1", "2"]) -> v2.InputField:
-    """Rewrite an integer column as an `ncelldim`-led integer array, the axis
-    `ncelldim` varying fastest (each cellid's components are contiguous),
-    referring to the given model's grid. `_mark_cellids` sets `index`."""
+def _cellid_base(field: "v2.Integer | v2.Array") -> dict[str, Any]:
+    """The attributes a cellid keeps from the field it replaces: the common
+    ones, less those a cellid can't have (`netcdf`)."""
+    base = field.model_dump(include=set(v2.InputFieldBase.model_fields))
+    base.pop("type", None)  # the serializer restores it
+    base.pop("netcdf", None)
+    return base
+
+
+def _as_cellid(field: v2.InputField, model: Literal["1", "2"] | None = None) -> v2.InputField:
+    """Rewrite an integer column as a cellid in the given model's grid: a
+    `CellID` if it's one cellid (a plain integer, or a v1 `shape (ncelldim)`
+    array), else an array of them, shaped by what counts them (GNC's
+    `cellidsj`, v1 `shape (numalphaj)`)."""
     if isinstance(field, v2.Integer):
-        base = field.model_dump(include=set(v2.InputFieldBase.model_fields))
-        base.pop("type", None)  # the serializer restores it
-        return v2.Array(**base, dtype="integer", shape=["ncelldim"], cellid=model, index=True)
+        return v2.CellID(**_cellid_base(field), model=model)
     if isinstance(field, v2.Array) and field.dtype == "integer":
-        shape = field.shape if field.shape[:1] == ["ncelldim"] else ["ncelldim", *field.shape]
-        return field.model_copy(update={"shape": shape, "cellid": model})
+        shape = field.shape[1:] if field.shape[:1] == ["ncelldim"] else field.shape
+        if not shape:
+            return v2.CellID(**_cellid_base(field), model=model)
+        return v2.Array(**_cellid_base(field), dtype="cellid", shape=shape, model=model)
     return field
 
 
 def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
-    """Rewrite this component's known cellid columns into the standard
-    `ncelldim`-shaped form. See `_CELLID_FIELDS`."""
+    """Rewrite this component's known cellid columns as cellids. See
+    `_CELLID_FIELDS`."""
     entry = _CELLID_FIELDS.get(name)
     if entry is None:
         return blocks
@@ -641,6 +651,32 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     new_list = list_field.model_copy(update={"item": new_item})
     new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
     return {**blocks, block_name: new_block}
+
+
+# Cellid columns that may refer to no cell, given as zero for every component.
+# MF6 allows it only where it calls `nodeu_from_cellid` with `allow_zero`, which
+# v1 says only in prose: an SFR reach not connected to the groundwater model
+# (`gwf-sfr.f90`), and a dummy contributing cell with a zero factor
+# (`GhostNode.f90`). Entries are (block, fields).
+_CELLID_ALLOW_ZERO: dict[str, tuple[str, set[str]]] = {
+    "gwf-sfr": ("packagedata", {"cellid"}),
+    "gwf-gnc": ("gncdata", {"cellidsj"}),
+}
+
+
+def _fix_cellid_allow_zero(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Mark this component's cellids that may refer to no cell. See
+    `_CELLID_ALLOW_ZERO`."""
+    if (entry := _CELLID_ALLOW_ZERO.get(name)) is None:
+        return blocks
+    block_name, names = entry
+
+    def _replace(field: Any, _in_union: bool) -> Any:
+        if not v2._is_cellid(field):
+            raise ValueError(f"{name}: {field.name!r} is not a cellid")
+        return field.model_copy(update={"allow_zero": True})
+
+    return _replace_named(name, blocks, block_name, _replace, names)
 
 
 def _replace_named(
@@ -798,15 +834,15 @@ def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v
 
 
 def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
-    """Mark every cellid column `index=True, cellid=True`: an integer array in a
-    list item whose first (fastest-varying) axis is `ncelldim`. Every v1 field
-    shaped by `ncelldim` is a cellid, so this needs no allowlist. A column
-    `_fix_cellid_fields` already gave a model (`"1"`/`"2"`) keeps it."""
+    """Rewrite every other cellid column as a cellid in the component's own
+    grid: an integer array in a list item whose first (fastest-varying) axis
+    is `ncelldim`. Every v1 field shaped by `ncelldim` is a cellid, so this
+    needs no allowlist."""
 
     def _mark(field: Any) -> Any:
         if isinstance(field, v2.Array):
             if field.dtype == "integer" and field.shape[:1] == ["ncelldim"]:
-                return field.model_copy(update={"index": True, "cellid": field.cellid or True})
+                return _as_cellid(field)
             return field
         if isinstance(field, v2.Record):
             fields = {n: _mark(f) for n, f in field.fields.items()}
@@ -1843,14 +1879,7 @@ def to_v2_0_0_dev2(
                 removed=removed,
                 deprecated=deprecated,
                 arms={
-                    "cellid": v2.Array(
-                        name="cellid",
-                        tagged=False,
-                        dtype="integer",
-                        shape=["ncelldim"],
-                        index=True,
-                        cellid=True,
-                    ),
+                    "cellid": v2.CellID(name="cellid", tagged=False),
                     "index": v2.Integer(name="index", tagged=False, index=True),
                     "boundname": v2.String(name="boundname", tagged=False),
                 },
@@ -2256,6 +2285,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_number_or_word_fields(name, blocks)
     blocks = _fix_string_time_series(name, blocks)
     blocks = _mark_cellids(blocks)
+    blocks = _fix_cellid_allow_zero(name, blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)

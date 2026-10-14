@@ -216,37 +216,17 @@ memory:
       - nja
 observations:
   head:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   drawdown:
-    type: array
+    type: cellid
     tagged: false
-    dtype: integer
-    index: true
-    cellid: true
-    shape:
-      - ncelldim
   flow-ja-face:
     type: record
     fields:
       cellid:
-        type: array
+        type: cellid
         tagged: false
-        dtype: integer
-        index: true
-        cellid: true
-        shape:
-          - ncelldim
       cellid2:
-        type: array
+        type: cellid
         tagged: false
-        dtype: integer
-        index: true
-        cellid: true
-        shape:
-          - ncelldim

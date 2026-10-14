@@ -352,14 +352,8 @@
       "type": "union",
       "arms": {
         "cellid": {
-          "type": "array",
-          "tagged": false,
-          "dtype": "integer",
-          "index": true,
-          "cellid": true,
-          "shape": [
-            "ncelldim"
-          ]
+          "type": "cellid",
+          "tagged": false
         },
         "boundname": {
           "type": "string",
@@ -371,14 +365,8 @@
       "type": "union",
       "arms": {
         "cellid": {
-          "type": "array",
-          "tagged": false,
-          "dtype": "integer",
-          "index": true,
-          "cellid": true,
-          "shape": [
-            "ncelldim"
-          ]
+          "type": "cellid",
+          "tagged": false
         },
         "boundname": {
           "type": "string",
@@ -390,14 +378,8 @@
       "type": "union",
       "arms": {
         "cellid": {
-          "type": "array",
-          "tagged": false,
-          "dtype": "integer",
-          "index": true,
-          "cellid": true,
-          "shape": [
-            "ncelldim"
-          ]
+          "type": "cellid",
+          "tagged": false
         },
         "boundname": {
           "type": "string",

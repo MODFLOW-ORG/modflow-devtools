@@ -405,16 +405,10 @@
                 "pk": true
               },
               "cellid": {
-                "type": "array",
+                "type": "cellid",
                 "longname": "cell identifier",
                 "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
-                "tagged": false,
-                "dtype": "integer",
-                "index": true,
-                "cellid": true,
-                "shape": [
-                  "ncelldim"
-                ]
+                "tagged": false
               },
               "cdelay": {
                 "type": "string",
@@ -495,16 +489,10 @@
             "type": "record",
             "fields": {
               "cellid": {
-                "type": "array",
+                "type": "cellid",
                 "longname": "cell identifier",
                 "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
-                "tagged": false,
-                "dtype": "integer",
-                "index": true,
-                "cellid": true,
-                "shape": [
-                  "ncelldim"
-                ]
+                "tagged": false
               },
               "sig0": {
                 "type": "double",
@@ -941,164 +929,68 @@
       }
     },
     "coarse-csub": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "csub-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "wcomp-csub-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "sk-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "ske-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "estress-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "gstress-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "preconstress-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "coarse-compaction": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "compaction-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "inelastic-compaction-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "elastic-compaction-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "coarse-thickness": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "thickness-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "coarse-theta": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     },
     "theta-cell": {
-      "type": "array",
-      "tagged": false,
-      "dtype": "integer",
-      "index": true,
-      "cellid": true,
-      "shape": [
-        "ncelldim"
-      ]
+      "type": "cellid",
+      "tagged": false
     }
   }
 }

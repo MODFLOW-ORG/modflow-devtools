@@ -343,20 +343,42 @@ def test_migrate_gnc_cellids(dfn_dir):
     item = component.blocks["gncdata"].fields["gncdata"].item
     # Under an exchange, `cellidn` and `cellidsj` are in model 1's grid and
     # `cellidm` in model 2's (MF6's GhostNode.f90).
-    for name, shape, model in [
-        ("cellidn", ["ncelldim"], "1"),
-        ("cellidm", ["ncelldim"], "2"),
-        ("cellidsj", ["ncelldim", "numalphaj"], "1"),
-    ]:
+    for name, model in [("cellidn", "1"), ("cellidm", "2")]:
         field = item.fields[name]
-        assert isinstance(field, v2.Array)
-        assert (field.dtype, field.shape, field.index, field.cellid) == (
-            "integer",
-            shape,
-            True,
-            model,
-        )
-    assert not item.fields["alphasj"].cellid
+        assert isinstance(field, v2.CellID)
+        assert (field.model, field.allow_zero) == (model, False)
+    # `numalphaj` cellids, each of which may be a dummy cell of zeros.
+    cellidsj = item.fields["cellidsj"]
+    assert isinstance(cellidsj, v2.Array)
+    assert (cellidsj.dtype, cellidsj.shape, cellidsj.model, cellidsj.allow_zero) == (
+        "cellid",
+        ["numalphaj"],
+        "1",
+        True,
+    )
+    assert cellidsj.render(inline=True) == "<cellidsj(ncelldim, numalphaj)>"
+    alphasj = item.fields["alphasj"]
+    assert isinstance(alphasj, v2.Array) and alphasj.dtype == "double"
+
+
+def test_migrate_sfr_cellid_allow_zero(dfn_dir):
+    # An unconnected reach gives zeros for its cellid (gwf-sfr.f90).
+    component = _migrate_dev3(dfn_dir, "gwf-sfr")
+    cellid = component.blocks["packagedata"].fields["packagedata"].item.fields["cellid"]
+    assert isinstance(cellid, v2.CellID)
+    assert (cellid.model, cellid.allow_zero, cellid.optional) == (None, True, False)
+    assert cellid.render(inline=True) == "<cellid(ncelldim)>"
+
+
+def test_migrate_cellid_allow_zero_fails_when_stale(dfn_dir, monkeypatch):
+    from modflow_devtools.dfns import migrate_to_v2_0_0_dev2 as dev2
+
+    monkeypatch.setitem(dev2._CELLID_ALLOW_ZERO, "gwf-sfr", ("packagedata", {"nope"}))
+    with pytest.raises(ValueError, match="nope"):
+        _migrate_dev3(dfn_dir, "gwf-sfr")
+    monkeypatch.setitem(dev2._CELLID_ALLOW_ZERO, "gwf-sfr", ("packagedata", {"rlen"}))
+    with pytest.raises(ValueError, match="'rlen' is not a cellid"):
+        _migrate_dev3(dfn_dir, "gwf-sfr")
 
 
 @pytest.mark.parametrize(
@@ -368,8 +390,8 @@ def test_migrate_exchange_cellids(dfn_dir, name):
     item = component.blocks["exchangedata"].fields["exchangedata"].item
     for col, model in (("cellidm1", "1"), ("cellidm2", "2")):
         field = item.fields[col]
-        assert isinstance(field, v2.Array)
-        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, model)
+        assert isinstance(field, v2.CellID)
+        assert (field.model, field.allow_zero) == (model, False)
 
 
 def _number_or_word(field, word: str) -> None:
@@ -451,18 +473,20 @@ def test_migrate_cellid_models_round_trip(dev3):
     out, fmt = dev3
     raw = _load(out / f"exg-gwfgwf.{fmt}", fmt)
     cols = raw["blocks"]["exchangedata"]["fields"]["exchangedata"]["item"]["fields"]
-    assert (cols["cellidm1"]["cellid"], cols["cellidm2"]["cellid"]) == ("1", "2")
+    assert (cols["cellidm1"]["model"], cols["cellidm2"]["model"]) == ("1", "2")
     dfns = v2.Dfns.load(out)
     gnc = dfns.components["gwf-gnc"].blocks["gncdata"].fields["gncdata"].item.fields
-    assert [gnc[c].cellid for c in ("cellidn", "cellidm", "cellidsj")] == ["1", "2", "1"]
+    assert [gnc[c].model for c in ("cellidn", "cellidm", "cellidsj")] == ["1", "2", "1"]
+    assert [type(gnc[c]) for c in ("cellidn", "cellidsj")] == [v2.CellID, v2.Array]
+    assert gnc["cellidsj"].allow_zero
 
 
 @pytest.mark.parametrize("name", ["gwf-chd", "gwf-wel", "gwf-hfb", "gwt-cnc"])
-def test_migrate_own_grid_cellids_stay_true(dfn_dir, name):
+def test_migrate_own_grid_cellids_name_no_model(dfn_dir, name):
     # Only the `_CELLID_FIELDS` columns name a model; every other cellid is in
     # the component's own model's grid.
     def _cellids(field):
-        if isinstance(field, v2.Array) and field.cellid:
+        if isinstance(field, v2.CellID):
             yield field
         elif isinstance(field, v2.List):
             yield from _cellids(field.item)
@@ -476,7 +500,7 @@ def test_migrate_own_grid_cellids_stay_true(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
     cellids = [c for b in component.blocks.values() for f in b.fields.values() for c in _cellids(f)]
     assert cellids
-    assert all(c.cellid is True for c in cellids)
+    assert all(c.model is None for c in cellids)
 
 
 @pytest.mark.parametrize(
@@ -492,7 +516,9 @@ def test_migrate_marks_cellids(dfn_dir, name, block, cols):
     lst = next(f for f in component.blocks[block].fields.values() if isinstance(f, v2.List))
     for col in cols:
         field = lst.item.fields[col]
-        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)
+        assert isinstance(field, v2.CellID)
+        assert (field.model, field.allow_zero) == (None, False)
+        assert field.render(inline=True) == f"<{col}(ncelldim)>"
 
 
 @pytest.mark.parametrize("col, optional", [("id", False), ("id2", True)])
@@ -505,8 +531,8 @@ def test_migrate_obs_id_union(dfn_dir, col, optional):
     assert isinstance(field, v2.Union)
     assert (field.tagged, field.optional) == (False, optional)
     cellid, index, boundname = field.arms.values()
-    assert isinstance(cellid, v2.Array)
-    assert (cellid.shape, cellid.index, cellid.cellid) == (["ncelldim"], True, True)
+    assert isinstance(cellid, v2.CellID)
+    assert cellid.model is None
     assert isinstance(index, v2.Integer) and index.index
     assert isinstance(boundname, v2.String)
     assert not any(arm.tagged for arm in field.arms.values())
@@ -522,7 +548,7 @@ def _obs_forms(field) -> list[tuple]:
         for col in field.fields.values():
             forms = [f + g for f in forms for g in _obs_forms(col)]
         return forms
-    if isinstance(field, v2.Array) and field.cellid:
+    if isinstance(field, v2.CellID):
         return [(("cellid",),)]
     if isinstance(field, v2.String):
         return [(("boundname",),)]

@@ -308,7 +308,7 @@ blocks:
               tagged: false
               index: true
             cellid:
-              type: array
+              type: cellid
               longname: cell identifier
               description: is the cell identifier, and depends on the type of grid that is used for the
                 simulation.  For a structured grid that uses the DIS input file, CELLID is the layer,
@@ -316,11 +316,6 @@ blocks:
                 number.  If the model uses the unstructured discretization (DISU) input file, CELLID is
                 the node number for the cell.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             claktype:
               type: string
               longname: lake connection type

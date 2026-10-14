@@ -5,6 +5,7 @@ import pytest
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
+    CellID,
     Dfns,
     Double,
     File,
@@ -107,7 +108,7 @@ def test_dfns_validate_fk_fields_fk_ref_with_hierarchical_fk_rejected():
 
 def test_dfns_validate_fk_fields_fk_ref_with_node_not_special_cased():
     # "node" was formerly a reserved fk sentinel for grid-cell references (now
-    # replaced by the dedicated `Array.cellid` attribute); as a bare fk value
+    # replaced by the dedicated `CellID` type); as a bare fk value
     # it's just an ordinary (if oddly named) block name like any other, so
     # combining it with fk_ref is unremarkable and must not raise.
     mvr, gwf = _mvr_id_ctx(fk_val="node")
@@ -205,16 +206,23 @@ def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
 @pytest.mark.parametrize(
     "field",
     [
-        Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, cellid=True),
-        Array(name="cellidsj", dtype="integer", shape=["ncelldim", "n"], index=True, cellid=True),
+        CellID(name="cellid"),
+        Array(name="cellidsj", dtype="cellid", shape=["n"]),
     ],
 )
 def test_dfns_validate_cellid_in_list_item(field):
     # No component declares `ncelldim`: a cellid's width comes from the grid
-    # it refers to, so it isn't resolved as a dim. Later axes still are.
+    # it refers to, so it isn't in any shape. An array's shape counts its
+    # cellids, and is resolved as usual.
     dims = {"n": InputDim(value="2", scope="model")}
     spec = Dfns(components=_cellid_ctx(field, dims=dims))
     assert "gwf-gnc" in spec.components
+
+
+def test_dfns_validate_cellid_array_shape_resolves():
+    field = Array(name="cellidsj", dtype="cellid", shape=["n"])
+    with pytest.raises(ValueError, match="'n' does not resolve"):
+        Dfns(components=_cellid_ctx(field))
 
 
 def _exchange_ctx(*fields):
@@ -224,19 +232,22 @@ def _exchange_ctx(*fields):
     return {"exg-gwfgwf": exg}
 
 
-def _cellid_col(name, cellid, shape=("ncelldim",)):
-    return Array(name=name, dtype="integer", shape=list(shape), index=True, cellid=cellid)
+def _cellid_col(name, model=None, shape=None):
+    if shape is None:
+        return CellID(name=name, model=model)
+    return Array(name=name, dtype="cellid", shape=list(shape), model=model)
 
 
 def test_dfns_validate_cellid_in_exchange():
     fields = (_cellid_col("cellidm1", "1"), _cellid_col("cellidm2", "2"))
     spec = Dfns(components=_exchange_ctx(*fields))
     item = spec.components["exg-gwfgwf"].blocks["data"].fields["data"].item
-    assert {n: f.cellid for n, f in item.fields.items()} == {"cellidm1": "1", "cellidm2": "2"}
+    assert {n: f.model for n, f in item.fields.items()} == {"cellidm1": "1", "cellidm2": "2"}
 
 
-def test_dfns_validate_exchange_cellid_must_name_model():
-    fields = (_cellid_col("cellidm1", True), _cellid_col("cellidm2", True))
+@pytest.mark.parametrize("shape", [None, ["n"]])
+def test_dfns_validate_exchange_cellid_must_name_model(shape):
+    fields = (_cellid_col("cellidm1", shape=shape), _cellid_col("cellidm2", shape=shape))
     with pytest.raises(ValueError, match="exchange's cellid must say which model"):
         Dfns(components=_exchange_ctx(*fields))
 
@@ -246,7 +257,7 @@ def test_dfns_validate_cellid_models_under_a_model():
     fields = (
         _cellid_col("cellidn", "1"),
         _cellid_col("cellidm", "2"),
-        _cellid_col("cellidsj", "1", shape=("ncelldim", "n")),
+        _cellid_col("cellidsj", "1", shape=("n",)),
     )
     item = Record(name="item", fields={f.name: f for f in fields})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
@@ -261,23 +272,23 @@ def test_dfns_validate_cellid_models_under_a_model():
 
 
 def test_dfns_validate_cellid_no_mixing():
-    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "b": _cellid_col("b", True)})
+    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "b": _cellid_col("b")})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
     pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
-    with pytest.raises(ValueError, match="mix cellid=True with '1'/'2'"):
+    with pytest.raises(ValueError, match="mix model=None with '1'/'2'"):
         Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
 
 
-def _union_cellid_pkg(arm_cellid, sibling_cellid):
+def _union_cellid_pkg(arm_model, sibling_model):
     union = Union(
         name="id",
         tagged=False,
         arms={
-            "cellid": _cellid_col("cellid", arm_cellid),
+            "cellid": _cellid_col("cellid", arm_model),
             "boundname": String(name="boundname", tagged=False),
         },
     )
-    item = Record(name="item", fields={"a": _cellid_col("a", sibling_cellid), "id": union})
+    item = Record(name="item", fields={"a": _cellid_col("a", sibling_model), "id": union})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
     pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
     return {"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg}
@@ -285,13 +296,13 @@ def _union_cellid_pkg(arm_cellid, sibling_cellid):
 
 def test_dfns_validate_cellid_no_mixing_across_union_arm():
     # A union arm's cellid is read in the same row as its sibling columns.
-    with pytest.raises(ValueError, match="mix cellid=True with '1'/'2'"):
-        Dfns(components=_union_cellid_pkg(True, "1"))
+    with pytest.raises(ValueError, match="mix model=None with '1'/'2'"):
+        Dfns(components=_union_cellid_pkg(None, "1"))
 
 
-@pytest.mark.parametrize("cellid", [True, "1"])
-def test_dfns_validate_cellid_union_arm_consistent(cellid):
-    assert "gwf-gnc" in Dfns(components=_union_cellid_pkg(cellid, cellid)).components
+@pytest.mark.parametrize("model", [None, "1"])
+def test_dfns_validate_cellid_union_arm_consistent(model):
+    assert "gwf-gnc" in Dfns(components=_union_cellid_pkg(model, model)).components
 
 
 def test_dfns_validate_cellid_union_arms_are_alternatives():
@@ -307,35 +318,54 @@ def test_dfns_validate_cellid_union_arms_are_alternatives():
     Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
 
 
-@pytest.mark.parametrize("value", [1, 2, 0, "true", "3", "a"])
-def test_array_cellid_rejects_non_model_values(value):
-    # `True == 1`: an int must never be read as (or coerced to) a model or `True`.
-    with pytest.raises(ValueError, match="cellid"):
-        _cellid_col("cellid", value)
+@pytest.mark.parametrize("value", [True, 1, 2, 0, "true", "3", "a"])
+@pytest.mark.parametrize("shape", [None, ["n"]])
+def test_cellid_rejects_non_model_values(value, shape):
+    # `True == 1`: an int or bool must never be read as (or coerced to) a model.
+    with pytest.raises(ValueError, match="model"):
+        _cellid_col("cellid", value, shape=shape)
 
 
-def test_array_cellid_requires_integer_dtype():
-    with pytest.raises(ValueError, match="cellid=True requires dtype='integer'"):
-        Array(name="alphasj", dtype="double", shape=["ncelldim"], cellid=True)
+def test_cellid_render():
+    assert CellID(name="cellid", tagged=False).render(inline=True) == "<cellid(ncelldim)>"
+    assert CellID(name="cellid", optional=True).render(inline=True) == "[CELLID <cellid(ncelldim)>]"
+    arr = Array(name="cellidsj", dtype="cellid", shape=["numalphaj"], tagged=False)
+    assert arr.render(inline=True) == "<cellidsj(ncelldim, numalphaj)>"
 
 
-@pytest.mark.parametrize("shape", [[], ["n"], ["n", "ncelldim"]])
-def test_array_cellid_requires_leading_ncelldim(shape):
-    with pytest.raises(ValueError, match="cellid=True requires shape to start with 'ncelldim'"):
-        Array(name="cellid", dtype="integer", shape=shape, index=True, cellid=True)
+@pytest.mark.parametrize("attr", ["model", "allow_zero"])
+def test_array_cellid_attrs_require_cellid_dtype(attr):
+    value = "1" if attr == "model" else True
+    with pytest.raises(ValueError, match=f"{attr} requires dtype='cellid'"):
+        Array(name="alphasj", dtype="integer", shape=["n"], **{attr: value})
 
 
-def test_array_cellid_requires_index():
-    with pytest.raises(ValueError, match="cellid=True requires index=True"):
-        Array(name="cellid", dtype="integer", shape=["ncelldim"], cellid=True)
+@pytest.mark.parametrize(
+    "attr, value, match",
+    [
+        ("index", True, "index=True requires dtype='integer'"),
+        ("fk", "packagedata.ifno", "fk requires dtype='integer'"),
+        ("time_series", True, "time_series is not valid with dtype='cellid'"),
+        ("layered", True, "layered is not valid with dtype='cellid'"),
+        ("netcdf", True, "netcdf is not valid with dtype='cellid'"),
+    ],
+)
+def test_array_cellid_rejects_attrs(attr, value, match):
+    with pytest.raises(ValueError, match=match):
+        Array(name="cellidsj", dtype="cellid", shape=["n"], **{attr: value})
+
+
+@pytest.mark.parametrize("attr", ["index", "time_series", "fk", "shape", "dtype"])
+def test_cellid_has_no_array_attrs(attr):
+    # Pydantic ignores unknown keys, so check the class simply doesn't have them.
+    assert attr not in CellID.model_fields
 
 
 def test_dfns_validate_cellid_outside_list_item():
-    field = Array(name="cellid", dtype="integer", shape=["ncelldim"], index=True, cellid=True)
-    block = Block(name="options", fields={"cellid": field})
+    block = Block(name="options", fields={"cellid": CellID(name="cellid")})
     pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"options": block})
     gwf = Model(name="gwf-nam", blocks=None)
-    with pytest.raises(ValueError, match="only valid on a column in a list item"):
+    with pytest.raises(ValueError, match="only valid as a column in a list item"):
         Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})
 
 

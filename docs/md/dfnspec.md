@@ -62,26 +62,30 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
         - [`time_series`](#time_series-2)
-    - [File](#file)
+    - [CellID](#cellid)
       - [Type-specific attributes](#type-specific-attributes-5)
+        - [`model`](#model)
+        - [`allow_zero`](#allow_zero)
+    - [File](#file)
+      - [Type-specific attributes](#type-specific-attributes-6)
         - [`direction`](#direction)
   - [Composites](#composites)
     - [Array](#array)
-      - [Type-specific attributes](#type-specific-attributes-6)
+      - [Type-specific attributes](#type-specific-attributes-7)
         - [`dtype`](#dtype)
         - [`shape`](#shape)
         - [`time_series`](#time_series-3)
         - [`index`](#index-1)
         - [`fk`](#fk-2)
-        - [`cellid`](#cellid)
+        - [`model`, `allow_zero`](#model-allow_zero)
     - [Record](#record)
-      - [Type-specific attributes](#type-specific-attributes-7)
+      - [Type-specific attributes](#type-specific-attributes-8)
         - [`fields`](#fields-2)
     - [Union](#union)
-      - [Type-specific attributes](#type-specific-attributes-8)
+      - [Type-specific attributes](#type-specific-attributes-9)
         - [`arms`](#arms)
     - [List](#list)
-      - [Type-specific attributes](#type-specific-attributes-9)
+      - [Type-specific attributes](#type-specific-attributes-10)
         - [`item`](#item)
         - [`shape`](#shape-1)
   - [Dimensions](#dimensions)
@@ -318,6 +322,7 @@ Required. One of:
 - `keyword`
 - `integer`
 - `double`
+- `cellid`
 - `array`
 - `string`
 - `file`
@@ -448,6 +453,24 @@ Type `double`.
 
 `boolean (default: false)`. Marks fields where the parser accepts either a numeric literal or a time-series name (referencing a `utl-ts` object). Not inferable from structural type. Also appears on array fields (where it references a `utl-tas` object instead). Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
 
+#### CellID
+
+Type `cellid`. A grid cell reference, resolved against the grid (DIS/DISV/DISU) it refers to: `ncelldim` integers, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Its width is a property of the type, the `ncelldim` of that grid, so it has no shape; `ncelldim` is never resolved as a dim in the component's own scope. A cellid is always 1-based in the file, so it has no `index` attribute. Several cellids are an [array](#array) with `dtype` `"cellid"`.
+
+A cellid is only valid as a column in a list item, where each row names its cell(s), or in an [observation](#observations) field, which reads like one. It renders as `<name(ncelldim)>`.
+
+##### Type-specific attributes
+
+###### `model`
+
+`"1" | "2" | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model; `"1"` or `"2"` for the grid of the first or second model of the enclosing context, i.e. `EXGMNAMEA` or `EXGMNAMEB` under an exchange. Under a single model, both are that model, so a component read in either context (e.g. `gwf-gnc`) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must give `"1"` or `"2"`, since an exchange has no grid of its own, and a list item giving `"1"` or `"2"` on one cellid column must give one on every cellid column. For example, in an exchange `cellidm1` is `"1"` and `cellidm2` is `"2"`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"1"` and `cellidm` is `"2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
+
+**Note:** The values are strings, not integers, as `true == 1` in many languages (e.g. Python). A reader rejects an integer or boolean `model`.
+
+###### `allow_zero`
+
+`boolean (default: false)`. Whether the cellid may refer to no cell, given as zero for every component (e.g. `0 0 0` for DIS). MF6 allows this in two places: `gwf-sfr`'s packagedata `cellid`, for a reach not connected to the groundwater model, and `gwf-gnc`'s `cellidsj`, for a dummy contributing cell with a zero factor. This is not [`optional`](#optional): the zeros are still written.
+
 #### File
 
 Type `file`. A path to another file.
@@ -494,13 +517,13 @@ An array appearing as a subfield of a record is called an **inline array**. Inli
 
 ###### `dtype`
 
-`string`. The array's data type. Must be one of the scalar types.
+`string`. The array's data type. Must be one of the scalar types: `"keyword"`, `"integer"`, `"double"`, `"string"` or `"cellid"`. An array of cellids is shaped only by what counts them: `gwf-gnc`'s `cellidsj` has shape `["numalphaj"]`, `numalphaj` cellids written one after another, each `ncelldim` integers.
 
 ###### `shape`
 
 `[string] (default: [])`. The array's shape, as a list of shape expressions, one per dimension. An empty list means the array is 1-dimensional and **self-sizing** (see above). Each length is exact unless its expression is prefixed with an inequality operator (e.g. `"<=n"`); see [Bounds](#bounds).
 
-Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`, and a cellid array's `ncelldim` axis comes first (see [`cellid`](#cellid)).
+Dimensions are listed fastest-varying first, i.e. in the order elements are read from (or written to) the input file. A 3D grid array is `["ncol", "nrow", "nlay"]`. A cellid's own components vary fastest of all, so an array of cellids renders with `ncelldim` first, e.g. `<cellidsj(ncelldim, numalphaj)>`, though `ncelldim` isn't in its shape (see [CellID](#cellid)).
 
 ###### `time_series`
 
@@ -514,15 +537,9 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 `string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
-###### `cellid`
+###### `model`, `allow_zero`
 
-`boolean | "1" | "2" (default: false)`. Marks the array as a **cellid**, or several: a grid cell reference, resolved against the grid (DIS/DISV/DISU) the column refers to. The first axis must be `ncelldim`, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Any further axes count cellids. A single cellid has shape `["ncelldim"]`; `gwf-gnc`'s `cellidsj` has shape `["ncelldim", "numalphaj"]`, `numalphaj` cellids written one after another. Only valid when `dtype` is `"integer"`, `index` is set (cellids are 1-based), and the array is a column in a list item.
-
-The value says which grid: `true` for the grid of the component's own model; `"1"` or `"2"` for the grid of the first or second model of the enclosing context, i.e. `EXGMNAMEA` or `EXGMNAMEB` under an exchange. Under a single model, both are that model, so a component read in either context (e.g. `gwf-gnc`) gives the value unconditionally. A cellid column in an exchange ([`subtype`](#subtype) `"exchange"`) must be `"1"` or `"2"`, since an exchange has no grid of its own, and a list item giving `"1"` or `"2"` on one cellid column must give one on every cellid column. For example, in an exchange `cellidm1` is `"1"` and `cellidm2` is `"2"`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"1"` and `cellidm` is `"2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
-
-The leading `ncelldim` is not resolved as a dim in the component's own scope: its value is the `ncelldim` of the grid the column refers to, by the above.
-
-**Note:** The model values are strings, not integers, as `true == 1` in many languages (e.g. Python). A consumer should test for the strings (`cellid in ("1", "2")`), never compare `cellid` to an integer; and a reader rejects an integer `cellid`.
+As for a [CellID](#cellid), applying to each element. Only valid when `dtype` is `"cellid"`. An array of cellids may not set `index` (cellids are always 1-based), `fk`, `time_series`, `layered` or `netcdf`.
 
 #### Record
 
@@ -642,7 +659,7 @@ The `value` attribute defines the dimension as a Python expression over the comp
 - **`sum(list.column)`** — the sum of an integer column over a list's rows (`sum(packagedata.nlakeconn)`).
 - **Arithmetic expression** `nlay * nrow * ncol` — integer literals and other dims, combined with `+`, `-`, `*`, `/` (exact) and `//`. May not use bare field names; all operands must be declared dimensions.
 
-A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the width of `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. More generally, a consumer may set an unset input from data whenever a length determines it uniquely: `nseg` from the width of an array with shape `["nseg-1"]`, or a row's `ncvert` from the length of its `icvert`. `modflow_devtools.dfns` evaluates any dimension or shape expression with `dim_value`, and finds the input a length determines with `dim_input`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
+A dimension whose value is its own name is an **input dimension**: it *is* the field, so a consumer may set the field from data the dimension sizes (e.g. `numalphaj` from the number of cellids in `cellidsj`). Every other dimension is **derived**: a function of the input, which a consumer can evaluate and check data against, but not set. More generally, a consumer may set an unset input from data whenever a length determines it uniquely: `nseg` from the width of an array with shape `["nseg-1"]`, or a row's `ncvert` from the length of its `icvert`. `modflow_devtools.dfns` evaluates any dimension or shape expression with `dim_value`, and finds the input a length determines with `dim_input`; see [Evaluating dimensions and shapes](dfns.md#evaluating-dimensions-and-shapes).
 
 #### `runtime_dims` (RuntimeDim)
 
@@ -796,7 +813,7 @@ Only a dimension that every component in the model (or simulation) shares should
 
 ### Primary and foreign keys
 
-Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the array [`cellid`](#cellid) attribute rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
+Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the [`cellid`](#cellid) type rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
 
 **Note**: `pk`/`fk_ref` are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type. `fk` is valid there too, and additionally on integer-`dtype` `Array` fields (see [Array](#array)) — there it references another list's row per grid cell rather than per list row, and only the hierarchical-path form applies (no `fk_ref` counterpart, since an array has no sibling record to carry a runtime component selector).
 

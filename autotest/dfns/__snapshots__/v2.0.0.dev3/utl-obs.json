@@ -50,14 +50,8 @@
                 "description": "Text identifying cell where observation is located. For packages other than NPF, if boundary names are defined in the corresponding package input file, ID can be a boundary name. Otherwise ID is a cellid. If the model discretization is type DIS, cellid is three integers (layer, row, column). If the discretization is DISV, cellid is two integers (layer, cell number). If the discretization is DISU, cellid is one integer (node number).",
                 "arms": {
                   "cellid": {
-                    "type": "array",
-                    "tagged": false,
-                    "dtype": "integer",
-                    "index": true,
-                    "cellid": true,
-                    "shape": [
-                      "ncelldim"
-                    ]
+                    "type": "cellid",
+                    "tagged": false
                   },
                   "index": {
                     "type": "integer",
@@ -77,14 +71,8 @@
                 "optional": true,
                 "arms": {
                   "cellid": {
-                    "type": "array",
-                    "tagged": false,
-                    "dtype": "integer",
-                    "index": true,
-                    "cellid": true,
-                    "shape": [
-                      "ncelldim"
-                    ]
+                    "type": "cellid",
+                    "tagged": false
                   },
                   "index": {
                     "type": "integer",

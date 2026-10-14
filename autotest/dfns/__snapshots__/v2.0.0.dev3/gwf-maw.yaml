@@ -338,7 +338,7 @@ blocks:
               tagged: false
               index: true
             cellid:
-              type: array
+              type: cellid
               longname: cell identifier
               description: is the cell identifier, and depends on the type of grid that is used for the
                 simulation.  For a structured grid that uses the DIS input file, CELLID is the layer,
@@ -349,11 +349,6 @@ blocks:
                 wells using SPECIFIED, THIEM, SKIN, or CUMULATIVE conductance equations have more than
                 one connection to the same CELLID.
               tagged: false
-              dtype: integer
-              index: true
-              cellid: true
-              shape:
-                - ncelldim
             scrn_top:
               type: double
               longname: screen top
