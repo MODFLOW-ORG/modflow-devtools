@@ -306,6 +306,7 @@ There is a core set of attributes shared by all field types:
 - `longname`
 - `description`
 - `optional`
+- `when`
 - `default`
 - `developmode`
 - `netcdf`
@@ -340,7 +341,31 @@ Required. One of:
 
 #### `optional`
 
-`boolean (default: false)`. Indicates that the field is not mandatory and may be omitted. May be applied to both composite and scalar fields.
+`boolean (default: false)`. Indicates that the field is not mandatory and may be omitted. May be applied to both composite and scalar fields. On a field with a `when`, it says whether the field may be omitted when its option is set.
+
+#### `when`
+
+`string | null (default: null)`. The name of a keyword in the component's `options` block that switches the field on. The field is absent from the input unless that keyword is set. With `optional`:
+
+- `optional = false`: the field is present if and only if the option is set. `gwf-evt`'s `petm0` column is read only, and then always, when `SURF_RATE_SPECIFIED` is set.
+- `optional = true`: the field is absent unless the option is set, and may still be omitted when it is. A `boundname` column is switched on by `BOUNDNAMES`, but a row may leave it out.
+
+```toml
+[petm0]
+type = "double"
+tagged = false
+when = "surf_rate_specified"
+
+[boundname]
+type = "string"
+tagged = false
+optional = true
+when = "boundnames"
+```
+
+A field with a `when` renders in brackets, like an optional one, e.g. `[<petm0>]`.
+
+This is about whether a field is present at all, not how many values it holds. A column sized by another field, like `aux` (one value per auxiliary variable), uses `shape` instead, and a size of 0 means it's absent.
 
 #### `default`
 

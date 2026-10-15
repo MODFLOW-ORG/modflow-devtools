@@ -153,6 +153,7 @@ blocks:
                 that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the
                 entire name must be enclosed within single quotes.
               optional: true
+              when: boundnames
               tagged: false
         shape:
           - <=maxbound

@@ -37,6 +37,26 @@ def test_field_dict_roundtrip():
     assert f.optional == i.optional
 
 
+def test_field_when_roundtrip():
+    d = Double(name="petm0", tagged=False, when="surf_rate_specified")
+    assert d.model_dump(exclude_defaults=True)["when"] == "surf_rate_specified"
+    assert Double.model_validate_json(d.model_dump_json()) == d
+    assert Double(name="rate").when is None
+
+
+@pytest.mark.parametrize(
+    "field,rendered",
+    [
+        (Double(name="petm0", tagged=False, when="surf_rate_specified"), "[<petm0>]"),
+        (String(name="boundname", tagged=False, optional=True, when="boundnames"), "[<boundname>]"),
+        (Double(name="rate", tagged=False), "<rate>"),
+    ],
+)
+def test_render_when_bracketed(field, rendered):
+    # Like an optional field: it may be absent, even if not optional.
+    assert field.render(inline=True) == rendered
+
+
 def test_block_optional_all_optional_fields():
     block = Block(
         name="options",

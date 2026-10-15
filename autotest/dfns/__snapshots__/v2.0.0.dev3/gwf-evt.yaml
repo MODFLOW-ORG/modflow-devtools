@@ -205,7 +205,7 @@ blocks:
                 option is used. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable
                 Input' section), values can be obtained from a time series by entering the time-series
                 name in place of a numeric value.
-              optional: true
+              when: surf_rate_specified
               tagged: false
               time_series: true
             aux:
@@ -230,6 +230,7 @@ blocks:
                 that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the
                 entire name must be enclosed within single quotes.
               optional: true
+              when: boundnames
               tagged: false
         shape:
           - <=maxbound

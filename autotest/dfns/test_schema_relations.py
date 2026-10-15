@@ -579,3 +579,26 @@ def test_concrete_package_parent_sees_model_dims():
         }
     )
     assert "nodes" in spec.inherited_dims("utl-tvk")
+
+
+def _when_ctx(when, option=None):
+    options = Block(name="options", fields={option.name: option} if option else {})
+    col = Double(name="petm0", tagged=False, when=when)
+    item = Record(name="item", fields={"rate": Double(name="rate", tagged=False), "petm0": col})
+    period = Block(name="period", fields={"data": List(name="data", item=item)})
+    pkg = Package(name="gwf-evt", blocks={"options": options, "period": period})
+    return {"gwf-evt": pkg}
+
+
+def test_dfns_validate_when_names_keyword_option():
+    spec = Dfns(components=_when_ctx("surf", Keyword(name="surf", optional=True)))
+    item = spec.components["gwf-evt"].blocks["period"].fields["data"].item
+    assert item.fields["petm0"].when == "surf"
+
+
+@pytest.mark.parametrize(
+    "option", [None, Keyword(name="other", optional=True), Integer(name="surf", optional=True)]
+)
+def test_dfns_validate_when_names_no_keyword_option(option):
+    with pytest.raises(ValueError, match="when='surf' names no keyword option of gwf-evt"):
+        Dfns(components=_when_ctx("surf", option))

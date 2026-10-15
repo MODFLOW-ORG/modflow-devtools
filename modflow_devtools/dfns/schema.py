@@ -28,6 +28,13 @@ class InputFieldBase(BaseModel):
     longname: str | None = None
     description: str | None = None
     optional: bool = False
+    # The name of a keyword in the component's options block that switches
+    # this field on: it is absent unless the keyword is set. Then `optional`
+    # says whether it may still be left out (a boundname may be, EVT's `petm0`
+    # may not). Unlike a column sized by `shape` (`aux`, a count that may be
+    # 0), this decides whether the field is there at all. None if no option
+    # decides it.
+    when: str | None = None
     default: Any | None = None
     developmode: bool = False
     netcdf: bool = False
@@ -457,7 +464,7 @@ def _render_field(field: "InputField", *, inline: bool = False) -> str:
     """
 
     def _wrap(token: str) -> str:
-        return f"[{token}]" if field.optional else token
+        return f"[{token}]" if field.optional or field.when else token
 
     match field:
         case Keyword():
@@ -1691,6 +1698,20 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
         _check_item(obs_field)
 
 
+def _validate_when_fields(component: "ComponentBase") -> None:
+    """Every field's `when` (at any depth) names a keyword in the
+    component's options block."""
+    options = (component.blocks or {}).get("options")
+    keywords = {n for n, f in (options.fields if options else {}).items() if isinstance(f, Keyword)}
+    for block in (component.blocks or {}).values():
+        for field in block.fields.values():
+            for f in _iter_subfields(field):
+                if f.when is not None and f.when not in keywords:
+                    raise ValueError(
+                        f"{f.name!r}: when={f.when!r} names no keyword option of {component.name}"
+                    )
+
+
 def _obs_columns(field: "InputField") -> list[int]:
     """How many `utl-obs` columns each form of an observation field fills."""
     if isinstance(field, Union):
@@ -2045,6 +2066,8 @@ class Dfns(BaseModel):
             _validate_file_links(component, self)
         for name, component in self.components.items():
             _validate_cellid_fields(component)
+        for name, component in self.components.items():
+            _validate_when_fields(component)
         for name, component in self.components.items():
             _validate_observations(component)
         for name, component in self.components.items():

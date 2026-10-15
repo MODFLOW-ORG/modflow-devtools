@@ -39,6 +39,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -361,6 +373,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -479,6 +503,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -580,6 +616,18 @@
           "default": false,
           "title": "Optional",
           "type": "boolean"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
         },
         "default": {
           "anyOf": [
@@ -746,6 +794,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -905,6 +965,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -1004,6 +1076,18 @@
           "default": false,
           "title": "Optional",
           "type": "boolean"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
         },
         "default": {
           "anyOf": [
@@ -1813,6 +1897,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -2175,6 +2271,18 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
         "default": {
           "anyOf": [
             {},
@@ -2325,6 +2433,18 @@
           "default": false,
           "title": "Optional",
           "type": "boolean"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
         },
         "default": {
           "anyOf": [

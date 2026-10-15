@@ -716,6 +716,61 @@ def _replace_named(
     return {**blocks, block_name: block.model_copy(update={"fields": fields})}
 
 
+# Columns MF6 reads only when an option is set, and then always. v1 says so
+# only in the column's description (`gwf-evt.dfn`'s petm0: "read only when
+# the SURF_RATE_SPECIFIED option is used"). Boundnames, switched on by
+# BOUNDNAMES, are found by name instead (see `_fix_option_columns`). Entries
+# are (block, field, option).
+_OPTION_COLUMNS: dict[str, list[tuple[str, str, str]]] = {
+    "gwf-evt": [("period", "petm0", "surf_rate_specified")],
+}
+
+
+def _fix_option_columns(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Say which option switches on each of this component's columns that
+    one does. Those in `_OPTION_COLUMNS` are required when it's set; a
+    boundname column (an untagged string named `boundname` in a list
+    item's record) is switched on by `boundnames`, and may still be left out."""
+    for block_name, field_name, option in _OPTION_COLUMNS.get(name, []):
+
+        def _replace(field: Any, _in_union: bool, option: str = option) -> Any:
+            return field.model_copy(update={"when": option, "optional": False})
+
+        blocks = _replace_named(name, blocks, block_name, _replace, {field_name})
+
+    def _walk(field: Any, in_item: bool) -> Any:
+        if (
+            in_item
+            and isinstance(field, v2.String)
+            and field.name == "boundname"
+            and not field.tagged
+        ):
+            return field.model_copy(update={"when": "boundnames"})
+        if isinstance(field, v2.Record):
+            fields = {n: _walk(f, in_item) for n, f in field.fields.items()}
+            return field.model_copy(update={"fields": fields})
+        if isinstance(field, v2.List):
+            return field.model_copy(update={"item": _walk(field.item, True)})
+        # Not a union's arms: those are what a column may hold (`utl-obs`'s
+        # `id` names a cell or a boundname), not columns an option adds.
+        return field
+
+    blocks = {
+        n: b.model_copy(update={"fields": {k: _walk(f, False) for k, f in b.fields.items()}})
+        for n, b in blocks.items()
+    }
+    gated = any(
+        f.when == "boundnames"
+        for b in blocks.values()
+        for field in b.fields.values()
+        for f in v2._iter_subfields(field)
+    )
+    options = blocks.get("options")
+    if gated and not (options and isinstance(options.fields.get("boundnames"), v2.Keyword)):
+        raise ValueError(f"{name}: a boundname column but no boundnames option")
+    return blocks
+
+
 # v1 fields typed `string` that MF6 reads as a number, or as the given word
 # (`gwf-lak.f90`'s `case ('NONE')`, `gwf-maw.f90`'s `trim(str) == 'OFF'`). v1
 # can't say "a number or this word", so the word is only in the description.
@@ -2286,6 +2341,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_string_time_series(name, blocks)
     blocks = _mark_cellids(blocks)
     blocks = _fix_cellid_allow_zero(name, blocks)
+    blocks = _fix_option_columns(name, blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)

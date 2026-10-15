@@ -260,6 +260,7 @@ type = "string"
 longname = "release point name"
 description = "name of the particle release point. BOUNDNAME is an ASCII character variable that can contain as many as 40 characters. If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 optional = true
+when = "boundnames"
 tagged = false
 
 [blocks.releasetimes.fields.releasetimes]

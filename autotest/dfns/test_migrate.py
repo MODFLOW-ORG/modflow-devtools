@@ -394,6 +394,48 @@ def test_migrate_exchange_cellids(dfn_dir, name):
         assert (field.model, field.allow_zero) == (model, False)
 
 
+def test_migrate_evt_petm0_when_option(dfn_dir):
+    # Read only, and then always, with SURF_RATE_SPECIFIED.
+    component = _migrate_dev3(dfn_dir, "gwf-evt")
+    item = component.blocks["period"].fields["stress_period_data"].item
+    petm0 = item.fields["petm0"]
+    assert (petm0.when, petm0.optional) == ("surf_rate_specified", False)
+    assert petm0.render(inline=True) == "[<@petm0@>]"
+    boundname = item.fields["boundname"]
+    assert (boundname.when, boundname.optional) == ("boundnames", True)
+
+
+@pytest.mark.parametrize(
+    "name,block,field",
+    [
+        ("gwf-chd", "period", "stress_period_data"),
+        ("gwf-maw", "packagedata", "packagedata"),
+        ("gwf-sfr", "packagedata", "packagedata"),
+    ],
+)
+def test_migrate_boundname_when_boundnames(dfn_dir, name, block, field):
+    component = _migrate_dev3(dfn_dir, name)
+    boundname = component.blocks[block].fields[field].item.fields["boundname"]
+    assert (boundname.when, boundname.optional) == ("boundnames", True)
+
+
+def test_migrate_obs_id_boundname_arm_has_no_when(dfn_dir):
+    # A union's arms are what a column holds, not columns an option adds.
+    component = _migrate_dev3(dfn_dir, "utl-obs")
+    item = component.blocks["continuous"].fields["continuous"].item
+    assert item.fields["id"].arms["boundname"].when is None
+
+
+def test_migrate_option_columns_fails_when_stale(dfn_dir, monkeypatch):
+    from modflow_devtools.dfns import migrate_to_v2_0_0_dev2 as dev2
+
+    monkeypatch.setitem(
+        dev2._OPTION_COLUMNS, "gwf-evt", [("period", "nope", "surf_rate_specified")]
+    )
+    with pytest.raises(ValueError, match="nope"):
+        _migrate_dev3(dfn_dir, "gwf-evt")
+
+
 def _number_or_word(field, word: str) -> None:
     assert isinstance(field, v2.Union)
     assert not field.tagged

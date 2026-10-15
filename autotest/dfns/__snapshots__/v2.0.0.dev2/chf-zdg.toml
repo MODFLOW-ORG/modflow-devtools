@@ -147,6 +147,7 @@ type = "string"
 longname = "zero-depth-gradient boundary name"
 description = "name of the zero-depth-gradient boundary cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 optional = true
+when = "boundnames"
 tagged = false
 
 [blocks.period.header]
