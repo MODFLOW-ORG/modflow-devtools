@@ -592,14 +592,19 @@ def test_list_led_by_other_untagged_value_is_untagged(auxname):
     "kwargs,match",
     [
         ({"fk": "options.auxiliary"}, "requires tagged=False"),
-        ({"tagged": False}, "requires a hierarchical-path fk"),
-        ({"tagged": False, "fk": "packagedata"}, "requires a hierarchical-path fk"),
-        ({"tagged": False, "fk_ref": "pname"}, "requires a hierarchical-path fk"),
+        ({"tagged": False}, "requires an fk"),
+        ({"tagged": False, "fk_ref": "pname"}, "requires an fk"),
+        ({"tagged": False, "fk": "packagedata", "fk_ref": "pname"}, "requires an fk"),
     ],
 )
-def test_dynamic_string_requires_untagged_hierarchical_fk(kwargs, match):
+def test_dynamic_string_requires_untagged_static_fk(kwargs, match):
     with pytest.raises(ValueError, match=match):
         String(name="auxname", dynamic=True, **kwargs)
+
+
+@pytest.mark.parametrize("fk", ["options.auxiliary", "packagedata", "gwf-nam.packages.pname"])
+def test_dynamic_string_accepts_any_static_fk(fk):
+    assert String(name="auxname", tagged=False, fk=fk, dynamic=True).dynamic
 
 
 def test_dynamic_string_must_lead_record():

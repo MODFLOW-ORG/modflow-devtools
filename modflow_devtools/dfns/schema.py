@@ -161,10 +161,11 @@ class String(InputFieldBase):
             raise ValueError(
                 f"String {self.name!r}: dynamic requires tagged=False (its value is the keyword)"
             )
-        if self.fk is None or "." not in self.fk or self.fk_ref is not None:
+        # Its keywords must be known before its line is read, so they can't
+        # depend on a sibling later on that line, as `fk_ref` would make them.
+        if self.fk is None or self.fk_ref is not None:
             raise ValueError(
-                f"String {self.name!r}: dynamic requires a hierarchical-path fk "
-                f"('[component.]block.field') naming its keywords, without fk_ref"
+                f"String {self.name!r}: dynamic requires an fk naming its keywords, without fk_ref"
             )
         return self
 

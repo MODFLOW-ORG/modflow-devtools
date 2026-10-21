@@ -439,7 +439,7 @@ Type `string`.
 
 ###### `dynamic`
 
-`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and a hierarchical-path `fk`, without `fk_ref`, and is valid only on a record's first field. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
+`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an `fk` without `fk_ref`, and is valid only on a record's first field. The keywords must be known before the line is read, so they can't depend on a field later on the same line, as an `fk_ref` would make them. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
 
 #### Integer
 
@@ -850,7 +850,7 @@ Sometimes a column in one list identifies a row in another list. This can be con
 
 The `fk` attribute can take one of two forms:
 
-- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) must use this form.
+- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
 - **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime.
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:

@@ -244,6 +244,24 @@ def test_dfns_validate_dynamic_key_to_list_pk():
     assert spec.components["utl-hpc"].blocks["partitions"].fields["partitions"].tagged is True
 
 
+def test_dfns_validate_dynamic_key_bare_block_fk():
+    """A bare block name without fk_ref is as static as a path, so a dynamic
+    key may use it: the keywords are that block's pk values."""
+    pname = String(name="pname", tagged=False, pk=True)
+    packages_item = Record(name="packages", fields={"pname": pname})
+    packages = Block(
+        name="packages", fields={"packages": List(name="packages", item=packages_item)}
+    )
+    key = String(name="pname", tagged=False, fk="packages", dynamic=True)
+    item = Record(name="rate", fields={"pname": key, "rate": Double(name="rate", tagged=False)})
+    period = Block(name="period", fields={"rate": List(name="rate", item=item)})
+    pkg = Package(
+        name="gwf-test", parent="gwf-nam", blocks={"packages": packages, "period": period}
+    )
+    spec = Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-test": pkg})
+    assert spec.components["gwf-test"].blocks["period"].fields["rate"].tagged is True
+
+
 @pytest.mark.parametrize("dtype", ["integer", "string"])
 def test_array_fk_bare_block_rejected(dtype):
     with pytest.raises(ValueError, match="must be a hierarchical path"):
