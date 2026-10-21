@@ -431,7 +431,7 @@ Type `string`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. A string's hierarchical path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
+`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — naming a block whose `pk` field is the target: in this component when used alone, or, together with `fk_ref`, within the runtime-resolved target component. A string's hierarchical path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
 
 ###### `fk_ref`
 
@@ -467,7 +467,7 @@ Type `integer`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
+`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — naming a block whose `pk` field is the target: in this component when used alone, or, together with `fk_ref`, within the runtime-resolved target component. See "Primary/foreign keys".
 
 ###### `fk_ref`
 
@@ -851,7 +851,7 @@ Sometimes a column in one list identifies a row in another list. This can be con
 The `fk` attribute can take one of two forms:
 
 - **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
-- **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime.
+- **Bare block name**: The name of a block in which there is exactly one `pk` field. Alone, the block is looked up in this component, so the reference is as static as a hierarchical path, which may be preferred for clarity. With `fk_ref`, the block is looked up in the component `fk_ref` resolves to at runtime (see below).
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:
 
