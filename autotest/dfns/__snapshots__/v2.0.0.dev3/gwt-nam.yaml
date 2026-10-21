@@ -129,6 +129,7 @@ blocks:
                 is case insensitive and is stored in all upper case letters.
               optional: true
               tagged: false
+              pk: true
 memory:
   idv_scale:
     set_in: ar

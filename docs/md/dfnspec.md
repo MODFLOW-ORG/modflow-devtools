@@ -852,6 +852,8 @@ Sometimes a column in one list identifies a row in another list. This can be con
 
 **Note**: `pk`/`fk_ref` are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type. `fk` is valid there too, and additionally on integer- and string-`dtype` `Array` fields (see [Array](#array)) — there each element references another list's row, per grid cell for a grid array, or several per row for an array column in a list item; a string array's entries are keys. Only the hierarchical-path form applies (no `fk_ref` counterpart, since an array has no sibling record to carry a runtime component selector).
 
+A `pk` column may be optional when MODFLOW assigns a default key to a row that omits it, e.g. a model name file's `packages.pname`, where an unnamed stress package is named `<TYPE>-<N>`. The keys are then unique only after defaults are assigned, so a consumer resolving references must assign them the same way.
+
 The `fk` attribute can take one of two forms:
 
 - **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.

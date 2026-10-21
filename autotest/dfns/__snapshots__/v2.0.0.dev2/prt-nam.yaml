@@ -71,3 +71,4 @@ blocks:
                 is case insensitive and is stored in all upper case letters.
               optional: true
               tagged: false
+              pk: true

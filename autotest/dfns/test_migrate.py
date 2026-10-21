@@ -9,7 +9,11 @@ import yaml
 from modflow_devtools.dfn.schema import Dfn
 from modflow_devtools.dfns import fetch_dfns, migrate
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _fix_model_name_relations, to_v2_0_0_dev2
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
+    _fix_model_nam_package_keys,
+    _fix_model_name_relations,
+    to_v2_0_0_dev2,
+)
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
 FORMATS = ["yaml", "toml", "json"]
@@ -346,6 +350,23 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
     assert item("solutiongroup").fields["slnmnames"].fk == "models.mname"
     # unchanged by a second pass
     assert _fix_model_name_relations("sim-nam", component.blocks) == component.blocks
+
+
+@pytest.mark.parametrize("name", ["gwf-nam", "gwt-nam", "gwe-nam", "prt-nam", "chf-nam", "olf-nam"])
+def test_migrate_model_nam_package_keys(dfn_dir, name):
+    component = _migrate_dev3(dfn_dir, name)
+    item = component.blocks["packages"].fields["packages"].item
+    assert item.fields["pname"].pk
+    assert item.fields["pname"].optional
+    assert [n for n, f in item.fields.items() if getattr(f, "pk", False)] == ["pname"]
+    # unchanged by a second pass
+    assert _fix_model_nam_package_keys(name, component.blocks) == component.blocks
+
+
+@pytest.mark.parametrize("name", ["sim-nam", "gwf-mvr"])
+def test_migrate_model_nam_package_keys_skips(dfn_dir, name):
+    component = _migrate_dev3(dfn_dir, name)
+    assert _fix_model_nam_package_keys(name, component.blocks) == component.blocks
 
 
 def test_migrate_hpc_model_names(dfn_dir):

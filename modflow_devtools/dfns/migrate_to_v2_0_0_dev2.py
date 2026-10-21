@@ -1666,6 +1666,42 @@ def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[st
     return blocks
 
 
+def _fix_model_nam_package_keys(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Mark `packages.pname` as `pk` in each model name file, so the binding
+    row's column naming the package itself is annotated like `sim-nam`'s
+    `models.mname`. It isn't the leading column (`ftype` is), and nothing
+    else repeats the name `pname`, so neither `_resolve_relations` nor
+    `_mark_lonely_pk` finds it.
+
+    MF6 rejects a stress package named like another in the same model
+    ("Package name already exists", `package_create` in `gwf.f90` and the
+    other models), comparing names upcased (`PNAME` doesn't preserve case),
+    i.e. case-insensitively like a `String` by default. The column is
+    optional: an unnamed stress package gets `<TYPE>-<N>`, N counting every
+    package of that type in name-file order, named ones too
+    (`idm_pkg_instance_name` in `SourceCommon.f90`); a default clashing with
+    an explicit name fails the same check. Single-instance packages (NPF,
+    IC, DIS, ...) take the type as their name and ignore `pname`
+    (`idm_subcomponent_name`), so only stress packages' names matter.
+
+    Must run after `_link_namefile_fields`: it matches the list by its
+    linked `File` column rather than by component name, so new model types
+    get it too.
+    """
+    if not name.endswith("-nam") or name == "sim-nam":
+        return blocks
+    if not isinstance(_list_item_field(blocks, "packages", "pname"), v2.String):
+        return blocks
+    item = blocks["packages"].fields["packages"].item  # type: ignore[union-attr]
+    if not any(
+        isinstance(f, v2.File) and f.component_ftype
+        for f in item.fields.values()  # type: ignore[union-attr]
+    ):
+        return blocks
+    return _set_list_item_attrs(blocks, "packages", {"pname": {"pk": True}})
+
+
 def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     Mark SSM's SOURCES block write_if_empty: MF6 requires the block's header
@@ -2472,6 +2508,7 @@ def to_v2_0_0_dev2(
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)
+    blocks = _fix_model_nam_package_keys(name, blocks)
     blocks = _name_period_lists(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
