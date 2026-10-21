@@ -9,7 +9,7 @@ import yaml
 from modflow_devtools.dfn.schema import Dfn
 from modflow_devtools.dfns import fetch_dfns, migrate
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _fix_sim_nam_relations, to_v2_0_0_dev2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
 FORMATS = ["yaml", "toml", "json"]
@@ -331,6 +331,21 @@ def test_migrate_period_union_element(dfn_dir, name, setting):
     if name == "gwf-lak":
         assert item.arms["stage"].fields["lakeno"].fk == "packagedata.ifno"
         assert item.arms["rate"].fields["outletno"].fk == "outlets.outletno"
+
+
+def test_migrate_sim_nam_model_keys(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "sim-nam")
+
+    def item(block):
+        return component.blocks[block].fields[block].item
+
+    assert item("models").fields["mname"].pk
+    exchanges = item("exchanges")
+    assert exchanges.fields["exgmnamea"].fk == "models.mname"
+    assert exchanges.fields["exgmnameb"].fk == "models.mname"
+    assert item("solutiongroup").fields["slnmnames"].fk == "models.mname"
+    # unchanged by a second pass
+    assert _fix_sim_nam_relations("sim-nam", component.blocks) == component.blocks
 
 
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):

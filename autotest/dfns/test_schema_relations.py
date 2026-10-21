@@ -194,6 +194,45 @@ def test_dfns_validate_fk_in_union_item_scalar_arm():
         Dfns(components=_union_ctx(arm))
 
 
+def _model_names_ctx(fk="models.mname", pk=True):
+    """A simulation whose solution rows each name several models, by key."""
+    mname = String(name="mname", tagged=False, pk=pk)
+    models_item = Record(name="models", fields={"mtype": String(name="mtype"), "mname": mname})
+    models = Block(name="models", fields={"models": List(name="models", item=models_item)})
+    slnmnames = Array(name="slnmnames", dtype="string", tagged=False, fk=fk)
+    sln_item = Record(
+        name="sln", fields={"slntype": String(name="slntype"), "slnmnames": slnmnames}
+    )
+    sln = Block(name="sln", fields={"sln": List(name="sln", item=sln_item)})
+    return {"sim-nam": Simulation(name="sim-nam", blocks={"models": models, "sln": sln})}
+
+
+def test_dfns_validate_string_array_fk():
+    assert "sim-nam" in Dfns(components=_model_names_ctx()).components
+
+
+def test_dfns_validate_string_array_fk_no_pk_rejected():
+    with pytest.raises(ValueError, match="has no pk=True field"):
+        Dfns(components=_model_names_ctx(pk=False))
+
+
+def test_dfns_validate_string_array_fk_unknown_block_rejected():
+    with pytest.raises(ValueError, match="is not a list block"):
+        Dfns(components=_model_names_ctx(fk="nosuchblock.mname"))
+
+
+@pytest.mark.parametrize("dtype", ["integer", "string"])
+def test_array_fk_bare_block_rejected(dtype):
+    with pytest.raises(ValueError, match="must be a hierarchical path"):
+        Array(name="slnmnames", dtype=dtype, fk="models")
+
+
+@pytest.mark.parametrize("dtype", ["double", "keyword"])
+def test_array_fk_requires_integer_or_string_dtype(dtype):
+    with pytest.raises(ValueError, match="fk requires dtype='integer' or 'string'"):
+        Array(name="slnmnames", dtype=dtype, fk="models.mname")
+
+
 def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
     item = Record(name="item", fields={field.name: field})
     lst = List(name="data", item=item)

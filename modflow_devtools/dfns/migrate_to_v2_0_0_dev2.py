@@ -1579,6 +1579,85 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, "packages": new_packages, "period": new_period}
 
 
+def _list_item_field(blocks: dict[str, v2.Block], block_name: str, field_name: str):
+    """The field `field_name` of the item record of the list sharing
+    `block_name`'s name, or None if there's no such field."""
+    block = blocks.get(block_name)
+    lst = block.fields.get(block_name) if block else None
+    item = lst.item if isinstance(lst, v2.List) else None
+    return item.fields.get(field_name) if isinstance(item, v2.Record) else None
+
+
+def _set_list_item_attrs(
+    blocks: dict[str, v2.Block], block_name: str, attrs: dict[str, dict[str, Any]]
+) -> dict[str, v2.Block]:
+    """
+    Set attributes on fields of the item record of the list sharing
+    `block_name`'s name, e.g. `{"mname": {"pk": True}}`, leaving any that's
+    already set. The fields must exist (see `_list_item_field`).
+    """
+    block = blocks[block_name]
+    lst = block.fields[block_name]
+    item_fields = dict(lst.item.fields)  # type: ignore[union-attr]
+    for field_name, field_attrs in attrs.items():
+        field = item_fields[field_name]
+        update = {k: v for k, v in field_attrs.items() if not getattr(field, k)}
+        if update:
+            item_fields[field_name] = field.model_copy(update=update)
+    new_item = lst.item.model_copy(update={"fields": item_fields})  # type: ignore[union-attr]
+    new_list = lst.model_copy(update={"item": new_item})
+    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
+def _fix_sim_nam_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Patch `sim-nam`'s model-name pk/fk relations, which the general passes
+    can't reach on their own.
+
+    - Marks `models.mname` as `pk`. MF6 rejects a duplicate model name
+      (`check_model_name` in `SimulationCreate.f90`), comparing names
+      upcased, i.e. case-insensitively like a `String` by default. It isn't
+      the leading column (`mtype` is), and nothing else repeats the name
+      `mname`, so neither `_resolve_relations` nor `_mark_lonely_pk` finds it.
+    - Marks `exchanges`' `exgmnamea`/`exgmnameb` and `solutiongroup`'s
+      `slnmnames` (a string array, each entry a model name) as
+      `fk: "models.mname"`, since MF6 looks each up among the model names
+      and fails on one not found.
+
+    Does *not* annotate `utl-hpc`'s `partitions.mname`, though it names a
+    model too: it leads its row, and a leading untagged String with a
+    hierarchical-path `fk` is taken for a dynamic keyword (`_is_dynamic_key`),
+    which would make `partitions` a tagged list. Nor does it express which
+    model *types* are valid where (a GWF-GWT exchange's model A must be a GWF
+    model; IMS can't solve an explicit model): those are constraints on the
+    referenced row, not keys.
+    """
+    if name != "sim-nam":
+        return blocks
+
+    refs = {
+        "models": ("mname",),
+        "exchanges": ("exgmnamea", "exgmnameb"),
+        "solutiongroup": ("slnmnames",),
+    }
+    for block_name, field_names in refs.items():
+        for field_name in field_names:
+            field = _list_item_field(blocks, block_name, field_name)
+            if not (
+                isinstance(field, v2.String)
+                or (isinstance(field, v2.Array) and field.dtype == "string")
+            ):
+                return blocks
+
+    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": True}})
+    for block_name in ("exchanges", "solutiongroup"):
+        blocks = _set_list_item_attrs(
+            blocks, block_name, {n: {"fk": "models.mname"} for n in refs[block_name]}
+        )
+    return blocks
+
+
 def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     Mark SSM's SOURCES block write_if_empty: MF6 requires the block's header
@@ -2326,6 +2405,7 @@ def to_v2_0_0_dev2(
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
+    blocks = _fix_sim_nam_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
     blocks = _fix_optional_blocks(name, blocks)
     blocks = _wrap_grid_aux(blocks, fields)

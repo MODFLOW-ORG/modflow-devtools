@@ -107,7 +107,8 @@
                 "type": "string",
                 "longname": "name of model",
                 "description": "is the user-assigned name of the model.  The model name cannot exceed 16 characters and must not have blanks within the name.  The model name is case insensitive; any lowercase letters are converted and stored as upper case letters.",
-                "tagged": false
+                "tagged": false,
+                "pk": true
               }
             }
           }
@@ -146,13 +147,15 @@
                 "type": "string",
                 "longname": "name of model A",
                 "description": "is the name of the first model that is part of this exchange.",
-                "tagged": false
+                "tagged": false,
+                "fk": "models.mname"
               },
               "exgmnameb": {
                 "type": "string",
                 "longname": "name of model B",
                 "description": "is the name of the second model that is part of this exchange.",
-                "tagged": false
+                "tagged": false,
+                "fk": "models.mname"
               }
             }
           }
@@ -201,7 +204,8 @@
                 "longname": "array of model names in this solution",
                 "description": "is the array of model names to add to this solution.  The number of model names is determined by the number of model names the user provides on this line.",
                 "tagged": false,
-                "dtype": "string"
+                "dtype": "string",
+                "fk": "models.mname"
               }
             }
           }

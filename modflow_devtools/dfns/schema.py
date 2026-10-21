@@ -217,6 +217,9 @@ class Array(InputFieldBase):
     time_series: bool = False
     layered: bool = False
     index: Index = False
+    # Integer: each (nonzero) element references a row by `pk`, per grid cell
+    # or, in a list item, per entry. String: each entry is a key into the
+    # target (e.g. a list of model names). Hierarchical-path form only.
     fk: str | None = None
     # For dtype="cellid" only: each element is a `CellID` with these.
     model: CellModel = None
@@ -241,10 +244,18 @@ class Array(InputFieldBase):
                     raise ValueError(
                         f"Array {self.name!r}: {attr} is not valid with dtype='cellid'"
                     )
-        if self.fk is not None and self.dtype != "integer":
-            raise ValueError(
-                f"Array {self.name!r}: fk requires dtype='integer', got {self.dtype!r}"
-            )
+        if self.fk is not None:
+            if self.dtype not in ("integer", "string"):
+                raise ValueError(
+                    f"Array {self.name!r}: fk requires dtype='integer' or 'string', "
+                    f"got {self.dtype!r}"
+                )
+            # no sibling `fk_ref` to resolve a bare block name against
+            if "." not in self.fk:
+                raise ValueError(
+                    f"Array {self.name!r}: fk={self.fk!r} must be a hierarchical path "
+                    f"('[component.]block.field')"
+                )
         return self
 
 
@@ -1460,17 +1471,18 @@ def _validate_list_shape_element(
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
     For every Integer/String/Array field with fk or fk_ref set, validate
-    structure. Array's `fk` (per-grid-cell rather than per-list-row) only
-    ever uses the hierarchical-path form below — it has no `pk`/`fk_ref`
-    counterpart (see `Array.fk`).
+    structure. Array's `fk` (an integer array's per grid cell or per entry,
+    a string array's per entry) only ever uses the hierarchical-path form
+    below — it has no `pk`/`fk_ref` counterpart (see `Array.fk`).
 
     Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
     references are a separate mechanism entirely (the `cellid` type, not an
     `fk` value — see `CellID`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block whose item has a pk field, or, for a String,
-      the named field may instead be a string-dtype Array, whose entries are
+      block must be a list block whose item has a pk field, or, for a String
+      or string Array, the named field may instead be a string-dtype Array,
+      whose entries are
       then the key set (e.g. `options.auxiliary`). Unqualified ("block.field"),
       the block is looked up in this component; qualified
       ("component.block.field"), it's looked up in the named component via
@@ -1531,7 +1543,10 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         f"'component.block.field'"
                     )
                 is_dynamic_key = field is dynamic_key
-                if is_dynamic_key or (isinstance(field, String) and len(parts) > 1):
+                is_string = isinstance(field, String) or (
+                    isinstance(field, Array) and field.dtype == "string"
+                )
+                if is_dynamic_key or (is_string and len(parts) > 1):
                     target_block = (target.blocks or {}).get(block_name)
                     target_field = target_block.fields.get(parts[-1]) if target_block else None
                     if isinstance(target_field, Array) and target_field.dtype == "string":

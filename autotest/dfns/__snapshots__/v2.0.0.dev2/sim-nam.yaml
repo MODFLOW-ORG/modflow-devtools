@@ -104,6 +104,7 @@ blocks:
                 and must not have blanks within the name.  The model name is case insensitive; any lowercase
                 letters are converted and stored as upper case letters.
               tagged: false
+              pk: true
   exchanges:
     fields:
       exchanges:
@@ -135,11 +136,13 @@ blocks:
               longname: name of model A
               description: is the name of the first model that is part of this exchange.
               tagged: false
+              fk: models.mname
             exgmnameb:
               type: string
               longname: name of model B
               description: is the name of the second model that is part of this exchange.
               tagged: false
+              fk: models.mname
   solutiongroup:
     fields:
       mxiter:
@@ -182,6 +185,7 @@ blocks:
                 is determined by the number of model names the user provides on this line.
               tagged: false
               dtype: string
+              fk: models.mname
     header:
       field:
         name: group_num
