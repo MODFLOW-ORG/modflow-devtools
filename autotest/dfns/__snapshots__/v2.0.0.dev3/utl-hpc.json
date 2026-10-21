@@ -39,7 +39,8 @@
                 "type": "string",
                 "longname": "model name",
                 "description": "is the unique model name.",
-                "tagged": false
+                "tagged": false,
+                "fk": "sim-nam.models.mname"
               },
               "mrank": {
                 "type": "integer",

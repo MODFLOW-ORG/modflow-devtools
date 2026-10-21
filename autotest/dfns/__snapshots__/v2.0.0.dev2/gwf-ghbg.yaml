@@ -142,6 +142,7 @@ blocks:
                 auxiliary variables.
               tagged: false
               fk: options.auxiliary
+              dynamic: true
             aux:
               type: array
               longname: general-head boundary auxiliary variable iaux

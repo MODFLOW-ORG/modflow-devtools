@@ -1610,10 +1610,10 @@ def _set_list_item_attrs(
     return {**blocks, block_name: new_block}
 
 
-def _fix_sim_nam_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Patch `sim-nam`'s model-name pk/fk relations, which the general passes
-    can't reach on their own.
+    Patch the model-name pk/fk relations of `sim-nam` and `utl-hpc`, which
+    the general passes can't reach on their own.
 
     - Marks `models.mname` as `pk`. MF6 rejects a duplicate model name
       (`check_model_name` in `SimulationCreate.f90`), comparing names
@@ -1624,15 +1624,20 @@ def _fix_sim_nam_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, 
       `slnmnames` (a string array, each entry a model name) as
       `fk: "models.mname"`, since MF6 looks each up among the model names
       and fails on one not found.
+    - Marks `utl-hpc`'s `partitions.mname` as `fk: "sim-nam.models.mname"`:
+      MF6 rejects an undefined model name (`DistributedSim.f90`). Not a `pk`,
+      since MF6 doesn't reject a repeat (the last rank given wins). It leads
+      its row, but as data, not a dynamic keyword, so `partitions` stays
+      untagged.
 
-    Does *not* annotate `utl-hpc`'s `partitions.mname`, though it names a
-    model too: it leads its row, and a leading untagged String with a
-    hierarchical-path `fk` is taken for a dynamic keyword (`_is_dynamic_key`),
-    which would make `partitions` a tagged list. Nor does it express which
-    model *types* are valid where (a GWF-GWT exchange's model A must be a GWF
-    model; IMS can't solve an explicit model): those are constraints on the
-    referenced row, not keys.
+    Doesn't express which model *types* are valid where (a GWF-GWT
+    exchange's model A must be a GWF model; IMS can't solve an explicit
+    model): those are constraints on the referenced row, not keys.
     """
+    if name == "utl-hpc":
+        if not isinstance(_list_item_field(blocks, "partitions", "mname"), v2.String):
+            return blocks
+        return _set_list_item_attrs(blocks, "partitions", {"mname": {"fk": "sim-nam.models.mname"}})
     if name != "sim-nam":
         return blocks
 
@@ -1784,8 +1789,8 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
     ``AUX``, but the input file has zero or more grid arrays, each introduced
     by one of the ``auxiliary`` names (MF6 treats any period tag matching one
     as ``AUX``). The leading ``auxname`` is a dynamic keyword (an untagged
-    String with an ``fk`` to ``options.auxiliary``), which makes the list
-    tagged, so it mixes freely with the block's other arrays. Each auxiliary
+    String marked ``dynamic``, with an ``fk`` to ``options.auxiliary``), which
+    makes the list tagged, so it mixes freely with the block's other arrays. Each auxiliary
     variable is set at most once per period, so the list is bounded by the
     ``auxiliary`` count, and is always optional (v1's ``gwf-evta`` says
     otherwise). The outer name stays ``aux`` so memory variables sourced from
@@ -1817,6 +1822,7 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
             "one of the auxiliary variables.",
             tagged=False,
             fk="options.auxiliary",
+            dynamic=True,
         )
         array = field.model_copy(update={"tagged": False, "optional": False, "description": None})
         updates[fname] = v2.List(
@@ -2405,7 +2411,7 @@ def to_v2_0_0_dev2(
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
-    blocks = _fix_sim_nam_relations(name, blocks)
+    blocks = _fix_model_name_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
     blocks = _fix_optional_blocks(name, blocks)
     blocks = _wrap_grid_aux(blocks, fields)

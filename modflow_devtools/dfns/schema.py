@@ -147,6 +147,26 @@ class String(InputFieldBase):
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
+    # A dynamic keyword: the value itself is a keyword, one of the `fk`
+    # target's keys, so a record it leads is keyword-led (see
+    # `_is_dynamic_key`). A role in the input grammar, independent of `fk`,
+    # which only says what the value references.
+    dynamic: bool = False
+
+    @model_validator(mode="after")
+    def _check_dynamic(self) -> "String":
+        if not self.dynamic:
+            return self
+        if self.tagged:
+            raise ValueError(
+                f"String {self.name!r}: dynamic requires tagged=False (its value is the keyword)"
+            )
+        if self.fk is None or "." not in self.fk or self.fk_ref is not None:
+            raise ValueError(
+                f"String {self.name!r}: dynamic requires a hierarchical-path fk "
+                f"('[component.]block.field') naming its keywords, without fk_ref"
+            )
+        return self
 
 
 # `True`: a 1-based index in the file, 0-based in memory. `"signed"`: the
@@ -267,6 +287,16 @@ class Record(_DerivedTagged):
         # Its first field begins with a keyword, or is a dynamic keyword.
         return _item_tags(self) is not None
 
+    @model_validator(mode="after")
+    def _check_dynamic_leads(self) -> "Record":
+        # A dynamic keyword begins a line; anywhere else it'd be plain data.
+        later = [n for n, f in list(self.fields.items())[1:] if _is_dynamic_key(f)]
+        if later:
+            raise ValueError(
+                f"Record {self.name!r}: only the first field may be dynamic, got {later!r}"
+            )
+        return self
+
     @property
     def children(self) -> "dict[str, InputField]":
         return self.fields  # type: ignore[return-value]
@@ -286,19 +316,14 @@ class Union(_DerivedTagged):
 
 
 def _is_dynamic_key(field: "InputField | None") -> bool:
-    """Whether `field` is a dynamic keyword: an untagged String whose value is
-    one of the entries of a string array named by a hierarchical-path `fk`
-    (e.g. an auxiliary variable's name). Its possible values are known keywords
-    once that array has been read, so a record it leads is keyword-led. That
-    the `fk` target really is a string array is checked by `_validate_fk_fields`,
-    since it needs the enclosing component."""
-    return (
-        isinstance(field, String)
-        and not field.tagged
-        and field.fk is not None
-        and "." in field.fk
-        and field.fk_ref is None
-    )
+    """Whether `field` is a dynamic keyword: a String marked `dynamic`, whose
+    value is one of the keys its `fk` names (e.g. an auxiliary variable's
+    name, one of `options.auxiliary`'s entries). Its possible values are known
+    keywords once the target has been read, so a record it leads is
+    keyword-led. Declared rather than inferred from `fk`, since a leading
+    untagged String with an `fk` may just as well be data (e.g. `utl-hpc`'s
+    `partitions.mname`, a model name)."""
+    return isinstance(field, String) and field.dynamic
 
 
 def _leads_with_dynamic_key(form: "InputField") -> bool:
@@ -1482,12 +1507,11 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
       block must be a list block whose item has a pk field, or, for a String
       or string Array, the named field may instead be a string-dtype Array,
-      whose entries are
-      then the key set (e.g. `options.auxiliary`). Unqualified ("block.field"),
-      the block is looked up in this component; qualified
-      ("component.block.field"), it's looked up in the named component via
-      `spec.components` instead. A dynamic key (see `_is_dynamic_key`) must
-      take the string-array form.
+      whose entries are then the key set (e.g. `options.auxiliary`).
+      Unqualified ("block.field"), the block is looked up in this component;
+      qualified ("component.block.field"), it's looked up in the named
+      component via `spec.components` instead. A dynamic key (see
+      `_is_dynamic_key`) is checked like any other String.
     - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
       String field in the same record, whose runtime value identifies the
       target component (and, with fk, the pk field is looked up in the block
@@ -1499,7 +1523,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     Observation fields (see `ObservationField`) are checked like a list item's.
     """
 
-    def _check_fields(fields: dict, dynamic_key: "InputField | None" = None) -> None:
+    def _check_fields(fields: dict) -> None:
         for field in fields.values():
             fk: str | None = getattr(field, "fk", None)
             fk_ref: str | None = getattr(field, "fk_ref", None)
@@ -1542,21 +1566,14 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         f"must be a bare block name, 'block.field', or "
                         f"'component.block.field'"
                     )
-                is_dynamic_key = field is dynamic_key
                 is_string = isinstance(field, String) or (
                     isinstance(field, Array) and field.dtype == "string"
                 )
-                if is_dynamic_key or (is_string and len(parts) > 1):
+                if is_string and len(parts) > 1:
                     target_block = (target.blocks or {}).get(block_name)
                     target_field = target_block.fields.get(parts[-1]) if target_block else None
                     if isinstance(target_field, Array) and target_field.dtype == "string":
                         continue
-                    if is_dynamic_key:
-                        raise ValueError(
-                            f"Field {field.name!r} fk={fk!r}: leads a tagged list's "
-                            f"item as a dynamic keyword, so must name a string array "
-                            f"in {where}"
-                        )
                 list_field = _find_list_in_block(target, block_name)
                 if list_field is None:
                     raise ValueError(
@@ -1582,8 +1599,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 # a Record item of its own (a scalar arm has no siblings).
                 for form in [item] if isinstance(item, Record) else item.arms.values():
                     if isinstance(form, Record):
-                        lead = next(iter(form.fields.values()), None)
-                        _check_fields(form.fields, lead if _is_dynamic_key(lead) else None)
+                        _check_fields(form.fields)
                     else:
                         _check_fields({form.name: form})
 

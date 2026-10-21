@@ -152,6 +152,7 @@ longname = "auxiliary variable name"
 description = "name of the auxiliary variable the following array sets; must be one of the auxiliary variables."
 tagged = false
 fk = "options.auxiliary"
+dynamic = true
 
 [blocks.period.fields.aux.item.fields.aux]
 type = "array"

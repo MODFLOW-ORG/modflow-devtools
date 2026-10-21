@@ -51,6 +51,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`pk`](#pk)
         - [`fk`](#fk)
         - [`fk_ref`](#fk_ref)
+        - [`dynamic`](#dynamic)
     - [Integer](#integer)
       - [Type-specific attributes](#type-specific-attributes-3)
         - [`valid`](#valid-1)
@@ -386,7 +387,7 @@ A list's default value is interpreted as a single element. This allows consumers
 `boolean (default: true)`. Whether the field begins with a keyword in input files. On a scalar or an array, it says whether the field's own name precedes its value, e.g. `MAXBOUND <maxbound>`. Other types derive it, so it is never declared on them:
 
 - A keyword always begins with itself, so it is always tagged.
-- A record is tagged if its first field is, or is a dynamic keyword (see [List](#list)).
+- A record is tagged if its first field is, or is a dynamic keyword (see [`dynamic`](#dynamic)).
 - A union is tagged if every arm is, so that the keyword picks the arm. This is a tagged union in the type-theory sense. An untagged union has an arm that begins with a value instead.
 - A list is tagged if its item is (see [List](#list)).
 
@@ -435,6 +436,10 @@ Type `string`.
 ###### `fk_ref`
 
 `string | null (default: null)`. For FKs whose target component is only known at runtime. Names a sibling string field whose value identifies the target component. May be set alone (block within target also unknown) or together with `fk` as a bare block name (block known, component not). See "Primary/foreign keys".
+
+###### `dynamic`
+
+`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and a hierarchical-path `fk`, without `fk_ref`, and is valid only on a record's first field. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
 
 #### Integer
 
@@ -598,7 +603,7 @@ A reader tries an untagged union's arms in order. A `keyword` arm is its own nam
 
 Type `list`. Collection type. Unlimited but for one rule: a list may not contain another list. Lists are distinct from arrays in two ways: a list element may be a composite type and a list admits sparse representations.
 
-A list is **tagged** if and only if its `item` type is keyword-led, i.e. tagged. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led or is a **dynamic keyword**: an untagged `string` whose `fk` is a hierarchical path to a string array, so that its value is one of that array's entries. A dynamic keyword's possible values are known keywords once the array has been read, though not when the definition is written. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
+A list is **tagged** if and only if its `item` type is keyword-led, i.e. tagged. This is a property of the definition, not of any particular input file. A type is keyword-led if it is a `keyword`, a tagged scalar or array (which begins with its own name), or a record whose first field is keyword-led or is a **dynamic keyword**: a `string` marked [`dynamic`](#dynamic), whose value is one of the keys its `fk` names, e.g. an entry of a string array. A dynamic keyword's possible values are known keywords once its `fk` target has been read, though not when the definition is written. A `union` item type is keyword-led if every arm is, since each arm is a distinct line form the item may take. For example, a record item `TS6 FILEIN <ts6_filename>`, or a union item whose arms are `ALL` and `FREQUENCY <frequency>`. Otherwise it is **untagged**. This is derived from `item` rather than declared (like a block's optionality), and determines where the list may appear in its block (see [Field ordering](#field-ordering)).
 
 Untagged lists are tables: a block body of items, one per line, e.g. a stress package's period data. Tagged lists also express a line that may be repeated among a block's other fields, e.g. `TS6 FILEIN <ts6_filename>`, which MODFLOW 6 accepts any number of times in a package's options block (one per time-series file). A tagged list whose item begins with a dynamic keyword expresses a field whose name is chosen by the user. For example, an array-based stress package (e.g. `gwf-rcha`) reads one grid array per auxiliary variable, each introduced by that variable's name:
 
@@ -614,6 +619,7 @@ aux:
         type: string
         tagged: false
         fk: options.auxiliary
+        dynamic: true
       aux:
         type: array
         dtype: double
@@ -844,7 +850,7 @@ Sometimes a column in one list identifies a row in another list. This can be con
 
 The `fk` attribute can take one of two forms:
 
-- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set; no `pk` is involved. A dynamic keyword (see [List](#list)) must use this form.
+- **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) must use this form.
 - **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime.
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:

@@ -9,7 +9,7 @@ import yaml
 from modflow_devtools.dfn.schema import Dfn
 from modflow_devtools.dfns import fetch_dfns, migrate
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _fix_sim_nam_relations, to_v2_0_0_dev2
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _fix_model_name_relations, to_v2_0_0_dev2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
 FORMATS = ["yaml", "toml", "json"]
@@ -345,7 +345,19 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
     assert exchanges.fields["exgmnameb"].fk == "models.mname"
     assert item("solutiongroup").fields["slnmnames"].fk == "models.mname"
     # unchanged by a second pass
-    assert _fix_sim_nam_relations("sim-nam", component.blocks) == component.blocks
+    assert _fix_model_name_relations("sim-nam", component.blocks) == component.blocks
+
+
+def test_migrate_hpc_model_names(dfn_dir):
+    """HPC's leading model name is a key into sim-nam's models, but data, not
+    a dynamic keyword, so its list stays untagged."""
+    component = _migrate_dev3(dfn_dir, "utl-hpc")
+    partitions = component.blocks["partitions"].fields["partitions"]
+    mname = partitions.item.fields["mname"]
+    assert mname.fk == "sim-nam.models.mname"
+    assert not mname.pk and not mname.dynamic
+    assert not partitions.tagged
+    assert _fix_model_name_relations("utl-hpc", component.blocks) == component.blocks
 
 
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):

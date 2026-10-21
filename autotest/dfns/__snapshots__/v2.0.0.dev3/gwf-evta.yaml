@@ -179,6 +179,7 @@ blocks:
                 auxiliary variables.
               tagged: false
               fk: options.auxiliary
+              dynamic: true
             aux:
               type: array
               longname: evapotranspiration auxiliary variable iaux

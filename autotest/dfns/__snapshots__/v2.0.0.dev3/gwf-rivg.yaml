@@ -158,6 +158,7 @@ blocks:
                 auxiliary variables.
               tagged: false
               fk: options.auxiliary
+              dynamic: true
             aux:
               type: array
               longname: river auxiliary variable iaux

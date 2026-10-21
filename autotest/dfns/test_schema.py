@@ -546,14 +546,16 @@ def test_block_tagged_list_item_keyword_must_be_unique():
         Block(name="options", fields={"a": _ts_list("a"), "b": _ts_list("b")})
 
 
-def _aux_list(fk="options.auxiliary", tagged=False):
+def _aux_list():
     return List(
         name="aux",
         optional=True,
         item=Record(
             name="aux",
             fields={
-                "auxname": String(name="auxname", tagged=tagged, fk=fk),
+                "auxname": String(
+                    name="auxname", tagged=False, fk="options.auxiliary", dynamic=True
+                ),
                 "aux": Array(name="aux", dtype="double", tagged=False, shape=["nodes"]),
             },
         ),
@@ -561,8 +563,8 @@ def _aux_list(fk="options.auxiliary", tagged=False):
 
 
 def test_list_led_by_dynamic_key_is_tagged():
-    """A record led by an untagged String with a hierarchical-path fk is
-    keyword-led: its keywords are the fk target's entries, known at runtime."""
+    """A record led by a dynamic String is keyword-led: its keywords are the
+    fk target's keys, known at runtime."""
     lst = _aux_list()
     assert lst.tagged is True
     assert lst.item_tags == []
@@ -575,12 +577,35 @@ def test_list_led_by_dynamic_key_is_tagged():
         String(name="auxname", tagged=False),
         String(name="auxname", tagged=False, fk="packagedata"),
         String(name="auxname", tagged=False, fk_ref="pname"),
+        # a key, but data: leading isn't enough without `dynamic`
+        String(name="auxname", tagged=False, fk="options.auxiliary"),
+        String(name="mname", tagged=False, fk="sim-nam.models.mname"),
         Integer(name="auxname", tagged=False, fk="options.auxiliary"),
     ],
 )
 def test_list_led_by_other_untagged_value_is_untagged(auxname):
     item = Record(name="aux", fields={"auxname": auxname, "v": Double(name="v", tagged=False)})
     assert List(name="aux", item=item).tagged is False
+
+
+@pytest.mark.parametrize(
+    "kwargs,match",
+    [
+        ({"fk": "options.auxiliary"}, "requires tagged=False"),
+        ({"tagged": False}, "requires a hierarchical-path fk"),
+        ({"tagged": False, "fk": "packagedata"}, "requires a hierarchical-path fk"),
+        ({"tagged": False, "fk_ref": "pname"}, "requires a hierarchical-path fk"),
+    ],
+)
+def test_dynamic_string_requires_untagged_hierarchical_fk(kwargs, match):
+    with pytest.raises(ValueError, match=match):
+        String(name="auxname", dynamic=True, **kwargs)
+
+
+def test_dynamic_string_must_lead_record():
+    auxname = String(name="auxname", tagged=False, fk="options.auxiliary", dynamic=True)
+    with pytest.raises(ValueError, match="only the first field may be dynamic"):
+        Record(name="aux", fields={"v": Double(name="v", tagged=False), "auxname": auxname})
 
 
 def test_block_dynamic_key_list_may_precede_fields():
@@ -626,7 +651,7 @@ def test_array_package_aux_is_list_of_named_arrays(dev3_spec, name, shape):
     assert list(aux.item.fields) == ["auxname", "aux"]
     auxname, array = aux.item.fields.values()
     assert isinstance(auxname, String)
-    assert not auxname.tagged
+    assert not auxname.tagged and auxname.dynamic
     assert auxname.fk == "options.auxiliary"
     assert isinstance(array, Array)
     assert not array.tagged and not array.optional

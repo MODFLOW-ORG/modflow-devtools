@@ -35,6 +35,7 @@ blocks:
               longname: model name
               description: is the unique model name.
               tagged: false
+              fk: sim-nam.models.mname
             mrank:
               type: integer
               longname: model rank

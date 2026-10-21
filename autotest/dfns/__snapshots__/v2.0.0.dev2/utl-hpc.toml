@@ -34,6 +34,7 @@ type = "string"
 longname = "model name"
 description = "is the unique model name."
 tagged = false
+fk = "sim-nam.models.mname"
 
 [blocks.partitions.fields.partitions.item.fields.mrank]
 type = "integer"
