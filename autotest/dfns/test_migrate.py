@@ -537,6 +537,23 @@ def test_migrate_round_trip_lossless(dfn_dir, dev3):
     assert [k for k in a if a[k] != b[k]] == []
 
 
+def test_migrate_period_header_is_index(dev3):
+    # `iper` is 1-based in the file and 0-based in memory; no other header
+    # (e.g. `solutiongroup`'s `group_num`, a label) is an index.
+    out, _ = dev3
+    components = v2.Dfns.load(out).components
+    headers = {
+        (c, b): block.header.field
+        for c, component in components.items()
+        for b, block in (component.blocks or {}).items()
+        if block.header is not None
+    }
+    period = {k: f for k, f in headers.items() if k[1] == "period"}
+    assert period
+    assert all(isinstance(f, v2.Integer) and f.index is True for f in period.values())
+    assert not [k for k, f in headers.items() if k[1] != "period" and getattr(f, "index", False)]
+
+
 def test_migrate_cellid_models_round_trip(dev3):
     # "1"/"2" stay strings on disk in every format, and load back as such.
     out, fmt = dev3

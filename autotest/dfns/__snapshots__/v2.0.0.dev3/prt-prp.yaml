@@ -386,6 +386,7 @@ blocks:
           assigned for the previous PERIOD block. The information specified in the PERIOD block applies
           only to that stress period.
         tagged: false
+        index: true
 memory:
   iprpak:
     set_in: ar

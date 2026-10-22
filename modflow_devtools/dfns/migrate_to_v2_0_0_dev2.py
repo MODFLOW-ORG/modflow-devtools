@@ -2379,12 +2379,18 @@ def to_v2_0_0_dev2(
             # before the in_record skip below: block-attached scalars are marked
             # in_record=true in v1 even though they aren't a record subfield.
             #
-            # No v1 tag for `fill_forward`, so it's hardcoded by block name:
-            # `period` is the only repeating-block header in the v1 corpus that
-            # fill-forwards (confirmed against MF6 source; see
-            # repeating-block-fill-forward-plan.md).
+            # No v1 tag for `fill_forward` or the header's `index`, so both are
+            # hardcoded by block name: `period` is the only repeating-block
+            # header in the v1 corpus that fill-forwards (confirmed against MF6
+            # source; see repeating-block-fill-forward-plan.md), and the only
+            # one whose header is a 1-based position (the stress period
+            # number). `solutiongroup`'s `group_num` is an Integer too, but
+            # it's a label, not a position, so it isn't an index.
+            header_field = _map_field(field)
+            if field["block"] == "period" and isinstance(header_field, v2.Integer):
+                header_field = header_field.model_copy(update={"index": True})
             block.header = v2.BlockHeader(
-                field=_map_field(field), fill_forward=field["block"] == "period"
+                field=header_field, fill_forward=field["block"] == "period"
             )
             continue
         if try_parse_bool(field.get("in_record", False)):

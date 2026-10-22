@@ -164,3 +164,4 @@ blocks:
           block will continue to apply for all subsequent stress periods, unless the program encounters
           another PERIOD block.
         tagged: false
+        index: true

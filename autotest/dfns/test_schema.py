@@ -737,6 +737,7 @@ def test_block_header_scalar(dev3_spec):
     assert isinstance(period.header.field, Integer)
     assert period.header.field.name == "iper"
     assert period.header.field.tagged is False
+    assert period.header.field.index is True
     assert period.header.fill_forward is True
 
 
@@ -761,6 +762,7 @@ def test_block_header_solutiongroup_does_not_fill_forward(dev3_spec):
     doesn't fill forward."""
     solutiongroup = dev3_spec.components["sim-nam"].blocks["solutiongroup"]
     assert solutiongroup.header.fill_forward is False
+    assert solutiongroup.header.field.index is False
 
 
 def test_block_header_fill_forward_requires_integer_field():
