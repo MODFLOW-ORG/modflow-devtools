@@ -310,14 +310,14 @@ longname = "skin radius"
 description = "real value that defines the skin radius (filter pack radius) for the multi-aquifer well. RADIUS_SKIN can be any value if CONDEQN is SPECIFIED or THIEM. If CONDEQN is SKIN, CUMULATIVE, or MEAN, the program will terminate with an error if  RADIUS_SKIN is less than or equal to the RADIUS for the multi-aquifer well."
 tagged = false
 
-[blocks.period.fields.perioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.perioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "perioddata"
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.ifno]
+[blocks.period.fields.stress_period_data.item.fields.ifno]
 type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the well number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS."
@@ -325,123 +325,123 @@ tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the MAWSETTING string include: STATUS, FLOWING_WELL, RATE, WELL_HEAD, HEAD_LIMIT, SHUT_OFF, RATE_SCALING, and AUXILIARY."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.status]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.status]
 type = "string"
 longname = "well status"
 description = "keyword option to define well status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.flowing_wellrecord]
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.flowing_well]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.flowing_wellrecord.fields.flowing_well]
 type = "keyword"
 longname = "well is a flowing well"
 description = "keyword to indicate the well is a flowing well.  The FLOWING_WELL option can be used to simulate flowing wells when the simulated well head exceeds the specified drainage elevation."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwelev]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwelev]
 type = "double"
 longname = "flowing well elevation"
 description = "elevation used to determine whether or not the well is flowing."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwcond]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwcond]
 type = "double"
 longname = "well flowing well conductance"
 description = "conductance used to calculate the discharge of a free flowing well.  Flow occurs when the head in the well is above the well top elevation (FWELEV)."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwrlen]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.flowing_wellrecord.fields.fwrlen]
 type = "double"
 longname = "flowing well reduction length"
 description = "length used to reduce the conductance of the flowing well.  When the head in the well drops below the well top plus the reduction length, then the conductance is reduced.  This reduction length can be used to improve the stability of simulations with flowing wells so that there is not an abrupt change in flowing well rates."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.rate]
 type = "double"
 longname = "well pumping rate"
 description = "is the volumetric pumping rate for the multi-aquifer well. A positive value indicates recharge and a negative value indicates discharge (pumping). RATE only applies to active (STATUS is ACTIVE) multi-aquifer wells. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each multi-aquifer well is zero."
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.well_head]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.well_head]
 type = "double"
 longname = "well head"
 description = "is the head in the multi-aquifer well. WELL_HEAD is only applied to constant head (STATUS is CONSTANT) and inactive (STATUS is INACTIVE) multi-aquifer wells. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. The program will terminate with an error if WELL_HEAD is less than the bottom of the well."
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.head_limitrecord]
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit]
 type = "keyword"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value]
 type = "union"
 longname = "head limit"
 description = "is the limiting water level (head) in the well, which is the minimum of the well RATE or the well inflow rate from the aquifer. HEAD_LIMIT can be applied to extraction wells (RATE $<$ 0) or injection wells (RATE $>$ 0). HEAD_LIMIT can be deactivated by specifying the text string `OFF'. The HEAD_LIMIT option is based on the HEAD_LIMIT functionality available in the MNW2~citep{konikow2009} package for MODFLOW-2005. The HEAD_LIMIT option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the HEAD_LIMIT option is recommended. By default, HEAD_LIMIT is `OFF'."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.off]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.off]
 type = "keyword"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.value]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.head_limitrecord.fields.head_limit_value.arms.value]
 type = "double"
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.shutoffrecord]
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.shut_off]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.shutoffrecord.fields.shut_off]
 type = "keyword"
 longname = "shut off well"
 description = "keyword for activating well shut off capability.  Subsequent values define the minimum and maximum pumping rate that a well must exceed to shutoff or reactivate a well, respectively, during a stress period. SHUT_OFF is only applied to injection wells (RATE$<0$) and if HEAD_LIMIT is specified (not set to `OFF').  If HEAD_LIMIT is specified, SHUT_OFF can be deactivated by specifying a minimum value equal to zero. The SHUT_OFF option is based on the SHUT_OFF functionality available in the MNW2~citep{konikow2009} package for MODFLOW-2005. The SHUT_OFF option has been included to facilitate backward compatibility with previous versions of MODFLOW but use of the RATE_SCALING option instead of the SHUT_OFF option is recommended. By default, SHUT_OFF is not used."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.minrate]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.shutoffrecord.fields.minrate]
 type = "double"
 longname = "minimum shutoff rate"
 description = "is the minimum rate that a well must exceed to shutoff a well during a stress period. The well will shut down during a time step if the flow rate to the well from the aquifer is less than MINRATE. If a well is shut down during a time step, reactivation of the well cannot occur until the next time step to reduce oscillations. MINRATE must be less than maxrate."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.shutoffrecord.fields.maxrate]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.shutoffrecord.fields.maxrate]
 type = "double"
 longname = "maximum shutoff rate"
 description = "is the maximum rate that a well must exceed to reactivate a well during a stress period. The well will reactivate during a timestep if the well was shutdown during the previous time step and the flow rate to the well from the aquifer exceeds maxrate. Reactivation of the well cannot occur until the next time step if a well is shutdown to reduce oscillations. maxrate must be greater than MINRATE."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.rate_scalingrecord]
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.rate_scaling]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.rate_scalingrecord.fields.rate_scaling]
 type = "keyword"
 longname = "rate scaling"
 description = "activate rate scaling.  If RATE_SCALING is specified, both PUMP_ELEVATION and SCALING_LENGTH must be specified. RATE_SCALING cannot be used with HEAD_LIMIT.  RATE_SCALING can be used for extraction or injection wells.  For extraction wells, the extraction rate will start to decrease once the head in the well lowers to a level equal to the pump elevation plus the scaling length.  If the head in the well drops below the pump elevation, then the extraction rate is calculated to be zero.  For an injection well, the injection rate will begin to decrease once the head in the well rises above the specified pump elevation.  If the head in the well rises above the pump elevation plus the scaling length, then the injection rate will be set to zero."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.pump_elevation]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.rate_scalingrecord.fields.pump_elevation]
 type = "double"
 longname = "pump elevation"
 description = "is the elevation of the multi-aquifer well pump (PUMP_ELEVATION).  PUMP_ELEVATION should not be less than the bottom elevation (BOTTOM) of the multi-aquifer well."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.rate_scalingrecord.fields.scaling_length]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.rate_scalingrecord.fields.scaling_length]
 type = "double"
 description = "height above the pump elevation (SCALING_LENGTH).  If the simulated well head is below this elevation (pump elevation plus the scaling length), then the pumping rate is reduced."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.auxiliaryrecord]
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxiliary]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxiliary]
 type = "keyword"
 description = "keyword for specifying auxiliary variable."
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxname]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxname]
 type = "string"
 description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxval]
+[blocks.period.fields.stress_period_data.item.fields.mawsetting.arms.auxiliaryrecord.fields.auxval]
 type = "double"
 longname = "auxiliary variable value"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

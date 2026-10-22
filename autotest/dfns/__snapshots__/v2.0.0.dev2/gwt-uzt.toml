@@ -184,14 +184,14 @@ optional = true
 when = "boundnames"
 tagged = false
 
-[blocks.period.fields.uztperioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.uztperioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "uztperioddata"
 type = "record"
 
-[blocks.period.fields.uztperioddata.item.fields.ifno]
+[blocks.period.fields.stress_period_data.item.fields.ifno]
 type = "integer"
 longname = "unsaturated zone flow cell number for this entry"
 description = "integer value that defines the feature (UZF object) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS."
@@ -199,46 +199,46 @@ tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the UZTSETTING string include: STATUS, CONCENTRATION, INFILTRATION, UZET, and AUXILIARY.  These settings are used to assign the concentration of associated with the corresponding flow terms.  Concentrations cannot be specified for all flow terms."
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.status]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.status]
 type = "string"
 longname = "unsaturated zone flow cell concentration status"
 description = "keyword option to define UZF cell status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that concentration will be calculated for the UZF cell.  If a UZF cell is inactive, then there will be no solute mass fluxes into or out of the UZF cell and the inactive value will be written for the UZF cell concentration.  If a UZF cell is constant, then the concentration for the UZF cell will be fixed at the user specified value."
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.concentration]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.concentration]
 type = "string"
 longname = "unsaturated zone flow cell concentration"
 description = "real or character value that defines the concentration for the unsaturated zone flow cell. The specified CONCENTRATION is only applied if the unsaturated zone flow cell is a constant concentration cell. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.infiltration]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.infiltration]
 type = "string"
 longname = "infiltration concentration"
 description = "real or character value that defines the infiltration solute concentration $(ML^{-3})$ for the UZF cell. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.uzet]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.uzet]
 type = "string"
 longname = "unsaturated zone et concentration"
 description = "real or character value that defines the concentration of unsaturated zone evapotranspiration water $(ML^{-3})$ for the UZF cell. If this concentration value is larger than the simulated concentration in the UZF cell, then the unsaturated zone ET water will be removed at the same concentration as the UZF cell.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.auxiliaryrecord]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.auxiliaryrecord]
 type = "record"
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxiliary]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxiliary]
 type = "keyword"
 description = "keyword for specifying auxiliary variable."
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxname]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxname]
 type = "string"
 description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
 tagged = false
 
-[blocks.period.fields.uztperioddata.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxval]
+[blocks.period.fields.stress_period_data.item.fields.uztsetting.arms.auxiliaryrecord.fields.auxval]
 type = "double"
 longname = "auxiliary variable value"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

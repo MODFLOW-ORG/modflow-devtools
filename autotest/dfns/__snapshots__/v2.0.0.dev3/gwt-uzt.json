@@ -214,7 +214,7 @@
     },
     "period": {
       "fields": {
-        "uztperioddata": {
+        "stress_period_data": {
           "type": "list",
           "item": {
             "name": "uztperioddata",

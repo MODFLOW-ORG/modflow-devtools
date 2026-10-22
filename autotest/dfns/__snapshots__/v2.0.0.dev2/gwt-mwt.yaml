@@ -202,7 +202,7 @@ blocks:
               tagged: false
   period:
     fields:
-      mwtperioddata:
+      stress_period_data:
         type: list
         item:
           name: mwtperioddata

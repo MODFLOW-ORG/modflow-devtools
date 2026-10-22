@@ -128,7 +128,7 @@
     },
     "period": {
       "fields": {
-        "output": {
+        "stress_period_data": {
           "type": "list",
           "optional": true,
           "item": {

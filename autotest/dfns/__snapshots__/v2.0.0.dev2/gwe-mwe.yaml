@@ -214,7 +214,7 @@ blocks:
               tagged: false
   period:
     fields:
-      mweperioddata:
+      stress_period_data:
         type: list
         item:
           name: mweperioddata

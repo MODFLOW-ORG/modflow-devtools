@@ -95,60 +95,60 @@ description = "is the name of a package that may be included in a subsequent str
 tagged = false
 pk = true
 
-[blocks.period.fields.perioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.perioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "perioddata"
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.mname1]
+[blocks.period.fields.stress_period_data.item.fields.mname1]
 type = "string"
 description = "name of model containing the package, PNAME1."
 optional = true
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.pname1]
+[blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
 longname = "provider package name"
 description = "is the package name for the provider.  The package PNAME1 must be designated to provide water through the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block."
 tagged = false
 fk = "packages.pname"
 
-[blocks.period.fields.perioddata.item.fields.id1]
+[blocks.period.fields.stress_period_data.item.fields.id1]
 type = "integer"
 longname = "provider reach"
 description = "is the identifier for the provider.  For the standard boundary packages, the provider identifier is the number of the boundary as it is listed in the package input file. (Note that the order of these boundaries may change by stress period, which must be accounted for in the Mover Package.)  So the first well has an identifier of one.  The second is two, and so forth.  For the advanced packages, the identifier is the reach number (SFR Package), well number (MAW Package), or UZF cell number.  For the Lake Package, ID1 is the lake outlet number.  Thus, outflows from a single lake can be routed to different streams, for example."
 tagged = false
 index = true
 
-[blocks.period.fields.perioddata.item.fields.mname2]
+[blocks.period.fields.stress_period_data.item.fields.mname2]
 type = "string"
 description = "name of model containing the package, PNAME2."
 optional = true
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.pname2]
+[blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"
 longname = "receiver package name"
 description = "is the package name for the receiver.  The package PNAME2 must be designated to receive water from the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block."
 tagged = false
 fk = "packages.pname"
 
-[blocks.period.fields.perioddata.item.fields.id2]
+[blocks.period.fields.stress_period_data.item.fields.id2]
 type = "integer"
 longname = "receiver reach"
 description = "is the identifier for the receiver.  The receiver identifier is the reach number (SFR Package), Lake number (LAK Package), well number (MAW Package), or UZF cell number."
 tagged = false
 index = true
 
-[blocks.period.fields.perioddata.item.fields.mvrtype]
+[blocks.period.fields.stress_period_data.item.fields.mvrtype]
 type = "string"
 longname = "mover type"
 description = "is the character string signifying the method for determining how much water will be moved.  Supported values are 'FACTOR' 'EXCESS' 'THRESHOLD' and 'UPTO'.  These four options determine how the receiver flow rate, $Q_R$, is calculated.  These options mirror the options defined for the cprior variable in the SFR package, with the term 'FACTOR' being functionally equivalent to the 'FRACTION' option for cprior."
 tagged = false
 
-[blocks.period.fields.perioddata.item.fields.value]
+[blocks.period.fields.stress_period_data.item.fields.value]
 type = "double"
 longname = "mover value"
 description = "is the value to be used in the equation for calculating the amount of water to move.  For the 'FACTOR' option, VALUE is the $alpha$ factor.  For the remaining options, VALUE is the specified flow rate, $Q_S$."

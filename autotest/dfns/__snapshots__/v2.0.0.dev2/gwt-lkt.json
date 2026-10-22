@@ -209,7 +209,7 @@
     },
     "period": {
       "fields": {
-        "lakeperioddata": {
+        "stress_period_data": {
           "type": "list",
           "item": {
             "name": "lakeperioddata",

@@ -296,14 +296,14 @@ optional = true
 when = "boundnames"
 tagged = false
 
-[blocks.period.fields.perioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.perioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "perioddata"
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.ifno]
+[blocks.period.fields.stress_period_data.item.fields.ifno]
 type = "integer"
 longname = "UZF id number"
 description = "integer value that defines the feature (UZF object) number associated with the specified PERIOD data on the line."
@@ -311,56 +311,56 @@ tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[blocks.period.fields.perioddata.item.fields.finf]
+[blocks.period.fields.stress_period_data.item.fields.finf]
 type = "double"
 longname = "infiltration rate"
 description = "real or character value that defines the applied infiltration rate of the UZF cell ($LT^{-1}$). If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.pet]
+[blocks.period.fields.stress_period_data.item.fields.pet]
 type = "double"
 longname = "potential ET rate"
 description = "real or character value that defines the potential evapotranspiration rate of the UZF cell and specified GWF cell. Evapotranspiration is first removed from the unsaturated zone and any remaining potential evapotranspiration is applied to the saturated zone. If IVERTCON is greater than zero then residual potential evapotranspiration not satisfied in the UZF cell is applied to the underlying UZF and GWF cells. PET is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.extdp]
+[blocks.period.fields.stress_period_data.item.fields.extdp]
 type = "double"
 longname = "extinction depth"
 description = "real or character value that defines the evapotranspiration extinction depth of the UZF cell. If IVERTCON is greater than zero and EXTDP extends below the GWF cell bottom then remaining potential evapotranspiration is applied to the underlying UZF and GWF cells. EXTDP is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.extwc]
+[blocks.period.fields.stress_period_data.item.fields.extwc]
 type = "double"
 longname = "extinction water content"
 description = "real or character value that defines the evapotranspiration extinction water content of the UZF cell. EXTWC is always specified, but is only used if SIMULATE_ET and UNSAT_ETWC are specified in the OPTIONS block. The evapotranspiration rate from the unsaturated zone will be set to zero when the calculated water content is at or less than this value.  The value for EXTWC cannot be less than the residual water content, and if it is specified as being less than the residual water content it is set to the residual water content. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.ha]
+[blocks.period.fields.stress_period_data.item.fields.ha]
 type = "double"
 longname = "air entry potential"
 description = "real or character value that defines the air entry potential (head) of the UZF cell. HA is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.hroot]
+[blocks.period.fields.stress_period_data.item.fields.hroot]
 type = "double"
 longname = "root potential"
 description = "real or character value that defines the root potential (head) of the UZF cell. HROOT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.rootact]
+[blocks.period.fields.stress_period_data.item.fields.rootact]
 type = "double"
 longname = "root activity function"
 description = "real or character value that defines the root activity function of the UZF cell. ROOTACT is the length of roots in a given volume of soil divided by that volume. Values range from 0 to about 3 $cm^{-2}$, depending on the plant community and its stage of development. ROOTACT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.aux]
+[blocks.period.fields.stress_period_data.item.fields.aux]
 type = "array"
 longname = "auxiliary variables"
 description = "represents the values of the auxiliary variables for each UZF. The values of auxiliary variables must be present for each UZF. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

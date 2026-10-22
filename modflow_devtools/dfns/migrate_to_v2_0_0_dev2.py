@@ -1779,6 +1779,38 @@ def _fix_ts_sfac(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, "attributes": block.model_copy(update={"fields": fields})}
 
 
+_PERIOD_LIST_NAME = "stress_period_data"
+
+
+def _name_period_lists(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Name a fill-forward block's single list `stress_period_data`. v1 names it
+    per package (`perioddata`, `lakeperioddata`, `reachperioddata`, ...), and
+    `_wrap_oc_period_records` synthesizes OC's as `output`. The name never
+    appears in an input file, so this is purely a naming convention.
+
+    Period blocks holding more than one field (the grid-based packages' named
+    arrays) keep their names, as do blocks without a fill-forward header
+    (TDIS's and ATS's `perioddata`), which aren't stress periods.
+
+    Must run after every pass that looks a period list up by its v1 name
+    (`_mark_lonely_pk`, `_fix_lak_relations`, `_fix_mvr_relations`).
+    """
+    result = {}
+    for bname, block in blocks.items():
+        header = block.header
+        if header is None or not header.fill_forward or len(block.fields) != 1:
+            result[bname] = block
+            continue
+        (field,) = block.fields.values()
+        if not isinstance(field, v2.List):
+            result[bname] = block
+            continue
+        field = field.model_copy(update={"name": _PERIOD_LIST_NAME})
+        result[bname] = block.model_copy(update={"fields": {_PERIOD_LIST_NAME: field}})
+    return result
+
+
 def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Block]:
     """
     Make an array-based package's period ``aux`` field a list of
@@ -2431,6 +2463,7 @@ def to_v2_0_0_dev2(
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)
+    blocks = _name_period_lists(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

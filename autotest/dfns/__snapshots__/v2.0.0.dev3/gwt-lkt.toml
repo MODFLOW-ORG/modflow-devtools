@@ -187,14 +187,14 @@ optional = true
 when = "boundnames"
 tagged = false
 
-[blocks.period.fields.lakeperioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.lakeperioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "lakeperioddata"
 type = "record"
 
-[blocks.period.fields.lakeperioddata.item.fields.ifno]
+[blocks.period.fields.stress_period_data.item.fields.ifno]
 type = "integer"
 longname = "lake number for this entry"
 description = "integer value that defines the feature (lake) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NLAKES."
@@ -202,58 +202,58 @@ tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting]
+[blocks.period.fields.stress_period_data.item.fields.laksetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the LAKSETTING string include: STATUS, CONCENTRATION, RAINFALL, EVAPORATION, RUNOFF, EXT-INFLOW, and AUXILIARY.  These settings are used to assign the concentration of associated with the corresponding flow terms.  Concentrations cannot be specified for all flow terms.  For example, the Lake Package supports a 'WITHDRAWAL' flow term.  If this withdrawal term is active, then water will be withdrawn from the lake at the calculated concentration of the lake."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.status]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.status]
 type = "string"
 longname = "lake concentration status"
 description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that concentration will be calculated for the lake.  If a lake is inactive, then there will be no solute mass fluxes into or out of the lake and the inactive value will be written for the lake concentration.  If a lake is constant, then the concentration for the lake will be fixed at the user specified value."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.concentration]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.concentration]
 type = "string"
 longname = "lake concentration"
 description = "real or character value that defines the concentration for the lake. The specified CONCENTRATION is only applied if the lake is a constant concentration lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.rainfall]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.rainfall]
 type = "string"
 longname = "rainfall concentration"
 description = "real or character value that defines the rainfall solute concentration $(ML^{-3})$ for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.evaporation]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.evaporation]
 type = "string"
 longname = "evaporation concentration"
 description = "real or character value that defines the concentration of evaporated water $(ML^{-3})$ for the lake. If this concentration value is larger than the simulated concentration in the lake, then the evaporated water will be removed at the same concentration as the lake.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.runoff]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.runoff]
 type = "string"
 longname = "runoff concentration"
 description = "real or character value that defines the concentration of runoff $(ML^{-3})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.ext-inflow]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.ext-inflow]
 type = "string"
 longname = "ext-inflow concentration"
 description = "real or character value that defines the concentration of external inflow $(ML^{-3})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord]
 type = "record"
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxiliary]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxiliary]
 type = "keyword"
 description = "keyword for specifying auxiliary variable."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxname]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxname]
 type = "string"
 description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
 tagged = false
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxval]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxval]
 type = "double"
 longname = "auxiliary variable value"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

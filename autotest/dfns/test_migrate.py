@@ -326,7 +326,7 @@ def test_migrate_period_union_element(dfn_dir, name, setting):
     """A period list of only a union is a list of the union: PRP's, and LAK's
     once its lake or outlet number moves into the arms."""
     component = _migrate_dev3(dfn_dir, name)
-    item = component.blocks["period"].fields["perioddata"].item
+    item = component.blocks["period"].fields["stress_period_data"].item
     assert isinstance(item, v2.Union) and item.name == setting
     if name == "gwf-lak":
         assert item.arms["stage"].fields["lakeno"].fk == "packagedata.ifno"
@@ -484,7 +484,7 @@ def test_migrate_lak_bedleak_number_or_none(dfn_dir):
 
 def test_migrate_maw_head_limit_number_or_off(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-maw")
-    item = component.blocks["period"].fields["perioddata"].item
+    item = component.blocks["period"].fields["stress_period_data"].item
     arms = item.fields["mawsetting"].arms
     assert "head_limit" not in arms
     record = arms["head_limitrecord"]
@@ -499,7 +499,7 @@ def test_migrate_maw_head_limit_number_or_off(dfn_dir):
 
 def test_migrate_uzf_time_series_are_doubles(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-uzf")
-    item = component.blocks["period"].fields["perioddata"].item
+    item = component.blocks["period"].fields["stress_period_data"].item
     for name in ("finf", "pet", "extdp", "extwc", "ha", "hroot", "rootact"):
         field = item.fields[name]
         assert isinstance(field, v2.Double), name
@@ -522,7 +522,7 @@ def test_migrate_number_or_word_round_trip(dev3):
     components = v2.Dfns.load(out).components
     lak = components["gwf-lak"].blocks["connectiondata"].fields["connectiondata"].item
     _number_or_word(lak.fields["bedleak"], "none")
-    maw = components["gwf-maw"].blocks["period"].fields["perioddata"].item
+    maw = components["gwf-maw"].blocks["period"].fields["stress_period_data"].item
     arm = maw.fields["mawsetting"].arms["head_limitrecord"]
     _number_or_word(arm.fields["head_limit_value"], "off")
 
@@ -954,3 +954,29 @@ def test_migrate_ftypes_unique_among_name_file_children(linked_spec):
         for ftype, children in by_ftype.items():
             base = min(children, key=len)
             assert all(n in (base, f"{base}a", f"{base}g") for n in children), (name, children)
+
+
+def test_migrate_period_lists_named_stress_period_data(dev3):
+    """A fill-forward block's single list is named `stress_period_data`,
+    whatever v1 called it (`perioddata`, `lakeperioddata`, OC's synthesized
+    `output`, ...). Named arrays in the grid packages' period blocks, and
+    lists in blocks that don't fill forward, keep their names."""
+    out, _ = dev3
+    components = v2.Dfns.load(out).components
+    renamed = set()
+    for name, component in components.items():
+        for bname, block in (component.blocks or {}).items():
+            if block.header is None or not block.header.fill_forward:
+                continue
+            fields = block.fields
+            if len(fields) == 1 and isinstance(next(iter(fields.values())), v2.List):
+                assert list(fields) == ["stress_period_data"], (name, bname)
+                assert fields["stress_period_data"].name == "stress_period_data"
+                renamed.add(name)
+            for fname in fields:
+                assert not fname.endswith("perioddata"), (name, bname, fname)
+                assert fname != "output", (name, bname)
+    assert {"gwf-chd", "gwf-lak", "gwt-lkt", "gwe-sfe", "gwf-oc", "prt-oc"} <= renamed
+    assert "perioddata" in components["sim-tdis"].blocks["perioddata"].fields
+    assert "perioddata" in components["utl-ats"].blocks["perioddata"].fields
+    assert {"recharge", "irch"} <= set(components["gwf-rcha"].blocks["period"].fields)

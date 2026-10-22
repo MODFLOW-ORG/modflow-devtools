@@ -280,31 +280,31 @@ longname = "release time"
 description = "real value that defines the release time with respect to the simulation start time."
 tagged = false
 
-[blocks.period.fields.perioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.perioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "releasesetting"
 type = "union"
 description = "specifies time steps at which to release a particle. A particle is released at the beginning of each specified time step. For fine control over release timing, specify times explicitly using the RELEASETIMES block. If the beginning of a specified time step coincides with a release time specified in the RELEASETIMES block or configured via RELEASE_TIME_FREQUENCY, only one particle is released at that time. Coincidence is evaluated up to the tolerance specified in RELEASE_TIME_TOLERANCE, or $epsilon times 10^{11}$ by default, where $epsilon$ is machine precision. If no release times are configured via this setting, the RELEASETIMES block, or the RELEASE_TIME_FREQUENCY option, a single release time is configured at the beginning of the first time step of the simulation's first stress period."
 
-[blocks.period.fields.perioddata.item.arms.all]
+[blocks.period.fields.stress_period_data.item.arms.all]
 type = "keyword"
 description = "keyword to indicate release at the start of all time steps in the period."
 
-[blocks.period.fields.perioddata.item.arms.first]
+[blocks.period.fields.stress_period_data.item.arms.first]
 type = "keyword"
 description = "keyword to indicate release at the start of the first time step in the period. This keyword may be used in conjunction with other RELEASESETTING options."
 
-[blocks.period.fields.perioddata.item.arms.last]
+[blocks.period.fields.stress_period_data.item.arms.last]
 type = "keyword"
 description = "keyword to indicate release at the start of the last time step in the period. This keyword may be used in conjunction with other RELEASESETTING options."
 
-[blocks.period.fields.perioddata.item.arms.frequency]
+[blocks.period.fields.stress_period_data.item.arms.frequency]
 type = "integer"
 description = "release at the specified time step frequency. This keyword may be used in conjunction with other RELEASESETTING options."
 
-[blocks.period.fields.perioddata.item.arms.steps]
+[blocks.period.fields.stress_period_data.item.arms.steps]
 type = "array"
 description = "release at the start of each step specified in STEPS. This option may be used in conjunction with other RELEASESETTING options."
 dtype = "integer"
@@ -312,7 +312,7 @@ shape = [
     "<=nstp",
 ]
 
-[blocks.period.fields.perioddata.item.arms.fraction]
+[blocks.period.fields.stress_period_data.item.arms.fraction]
 type = "array"
 description = "release particles after the specified fraction of the time step has elapsed. If FRACTION is not set, particles are released at the start of the specified time step(s). FRACTION must be a single value when used with ALL, FIRST, or FREQUENCY. When used with STEPS, FRACTION may be a single value or an array of the same length as STEPS. If a single FRACTION value is provided with STEPS, the fraction applies to all steps. NOTE: The FRACTION option has been removed. For fine control over release timing, specify times explicitly using the RELEASETIMES block."
 optional = true

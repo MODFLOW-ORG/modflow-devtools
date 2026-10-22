@@ -895,7 +895,7 @@ def test_file_filerecord_multiword_tag_not_collapsed(dev3_spec):
     """A multi-word v1 tag (e.g. `CROSS_SECTION TAB6`) becomes two sibling
     Keyword fields, not a single synthetic File.tag string."""
     period = dev3_spec.components["gwf-sfr"].blocks["period"]
-    item = period.fields["perioddata"].item
+    item = period.fields["stress_period_data"].item
     union = item.children["sfrsetting"]
     xsrecord = union.arms["cross_sectionrecord"]
     assert isinstance(xsrecord, Record)

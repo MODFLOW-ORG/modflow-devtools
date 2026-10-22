@@ -204,7 +204,7 @@ blocks:
               tagged: false
   period:
     fields:
-      uzeperioddata:
+      stress_period_data:
         type: list
         item:
           name: uzeperioddata

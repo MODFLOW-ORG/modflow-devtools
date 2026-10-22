@@ -109,24 +109,24 @@ longname = "write format"
 description = "write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC."
 tagged = false
 
-[blocks.period.fields.output]
+[blocks.period.fields.stress_period_data]
 type = "list"
 optional = true
 
-[blocks.period.fields.output.item]
+[blocks.period.fields.stress_period_data.item]
 name = "output_record"
 type = "union"
 
-[blocks.period.fields.output.item.arms.saverecord]
+[blocks.period.fields.stress_period_data.item.arms.saverecord]
 type = "record"
 optional = true
 
-[blocks.period.fields.output.item.arms.saverecord.fields.save]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.save]
 type = "keyword"
 longname = "keyword to save"
 description = "keyword to indicate that information will be saved this stress period."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.rtype]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.rtype]
 type = "string"
 longname = "record type"
 description = "type of information to save or print.  Can be BUDGET."
@@ -136,27 +136,27 @@ valid = [
     "BUDGET",
 ]
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting]
 type = "union"
 description = "specifies the steps for which the data will be saved."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.all]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting.arms.all]
 type = "keyword"
 description = "keyword to indicate save for all time steps in period."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.first]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting.arms.first]
 type = "keyword"
 description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.last]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting.arms.last]
 type = "keyword"
 description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.frequency]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting.arms.frequency]
 type = "integer"
 description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.saverecord.fields.ocsetting.arms.steps]
+[blocks.period.fields.stress_period_data.item.arms.saverecord.fields.ocsetting.arms.steps]
 type = "array"
 description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 dtype = "integer"
@@ -164,16 +164,16 @@ shape = [
     "<=nstp",
 ]
 
-[blocks.period.fields.output.item.arms.printrecord]
+[blocks.period.fields.stress_period_data.item.arms.printrecord]
 type = "record"
 optional = true
 
-[blocks.period.fields.output.item.arms.printrecord.fields.print]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.print]
 type = "keyword"
 longname = "keyword to save"
 description = "keyword to indicate that information will be printed this stress period."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.rtype]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.rtype]
 type = "string"
 longname = "record type"
 description = "type of information to save or print.  Can be BUDGET."
@@ -183,27 +183,27 @@ valid = [
     "BUDGET",
 ]
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting]
 type = "union"
 description = "specifies the steps for which the data will be saved."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.all]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting.arms.all]
 type = "keyword"
 description = "keyword to indicate save for all time steps in period."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.first]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting.arms.first]
 type = "keyword"
 description = "keyword to indicate save for first step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.last]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting.arms.last]
 type = "keyword"
 description = "keyword to indicate save for last step in period. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.frequency]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting.arms.frequency]
 type = "integer"
 description = "save at the specified time step frequency. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 
-[blocks.period.fields.output.item.arms.printrecord.fields.ocsetting.arms.steps]
+[blocks.period.fields.stress_period_data.item.arms.printrecord.fields.ocsetting.arms.steps]
 type = "array"
 description = "save for each step specified in STEPS. This keyword may be used in conjunction with other keywords to print or save results for multiple time steps."
 dtype = "integer"

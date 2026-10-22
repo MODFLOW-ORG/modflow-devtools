@@ -209,7 +209,7 @@
     },
     "period": {
       "fields": {
-        "reachperioddata": {
+        "stress_period_data": {
           "type": "list",
           "item": {
             "name": "reachperioddata",

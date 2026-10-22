@@ -199,14 +199,14 @@ optional = true
 when = "boundnames"
 tagged = false
 
-[blocks.period.fields.lakeperioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.lakeperioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "lakeperioddata"
 type = "record"
 
-[blocks.period.fields.lakeperioddata.item.fields.lakeno]
+[blocks.period.fields.stress_period_data.item.fields.lakeno]
 type = "integer"
 longname = "lake number for this entry"
 description = "integer value that defines the lake number associated with the specified PERIOD data on the line. LAKENO must be greater than zero and less than or equal to NLAKES."
@@ -214,58 +214,58 @@ tagged = false
 index = true
 fk = "packagedata.lakeno"
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting]
+[blocks.period.fields.stress_period_data.item.fields.laksetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the LAKSETTING string include: STATUS, TEMPERATURE, RAINFALL, EVAPORATION, RUNOFF, and AUXILIARY.  These settings are used to assign the temperature associated with the corresponding flow terms.  Temperatures cannot be specified for all flow terms.  For example, the Lake Package supports a 'WITHDRAWAL' flow term.  If this withdrawal term is active, then water will be withdrawn from the lake at the calculated temperature of the lake."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.status]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.status]
 type = "string"
 longname = "lake temperature status"
 description = "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that temperature will be calculated for the lake.  If a lake is inactive, then there will be no energy fluxes into or out of the lake and the inactive value will be written for the lake temperature.  If a lake is constant, then the temperature for the lake will be fixed at the user specified value."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.temperature]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.temperature]
 type = "string"
 longname = "lake temperature"
 description = "real or character value that defines the temperature for the lake. The specified TEMPERATURE is only applied if the lake is a constant temperature lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.rainfall]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.rainfall]
 type = "string"
 longname = "rainfall temperature"
 description = "real or character value that defines the rainfall temperature for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.evaporation]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.evaporation]
 type = "string"
 longname = "evaporation temperature"
 description = "use of the EVAPORATION keyword is allowed in the LKE package; however, the specified value is not currently used in LKE calculations.  Instead, the latent heat of evaporation is multiplied by the simulated evaporation rate for determining the thermal energy lost from a stream reach."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.runoff]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.runoff]
 type = "string"
 longname = "runoff temperature"
 description = "real or character value that defines the temperature of runoff for the lake. Users are free to use whatever temperature scale they want, which might include negative temperatures. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.ext-inflow]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.ext-inflow]
 type = "string"
 longname = "ext-inflow temperature"
 description = "real or character value that defines the temperature of external inflow for the lake.  Users are free to use whatever temperature scale they want, which might include negative temperatures.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord]
 type = "record"
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxiliary]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxiliary]
 type = "keyword"
 description = "keyword for specifying auxiliary variable."
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxname]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxname]
 type = "string"
 description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
 tagged = false
 
-[blocks.period.fields.lakeperioddata.item.fields.laksetting.arms.auxiliaryrecord.fields.auxval]
+[blocks.period.fields.stress_period_data.item.fields.laksetting.arms.auxiliaryrecord.fields.auxval]
 type = "double"
 longname = "auxiliary variable value"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

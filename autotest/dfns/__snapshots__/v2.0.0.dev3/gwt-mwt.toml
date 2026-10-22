@@ -187,14 +187,14 @@ optional = true
 when = "boundnames"
 tagged = false
 
-[blocks.period.fields.mwtperioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 
-[blocks.period.fields.mwtperioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "mwtperioddata"
 type = "record"
 
-[blocks.period.fields.mwtperioddata.item.fields.ifno]
+[blocks.period.fields.stress_period_data.item.fields.ifno]
 type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the feature (well) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS."
@@ -202,40 +202,40 @@ tagged = false
 index = true
 fk = "packagedata.ifno"
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the MWTSETTING string include: STATUS, CONCENTRATION, RATE, and AUXILIARY.  These settings are used to assign the concentration associated with the corresponding flow terms.  Concentrations cannot be specified for all flow terms.  For example, the Multi-Aquifer Well Package supports a 'WITHDRAWAL' flow term.  If this withdrawal term is active, then water will be withdrawn from the well at the calculated concentration of the well."
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.status]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.status]
 type = "string"
 longname = "well concentration status"
 description = "keyword option to define well status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that concentration will be calculated for the well.  If a well is inactive, then there will be no solute mass fluxes into or out of the well and the inactive value will be written for the well concentration.  If a well is constant, then the concentration for the well will be fixed at the user specified value."
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.concentration]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.concentration]
 type = "string"
 longname = "well concentration"
 description = "real or character value that defines the concentration for the well. The specified CONCENTRATION is only applied if the well is a constant concentration well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.rate]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.rate]
 type = "string"
 longname = "well injection concentration"
 description = "real or character value that defines the injection solute concentration $(ML^{-3})$ for the well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.auxiliaryrecord]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.auxiliaryrecord]
 type = "record"
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxiliary]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxiliary]
 type = "keyword"
 description = "keyword for specifying auxiliary variable."
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxname]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxname]
 type = "string"
 description = "name for the auxiliary variable to be assigned AUXVAL.  AUXNAME must match one of the auxiliary variable names defined in the OPTIONS block. If AUXNAME does not match one of the auxiliary variable names defined in the OPTIONS block the data are ignored."
 tagged = false
 
-[blocks.period.fields.mwtperioddata.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxval]
+[blocks.period.fields.stress_period_data.item.fields.mwtsetting.arms.auxiliaryrecord.fields.auxval]
 type = "double"
 longname = "auxiliary variable value"
 description = "value for the auxiliary variable. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."

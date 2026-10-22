@@ -44,17 +44,17 @@ type = "integer"
 longname = "maximum number of ssm entries"
 description = "integer value specifying the maximum number of spc cells that will be specified for use during any stress period."
 
-[blocks.period.fields.perioddata]
+[blocks.period.fields.stress_period_data]
 type = "list"
 shape = [
     "<=maxbound",
 ]
 
-[blocks.period.fields.perioddata.item]
+[blocks.period.fields.stress_period_data.item]
 name = "perioddata"
 type = "record"
 
-[blocks.period.fields.perioddata.item.fields.bndno]
+[blocks.period.fields.stress_period_data.item.fields.bndno]
 type = "integer"
 longname = "bound number for this entry"
 description = "integer value that defines the boundary package feature number associated with the specified PERIOD data on the line. BNDNO must be greater than zero and less than or equal to MAXBOUND."
@@ -62,17 +62,17 @@ tagged = false
 index = true
 pk = true
 
-[blocks.period.fields.perioddata.item.fields.spcsetting]
+[blocks.period.fields.stress_period_data.item.fields.spcsetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the SPCSETTING string include: CONCENTRATION and TEMPERATURE."
 
-[blocks.period.fields.perioddata.item.fields.spcsetting.arms.concentration]
+[blocks.period.fields.stress_period_data.item.fields.spcsetting.arms.concentration]
 type = "double"
 longname = "boundary concentration"
 description = "is the boundary concentration. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the CONCENTRATION for each boundary feature is zero."
 time_series = true
 
-[blocks.period.fields.perioddata.item.fields.spcsetting.arms.temperature]
+[blocks.period.fields.stress_period_data.item.fields.spcsetting.arms.temperature]
 type = "double"
 longname = "boundary temperature"
 description = "is the user-supplied boundary temperature. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the TEMPERATURE for each boundary feature is zero."

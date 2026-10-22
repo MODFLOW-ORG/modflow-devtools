@@ -277,6 +277,8 @@ Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, 
 
 An `Integer` header is inherently a sequential key: `group_num` and `iper` are both documented as monotonically increasing across occurrences, whether or not they fill forward. Only the meaning of a *gap* in that sequence varies — which is what `fill_forward` distinguishes.
 
+When a fill-forward block holds a single field and that field is a list, the list is named `stress_period_data`, in every component. v1 names it per package (`perioddata`, `lakeperioddata`, `reachperioddata`, ...); OC's is synthesized from sibling records. The name never appears in an input file. A fill-forward block with several fields, such as the grid-based packages' named arrays (`recharge`, `irch`, ...), keeps its field names, and so do blocks that don't fill forward (e.g. TDIS's and ATS's `perioddata`).
+
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 
 ### Field ordering
