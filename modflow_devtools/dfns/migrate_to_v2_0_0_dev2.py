@@ -1298,7 +1298,8 @@ def _collapse_sto_keywords(
     """
     STO packages define their period block with two mutually exclusive optional
     Keywords (steady-state, transient). Replace them with a single optional
-    String field named 'storage' with constrained valid values.
+    String field with constrained valid values, named 'stress_period_data' like
+    every other package's period data.
     """
     _STO_KEYWORDS = frozenset({"steady-state", "transient"})
     result = {}
@@ -1317,7 +1318,7 @@ def _collapse_sto_keywords(
             continue
         non_sto = {name: f for name, f in fields.items() if name not in _STO_KEYWORDS}
         storage = v2.String(
-            name="storage",
+            name="stress_period_data",
             longname="storage state",
             description=fields["steady-state"].description,
             optional=True,
@@ -1327,7 +1328,9 @@ def _collapse_sto_keywords(
             tagged=False,
             valid=["steady-state", "transient"],
         )
-        result[bname] = block.model_copy(update={"fields": {**non_sto, "storage": storage}})
+        result[bname] = block.model_copy(
+            update={"fields": {**non_sto, "stress_period_data": storage}}
+        )
     return result
 
 

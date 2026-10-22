@@ -1440,7 +1440,7 @@ def to_v2_0_0_dev3(
 
     # Step 5c: clear stale string source references.
     # Some v1 field names are renamed by dev2 transforms (e.g. _collapse_sto_keywords
-    # replaces "steady-state"/"transient" with "storage"). The stress template also
+    # replaces "steady-state"/"transient" with "stress_period_data"). The stress template also
     # sets nodelist.source = "cellid" for all stress packages, including gridded
     # variants that have no cellid field. Clear any source that no longer resolves.
     v2_field_names = set(component.get_fields(recurse=True).keys())

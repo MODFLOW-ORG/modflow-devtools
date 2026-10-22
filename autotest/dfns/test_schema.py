@@ -389,9 +389,11 @@ def test_memory_output_attributes_rcha(dev3_spec):
 
 
 @pytest.mark.parametrize("name", ["chf-sto", "gwf-sto", "olf-sto", "swf-sto"])
-def test_sto_storage_field_is_untagged(dev3_spec, name):
+def test_sto_period_field_is_untagged(dev3_spec, name):
     """STO's PERIOD block writes a bare STEADY-STATE/TRANSIENT line, no STORAGE prefix."""
-    storage = dev3_spec.components[name].blocks["period"].fields["storage"]
+    fields = dev3_spec.components[name].blocks["period"].fields
+    assert "storage" not in fields
+    storage = fields["stress_period_data"]
     assert storage.tagged is False
     assert storage.valid == ["steady-state", "transient"]
 

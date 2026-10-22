@@ -16,7 +16,7 @@ longname = "export array variables to layered ascii files."
 description = "keyword that specifies input grid arrays, which already support the layered keyword, should be written to layered ascii output files."
 optional = true
 
-[blocks.period.fields.storage]
+[blocks.period.fields.stress_period_data]
 type = "string"
 longname = "storage state"
 description = "keyword to indicate that stress period IPER is steady-state. Steady-state conditions will apply until the TRANSIENT keyword is specified in a subsequent BEGIN PERIOD block."

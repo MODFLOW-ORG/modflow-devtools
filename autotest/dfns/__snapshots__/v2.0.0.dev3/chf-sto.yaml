@@ -20,7 +20,7 @@ blocks:
         optional: true
   period:
     fields:
-      storage:
+      stress_period_data:
         type: string
         longname: storage state
         description: keyword to indicate that stress period IPER is steady-state. Steady-state conditions
