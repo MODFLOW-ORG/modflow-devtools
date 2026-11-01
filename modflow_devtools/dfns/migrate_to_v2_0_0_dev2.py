@@ -2080,7 +2080,7 @@ def to_v2_0_0_dev2(
             # A v1 string with `numeric_index` (only utl-obs's `id`/`id2`)
             # identifies something in the parent: a cell, a 1-based number
             # (e.g. a lake or reach), or a boundname. Which one depends on the
-            # parent and is resolved by the codec, like an `fk_ref` target.
+            # parent and is resolved by the codec.
             return v2.Union(
                 name=_name,
                 longname=longname,

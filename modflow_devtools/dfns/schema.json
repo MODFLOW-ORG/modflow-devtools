@@ -910,18 +910,6 @@
           ],
           "default": null,
           "title": "Fk"
-        },
-        "fk_ref": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Fk Ref"
         }
       },
       "required": [
@@ -2380,17 +2368,10 @@
           "default": null,
           "title": "Fk"
         },
-        "fk_ref": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Fk Ref"
+        "dynamic": {
+          "default": false,
+          "title": "Dynamic",
+          "type": "boolean"
         }
       },
       "required": [

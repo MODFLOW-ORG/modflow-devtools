@@ -126,11 +126,6 @@ already gives `number` a correct `pk`/`fk` representation), so it should
 only be pursued upstream, if at all, through MF6's normal deprecation path —
 not as a consequence of this document.
 
-`fk_ref` already exists in the v2 schema for harder cross-component cases
-(e.g. `gwf-mvr` referencing an arbitrary package's `packagedata` pk at
-runtime; see "Primary/foreign keys" in `docs/md/dfnspec.md`), in case some
-future relation needs real runtime resolution instead of a static `fk`.
-
 ## Aside: a pre-existing, unrelated bug noticed along the way (now fixed)
 
 While tracing how LAK's `laksetting` union arms get built, one arm came out

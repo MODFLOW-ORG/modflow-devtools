@@ -146,7 +146,6 @@ class String(InputFieldBase):
     time_series: bool = False
     pk: bool = False
     fk: str | None = None
-    fk_ref: str | None = None
     # A dynamic keyword: the value itself is a keyword, one of the `fk`
     # target's keys, so a record it leads is keyword-led (see
     # `_is_dynamic_key`). A role in the input grammar, independent of `fk`,
@@ -161,12 +160,8 @@ class String(InputFieldBase):
             raise ValueError(
                 f"String {self.name!r}: dynamic requires tagged=False (its value is the keyword)"
             )
-        # Its keywords must be known before its line is read, so they can't
-        # depend on a sibling later on that line, as `fk_ref` would make them.
-        if self.fk is None or self.fk_ref is not None:
-            raise ValueError(
-                f"String {self.name!r}: dynamic requires an fk naming its keywords, without fk_ref"
-            )
+        if self.fk is None:
+            raise ValueError(f"String {self.name!r}: dynamic requires an fk naming its keywords")
         return self
 
 
@@ -189,7 +184,6 @@ class Integer(InputFieldBase):
     index: Index = False
     pk: bool = False
     fk: str | None = None
-    fk_ref: str | None = None
 
 
 class Double(InputFieldBase):
@@ -271,7 +265,6 @@ class Array(InputFieldBase):
                     f"Array {self.name!r}: fk requires dtype='integer' or 'string', "
                     f"got {self.dtype!r}"
                 )
-            # no sibling `fk_ref` to resolve a bare block name against
             if "." not in self.fk:
                 raise ValueError(
                     f"Array {self.name!r}: fk={self.fk!r} must be a hierarchical path "
@@ -1463,7 +1456,7 @@ def _check_shape_ref(
     fk = getattr(fk_field, "fk", None)
     if fk is None:
         raise ValueError(f"{where}: {ref.fk_field!r}.fk is not set")
-    fk_block = fk.split(".")[0] if "." in fk else fk
+    fk_block = fk.split(".")[0]
     if fk_block != ref.block:
         raise ValueError(
             f"{where}: {ref.fk_field!r}.fk = {fk!r} does not reference block {ref.block!r}"
@@ -1496,30 +1489,18 @@ def _validate_list_shape_element(
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String/Array field with fk or fk_ref set, validate
-    structure. Array's `fk` (an integer array's per grid cell or per entry,
-    a string array's per entry) only ever uses the hierarchical-path form
-    below — it has no `pk`/`fk_ref` counterpart (see `Array.fk`).
+    For every Integer/String/Array field with an fk, validate structure (see
+    docs/md/dfnspec.md, "Primary and foreign keys"). Grid-cell references are
+    a separate mechanism (the `cellid` type, see `CellID`).
 
-    Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
-    references are a separate mechanism entirely (the `cellid` type, not an
-    `fk` value — see `CellID`):
-
-    - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block whose item has a pk field, or, for a String
-      or string Array, the named field may instead be a string-dtype Array,
-      whose entries are then the key set (e.g. `options.auxiliary`).
-      Unqualified ("block.field"), the block is looked up in this component;
-      qualified ("component.block.field"), it's looked up in the named
-      component via `spec.components` instead. A dynamic key (see
-      `_is_dynamic_key`) is checked like any other String.
-    - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
-      String field in the same record, whose runtime value identifies the
-      target component (and, with fk, the pk field is looked up in the block
-      named by fk within that component). The target itself is only known at
-      runtime, so no further structural check is possible statically.
-
-    A hierarchical-path fk may not be combined with fk_ref.
+    An fk is a hierarchical path, "[component.]block.field": the named block
+    must be a list block whose item has a pk field, or, for a String or string
+    Array, the named field may instead be a string-dtype Array, whose entries
+    are then the key set (e.g. `options.auxiliary`). Unqualified
+    ("block.field"), the block is looked up in this component; qualified
+    ("component.block.field"), it's looked up in the named component via
+    `spec.components` instead. A dynamic key (see `_is_dynamic_key`) is
+    checked like any other String.
 
     Observation fields (see `ObservationField`) are checked like a list item's.
     """
@@ -1527,24 +1508,8 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     def _check_fields(fields: dict) -> None:
         for field in fields.values():
             fk: str | None = getattr(field, "fk", None)
-            fk_ref: str | None = getattr(field, "fk_ref", None)
 
-            if fk_ref is not None:
-                if fk is not None and "." in fk:
-                    raise ValueError(
-                        f"Field {field.name!r}: fk={fk!r} may not be combined with "
-                        f"fk_ref (only a bare block name may be)"
-                    )
-                sibling = fields.get(fk_ref)
-                if not isinstance(sibling, String):
-                    raise ValueError(
-                        f"Field {field.name!r} fk_ref={fk_ref!r}: "
-                        f"not a sibling String field in the same record"
-                    )
-                # fk (a bare block name, if set) and the component it lives in
-                # are both resolved from fk_ref's runtime value — no further
-                # static check is possible.
-            elif fk is not None:
+            if fk is not None:
                 parts = fk.split(".")
                 target: ComponentBase
                 if len(parts) == 3:
@@ -1557,20 +1522,19 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         )
                     target = resolved
                     where = f"component {component_ref!r}"
-                elif len(parts) in (1, 2):
+                elif len(parts) == 2:
                     block_name = parts[0]
                     target = component
                     where = "this component"
                 else:
                     raise ValueError(
                         f"Field {field.name!r} fk={fk!r}: "
-                        f"must be a bare block name, 'block.field', or "
-                        f"'component.block.field'"
+                        f"must be 'block.field' or 'component.block.field'"
                     )
                 is_string = isinstance(field, String) or (
                     isinstance(field, Array) and field.dtype == "string"
                 )
-                if is_string and len(parts) > 1:
+                if is_string:
                     target_block = (target.blocks or {}).get(block_name)
                     target_field = target_block.fields.get(parts[-1]) if target_block else None
                     if isinstance(target_field, Array) and target_field.dtype == "string":
