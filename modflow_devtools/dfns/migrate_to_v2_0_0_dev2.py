@@ -949,7 +949,8 @@ def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 #   index (`support_negative_index`): the sign says which end of the current
 #   reach, the magnitude which reach, so the fk applies to the magnitude.
 # - `chf-cdb`/`chf-zdg`/`olf-zdg`'s `idcxs` reference the cross-section
-#   defined by `chf-cxs`'s `packagedata.idcxs` -- a cross-component fk
+#   defined by `chf-cxs`'s `packagedata` (its key is `idcxs` through 6.7,
+#   `ifno` after; `_retarget_fk_backfill` picks it) -- a cross-component fk
 #   `_resolve_relations` structurally can't reach (single-component scope).
 #   OLF has no `*-cxs` component of its own (overland flow has no concept of
 #   cross section upstream), but `olf-zdg`'s Fortran source shares CHF's
@@ -1033,6 +1034,67 @@ def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str
         }
     )
     return {**blocks, block_name: new_block}
+
+
+def _pk_path(components: Mapping[str, v2.Component], path: str) -> str:
+    """A cross-component fk path, its field replaced by the target list's pk.
+
+    The backfill tables name the target column, but it differs between MF6
+    versions: `chf-cxs`'s `packagedata` key is `idcxs` through 6.7, `ifno`
+    after (modflow6 #2892). The path is unchanged if the target isn't in the
+    corpus or has no pk.
+    """
+    component, block, _ = path.split(".")
+    target = components.get(component)
+    list_field = v2._find_list_in_block(target, block) if target else None
+    if list_field is None or not isinstance(list_field.item, v2.Record):
+        return path
+    pk = next((n for n, f in list_field.item.fields.items() if getattr(f, "pk", None)), None)
+    return f"{component}.{block}.{pk}" if pk else path
+
+
+def _retarget_fk_backfill(components: Mapping[str, v2.Component]) -> dict[str, v2.Component]:
+    """Point each cross-component `_FK_BACKFILL` / `_ARRAY_FK_BACKFILL` fk at
+    its target list's pk (see `_pk_path`). Per-file conversion can't see the
+    target, so this runs over the corpus."""
+
+    def retarget(f: v2.InputField) -> v2.InputField:
+        fk = getattr(f, "fk", None)
+        if fk is None or fk.component is None or (path := _pk_path(components, fk.path)) == fk.path:
+            return f
+        return f.model_copy(update={"fk": fk.model_copy(update={"path": path})})
+
+    result = dict(components)
+    for name, entries in _FK_BACKFILL.items():
+        if (component := result.get(name)) is None:
+            continue
+        blocks = dict(component.blocks or {})
+        for block_name, list_field_name, field_targets in entries:
+            if (block := blocks.get(block_name)) is None:
+                continue
+            list_field = block.fields.get(list_field_name)
+            if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
+                continue
+            item = list_field.item
+            fields = {n: retarget(f) if n in field_targets else f for n, f in item.fields.items()}
+            new_list = list_field.model_copy(
+                update={"item": item.model_copy(update={"fields": fields})}
+            )
+            blocks[block_name] = block.model_copy(
+                update={"fields": {**block.fields, list_field_name: new_list}}
+            )
+        result[name] = component.model_copy(update={"blocks": blocks})
+    for name, (block_name, field_name, _) in _ARRAY_FK_BACKFILL.items():
+        if (component := result.get(name)) is None:
+            continue
+        block = (component.blocks or {}).get(block_name)
+        if block is None or field_name not in block.fields:
+            continue
+        fields = {**block.fields, field_name: retarget(block.fields[field_name])}
+        new_block = block.model_copy(update={"fields": fields})
+        blocks = {**(component.blocks or {}), block_name: new_block}
+        result[name] = component.model_copy(update={"blocks": blocks})
+    return result
 
 
 def _fill_period_list_shapes(
@@ -2689,4 +2751,4 @@ def migrate_corpus(
     components = {
         name: convert(name, fields, meta, subpackages=keys) for name, (fields, meta) in raw.items()
     }
-    return link_components(components, metas)
+    return link_components(_retarget_fk_backfill(components), metas)
