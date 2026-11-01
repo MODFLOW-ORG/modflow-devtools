@@ -1,5 +1,6 @@
 import io
 import json
+import re
 import tomllib
 from pathlib import Path
 
@@ -430,6 +431,24 @@ def test_migrate_hpc_model_names(dfn_dir):
     assert mname.pk is None and not mname.dynamic
     assert not partitions.tagged
     assert _fix_model_name_relations("utl-hpc", component.blocks) == component.blocks
+
+
+@pytest.mark.parametrize("pk", ["idcxs", "ifno"])
+def test_migrate_cross_section_keys(dfn_dir, tmp_path, pk):
+    """The cross-section fks name `chf-cxs`'s packagedata key, whatever it's
+    called: `idcxs` in 6.7, `ifno` after modflow6 #2892."""
+    for path in dfn_dir.glob("*.dfn"):
+        text = path.read_text()
+        if path.stem == "chf-cxs":
+            text = re.sub(r"\bidcxs\b", pk, text)
+        (tmp_path / path.name).write_text(text)
+    components = v2.Dfns.load(tmp_path).components
+    for name in ("chf-cdb", "chf-zdg", "olf-zdg"):
+        item = components[name].blocks["period"].fields["stress_period_data"].item
+        assert item.fields["idcxs"].fk.path == f"chf-cxs.packagedata.{pk}"
+    for name in ("chf-dfw", "olf-dfw"):
+        idcxs = components[name].blocks["griddata"].fields["idcxs"]
+        assert idcxs.fk.path == f"chf-cxs.packagedata.{pk}"
 
 
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
