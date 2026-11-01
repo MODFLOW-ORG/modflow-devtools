@@ -100,13 +100,20 @@
                 "type": "string",
                 "description": "name of model containing the package.  Model names are assigned by the user in the simulation name file.",
                 "optional": true,
-                "tagged": false
+                "tagged": false,
+                "fk": "sim-nam.models.mname"
               },
               "pname": {
                 "type": "string",
                 "description": "is the name of a package that may be included in a subsequent stress period block.  The package name is assigned in the name file for the GWF Model.  Package names are optionally provided in the name file.  If they are not provided by the user, then packages are assigned a default value, which is the package acronym followed by a hyphen and the package number.  For example, the first Drain Package is named DRN-1.  The second Drain Package is named DRN-2, and so forth.",
                 "tagged": false,
-                "pk": true
+                "pk": {
+                  "scope": "mname"
+                },
+                "fk": {
+                  "path": "gwf-nam.packages.pname",
+                  "scope": "mname"
+                }
               }
             }
           },
@@ -128,14 +135,18 @@
                 "type": "string",
                 "description": "name of model containing the package, PNAME1.",
                 "optional": true,
-                "tagged": false
+                "tagged": false,
+                "fk": "sim-nam.models.mname"
               },
               "pname1": {
                 "type": "string",
                 "longname": "provider package name",
                 "description": "is the package name for the provider.  The package PNAME1 must be designated to provide water through the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block.",
                 "tagged": false,
-                "fk": "packages.pname"
+                "fk": {
+                  "path": "packages.pname",
+                  "scope": "mname1"
+                }
               },
               "id1": {
                 "type": "integer",
@@ -148,14 +159,18 @@
                 "type": "string",
                 "description": "name of model containing the package, PNAME2.",
                 "optional": true,
-                "tagged": false
+                "tagged": false,
+                "fk": "sim-nam.models.mname"
               },
               "pname2": {
                 "type": "string",
                 "longname": "receiver package name",
                 "description": "is the package name for the receiver.  The package PNAME2 must be designated to receive water from the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block.",
                 "tagged": false,
-                "fk": "packages.pname"
+                "fk": {
+                  "path": "packages.pname",
+                  "scope": "mname2"
+                }
               },
               "id2": {
                 "type": "integer",

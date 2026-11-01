@@ -12,6 +12,7 @@ from modflow_devtools.dfns import schema as v2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
     _fix_model_nam_package_keys,
     _fix_model_name_relations,
+    _fix_mvr_relations,
     to_v2_0_0_dev2,
 )
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
@@ -367,6 +368,47 @@ def test_migrate_model_nam_package_keys(dfn_dir, name):
 def test_migrate_model_nam_package_keys_skips(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
     assert _fix_model_nam_package_keys(name, component.blocks) == component.blocks
+
+
+def test_migrate_mvr_keys(dfn_dir):
+    """A mover's package is unique within its model, and its period rows
+    reference those (model, package) rows."""
+    component = _migrate_dev3(dfn_dir, "gwf-mvr")
+    blocks = component.blocks
+    packages = blocks["packages"].fields["packages"].item.fields
+    period = blocks["period"].fields["stress_period_data"].item.fields
+    model = v2.ForeignKey(path="sim-nam.models.mname")
+    assert packages["mname"].fk == model
+    assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
+    assert packages["pname"].fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname")
+    for i in ("1", "2"):
+        assert period[f"mname{i}"].fk == model
+        assert period[f"pname{i}"].fk == v2.ForeignKey(path="packages.pname", scope=f"mname{i}")
+        assert period[f"id{i}"].fk is None
+    # unchanged by a second pass
+    assert _fix_mvr_relations("gwf-mvr", blocks) == blocks
+
+
+def test_migrate_mvr_keys_upgrades_only_unscoped_expected(dfn_dir):
+    """An earlier pass's unscoped key with the expected path is upgraded to
+    its scoped form; any other key is left alone."""
+    blocks = _migrate_dev3(dfn_dir, "gwf-mvr").blocks
+    lst = blocks["packages"].fields["packages"]
+    other = v2.ForeignKey(path="sim-nam.models.mtype")
+    fields = {
+        "pname": lst.item.fields["pname"].model_copy(
+            update={"pk": v2.PrimaryKey(), "fk": v2.ForeignKey(path="gwf-nam.packages.pname")}
+        ),
+        "mname": lst.item.fields["mname"].model_copy(update={"fk": other}),
+    }
+    item = lst.item.model_copy(update={"fields": {**lst.item.fields, **fields}})
+    packages = blocks["packages"].model_copy(
+        update={"fields": {"packages": lst.model_copy(update={"item": item})}}
+    )
+    fixed = _fix_mvr_relations("gwf-mvr", {**blocks, "packages": packages})
+    fixed_fields = fixed["packages"].fields["packages"].item.fields
+    assert fixed_fields["pname"] == blocks["packages"].fields["packages"].item.fields["pname"]
+    assert fixed_fields["mname"].fk == other
 
 
 def test_migrate_hpc_model_names(dfn_dir):

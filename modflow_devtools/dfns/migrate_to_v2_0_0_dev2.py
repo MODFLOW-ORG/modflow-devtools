@@ -1521,17 +1521,26 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
 def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Patch MVR's pk/fk relations that the general passes can't reach on their
-    own.
+    Patch MVR's keys, which the general passes can't reach on their own
+    (nothing else in the component repeats `pname`, and it isn't `packages`'
+    leading column). MF6 (`gwf-mvr.f90`) names each listed package by memory
+    path, `<mname>/<pname>`, with `mname` given only in an exchange's mover
+    (iff `MODELNAMES`) and otherwise the owning model:
 
-    - Marks `packages.pname` as `pk`: it's the unique name of a package
-      participating in the mover, but nothing else in the component repeats
-      the field name `pname` (the period block's `pname1`/`pname2` are
-      renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
-      it, and `pname` isn't `packages`' leading column anyway (`mname` is).
-    - Marks `period.perioddata`'s `pname1`/`pname2` as
-      `fk: "packages.pname"`, since each identifies the provider/receiver
-      package by name.
+    - `packages.pname` is unique within `mname`: `read_packages` rejects a
+      repeated memory path (since modflow6 #3077, case-insensitively), and
+      each must name a package in that model (`check_packages`). So
+      `pk = {scope = "mname"}`, `fk = {path = "gwf-nam.packages.pname",
+      scope = "mname"}`.
+    - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
+      `fk = "sim-nam.models.mname"`. MF6 also requires an exchange mover's
+      models to be the exchange's two, which a key can't say.
+    - `pname1`/`pname2`: `fk = {path = "packages.pname", scope = "mname1"}`
+      (`"mname2"`), since `mvr_rp` looks each provider/receiver up among
+      the `packages` rows, fatal if unlisted.
+
+    Upgrades an unscoped key with the expected path (from an earlier pass)
+    to its scoped form, leaving any other key alone.
 
     Does *not* annotate `id1`/`id2`. Each identifies a feature within the
     package named by the sibling `pname1`/`pname2` field, but which block
@@ -1541,88 +1550,89 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     WEL/DRN/RIV. A single static `fk` value can't express a target that's
     conditional on resolved data like that.
     """
-    if name != "gwf-mvr":
+    if name != "gwf-mvr" or "period" not in blocks:
         return blocks
-
-    packages = blocks.get("packages")
-    period = blocks.get("period")
-    if packages is None or period is None:
+    # `perioddata` until `_name_period_lists` renames it
+    period_list = next(
+        (n for n, f in blocks["period"].fields.items() if isinstance(f, v2.List)), None
+    )
+    if period_list is None:
         return blocks
+    packages = ("packages", "packages", ("mname", "pname"))
+    period = ("period", period_list, ("mname1", "pname1", "mname2", "pname2"))
+    for block_name, list_name, columns in (packages, period):
+        if not all(
+            isinstance(_list_item_field(blocks, block_name, c, list_name), v2.String)
+            for c in columns
+        ):
+            return blocks
 
-    packages_list = packages.fields.get("packages")
-    if not isinstance(packages_list, v2.List) or not isinstance(packages_list.item, v2.Record):
-        return blocks
-    pname_field = packages_list.item.fields.get("pname")
-    if not isinstance(pname_field, v2.String):
-        return blocks
-
-    perioddata = period.fields.get("perioddata")
-    if not isinstance(perioddata, v2.List) or not isinstance(perioddata.item, v2.Record):
-        return blocks
-    item_fields = perioddata.item.fields
-    if not all(isinstance(item_fields.get(n), v2.String) for n in ("pname1", "pname2")):
-        return blocks
-
-    new_packages = packages
-    if pname_field.pk is None:
-        new_packages_item = packages_list.item.model_copy(
-            update={
-                "fields": {
-                    **packages_list.item.fields,
-                    "pname": pname_field.model_copy(update={"pk": v2.PrimaryKey()}),
-                }
-            }
-        )
-        new_packages_list = packages_list.model_copy(update={"item": new_packages_item})
-        new_packages = packages.model_copy(update={"fields": {"packages": new_packages_list}})
-
-    new_item_fields = dict(item_fields)
-    for pname_key in ("pname1", "pname2"):
-        pname_f = item_fields[pname_key]
-        if not isinstance(pname_f, v2.String):
-            continue
-        if pname_f.fk is None:
-            new_item_fields[pname_key] = pname_f.model_copy(
-                update={"fk": v2.ForeignKey(path="packages.pname")}
-            )
-
-    new_item = perioddata.item.model_copy(update={"fields": new_item_fields})
-    new_perioddata = perioddata.model_copy(update={"item": new_item})
-    new_period = period.model_copy(
-        update={"fields": {**period.fields, "perioddata": new_perioddata}}
+    model = v2.ForeignKey(path="sim-nam.models.mname")
+    blocks = _set_list_item_attrs(
+        blocks,
+        "packages",
+        {
+            "mname": {"fk": model},
+            "pname": {
+                "pk": v2.PrimaryKey(scope="mname"),
+                "fk": v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname"),
+            },
+        },
+    )
+    return _set_list_item_attrs(
+        blocks,
+        "period",
+        {
+            "mname1": {"fk": model},
+            "mname2": {"fk": model},
+            "pname1": {"fk": v2.ForeignKey(path="packages.pname", scope="mname1")},
+            "pname2": {"fk": v2.ForeignKey(path="packages.pname", scope="mname2")},
+        },
+        list_name=period_list,
     )
 
-    return {**blocks, "packages": new_packages, "period": new_period}
 
-
-def _list_item_field(blocks: dict[str, v2.Block], block_name: str, field_name: str):
-    """The field `field_name` of the item record of the list sharing
-    `block_name`'s name, or None if there's no such field."""
+def _list_item_field(
+    blocks: dict[str, v2.Block], block_name: str, field_name: str, list_name: str | None = None
+):
+    """The field `field_name` of the item record of the list `list_name`
+    (default: sharing `block_name`'s name), or None if there's no such field."""
     block = blocks.get(block_name)
-    lst = block.fields.get(block_name) if block else None
+    lst = block.fields.get(list_name or block_name) if block else None
     item = lst.item if isinstance(lst, v2.List) else None
     return item.fields.get(field_name) if isinstance(item, v2.Record) else None
 
 
 def _set_list_item_attrs(
-    blocks: dict[str, v2.Block], block_name: str, attrs: dict[str, dict[str, Any]]
+    blocks: dict[str, v2.Block],
+    block_name: str,
+    attrs: dict[str, dict[str, v2.PrimaryKey | v2.ForeignKey]],
+    list_name: str | None = None,
 ) -> dict[str, v2.Block]:
     """
-    Set attributes on fields of the item record of the list sharing
-    `block_name`'s name, e.g. `{"mname": {"pk": v2.PrimaryKey()}}`, leaving any that's
-    already set. The fields must exist (see `_list_item_field`).
+    Set keys on fields of the item record of the list `list_name` (default:
+    sharing `block_name`'s name), e.g. `{"mname": {"pk": v2.PrimaryKey()}}`.
+    Leaves any key that's already set, unless it's the unscoped form of a
+    scoped one given, which it upgrades. The fields must exist (see
+    `_list_item_field`).
     """
+    list_name = list_name or block_name
     block = blocks[block_name]
-    lst = block.fields[block_name]
+    lst = block.fields[list_name]
     item_fields = dict(lst.item.fields)  # type: ignore[union-attr]
     for field_name, field_attrs in attrs.items():
         field = item_fields[field_name]
-        update = {k: v for k, v in field_attrs.items() if getattr(field, k) is None}
+        update = {
+            k: v
+            for k, v in field_attrs.items()
+            if (current := getattr(field, k)) is None
+            or current == v.model_copy(update={"scope": None})
+        }
         if update:
             item_fields[field_name] = field.model_copy(update=update)
     new_item = lst.item.model_copy(update={"fields": item_fields})  # type: ignore[union-attr]
     new_list = lst.model_copy(update={"item": new_item})
-    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    new_block = block.model_copy(update={"fields": {**block.fields, list_name: new_list}})
     return {**blocks, block_name: new_block}
 
 
