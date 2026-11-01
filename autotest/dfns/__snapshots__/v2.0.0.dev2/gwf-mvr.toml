@@ -86,14 +86,21 @@ type = "record"
 [blocks.packages.fields.packages.item.fields.mname]
 type = "string"
 description = "name of model containing the package.  Model names are assigned by the user in the simulation name file."
-optional = true
+when = "modelnames"
 tagged = false
+fk = "sim-nam.models.mname"
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
 description = "is the name of a package that may be included in a subsequent stress period block.  The package name is assigned in the name file for the GWF Model.  Package names are optionally provided in the name file.  If they are not provided by the user, then packages are assigned a default value, which is the package acronym followed by a hyphen and the package number.  For example, the first Drain Package is named DRN-1.  The second Drain Package is named DRN-2, and so forth."
 tagged = false
-pk = true
+
+[blocks.packages.fields.packages.item.fields.pname.pk]
+scope = "mname"
+
+[blocks.packages.fields.packages.item.fields.pname.fk]
+path = "gwf-nam.packages.pname"
+scope = "mname"
 
 [blocks.period.fields.stress_period_data]
 type = "list"
@@ -105,15 +112,19 @@ type = "record"
 [blocks.period.fields.stress_period_data.item.fields.mname1]
 type = "string"
 description = "name of model containing the package, PNAME1."
-optional = true
+when = "modelnames"
 tagged = false
+fk = "sim-nam.models.mname"
 
 [blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
 longname = "provider package name"
 description = "is the package name for the provider.  The package PNAME1 must be designated to provide water through the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block."
 tagged = false
-fk = "packages.pname"
+
+[blocks.period.fields.stress_period_data.item.fields.pname1.fk]
+path = "packages.pname"
+scope = "mname1"
 
 [blocks.period.fields.stress_period_data.item.fields.id1]
 type = "integer"
@@ -125,15 +136,19 @@ index = true
 [blocks.period.fields.stress_period_data.item.fields.mname2]
 type = "string"
 description = "name of model containing the package, PNAME2."
-optional = true
+when = "modelnames"
 tagged = false
+fk = "sim-nam.models.mname"
 
 [blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"
 longname = "receiver package name"
 description = "is the package name for the receiver.  The package PNAME2 must be designated to receive water from the MVR Package by specifying the keyword 'MOVER' in its OPTIONS block."
 tagged = false
-fk = "packages.pname"
+
+[blocks.period.fields.stress_period_data.item.fields.pname2.fk]
+path = "packages.pname"
+scope = "mname2"
 
 [blocks.period.fields.stress_period_data.item.fields.id2]
 type = "integer"

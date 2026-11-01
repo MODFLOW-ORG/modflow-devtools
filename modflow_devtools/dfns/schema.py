@@ -9,6 +9,9 @@ from typing import Annotated, Any, Literal, cast
 from boltons.dictutils import OMD
 from pydantic import (
     BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    PlainSerializer,
     SerializationInfo,
     computed_field,
     field_validator,
@@ -139,14 +142,92 @@ class Keyword(_DerivedTagged):
         return True
 
 
+class PrimaryKey(BaseModel):
+    """A list item column's key: rows are unique by it. With a `scope`, the
+    name of a sibling column, rows are unique by (scope, key) instead, e.g.
+    MVR's `pname` within `mname`. Written `pk = true` when unscoped."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    scope: str | None = None
+
+
+class ForeignKey(BaseModel):
+    """A reference to a `pk` column (or a string array's entries), by its
+    path, `[component.]block.field`. With a `scope`, the name of a sibling
+    column, that column qualifies the reference: within a component, it
+    matches the target pk's own scope; across components, it picks the
+    target component's instance. Written `fk = "<path>"` when unscoped."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    path: str
+    scope: str | None = None
+
+    @field_validator("path")
+    @classmethod
+    def _check_path(cls, v: str) -> str:
+        parts = v.split(".")
+        if len(parts) not in (2, 3) or not all(parts):
+            raise ValueError(
+                f"fk path {v!r} must be a hierarchical path ('[component.]block.field')"
+            )
+        return v
+
+    @property
+    def component(self) -> str | None:
+        """The target component, or None for this one."""
+        parts = self.path.split(".")
+        return parts[0] if len(parts) == 3 else None
+
+    @property
+    def block(self) -> str:
+        return self.path.split(".")[-2]
+
+    @property
+    def field(self) -> str:
+        return self.path.split(".")[-1]
+
+
+# Keys load from their TOML shorthand (`pk = true`, `fk = "<path>"`) and dump
+# back to it when unscoped, so they're always objects in Python.
+def _load_pk(v: Any) -> Any:
+    if isinstance(v, bool):
+        return PrimaryKey() if v else None
+    return v
+
+
+def _load_fk(v: Any) -> Any:
+    return ForeignKey(path=v) if isinstance(v, str) else v
+
+
+def _dump_pk(key: PrimaryKey) -> Any:
+    return True if key.scope is None else key.model_dump(exclude_none=True)
+
+
+def _dump_fk(key: ForeignKey) -> Any:
+    return key.path if key.scope is None else key.model_dump(exclude_none=True)
+
+
+PK = Annotated[
+    PrimaryKey | None,
+    BeforeValidator(_load_pk, json_schema_input_type=bool | PrimaryKey | None),
+    PlainSerializer(_dump_pk, when_used="unless-none"),
+]
+FK = Annotated[
+    ForeignKey | None,
+    BeforeValidator(_load_fk, json_schema_input_type=str | ForeignKey | None),
+    PlainSerializer(_dump_fk, when_used="unless-none"),
+]
+
+
 class String(InputFieldBase):
     type: Literal["string"] = PydanticField(default="string", frozen=True)
     valid: list[str] | None = None
     case_sensitive: bool = False
     time_series: bool = False
-    pk: bool = False
-    fk: str | None = None
-    fk_ref: str | None = None
+    pk: PK = None
+    fk: FK = None
     # A dynamic keyword: the value itself is a keyword, one of the `fk`
     # target's keys, so a record it leads is keyword-led (see
     # `_is_dynamic_key`). A role in the input grammar, independent of `fk`,
@@ -161,12 +242,12 @@ class String(InputFieldBase):
             raise ValueError(
                 f"String {self.name!r}: dynamic requires tagged=False (its value is the keyword)"
             )
+        if self.fk is None:
+            raise ValueError(f"String {self.name!r}: dynamic requires an fk naming its keywords")
         # Its keywords must be known before its line is read, so they can't
-        # depend on a sibling later on that line, as `fk_ref` would make them.
-        if self.fk is None or self.fk_ref is not None:
-            raise ValueError(
-                f"String {self.name!r}: dynamic requires an fk naming its keywords, without fk_ref"
-            )
+        # depend on a scope later on that line.
+        if self.fk.scope is not None:
+            raise ValueError(f"String {self.name!r}: a dynamic keyword's fk can't be scoped")
         return self
 
 
@@ -187,9 +268,8 @@ class Integer(InputFieldBase):
     valid: list[int] | None = None
     time_series: bool = False
     index: Index = False
-    pk: bool = False
-    fk: str | None = None
-    fk_ref: str | None = None
+    pk: PK = None
+    fk: FK = None
 
 
 class Double(InputFieldBase):
@@ -240,8 +320,9 @@ class Array(InputFieldBase):
     index: Index = False
     # Integer: each (nonzero) element references a row by `pk`, per grid cell
     # or, in a list item, per entry. String: each entry is a key into the
-    # target (e.g. a list of model names). Hierarchical-path form only.
-    fk: str | None = None
+    # target (e.g. a list of model names). Never scoped: an array has no
+    # sibling columns of its own.
+    fk: FK = None
     # For dtype="cellid" only: each element is a `CellID` with these.
     model: CellModel = None
     allow_zero: bool = False
@@ -271,12 +352,8 @@ class Array(InputFieldBase):
                     f"Array {self.name!r}: fk requires dtype='integer' or 'string', "
                     f"got {self.dtype!r}"
                 )
-            # no sibling `fk_ref` to resolve a bare block name against
-            if "." not in self.fk:
-                raise ValueError(
-                    f"Array {self.name!r}: fk={self.fk!r} must be a hierarchical path "
-                    f"('[component.]block.field')"
-                )
+            if self.fk.scope is not None:
+                raise ValueError(f"Array {self.name!r}: an array's fk can't be scoped")
         return self
 
 
@@ -1459,14 +1536,13 @@ def _check_shape_ref(
             f"{where}: {ref.fk_field!r} is not a sibling field in the enclosing record"
         )
 
-    # its fk must be set and its block portion must match the lookup's block
-    fk = getattr(fk_field, "fk", None)
+    # its fk must be set and reference the lookup's list
+    fk: ForeignKey | None = getattr(fk_field, "fk", None)
     if fk is None:
         raise ValueError(f"{where}: {ref.fk_field!r}.fk is not set")
-    fk_block = fk.split(".")[0] if "." in fk else fk
-    if fk_block != ref.block:
+    if (fk.component, fk.block) != (ref.component, ref.block):
         raise ValueError(
-            f"{where}: {ref.fk_field!r}.fk = {fk!r} does not reference block {ref.block!r}"
+            f"{where}: {ref.fk_field!r}.fk = {fk.path!r} does not reference block {ref.block!r}"
         )
 
 
@@ -1494,104 +1570,129 @@ def _validate_list_shape_element(
     _check_shape_element(element, list_field, known_dims)
 
 
+def _key_scopes(field: "InputField") -> set[str]:
+    keys = (getattr(field, "pk", None), getattr(field, "fk", None))
+    return {k.scope for k in keys if k is not None and k.scope is not None}
+
+
+def _check_record_keys(fields: dict) -> None:
+    """
+    Check a record's keys among its columns: at most one `pk`, and every
+    scope names another String/Integer column, without cycles. A column's
+    `pk` and `fk`, if both scoped, share the scope.
+    """
+    pks = [n for n, f in fields.items() if getattr(f, "pk", None) is not None]
+    if len(pks) > 1:
+        raise ValueError(f"Fields {pks!r}: a row may have only one pk")
+    for name, field in fields.items():
+        scopes = _key_scopes(field)
+        if len(scopes) > 1:
+            raise ValueError(f"Field {name!r}: pk and fk scopes differ, {sorted(scopes)!r}")
+        for scope in scopes:
+            if scope == name or not isinstance(fields.get(scope), String | Integer):
+                raise ValueError(
+                    f"Field {name!r} scope={scope!r}: not another String or Integer "
+                    f"field in the same record"
+                )
+    for name in fields:
+        chain = [name]
+        while scopes := _key_scopes(fields[chain[-1]]):
+            (scope,) = scopes
+            if scope in chain:
+                raise ValueError(f"Fields {chain!r}: scopes form a cycle")
+            chain.append(scope)
+
+
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String/Array field with fk or fk_ref set, validate
-    structure. Array's `fk` (an integer array's per grid cell or per entry,
-    a string array's per entry) only ever uses the hierarchical-path form
-    below — it has no `pk`/`fk_ref` counterpart (see `Array.fk`).
+    For every Integer/String/Array field with an fk, validate structure (see
+    docs/md/dfnspec.md, "Primary and foreign keys"). Grid-cell references are
+    a separate mechanism (the `cellid` type, see `CellID`).
 
-    Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
-    references are a separate mechanism entirely (the `cellid` type, not an
-    `fk` value — see `CellID`):
+    An fk's path names a list block's pk column, or, for a String or string
+    Array, a string-dtype Array, whose entries are then the key set (e.g.
+    `options.auxiliary`). Without a component, the block is looked up in this
+    component; with one, in that component via `spec.components`. A dynamic
+    key (see `_is_dynamic_key`) is checked like any other String.
 
-    - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block whose item has a pk field, or, for a String
-      or string Array, the named field may instead be a string-dtype Array,
-      whose entries are then the key set (e.g. `options.auxiliary`).
-      Unqualified ("block.field"), the block is looked up in this component;
-      qualified ("component.block.field"), it's looked up in the named
-      component via `spec.components` instead. A dynamic key (see
-      `_is_dynamic_key`) is checked like any other String.
-    - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
-      String field in the same record, whose runtime value identifies the
-      target component (and, with fk, the pk field is looked up in the block
-      named by fk within that component). The target itself is only known at
-      runtime, so no further structural check is possible statically.
-
-    A hierarchical-path fk may not be combined with fk_ref.
+    A scoped fk within a component targets a pk scoped the same way: if both
+    scope columns have an fk, it's the same. A scoped fk to another component
+    picks its instance by the scope column, which must be an fk to the row
+    binding that component in its parent, i.e. a list whose item has a File
+    whose `component` admits the target. See also `_check_record_keys`.
 
     Observation fields (see `ObservationField`) are checked like a list item's.
     """
 
-    def _check_fields(fields: dict) -> None:
-        for field in fields.values():
-            fk: str | None = getattr(field, "fk", None)
-            fk_ref: str | None = getattr(field, "fk_ref", None)
-
-            if fk_ref is not None:
-                if fk is not None and "." in fk:
-                    raise ValueError(
-                        f"Field {field.name!r}: fk={fk!r} may not be combined with "
-                        f"fk_ref (only a bare block name may be)"
-                    )
-                sibling = fields.get(fk_ref)
-                if not isinstance(sibling, String):
-                    raise ValueError(
-                        f"Field {field.name!r} fk_ref={fk_ref!r}: "
-                        f"not a sibling String field in the same record"
-                    )
-                # fk (a bare block name, if set) and the component it lives in
-                # are both resolved from fk_ref's runtime value — no further
-                # static check is possible.
-            elif fk is not None:
-                parts = fk.split(".")
-                target: ComponentBase
-                if len(parts) == 3:
-                    component_ref, block_name, _fk_field = parts
-                    resolved = spec.components.get(component_ref)
-                    if resolved is None:
-                        raise ValueError(
-                            f"Field {field.name!r} fk={fk!r}: "
-                            f"component {component_ref!r} not found in spec"
-                        )
-                    target = resolved
-                    where = f"component {component_ref!r}"
-                elif len(parts) in (1, 2):
-                    block_name = parts[0]
-                    target = component
-                    where = "this component"
-                else:
-                    raise ValueError(
-                        f"Field {field.name!r} fk={fk!r}: "
-                        f"must be a bare block name, 'block.field', or "
-                        f"'component.block.field'"
-                    )
-                is_string = isinstance(field, String) or (
-                    isinstance(field, Array) and field.dtype == "string"
+    def _check_fk(field: "InputField", fk: ForeignKey, fields: dict) -> None:
+        where_fk = f"Field {field.name!r} fk={fk.path!r}"
+        target = component
+        where = "this component"
+        if fk.component is not None:
+            resolved = spec.components.get(fk.component)
+            if resolved is None:
+                raise ValueError(f"{where_fk}: component {fk.component!r} not found in spec")
+            target = resolved
+            where = f"component {fk.component!r}"
+        is_string = isinstance(field, String) or (
+            isinstance(field, Array) and field.dtype == "string"
+        )
+        if is_string:
+            target_block = (target.blocks or {}).get(fk.block)
+            target_field = target_block.fields.get(fk.field) if target_block else None
+            if isinstance(target_field, Array) and target_field.dtype == "string":
+                return
+        list_field = _find_list_in_block(target, fk.block)
+        if list_field is None:
+            raise ValueError(f"{where_fk}: {fk.block!r} is not a list block in {where}")
+        item = list_field.item
+        item_fields: dict = item.fields if isinstance(item, Record) else item.arms
+        target_pk: PrimaryKey | None = getattr(item_fields.get(fk.field), "pk", None)
+        if target_pk is None:
+            raise ValueError(f"{where_fk}: {fk.field!r} is not the pk of list {list_field.name!r}")
+        if fk.component is None:
+            if (fk.scope is None) != (target_pk.scope is None):
+                raise ValueError(
+                    f"{where_fk}: scope={fk.scope!r}, but the target pk's is "
+                    f"{target_pk.scope!r}; both or neither must be scoped"
                 )
-                if is_string and len(parts) > 1:
-                    target_block = (target.blocks or {}).get(block_name)
-                    target_field = target_block.fields.get(parts[-1]) if target_block else None
-                    if isinstance(target_field, Array) and target_field.dtype == "string":
-                        continue
-                list_field = _find_list_in_block(target, block_name)
-                if list_field is None:
+            if fk.scope is not None and target_pk.scope is not None:
+                ours = getattr(fields[fk.scope], "fk", None)
+                theirs = getattr(item_fields[target_pk.scope], "fk", None)
+                if ours is not None and theirs is not None and ours != theirs:
                     raise ValueError(
-                        f"Field {field.name!r} fk={fk!r}: "
-                        f"{block_name!r} is not a list block in {where}"
+                        f"{where_fk}: scope {fk.scope!r} references {ours.path!r}, but the "
+                        f"target's scope {target_pk.scope!r} references {theirs.path!r}"
                     )
-                item = list_field.item
-                item_fields: dict = item.fields if isinstance(item, Record) else item.arms
-                has_pk = any(getattr(f, "pk", False) for f in item_fields.values())
-                if not has_pk:
-                    raise ValueError(
-                        f"Field {field.name!r} fk={fk!r}: "
-                        f"list {list_field.name!r} item has no pk=True field"
-                    )
+        elif fk.scope is not None:
+            _check_instance_scope(field, fk, fields[fk.scope])
+
+    def _check_instance_scope(field: "InputField", fk: ForeignKey, scope_field: Any) -> None:
+        where_fk = f"Field {field.name!r} fk={fk.path!r}"
+        scope_fk: ForeignKey | None = getattr(scope_field, "fk", None)
+        problem = f"{where_fk}: scope {scope_field.name!r} must be an fk to the row binding "
+        problem += f"{fk.component!r} in its parent"
+        if scope_fk is None:
+            raise ValueError(problem)
+        owner = spec.components.get(scope_fk.component) if scope_fk.component else component
+        binding = _find_list_in_block(owner, scope_fk.block) if owner else None
+        if binding is None or not isinstance(binding.item, Record):
+            raise ValueError(problem)
+        target = spec.components[fk.component]  # type: ignore[index]
+        files = [f for f in binding.item.fields.values() if isinstance(f, File)]
+        if not any(f.component is not None and admits(f.component, target) for f in files):
+            raise ValueError(problem)
+
+    def _check_fields(fields: dict, record: bool = False) -> None:
+        if record:
+            _check_record_keys(fields)
+        for field in fields.values():
+            fk: ForeignKey | None = getattr(field, "fk", None)
+            if fk is not None:
+                _check_fk(field, fk, fields)
 
             if isinstance(field, Record):
-                _check_fields(field.fields)
+                _check_fields(field.fields, record=True)
             elif isinstance(field, Union):
                 _check_fields(field.arms)
             elif isinstance(field, List):
@@ -1600,13 +1701,13 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 # a Record item of its own (a scalar arm has no siblings).
                 for form in [item] if isinstance(item, Record) else item.arms.values():
                     if isinstance(form, Record):
-                        _check_fields(form.fields)
+                        _check_fields(form.fields, record=True)
                     else:
                         _check_fields({form.name: form})
 
     for block in (component.blocks or {}).values():
         _check_fields(block.fields)
-    _check_fields(component.observations or {})
+    _check_fields(component.observations or {}, record=True)
 
 
 def _iter_files(fields: "Mapping[str, InputField]"):

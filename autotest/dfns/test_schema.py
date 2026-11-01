@@ -577,8 +577,7 @@ def test_list_led_by_dynamic_key_is_tagged():
     "auxname",
     [
         String(name="auxname", tagged=False),
-        String(name="auxname", tagged=False, fk="packagedata"),
-        String(name="auxname", tagged=False, fk_ref="pname"),
+        String(name="auxname", tagged=False, fk="packagedata.pname"),
         # a key, but data: leading isn't enough without `dynamic`
         String(name="auxname", tagged=False, fk="options.auxiliary"),
         String(name="mname", tagged=False, fk="sim-nam.models.mname"),
@@ -595,8 +594,6 @@ def test_list_led_by_other_untagged_value_is_untagged(auxname):
     [
         ({"fk": "options.auxiliary"}, "requires tagged=False"),
         ({"tagged": False}, "requires an fk"),
-        ({"tagged": False, "fk_ref": "pname"}, "requires an fk"),
-        ({"tagged": False, "fk": "packagedata", "fk_ref": "pname"}, "requires an fk"),
     ],
 )
 def test_dynamic_string_requires_untagged_static_fk(kwargs, match):
@@ -604,7 +601,7 @@ def test_dynamic_string_requires_untagged_static_fk(kwargs, match):
         String(name="auxname", dynamic=True, **kwargs)
 
 
-@pytest.mark.parametrize("fk", ["options.auxiliary", "packagedata", "gwf-nam.packages.pname"])
+@pytest.mark.parametrize("fk", ["options.auxiliary", "packages.pname", "gwf-nam.packages.pname"])
 def test_dynamic_string_accepts_any_static_fk(fk):
     assert String(name="auxname", tagged=False, fk=fk, dynamic=True).dynamic
 
@@ -659,7 +656,7 @@ def test_array_package_aux_is_list_of_named_arrays(dev3_spec, name, shape):
     auxname, array = aux.item.fields.values()
     assert isinstance(auxname, String)
     assert not auxname.tagged and auxname.dynamic
-    assert auxname.fk == "options.auxiliary"
+    assert auxname.fk.path == "options.auxiliary"
     assert isinstance(array, Array)
     assert not array.tagged and not array.optional
     assert array.dtype == "double"

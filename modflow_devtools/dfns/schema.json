@@ -154,11 +154,13 @@
               "type": "string"
             },
             {
+              "$ref": "#/$defs/ForeignKey"
+            },
+            {
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Fk"
+          "default": null
         },
         "model": {
           "anyOf": [
@@ -735,6 +737,33 @@
       "title": "File",
       "type": "object"
     },
+    "ForeignKey": {
+      "additionalProperties": false,
+      "description": "A reference to a `pk` column (or a string array's entries), by its\npath, `[component.]block.field`. With a `scope`, the name of a sibling\ncolumn, that column qualifies the reference: within a component, it\nmatches the target pk's own scope; across components, it picks the\ntarget component's instance. Written `fk = \"<path>\"` when unscoped.",
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "ForeignKey",
+      "type": "object"
+    },
     "InputDim": {
       "description": "A named dimension resolvable from input fields at DFN-parse time.\n\n``value`` specifies the dimension size, directly or indirectly, and can be:\n  - ``nlay``: an integer field\n  - ``len(auxiliary)``: the runtime length of a self-sizing array field\n  - ``nlay * ncol``: the result of an arithmetic expression, e.g. of other dims\n\nValid in both input field shapes and memory variable shapes.",
       "properties": {
@@ -895,9 +924,18 @@
           "title": "Index"
         },
         "pk": {
-          "default": false,
-          "title": "Pk",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/PrimaryKey"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fk": {
           "anyOf": [
@@ -905,23 +943,13 @@
               "type": "string"
             },
             {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Fk"
-        },
-        "fk_ref": {
-          "anyOf": [
-            {
-              "type": "string"
+              "$ref": "#/$defs/ForeignKey"
             },
             {
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Fk Ref"
+          "default": null
         }
       },
       "required": [
@@ -1862,6 +1890,26 @@
       "title": "Package",
       "type": "object"
     },
+    "PrimaryKey": {
+      "additionalProperties": false,
+      "description": "A list item column's key: rows are unique by it. With a `scope`, the\nname of a sibling column, rows are unique by (scope, key) instead, e.g.\nMVR's `pname` within `mname`. Written `pk = true` when unscoped.",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        }
+      },
+      "title": "PrimaryKey",
+      "type": "object"
+    },
     "Record": {
       "properties": {
         "name": {
@@ -2364,9 +2412,18 @@
           "type": "boolean"
         },
         "pk": {
-          "default": false,
-          "title": "Pk",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/PrimaryKey"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fk": {
           "anyOf": [
@@ -2374,23 +2431,18 @@
               "type": "string"
             },
             {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Fk"
-        },
-        "fk_ref": {
-          "anyOf": [
-            {
-              "type": "string"
+              "$ref": "#/$defs/ForeignKey"
             },
             {
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Fk Ref"
+          "default": null
+        },
+        "dynamic": {
+          "default": false,
+          "title": "Dynamic",
+          "type": "boolean"
         }
       },
       "required": [

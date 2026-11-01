@@ -12,6 +12,7 @@ from modflow_devtools.dfns import schema as v2
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
     _fix_model_nam_package_keys,
     _fix_model_name_relations,
+    _fix_mvr_relations,
     to_v2_0_0_dev2,
 )
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
@@ -333,8 +334,8 @@ def test_migrate_period_union_element(dfn_dir, name, setting):
     item = component.blocks["period"].fields["stress_period_data"].item
     assert isinstance(item, v2.Union) and item.name == setting
     if name == "gwf-lak":
-        assert item.arms["stage"].fields["lakeno"].fk == "packagedata.ifno"
-        assert item.arms["rate"].fields["outletno"].fk == "outlets.outletno"
+        assert item.arms["stage"].fields["lakeno"].fk.path == "packagedata.ifno"
+        assert item.arms["rate"].fields["outletno"].fk.path == "outlets.outletno"
 
 
 def test_migrate_sim_nam_model_keys(dfn_dir):
@@ -343,11 +344,11 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
     def item(block):
         return component.blocks[block].fields[block].item
 
-    assert item("models").fields["mname"].pk
+    assert item("models").fields["mname"].pk is not None
     exchanges = item("exchanges")
-    assert exchanges.fields["exgmnamea"].fk == "models.mname"
-    assert exchanges.fields["exgmnameb"].fk == "models.mname"
-    assert item("solutiongroup").fields["slnmnames"].fk == "models.mname"
+    assert exchanges.fields["exgmnamea"].fk.path == "models.mname"
+    assert exchanges.fields["exgmnameb"].fk.path == "models.mname"
+    assert item("solutiongroup").fields["slnmnames"].fk.path == "models.mname"
     # unchanged by a second pass
     assert _fix_model_name_relations("sim-nam", component.blocks) == component.blocks
 
@@ -356,7 +357,7 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
 def test_migrate_model_nam_package_keys(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
     item = component.blocks["packages"].fields["packages"].item
-    assert item.fields["pname"].pk
+    assert item.fields["pname"].pk is not None
     assert item.fields["pname"].optional
     assert [n for n, f in item.fields.items() if getattr(f, "pk", False)] == ["pname"]
     # unchanged by a second pass
@@ -369,14 +370,64 @@ def test_migrate_model_nam_package_keys_skips(dfn_dir, name):
     assert _fix_model_nam_package_keys(name, component.blocks) == component.blocks
 
 
+def test_migrate_mvr_keys(dfn_dir):
+    """A mover's package is unique within its model, and its period rows
+    reference those (model, package) rows."""
+    component = _migrate_dev3(dfn_dir, "gwf-mvr")
+    blocks = component.blocks
+    packages = blocks["packages"].fields["packages"].item.fields
+    period = blocks["period"].fields["stress_period_data"].item.fields
+    model = v2.ForeignKey(path="sim-nam.models.mname")
+    assert packages["mname"].fk == model
+    assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
+    assert packages["pname"].fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname")
+    for i in ("1", "2"):
+        assert period[f"mname{i}"].fk == model
+        assert period[f"pname{i}"].fk == v2.ForeignKey(path="packages.pname", scope=f"mname{i}")
+        assert period[f"id{i}"].fk is None
+    # unchanged by a second pass
+    assert _fix_mvr_relations("gwf-mvr", blocks) == blocks
+
+
+def test_migrate_mvr_model_names_when_option(dfn_dir):
+    """MVR's model names are read iff MODELNAMES, and then required."""
+    blocks = _migrate_dev3(dfn_dir, "gwf-mvr").blocks
+    packages = blocks["packages"].fields["packages"].item.fields
+    period = blocks["period"].fields["stress_period_data"].item.fields
+    for field in (packages["mname"], period["mname1"], period["mname2"]):
+        assert (field.when, field.optional) == ("modelnames", False)
+
+
+def test_migrate_mvr_keys_upgrades_only_unscoped_expected(dfn_dir):
+    """An earlier pass's unscoped key with the expected path is upgraded to
+    its scoped form; any other key is left alone."""
+    blocks = _migrate_dev3(dfn_dir, "gwf-mvr").blocks
+    lst = blocks["packages"].fields["packages"]
+    other = v2.ForeignKey(path="sim-nam.models.mtype")
+    fields = {
+        "pname": lst.item.fields["pname"].model_copy(
+            update={"pk": v2.PrimaryKey(), "fk": v2.ForeignKey(path="gwf-nam.packages.pname")}
+        ),
+        "mname": lst.item.fields["mname"].model_copy(update={"fk": other}),
+    }
+    item = lst.item.model_copy(update={"fields": {**lst.item.fields, **fields}})
+    packages = blocks["packages"].model_copy(
+        update={"fields": {"packages": lst.model_copy(update={"item": item})}}
+    )
+    fixed = _fix_mvr_relations("gwf-mvr", {**blocks, "packages": packages})
+    fixed_fields = fixed["packages"].fields["packages"].item.fields
+    assert fixed_fields["pname"] == blocks["packages"].fields["packages"].item.fields["pname"]
+    assert fixed_fields["mname"].fk == other
+
+
 def test_migrate_hpc_model_names(dfn_dir):
     """HPC's leading model name is a key into sim-nam's models, but data, not
     a dynamic keyword, so its list stays untagged."""
     component = _migrate_dev3(dfn_dir, "utl-hpc")
     partitions = component.blocks["partitions"].fields["partitions"]
     mname = partitions.item.fields["mname"]
-    assert mname.fk == "sim-nam.models.mname"
-    assert not mname.pk and not mname.dynamic
+    assert mname.fk.path == "sim-nam.models.mname"
+    assert mname.pk is None and not mname.dynamic
     assert not partitions.tagged
     assert _fix_model_name_relations("utl-hpc", component.blocks) == component.blocks
 
@@ -662,7 +713,7 @@ def _obs_forms(field) -> list[tuple]:
     if isinstance(field, v2.Double):
         return [(("double", field.name),)]
     assert isinstance(field, v2.Integer) and field.index
-    return [(("index", field.fk),)]
+    return [(("index", field.fk.path if field.fk else None),)]
 
 
 _CELL = ("cellid",)
@@ -752,7 +803,7 @@ def test_migrate_sfr_ic_is_signed_index(dfn_dir):
     item = component.blocks["connectiondata"].fields["connectiondata"].item
     ic = item.fields["ic"]
     assert ic.index == "signed"
-    assert ic.fk == "packagedata.ifno"
+    assert ic.fk.path == "packagedata.ifno"
     # nothing else in the corpus supports negative indices
     signed = [
         f.name

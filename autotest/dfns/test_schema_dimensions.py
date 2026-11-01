@@ -429,7 +429,7 @@ def _lookup_ctx():
     row-level lookup scenario mirroring the gwf-lak period table.
 
     packagedata block has a List with item Record(lakeno pk, nlakeconn int).
-    The array lives inside a Record with sibling lakeno(fk='packagedata').
+    The array lives inside a Record with sibling lakeno(fk='packagedata.lakeno').
     """
     nlakeconn = Integer(name="nlakeconn")
     lakeno_pk = Integer(name="lakeno", pk=True)
@@ -437,7 +437,7 @@ def _lookup_ctx():
     pkg_list = List(name="packagedata", item=pkg_item)
     pkg_block = Block(name="packagedata", fields={"packagedata": pkg_list})
 
-    fk_lakeno = Integer(name="lakeno", fk="packagedata")
+    fk_lakeno = Integer(name="lakeno", fk="packagedata.lakeno")
     arr = Array(name="outflow", dtype="double", shape=[])
     enc_record = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": arr})
 
@@ -486,7 +486,7 @@ def test_validate_shape_element_non_integer_column():
     pkg_item = Record(name="item", fields={"lakeno": lakeno_pk, "nlakeconn": nlakeconn})
     pkg_list = List(name="packagedata", item=pkg_item)
     pkg_block = Block(name="packagedata", fields={"packagedata": pkg_list})
-    fk_lakeno = Integer(name="lakeno", fk="packagedata")
+    fk_lakeno = Integer(name="lakeno", fk="packagedata.lakeno")
     arr = Array(name="outflow", dtype="double", shape=[])
     enc = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": arr})
     lak = Package(name="gwf-lak", parent="gwf-nam", blocks={"packagedata": pkg_block})
@@ -526,7 +526,7 @@ def test_validate_shape_element_fk_block_mismatch():
     pkg_item = Record(name="item", fields={"lakeno": lakeno_pk, "nlakeconn": nlakeconn})
     pkg_list = List(name="packagedata", item=pkg_item)
     pkg_block = Block(name="packagedata", fields={"packagedata": pkg_list})
-    fk_lakeno = Integer(name="lakeno", fk="otherblock")  # fk → wrong block
+    fk_lakeno = Integer(name="lakeno", fk="otherblock.lakeno")  # fk → wrong block
     arr = Array(name="outflow", dtype="double", shape=[])
     enc = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": arr})
     lak = Package(name="gwf-lak", parent="gwf-nam", blocks={"packagedata": pkg_block})
@@ -614,7 +614,7 @@ def _cross_component_lookup_ctx():
     _arr, _enc, lak, _known = _lookup_ctx()
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    fk_lakeno = Integer(name="lakeno", fk="packagedata.lakeno")
+    fk_lakeno = Integer(name="lakeno", fk="gwf-lak.packagedata.lakeno")
     arr = Array(name="outflow", dtype="double", shape=[])
     enc = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": arr})
     other = Package(name="gwf-other", parent="gwf-nam", blocks=None)
@@ -978,7 +978,7 @@ def test_row_level_lookup_in_list_item():
     pkg_list = List(name="packagedata", item=pkg_item)
     pkg_block = Block(name="packagedata", fields={"packagedata": pkg_list})
 
-    fk_lakeno = Integer(name="lakeno", fk="packagedata")
+    fk_lakeno = Integer(name="lakeno", fk="packagedata.lakeno")
     outflow = Array(name="outflow", dtype="double", shape=["packagedata.nlakeconn(lakeno)"])
     period_item = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": outflow})
     period_list = List(name="period", item=period_item)

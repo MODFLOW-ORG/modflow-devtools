@@ -480,9 +480,11 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             for fname, sf in record.fields.items():
                 updated = sf
                 if (block_name, fname) in fk_map and getattr(sf, "fk", None) is None:
-                    updated = updated.model_copy(update={"fk": fk_map[(block_name, fname)]})
-                if (block_name, fname) in pk_set and not getattr(sf, "pk", False):
-                    updated = updated.model_copy(update={"pk": True})
+                    updated = updated.model_copy(
+                        update={"fk": v2.ForeignKey(path=fk_map[(block_name, fname)])}
+                    )
+                if (block_name, fname) in pk_set and getattr(sf, "pk", None) is None:
+                    updated = updated.model_copy(update={"pk": v2.PrimaryKey()})
                 if updated is not sf:
                     updates[fname] = updated
             if not updates:
@@ -561,7 +563,9 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         if not isinstance(field, v2.List) or not isinstance(field.item, v2.Record):
             continue
         record = field.item
-        if not record.fields or any(getattr(f, "pk", False) for f in record.fields.values()):
+        if not record.fields or any(
+            getattr(f, "pk", None) is not None for f in record.fields.values()
+        ):
             continue
         first_name, first = next(iter(record.fields.items()))
         if not isinstance(first, v2.Integer) or first.optional or first.fk is not None:
@@ -570,7 +574,7 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             update={
                 "fields": {
                     **record.fields,
-                    first_name: first.model_copy(update={"pk": True}),
+                    first_name: first.model_copy(update={"pk": v2.PrimaryKey()}),
                 }
             }
         )
@@ -723,6 +727,14 @@ def _replace_named(
 # are (block, field, option).
 _OPTION_COLUMNS: dict[str, list[tuple[str, str, str]]] = {
     "gwf-evt": [("period", "petm0", "surf_rate_specified")],
+    # MF6 requires MODELNAMES in an exchange's mover and rejects it in a
+    # model's (`check_options`, `gwf-mvr.f90`), and reads the model names iff
+    # it's set.
+    "gwf-mvr": [
+        ("packages", "mname", "modelnames"),
+        ("period", "mname1", "modelnames"),
+        ("period", "mname2", "modelnames"),
+    ],
 }
 
 
@@ -971,7 +983,7 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             continue
         item = list_field.item
         updates = {
-            fname: f.model_copy(update={"fk": target})
+            fname: f.model_copy(update={"fk": v2.ForeignKey(path=target)})
             for fname, target in field_targets.items()
             if isinstance(f := item.fields.get(fname), v2.Integer | v2.Array) and f.fk is None
         }
@@ -1013,7 +1025,12 @@ def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str
     if not isinstance(field, v2.Array) or field.fk is not None:
         return blocks
     new_block = block.model_copy(
-        update={"fields": {**block.fields, field_name: field.model_copy(update={"fk": target})}}
+        update={
+            "fields": {
+                **block.fields,
+                field_name: field.model_copy(update={"fk": v2.ForeignKey(path=target)}),
+            }
+        }
     )
     return {**blocks, block_name: new_block}
 
@@ -1456,7 +1473,7 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     def _retarget(
         arm_name: str, arm: "v2.Scalar | v2.Array | v2.Record", key: str, fk: str
     ) -> v2.Record:
-        renamed = number_field.model_copy(update={"name": key, "fk": fk})
+        renamed = number_field.model_copy(update={"name": key, "fk": v2.ForeignKey(path=fk)})
         if isinstance(arm, v2.Record):
             return arm.model_copy(update={"fields": {key: renamed, **arm.fields}})
         # Most arms are a bare scalar (e.g. `stage`), not a Record — wrap it
@@ -1489,13 +1506,15 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
     outlets_item_fields = dict(outlets_list.item.fields)
     changed = False
-    if not outletno_field.pk:
-        outlets_item_fields["outletno"] = outletno_field.model_copy(update={"pk": True})
+    if outletno_field.pk is None:
+        outlets_item_fields["outletno"] = outletno_field.model_copy(update={"pk": v2.PrimaryKey()})
         changed = True
     for fname in _LAK_OUTLET_LAKE_REFS:
         f = outlets_item_fields.get(fname)
         if isinstance(f, v2.Integer) and f.fk is None:
-            outlets_item_fields[fname] = f.model_copy(update={"fk": "packagedata.ifno"})
+            outlets_item_fields[fname] = f.model_copy(
+                update={"fk": v2.ForeignKey(path="packagedata.ifno")}
+            )
             changed = True
 
     if changed:
@@ -1510,17 +1529,26 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
 def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Patch MVR's pk/fk relations that the general passes can't reach on their
-    own.
+    Patch MVR's keys, which the general passes can't reach on their own
+    (nothing else in the component repeats `pname`, and it isn't `packages`'
+    leading column). MF6 (`gwf-mvr.f90`) names each listed package by memory
+    path, `<mname>/<pname>`, with `mname` given only in an exchange's mover
+    (iff `MODELNAMES`) and otherwise the owning model:
 
-    - Marks `packages.pname` as `pk`: it's the unique name of a package
-      participating in the mover, but nothing else in the component repeats
-      the field name `pname` (the period block's `pname1`/`pname2` are
-      renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
-      it, and `pname` isn't `packages`' leading column anyway (`mname` is).
-    - Marks `period.perioddata`'s `pname1`/`pname2` as
-      `fk: "packages.pname"`, since each identifies the provider/receiver
-      package by name.
+    - `packages.pname` is unique within `mname`: `read_packages` rejects a
+      repeated memory path (since modflow6 #3077, case-insensitively), and
+      each must name a package in that model (`check_packages`). So
+      `pk = {scope = "mname"}`, `fk = {path = "gwf-nam.packages.pname",
+      scope = "mname"}`.
+    - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
+      `fk = "sim-nam.models.mname"`. MF6 also requires an exchange mover's
+      models to be the exchange's two, which a key can't say.
+    - `pname1`/`pname2`: `fk = {path = "packages.pname", scope = "mname1"}`
+      (`"mname2"`), since `mvr_rp` looks each provider/receiver up among
+      the `packages` rows, fatal if unlisted.
+
+    Upgrades an unscoped key with the expected path (from an earlier pass)
+    to its scoped form, leaving any other key alone.
 
     Does *not* annotate `id1`/`id2`. Each identifies a feature within the
     package named by the sibling `pname1`/`pname2` field, but which block
@@ -1530,86 +1558,89 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     WEL/DRN/RIV. A single static `fk` value can't express a target that's
     conditional on resolved data like that.
     """
-    if name != "gwf-mvr":
+    if name != "gwf-mvr" or "period" not in blocks:
         return blocks
-
-    packages = blocks.get("packages")
-    period = blocks.get("period")
-    if packages is None or period is None:
+    # `perioddata` until `_name_period_lists` renames it
+    period_list = next(
+        (n for n, f in blocks["period"].fields.items() if isinstance(f, v2.List)), None
+    )
+    if period_list is None:
         return blocks
+    packages = ("packages", "packages", ("mname", "pname"))
+    period = ("period", period_list, ("mname1", "pname1", "mname2", "pname2"))
+    for block_name, list_name, columns in (packages, period):
+        if not all(
+            isinstance(_list_item_field(blocks, block_name, c, list_name), v2.String)
+            for c in columns
+        ):
+            return blocks
 
-    packages_list = packages.fields.get("packages")
-    if not isinstance(packages_list, v2.List) or not isinstance(packages_list.item, v2.Record):
-        return blocks
-    pname_field = packages_list.item.fields.get("pname")
-    if not isinstance(pname_field, v2.String):
-        return blocks
-
-    perioddata = period.fields.get("perioddata")
-    if not isinstance(perioddata, v2.List) or not isinstance(perioddata.item, v2.Record):
-        return blocks
-    item_fields = perioddata.item.fields
-    if not all(isinstance(item_fields.get(n), v2.String) for n in ("pname1", "pname2")):
-        return blocks
-
-    new_packages = packages
-    if not pname_field.pk:
-        new_packages_item = packages_list.item.model_copy(
-            update={
-                "fields": {
-                    **packages_list.item.fields,
-                    "pname": pname_field.model_copy(update={"pk": True}),
-                }
-            }
-        )
-        new_packages_list = packages_list.model_copy(update={"item": new_packages_item})
-        new_packages = packages.model_copy(update={"fields": {"packages": new_packages_list}})
-
-    new_item_fields = dict(item_fields)
-    for pname_key in ("pname1", "pname2"):
-        pname_f = item_fields[pname_key]
-        if not isinstance(pname_f, v2.String):
-            continue
-        if pname_f.fk is None:
-            new_item_fields[pname_key] = pname_f.model_copy(update={"fk": "packages.pname"})
-
-    new_item = perioddata.item.model_copy(update={"fields": new_item_fields})
-    new_perioddata = perioddata.model_copy(update={"item": new_item})
-    new_period = period.model_copy(
-        update={"fields": {**period.fields, "perioddata": new_perioddata}}
+    model = v2.ForeignKey(path="sim-nam.models.mname")
+    blocks = _set_list_item_attrs(
+        blocks,
+        "packages",
+        {
+            "mname": {"fk": model},
+            "pname": {
+                "pk": v2.PrimaryKey(scope="mname"),
+                "fk": v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname"),
+            },
+        },
+    )
+    return _set_list_item_attrs(
+        blocks,
+        "period",
+        {
+            "mname1": {"fk": model},
+            "mname2": {"fk": model},
+            "pname1": {"fk": v2.ForeignKey(path="packages.pname", scope="mname1")},
+            "pname2": {"fk": v2.ForeignKey(path="packages.pname", scope="mname2")},
+        },
+        list_name=period_list,
     )
 
-    return {**blocks, "packages": new_packages, "period": new_period}
 
-
-def _list_item_field(blocks: dict[str, v2.Block], block_name: str, field_name: str):
-    """The field `field_name` of the item record of the list sharing
-    `block_name`'s name, or None if there's no such field."""
+def _list_item_field(
+    blocks: dict[str, v2.Block], block_name: str, field_name: str, list_name: str | None = None
+):
+    """The field `field_name` of the item record of the list `list_name`
+    (default: sharing `block_name`'s name), or None if there's no such field."""
     block = blocks.get(block_name)
-    lst = block.fields.get(block_name) if block else None
+    lst = block.fields.get(list_name or block_name) if block else None
     item = lst.item if isinstance(lst, v2.List) else None
     return item.fields.get(field_name) if isinstance(item, v2.Record) else None
 
 
 def _set_list_item_attrs(
-    blocks: dict[str, v2.Block], block_name: str, attrs: dict[str, dict[str, Any]]
+    blocks: dict[str, v2.Block],
+    block_name: str,
+    attrs: dict[str, dict[str, v2.PrimaryKey | v2.ForeignKey]],
+    list_name: str | None = None,
 ) -> dict[str, v2.Block]:
     """
-    Set attributes on fields of the item record of the list sharing
-    `block_name`'s name, e.g. `{"mname": {"pk": True}}`, leaving any that's
-    already set. The fields must exist (see `_list_item_field`).
+    Set keys on fields of the item record of the list `list_name` (default:
+    sharing `block_name`'s name), e.g. `{"mname": {"pk": v2.PrimaryKey()}}`.
+    Leaves any key that's already set, unless it's the unscoped form of a
+    scoped one given, which it upgrades. The fields must exist (see
+    `_list_item_field`).
     """
+    list_name = list_name or block_name
     block = blocks[block_name]
-    lst = block.fields[block_name]
+    lst = block.fields[list_name]
     item_fields = dict(lst.item.fields)  # type: ignore[union-attr]
     for field_name, field_attrs in attrs.items():
         field = item_fields[field_name]
-        update = {k: v for k, v in field_attrs.items() if not getattr(field, k)}
+        update = {
+            k: v
+            for k, v in field_attrs.items()
+            if (current := getattr(field, k)) is None
+            or current == v.model_copy(update={"scope": None})
+        }
         if update:
             item_fields[field_name] = field.model_copy(update=update)
     new_item = lst.item.model_copy(update={"fields": item_fields})  # type: ignore[union-attr]
     new_list = lst.model_copy(update={"item": new_item})
-    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    new_block = block.model_copy(update={"fields": {**block.fields, list_name: new_list}})
     return {**blocks, block_name: new_block}
 
 
@@ -1640,7 +1671,9 @@ def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[st
     if name == "utl-hpc":
         if not isinstance(_list_item_field(blocks, "partitions", "mname"), v2.String):
             return blocks
-        return _set_list_item_attrs(blocks, "partitions", {"mname": {"fk": "sim-nam.models.mname"}})
+        return _set_list_item_attrs(
+            blocks, "partitions", {"mname": {"fk": v2.ForeignKey(path="sim-nam.models.mname")}}
+        )
     if name != "sim-nam":
         return blocks
 
@@ -1658,10 +1691,12 @@ def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[st
             ):
                 return blocks
 
-    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": True}})
+    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": v2.PrimaryKey()}})
     for block_name in ("exchanges", "solutiongroup"):
         blocks = _set_list_item_attrs(
-            blocks, block_name, {n: {"fk": "models.mname"} for n in refs[block_name]}
+            blocks,
+            block_name,
+            {n: {"fk": v2.ForeignKey(path="models.mname")} for n in refs[block_name]},
         )
     return blocks
 
@@ -1699,7 +1734,7 @@ def _fix_model_nam_package_keys(name: str, blocks: dict[str, v2.Block]) -> dict[
         for f in item.fields.values()  # type: ignore[union-attr]
     ):
         return blocks
-    return _set_list_item_attrs(blocks, "packages", {"pname": {"pk": True}})
+    return _set_list_item_attrs(blocks, "packages", {"pname": {"pk": v2.PrimaryKey()}})
 
 
 def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
@@ -1892,7 +1927,7 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
             description="name of the auxiliary variable the following array sets; must be "
             "one of the auxiliary variables.",
             tagged=False,
-            fk="options.auxiliary",
+            fk=v2.ForeignKey(path="options.auxiliary"),
             dynamic=True,
         )
         array = field.model_copy(update={"tagged": False, "optional": False, "description": None})
@@ -2080,7 +2115,7 @@ def to_v2_0_0_dev2(
             # A v1 string with `numeric_index` (only utl-obs's `id`/`id2`)
             # identifies something in the parent: a cell, a 1-based number
             # (e.g. a lake or reach), or a boundname. Which one depends on the
-            # parent and is resolved by the codec, like an `fk_ref` target.
+            # parent and is resolved by the codec.
             return v2.Union(
                 name=_name,
                 longname=longname,
