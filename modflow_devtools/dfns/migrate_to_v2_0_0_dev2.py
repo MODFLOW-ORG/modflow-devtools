@@ -480,9 +480,11 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             for fname, sf in record.fields.items():
                 updated = sf
                 if (block_name, fname) in fk_map and getattr(sf, "fk", None) is None:
-                    updated = updated.model_copy(update={"fk": fk_map[(block_name, fname)]})
-                if (block_name, fname) in pk_set and not getattr(sf, "pk", False):
-                    updated = updated.model_copy(update={"pk": True})
+                    updated = updated.model_copy(
+                        update={"fk": v2.ForeignKey(path=fk_map[(block_name, fname)])}
+                    )
+                if (block_name, fname) in pk_set and getattr(sf, "pk", None) is None:
+                    updated = updated.model_copy(update={"pk": v2.PrimaryKey()})
                 if updated is not sf:
                     updates[fname] = updated
             if not updates:
@@ -561,7 +563,9 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         if not isinstance(field, v2.List) or not isinstance(field.item, v2.Record):
             continue
         record = field.item
-        if not record.fields or any(getattr(f, "pk", False) for f in record.fields.values()):
+        if not record.fields or any(
+            getattr(f, "pk", None) is not None for f in record.fields.values()
+        ):
             continue
         first_name, first = next(iter(record.fields.items()))
         if not isinstance(first, v2.Integer) or first.optional or first.fk is not None:
@@ -570,7 +574,7 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             update={
                 "fields": {
                     **record.fields,
-                    first_name: first.model_copy(update={"pk": True}),
+                    first_name: first.model_copy(update={"pk": v2.PrimaryKey()}),
                 }
             }
         )
@@ -971,7 +975,7 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             continue
         item = list_field.item
         updates = {
-            fname: f.model_copy(update={"fk": target})
+            fname: f.model_copy(update={"fk": v2.ForeignKey(path=target)})
             for fname, target in field_targets.items()
             if isinstance(f := item.fields.get(fname), v2.Integer | v2.Array) and f.fk is None
         }
@@ -1013,7 +1017,12 @@ def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str
     if not isinstance(field, v2.Array) or field.fk is not None:
         return blocks
     new_block = block.model_copy(
-        update={"fields": {**block.fields, field_name: field.model_copy(update={"fk": target})}}
+        update={
+            "fields": {
+                **block.fields,
+                field_name: field.model_copy(update={"fk": v2.ForeignKey(path=target)}),
+            }
+        }
     )
     return {**blocks, block_name: new_block}
 
@@ -1456,7 +1465,7 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     def _retarget(
         arm_name: str, arm: "v2.Scalar | v2.Array | v2.Record", key: str, fk: str
     ) -> v2.Record:
-        renamed = number_field.model_copy(update={"name": key, "fk": fk})
+        renamed = number_field.model_copy(update={"name": key, "fk": v2.ForeignKey(path=fk)})
         if isinstance(arm, v2.Record):
             return arm.model_copy(update={"fields": {key: renamed, **arm.fields}})
         # Most arms are a bare scalar (e.g. `stage`), not a Record — wrap it
@@ -1489,13 +1498,15 @@ def _fix_lak_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
     outlets_item_fields = dict(outlets_list.item.fields)
     changed = False
-    if not outletno_field.pk:
-        outlets_item_fields["outletno"] = outletno_field.model_copy(update={"pk": True})
+    if outletno_field.pk is None:
+        outlets_item_fields["outletno"] = outletno_field.model_copy(update={"pk": v2.PrimaryKey()})
         changed = True
     for fname in _LAK_OUTLET_LAKE_REFS:
         f = outlets_item_fields.get(fname)
         if isinstance(f, v2.Integer) and f.fk is None:
-            outlets_item_fields[fname] = f.model_copy(update={"fk": "packagedata.ifno"})
+            outlets_item_fields[fname] = f.model_copy(
+                update={"fk": v2.ForeignKey(path="packagedata.ifno")}
+            )
             changed = True
 
     if changed:
@@ -1553,12 +1564,12 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
         return blocks
 
     new_packages = packages
-    if not pname_field.pk:
+    if pname_field.pk is None:
         new_packages_item = packages_list.item.model_copy(
             update={
                 "fields": {
                     **packages_list.item.fields,
-                    "pname": pname_field.model_copy(update={"pk": True}),
+                    "pname": pname_field.model_copy(update={"pk": v2.PrimaryKey()}),
                 }
             }
         )
@@ -1571,7 +1582,9 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
         if not isinstance(pname_f, v2.String):
             continue
         if pname_f.fk is None:
-            new_item_fields[pname_key] = pname_f.model_copy(update={"fk": "packages.pname"})
+            new_item_fields[pname_key] = pname_f.model_copy(
+                update={"fk": v2.ForeignKey(path="packages.pname")}
+            )
 
     new_item = perioddata.item.model_copy(update={"fields": new_item_fields})
     new_perioddata = perioddata.model_copy(update={"item": new_item})
@@ -1596,7 +1609,7 @@ def _set_list_item_attrs(
 ) -> dict[str, v2.Block]:
     """
     Set attributes on fields of the item record of the list sharing
-    `block_name`'s name, e.g. `{"mname": {"pk": True}}`, leaving any that's
+    `block_name`'s name, e.g. `{"mname": {"pk": v2.PrimaryKey()}}`, leaving any that's
     already set. The fields must exist (see `_list_item_field`).
     """
     block = blocks[block_name]
@@ -1604,7 +1617,7 @@ def _set_list_item_attrs(
     item_fields = dict(lst.item.fields)  # type: ignore[union-attr]
     for field_name, field_attrs in attrs.items():
         field = item_fields[field_name]
-        update = {k: v for k, v in field_attrs.items() if not getattr(field, k)}
+        update = {k: v for k, v in field_attrs.items() if getattr(field, k) is None}
         if update:
             item_fields[field_name] = field.model_copy(update=update)
     new_item = lst.item.model_copy(update={"fields": item_fields})  # type: ignore[union-attr]
@@ -1640,7 +1653,9 @@ def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[st
     if name == "utl-hpc":
         if not isinstance(_list_item_field(blocks, "partitions", "mname"), v2.String):
             return blocks
-        return _set_list_item_attrs(blocks, "partitions", {"mname": {"fk": "sim-nam.models.mname"}})
+        return _set_list_item_attrs(
+            blocks, "partitions", {"mname": {"fk": v2.ForeignKey(path="sim-nam.models.mname")}}
+        )
     if name != "sim-nam":
         return blocks
 
@@ -1658,10 +1673,12 @@ def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[st
             ):
                 return blocks
 
-    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": True}})
+    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": v2.PrimaryKey()}})
     for block_name in ("exchanges", "solutiongroup"):
         blocks = _set_list_item_attrs(
-            blocks, block_name, {n: {"fk": "models.mname"} for n in refs[block_name]}
+            blocks,
+            block_name,
+            {n: {"fk": v2.ForeignKey(path="models.mname")} for n in refs[block_name]},
         )
     return blocks
 
@@ -1699,7 +1716,7 @@ def _fix_model_nam_package_keys(name: str, blocks: dict[str, v2.Block]) -> dict[
         for f in item.fields.values()  # type: ignore[union-attr]
     ):
         return blocks
-    return _set_list_item_attrs(blocks, "packages", {"pname": {"pk": True}})
+    return _set_list_item_attrs(blocks, "packages", {"pname": {"pk": v2.PrimaryKey()}})
 
 
 def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
@@ -1892,7 +1909,7 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
             description="name of the auxiliary variable the following array sets; must be "
             "one of the auxiliary variables.",
             tagged=False,
-            fk="options.auxiliary",
+            fk=v2.ForeignKey(path="options.auxiliary"),
             dynamic=True,
         )
         array = field.model_copy(update={"tagged": False, "optional": False, "description": None})

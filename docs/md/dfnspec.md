@@ -92,6 +92,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Bounds](#bounds)
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primary-and-foreign-keys)
+    - [Scoped keys](#scoped-keys)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -429,15 +430,15 @@ Type `string`.
 
 ###### `pk`
 
-`boolean (default: false)`. Marks this scalar as the primary key of its containing list's item record. Valid only on integer or string scalars that are columns in a list item record. Exactly one column per list item may be marked pk.
+`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = "<column>" }` for a key unique only within another column's value (see [Scoped keys](#scoped-keys)).
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column. A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
+`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
 
 ###### `dynamic`
 
-`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an `fk`, and is valid only on a record's first field. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
+`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an unscoped `fk`, and is valid only on a record's first field. Its keywords must be known before its line is read, so they can't depend on a scope later on the line. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
 
 #### Integer
 
@@ -461,11 +462,11 @@ Type `integer`.
 
 ###### `pk`
 
-`boolean (default: false)`. Marks this scalar as the primary key of its containing list's item record. Valid only on integer or string scalars that are columns in a list item record. Exactly one column per list item may be marked pk.
+`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = "<column>" }` for a key unique only within another column's value (see [Scoped keys](#scoped-keys)).
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column. See "Primary/foreign keys".
+`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). See "Primary/foreign keys".
 
 #### Double
 
@@ -559,7 +560,7 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 ###### `fk`
 
-`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar, but never scoped, since an array has no sibling columns of its own. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
 ###### `model`, `allow_zero`
 
@@ -844,7 +845,39 @@ Sometimes a column in one list identifies a row in another list. This can be con
 
 A `pk` column may be optional when MODFLOW assigns a default key to a row that omits it, e.g. a model name file's `packages.pname`, where an unnamed stress package is named `<TYPE>-<N>`. The keys are then unique only after defaults are assigned, so a consumer resolving references must assign them the same way.
 
+A `pk` means unique: a file in which two rows of a list share a key is invalid, and a reader or writer that validates input should reject it.
+
 An `fk` is a hierarchical path of the form `"[component.]block.field"`, naming the `pk` field it references. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
+
+A cross-component `fk` resolves in the current context: against the singleton component (e.g. `sim-nam`), or the instance that owns this file (e.g. a reference from a model's package to that model's name file).
+
+#### Scoped keys
+
+MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it. The scope belongs to the key, so it's written inside `pk` or `fk`:
+
+```toml
+pk = { scope = "mname" }
+fk = { path = "packages.pname", scope = "mname1" }
+```
+
+- A `pk` with scope `s` is unique within `s`: rows are unique by (`s`, the key).
+- An `fk` with scope `s` takes the target key's qualifier from `s`.
+  - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. If both scope columns have an `fk`, it must be the same.
+  - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)).
+- An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
+- A scope column's own key may be scoped, forming a chain, but not a cycle.
+- If a column's `pk` and `fk` are both scoped, the scope is the same column.
+
+For example, MODFLOW 6 rejects a mover whose `packages` block lists the same model and package twice, and looks each period row's provider and receiver up among those rows:
+
+```toml
+[blocks.packages.fields.packages.item.fields.pname]
+pk = { scope = "mname" }
+fk = { path = "gwf-nam.packages.pname", scope = "mname" }
+
+[blocks.period.fields.perioddata.item.fields.pname1]
+fk = { path = "packages.pname", scope = "mname1" }
+```
 
 Some references can't be written as a static path, because which block they target depends on the type of a component resolved at runtime (e.g. `gwf-mvr`'s `id1`, which names a row of whatever package `pname1` names). Those fields have no `fk`, and the codec resolves them.
 

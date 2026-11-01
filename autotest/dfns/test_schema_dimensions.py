@@ -614,7 +614,7 @@ def _cross_component_lookup_ctx():
     _arr, _enc, lak, _known = _lookup_ctx()
     gwf = Model(name="gwf-nam", blocks=None)
     spec = Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
-    fk_lakeno = Integer(name="lakeno", fk="packagedata.lakeno")
+    fk_lakeno = Integer(name="lakeno", fk="gwf-lak.packagedata.lakeno")
     arr = Array(name="outflow", dtype="double", shape=[])
     enc = Record(name="item", fields={"lakeno": fk_lakeno, "outflow": arr})
     other = Package(name="gwf-other", parent="gwf-nam", blocks=None)

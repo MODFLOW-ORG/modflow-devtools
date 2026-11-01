@@ -15,7 +15,9 @@ _Field = v2.ObservationField
 
 
 def _index(name: str, fk: str | None = None) -> v2.Integer:
-    return v2.Integer(name=name, tagged=False, index=True, fk=fk)
+    return v2.Integer(
+        name=name, tagged=False, index=True, fk=v2.ForeignKey(path=fk) if fk else None
+    )
 
 
 def _cellid(name: str = "cellid") -> v2.CellID:

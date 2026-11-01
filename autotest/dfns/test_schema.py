@@ -656,7 +656,7 @@ def test_array_package_aux_is_list_of_named_arrays(dev3_spec, name, shape):
     auxname, array = aux.item.fields.values()
     assert isinstance(auxname, String)
     assert not auxname.tagged and auxname.dynamic
-    assert auxname.fk == "options.auxiliary"
+    assert auxname.fk.path == "options.auxiliary"
     assert isinstance(array, Array)
     assert not array.tagged and not array.optional
     assert array.dtype == "double"

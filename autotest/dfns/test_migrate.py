@@ -333,8 +333,8 @@ def test_migrate_period_union_element(dfn_dir, name, setting):
     item = component.blocks["period"].fields["stress_period_data"].item
     assert isinstance(item, v2.Union) and item.name == setting
     if name == "gwf-lak":
-        assert item.arms["stage"].fields["lakeno"].fk == "packagedata.ifno"
-        assert item.arms["rate"].fields["outletno"].fk == "outlets.outletno"
+        assert item.arms["stage"].fields["lakeno"].fk.path == "packagedata.ifno"
+        assert item.arms["rate"].fields["outletno"].fk.path == "outlets.outletno"
 
 
 def test_migrate_sim_nam_model_keys(dfn_dir):
@@ -343,11 +343,11 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
     def item(block):
         return component.blocks[block].fields[block].item
 
-    assert item("models").fields["mname"].pk
+    assert item("models").fields["mname"].pk is not None
     exchanges = item("exchanges")
-    assert exchanges.fields["exgmnamea"].fk == "models.mname"
-    assert exchanges.fields["exgmnameb"].fk == "models.mname"
-    assert item("solutiongroup").fields["slnmnames"].fk == "models.mname"
+    assert exchanges.fields["exgmnamea"].fk.path == "models.mname"
+    assert exchanges.fields["exgmnameb"].fk.path == "models.mname"
+    assert item("solutiongroup").fields["slnmnames"].fk.path == "models.mname"
     # unchanged by a second pass
     assert _fix_model_name_relations("sim-nam", component.blocks) == component.blocks
 
@@ -356,7 +356,7 @@ def test_migrate_sim_nam_model_keys(dfn_dir):
 def test_migrate_model_nam_package_keys(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
     item = component.blocks["packages"].fields["packages"].item
-    assert item.fields["pname"].pk
+    assert item.fields["pname"].pk is not None
     assert item.fields["pname"].optional
     assert [n for n, f in item.fields.items() if getattr(f, "pk", False)] == ["pname"]
     # unchanged by a second pass
@@ -375,8 +375,8 @@ def test_migrate_hpc_model_names(dfn_dir):
     component = _migrate_dev3(dfn_dir, "utl-hpc")
     partitions = component.blocks["partitions"].fields["partitions"]
     mname = partitions.item.fields["mname"]
-    assert mname.fk == "sim-nam.models.mname"
-    assert not mname.pk and not mname.dynamic
+    assert mname.fk.path == "sim-nam.models.mname"
+    assert mname.pk is None and not mname.dynamic
     assert not partitions.tagged
     assert _fix_model_name_relations("utl-hpc", component.blocks) == component.blocks
 
@@ -662,7 +662,7 @@ def _obs_forms(field) -> list[tuple]:
     if isinstance(field, v2.Double):
         return [(("double", field.name),)]
     assert isinstance(field, v2.Integer) and field.index
-    return [(("index", field.fk),)]
+    return [(("index", field.fk.path if field.fk else None),)]
 
 
 _CELL = ("cellid",)
@@ -752,7 +752,7 @@ def test_migrate_sfr_ic_is_signed_index(dfn_dir):
     item = component.blocks["connectiondata"].fields["connectiondata"].item
     ic = item.fields["ic"]
     assert ic.index == "signed"
-    assert ic.fk == "packagedata.ifno"
+    assert ic.fk.path == "packagedata.ifno"
     # nothing else in the corpus supports negative indices
     signed = [
         f.name

@@ -9,12 +9,14 @@ from modflow_devtools.dfns.schema import (
     Dfns,
     Double,
     File,
+    ForeignKey,
     InputDim,
     Integer,
     Keyword,
     List,
     Model,
     Package,
+    PrimaryKey,
     Record,
     Simulation,
     String,
@@ -64,14 +66,179 @@ def test_dfns_validate_fk_fields_unknown_block():
 
 def test_dfns_validate_fk_fields_no_pk_on_item():
     lak, gwf = _fk_validation_ctx("packagedata.lakeno", pk_on_item=False)
-    with pytest.raises(ValueError, match="has no pk=True field"):
+    with pytest.raises(ValueError, match="is not the pk of"):
         Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
 
 
-def test_dfns_validate_fk_fields_bare_block_rejected():
-    lak, gwf = _fk_validation_ctx("packagedata", pk_on_item=True)
-    with pytest.raises(ValueError, match=r"must be 'block\.field'"):
-        Dfns(components={"gwf-nam": gwf, "gwf-lak": lak})
+@pytest.mark.parametrize("path", ["packagedata", "a.b.c.d", "packagedata."])
+def test_foreign_key_path_rejected(path):
+    with pytest.raises(ValueError, match="must be a hierarchical path"):
+        Integer(name="lakeno", fk=path)
+
+
+@pytest.mark.parametrize(
+    "cls,toml,obj",
+    [
+        (Integer, {"pk": True}, {"pk": PrimaryKey()}),
+        (Integer, {"pk": {"scope": "mname"}}, {"pk": PrimaryKey(scope="mname")}),
+        (String, {"fk": "packages.pname"}, {"fk": ForeignKey(path="packages.pname")}),
+        (
+            String,
+            {"fk": {"path": "packages.pname", "scope": "mname1"}},
+            {"fk": ForeignKey(path="packages.pname", scope="mname1")},
+        ),
+    ],
+)
+def test_keys_load_as_objects_and_dump_as_written(cls, toml, obj):
+    field = cls.model_validate({"name": "x", **toml})
+    assert {k: getattr(field, k) for k in obj} == obj
+    assert field.model_dump(exclude_defaults=True) == {"type": field.type, "name": "x", **toml}
+
+
+def test_pk_false_loads_as_none():
+    assert Integer.model_validate({"name": "x", "pk": False}).pk is None
+
+
+def test_foreign_key_parts():
+    fk = ForeignKey(path="gwf-nam.packages.pname")
+    assert (fk.component, fk.block, fk.field) == ("gwf-nam", "packages", "pname")
+    fk = ForeignKey(path="packages.pname")
+    assert (fk.component, fk.block, fk.field) == (None, "packages", "pname")
+
+
+def test_array_fk_scope_rejected():
+    with pytest.raises(ValueError, match="can't be scoped"):
+        Array(name="ids", dtype="string", fk={"path": "models.mname", "scope": "mtype"})
+
+
+def test_dynamic_fk_scope_rejected():
+    with pytest.raises(ValueError, match="can't be scoped"):
+        String(
+            name="pname",
+            tagged=False,
+            dynamic=True,
+            fk={"path": "packages.pname", "scope": "mname"},
+        )
+
+
+def _mvr_ctx(
+    packages_pk=None,
+    packages_fk=None,
+    period_fk=None,
+    period_mname_fk="sim-nam.models.mname",
+    period_extra=None,
+):
+    """
+    A simulation with a GWF model and a mover whose `packages` rows key a
+    package within a model, as MF6's exchange mover does, and whose period
+    rows reference those rows.
+    """
+    mname = String(name="mname", tagged=False, pk=True)
+    mfname = File(name="mfname", direction="in", mode_keyword=False, component="model")
+    models_item = Record(
+        name="models",
+        fields={"mtype": String(name="mtype"), "mfname": mfname, "mname": mname},
+    )
+    models = Block(name="models", fields={"models": List(name="models", item=models_item)})
+    sim = Simulation(name="sim-nam", blocks={"models": models})
+
+    pname = String(name="pname", tagged=False, pk=True, optional=True)
+    gwf_item = Record(name="packages", fields={"ftype": String(name="ftype"), "pname": pname})
+    gwf_packages = Block(name="packages", fields={"packages": List(name="packages", item=gwf_item)})
+    gwf = Model(name="gwf-nam", parent="sim-nam", blocks={"packages": gwf_packages})
+
+    mvr_pname = String(
+        name="pname",
+        tagged=False,
+        pk=packages_pk or {"scope": "mname"},
+        fk=packages_fk or {"path": "gwf-nam.packages.pname", "scope": "mname"},
+    )
+    mvr_item = Record(
+        name="packages",
+        fields={
+            "mname": String(name="mname", tagged=False, fk="sim-nam.models.mname"),
+            "pname": mvr_pname,
+        },
+    )
+    mvr_packages = Block(name="packages", fields={"packages": List(name="packages", item=mvr_item)})
+    period_fields = {
+        "mname1": String(name="mname1", tagged=False, fk=period_mname_fk),
+        "pname1": String(
+            name="pname1",
+            tagged=False,
+            fk=period_fk or {"path": "packages.pname", "scope": "mname1"},
+        ),
+        **(period_extra or {}),
+    }
+    period_item = Record(name="perioddata", fields=period_fields)
+    period = Block(name="period", fields={"perioddata": List(name="perioddata", item=period_item)})
+    mvr = Package(
+        name="gwf-mvr", parent="gwf-nam", blocks={"packages": mvr_packages, "period": period}
+    )
+    return {"sim-nam": sim, "gwf-nam": gwf, "gwf-mvr": mvr}
+
+
+def test_dfns_validate_scoped_keys():
+    spec = Dfns(components=_mvr_ctx())
+    pname = spec.components["gwf-mvr"].blocks["packages"].fields["packages"].item.fields["pname"]
+    assert pname.pk == PrimaryKey(scope="mname")
+    assert pname.fk == ForeignKey(path="gwf-nam.packages.pname", scope="mname")
+
+
+@pytest.mark.parametrize("scope", ["nosuchfield", "pname1"])
+def test_dfns_validate_scope_not_another_sibling(scope):
+    with pytest.raises(ValueError, match="not another String or Integer field"):
+        Dfns(components=_mvr_ctx(period_fk={"path": "packages.pname", "scope": scope}))
+
+
+def test_dfns_validate_scope_cycle():
+    extra = {"x": String(name="x", tagged=False, fk={"path": "packages.pname", "scope": "y"})}
+    extra["y"] = String(name="y", tagged=False, fk={"path": "packages.pname", "scope": "x"})
+    with pytest.raises(ValueError, match="scopes form a cycle"):
+        Dfns(components=_mvr_ctx(period_extra=extra))
+
+
+def test_dfns_validate_two_pks_rejected():
+    extra = {"id": Integer(name="id", pk=True), "id2": Integer(name="id2", pk=True)}
+    with pytest.raises(ValueError, match="only one pk"):
+        Dfns(components=_mvr_ctx(period_extra=extra))
+
+
+def test_dfns_validate_pk_fk_scopes_differ():
+    with pytest.raises(ValueError, match="pk and fk scopes differ"):
+        Dfns(
+            components=_mvr_ctx(
+                packages_fk={"path": "gwf-nam.packages.pname", "scope": "pname"},
+                packages_pk={"scope": "mname"},
+            )
+        )
+
+
+def test_dfns_validate_unscoped_fk_to_scoped_pk():
+    with pytest.raises(ValueError, match="both or neither must be scoped"):
+        Dfns(components=_mvr_ctx(period_fk="packages.pname"))
+
+
+def test_dfns_validate_scoped_fk_to_unscoped_pk():
+    with pytest.raises(ValueError, match="both or neither must be scoped"):
+        Dfns(components=_mvr_ctx(packages_pk=True, packages_fk="gwf-nam.packages.pname"))
+
+
+def test_dfns_validate_scope_columns_reference_differently():
+    with pytest.raises(ValueError, match="but the target's scope"):
+        Dfns(components=_mvr_ctx(period_mname_fk="gwf-nam.packages.pname"))
+
+
+def test_dfns_validate_cross_component_scope_not_a_binding():
+    extra = {
+        "pname2": String(
+            name="pname2",
+            tagged=False,
+            fk={"path": "gwf-nam.packages.pname", "scope": "pname1"},
+        )
+    }
+    with pytest.raises(ValueError, match="must be an fk to the row binding"):
+        Dfns(components=_mvr_ctx(period_extra=extra))
 
 
 def test_dfns_validate_fk_fields_no_fk_set():
@@ -170,7 +337,7 @@ def test_dfns_validate_string_array_fk():
 
 
 def test_dfns_validate_string_array_fk_no_pk_rejected():
-    with pytest.raises(ValueError, match="has no pk=True field"):
+    with pytest.raises(ValueError, match="is not the pk of"):
         Dfns(components=_model_names_ctx(pk=False))
 
 
