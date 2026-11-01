@@ -87,7 +87,7 @@ blocks:
               type: string
               description: name of model containing the package.  Model names are assigned by the user
                 in the simulation name file.
-              optional: true
+              when: modelnames
               tagged: false
               fk: sim-nam.models.mname
             pname:
@@ -117,7 +117,7 @@ blocks:
             mname1:
               type: string
               description: name of model containing the package, PNAME1.
-              optional: true
+              when: modelnames
               tagged: false
               fk: sim-nam.models.mname
             pname1:
@@ -146,7 +146,7 @@ blocks:
             mname2:
               type: string
               description: name of model containing the package, PNAME2.
-              optional: true
+              when: modelnames
               tagged: false
               fk: sim-nam.models.mname
             pname2:

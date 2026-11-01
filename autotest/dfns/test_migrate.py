@@ -389,6 +389,15 @@ def test_migrate_mvr_keys(dfn_dir):
     assert _fix_mvr_relations("gwf-mvr", blocks) == blocks
 
 
+def test_migrate_mvr_model_names_when_option(dfn_dir):
+    """MVR's model names are read iff MODELNAMES, and then required."""
+    blocks = _migrate_dev3(dfn_dir, "gwf-mvr").blocks
+    packages = blocks["packages"].fields["packages"].item.fields
+    period = blocks["period"].fields["stress_period_data"].item.fields
+    for field in (packages["mname"], period["mname1"], period["mname2"]):
+        assert (field.when, field.optional) == ("modelnames", False)
+
+
 def test_migrate_mvr_keys_upgrades_only_unscoped_expected(dfn_dir):
     """An earlier pass's unscoped key with the expected path is upgraded to
     its scoped form; any other key is left alone."""

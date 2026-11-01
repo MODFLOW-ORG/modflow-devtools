@@ -727,6 +727,14 @@ def _replace_named(
 # are (block, field, option).
 _OPTION_COLUMNS: dict[str, list[tuple[str, str, str]]] = {
     "gwf-evt": [("period", "petm0", "surf_rate_specified")],
+    # MF6 requires MODELNAMES in an exchange's mover and rejects it in a
+    # model's (`check_options`, `gwf-mvr.f90`), and reads the model names iff
+    # it's set.
+    "gwf-mvr": [
+        ("packages", "mname", "modelnames"),
+        ("period", "mname1", "modelnames"),
+        ("period", "mname2", "modelnames"),
+    ],
 }
 
 

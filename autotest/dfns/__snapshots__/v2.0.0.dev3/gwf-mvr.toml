@@ -86,7 +86,7 @@ type = "record"
 [blocks.packages.fields.packages.item.fields.mname]
 type = "string"
 description = "name of model containing the package.  Model names are assigned by the user in the simulation name file."
-optional = true
+when = "modelnames"
 tagged = false
 fk = "sim-nam.models.mname"
 
@@ -112,7 +112,7 @@ type = "record"
 [blocks.period.fields.stress_period_data.item.fields.mname1]
 type = "string"
 description = "name of model containing the package, PNAME1."
-optional = true
+when = "modelnames"
 tagged = false
 fk = "sim-nam.models.mname"
 
@@ -136,7 +136,7 @@ index = true
 [blocks.period.fields.stress_period_data.item.fields.mname2]
 type = "string"
 description = "name of model containing the package, PNAME2."
-optional = true
+when = "modelnames"
 tagged = false
 fk = "sim-nam.models.mname"
 
