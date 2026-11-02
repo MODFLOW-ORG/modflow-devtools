@@ -448,3 +448,6 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+keys:
+  mover_provider: packagedata.ifno
+  mover_receiver: packagedata.ifno

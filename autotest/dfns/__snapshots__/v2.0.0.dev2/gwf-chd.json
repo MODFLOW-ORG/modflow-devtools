@@ -173,5 +173,8 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": "<=maxbound"
   }
 }

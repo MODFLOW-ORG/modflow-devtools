@@ -168,3 +168,6 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+keys:
+  mover_provider: <=maxbound
+  bound: <=maxbound

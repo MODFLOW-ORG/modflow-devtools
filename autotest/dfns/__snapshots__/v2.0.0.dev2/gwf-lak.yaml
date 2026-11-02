@@ -823,3 +823,6 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+keys:
+  mover_provider: outlets.outletno
+  mover_receiver: packagedata.ifno

@@ -88,7 +88,10 @@ type = "string"
 description = "name of model containing the package.  Model names are assigned by the user in the simulation name file."
 when = "modelnames"
 tagged = false
-fk = "sim-nam.models.mname"
+
+[blocks.packages.fields.packages.item.fields.mname.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
@@ -114,7 +117,10 @@ type = "string"
 description = "name of model containing the package, PNAME1."
 when = "modelnames"
 tagged = false
-fk = "sim-nam.models.mname"
+
+[blocks.period.fields.stress_period_data.item.fields.mname1.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
@@ -133,12 +139,19 @@ description = "is the identifier for the provider.  For the standard boundary pa
 tagged = false
 index = true
 
+[blocks.period.fields.stress_period_data.item.fields.id1.fk]
+scope = "pname1"
+key = "mover_provider"
+
 [blocks.period.fields.stress_period_data.item.fields.mname2]
 type = "string"
 description = "name of model containing the package, PNAME2."
 when = "modelnames"
 tagged = false
-fk = "sim-nam.models.mname"
+
+[blocks.period.fields.stress_period_data.item.fields.mname2.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"
@@ -156,6 +169,10 @@ longname = "receiver reach"
 description = "is the identifier for the receiver.  The receiver identifier is the reach number (SFR Package), Lake number (LAK Package), well number (MAW Package), or UZF cell number."
 tagged = false
 index = true
+
+[blocks.period.fields.stress_period_data.item.fields.id2.fk]
+scope = "pname2"
+key = "mover_receiver"
 
 [blocks.period.fields.stress_period_data.item.fields.mvrtype]
 type = "string"

@@ -101,3 +101,6 @@ observations:
       boundname:
         type: string
         tagged: false
+keys:
+  mover_provider: <=maxbound
+  bound: <=maxbound

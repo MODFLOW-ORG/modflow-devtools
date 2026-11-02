@@ -350,5 +350,8 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": "<=maxbound"
   }
 }

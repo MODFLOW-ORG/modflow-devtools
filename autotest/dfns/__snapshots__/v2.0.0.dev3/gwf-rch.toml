@@ -296,3 +296,6 @@ tagged = false
 [observations.rch.arms.boundname]
 type = "string"
 tagged = false
+
+[keys]
+bound = "<=maxbound"

@@ -295,3 +295,6 @@ tagged = false
 [observations.cnc.arms.boundname]
 type = "string"
 tagged = false
+
+[keys]
+bound = "<=maxbound"

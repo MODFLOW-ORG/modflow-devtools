@@ -281,3 +281,5 @@ observations:
       boundname:
         type: string
         tagged: false
+keys:
+  bound: <=maxbound

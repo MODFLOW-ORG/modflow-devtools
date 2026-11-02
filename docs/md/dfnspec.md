@@ -14,6 +14,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`dims`](#dims)
     - [`memory`](#memory)
     - [`observations`](#observations)
+    - [`keys`](#keys)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -94,6 +95,8 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Scoped keys](#scoped-keys)
+    - [Key sets](#key-sets)
+    - [Rules](#rules)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -129,6 +132,7 @@ Component definitions consist of a number of attributes:
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
 - `memory`: API-accessible runtime variable definitions
 - `observations`: the observation types the component accepts in its OBS file
+- `keys`: named key sets other components' foreign keys can name without knowing this component's type
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
@@ -194,6 +198,10 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 #### `observations`
 
 `{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name. Each is an untagged field for the values that follow the observation type: its ID and ID2.
+
+#### `keys`
+
+`{string: string} (default: {})`. Named key sets that a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types. See [Key sets](#key-sets).
 
 ### Component types
 
@@ -435,11 +443,18 @@ Type `string`.
 
 ###### `fk`
 
-`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
+`string | {path, scope} | {path, rule} | {key, scope} | {key, rule} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. One of:
+
+- a hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`);
+- a table `{ key = "<name>", scope = "<column>" }`, naming a key set of the instance the scope picks (see [Key sets](#key-sets)).
+
+In either table, a `rule` may take the place of the `scope` (see [Rules](#rules)).
+
+See "Primary/foreign keys".
 
 ###### `dynamic`
 
-`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an unscoped `fk`, and is valid only on a record's first field. Its keywords must be known before its line is read, so they can't depend on a scope later on the line. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
+`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an `fk` that is a plain path (no scope or rule), and is valid only on a record's first field. Its keywords must be known before its line is read, so they can't depend on a scope later on the line, or on a rule. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
 
 #### Integer
 
@@ -467,7 +482,7 @@ Type `integer`.
 
 ###### `fk`
 
-`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). See "Primary/foreign keys".
+`string | {path, scope} | {path, rule} | {key, scope} | {key, rule} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)), or a table `{ key = "<name>", scope = "<column>" }` naming a key set of the instance the scope picks (see [Key sets](#key-sets)). In either table, a `rule` may take the place of the `scope` (see [Rules](#rules)). See "Primary/foreign keys".
 
 ###### `allow_zero` (integer)
 
@@ -565,7 +580,7 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 ###### `fk`
 
-`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar, but never scoped, since an array has no sibling columns of its own. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar, but never scoped, ruled or a key set, since an array has no sibling columns of its own. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
 ###### `model`, `allow_zero`
 
@@ -870,7 +885,7 @@ fk = { path = "packages.pname", scope = "mname1" }
 - A `pk` with scope `s` is unique within `s`: rows are unique by (`s`, the key).
 - An `fk` with scope `s` takes the target key's qualifier from `s`.
   - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. If both scope columns have an `fk`, it must be the same.
-  - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)).
+  - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must name that instance: it must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)), either directly or through other `fk`s. For example, `gwf-mvr`'s `pname1` names a `packages` row, whose `pname` names a row of a model name file's `packages`.
 - An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
 - A scope column's own key may be scoped, forming a chain, but not a cycle.
 - If a column's `pk` and `fk` are both scoped, the scope is the same column.
@@ -886,7 +901,98 @@ fk = { path = "gwf-nam.packages.pname", scope = "mname" }
 fk = { path = "packages.pname", scope = "mname1" }
 ```
 
-Some references can't be written as a static path, because which block they target depends on the type of a component resolved at runtime (e.g. `gwf-mvr`'s `id1`, which names a row of whatever package `pname1` names). Those fields have no `fk`, and the codec resolves them.
+A scoped key is a composite key whose columns form a hierarchy. In database terms:
+
+| DFN | SQL |
+|---|---|
+| `pname.pk = {scope = "mname"}` | `PRIMARY KEY (mname, pname)` |
+| `pname1.fk = {path = "packages.pname", scope = "mname1"}` | `FOREIGN KEY (mname1, pname1) REFERENCES packages (mname, pname)` |
+| "if both scope columns have an `fk`, it must be the same" | a composite foreign key's column correspondence |
+| an absent scope value means the current one | no equivalent: with SQL's default `MATCH SIMPLE`, a NULL skips the check |
+
+Every composite key in MODFLOW 6 is hierarchical, so there is no separate tuple form.
+
+#### Key sets
+
+A normal `fk` is written as a path because the referrer knows the target's type: `gwf-mvr`'s `pname1` always names a row of its own `packages`. When the referenced instance is picked at runtime and may be one of several component types, the referrer can't write a path. Instead, it names a **role**, and each component type that can play it says what it means, like an interface or protocol. A component declares its roles in [`keys`](#keys):
+
+```toml
+# gwf-lak
+[keys]
+mover_provider = "outlets.outletno"
+mover_receiver = "packagedata.ifno"
+
+# gwf-wel, and other standard boundary packages with a MOVER option
+[keys]
+mover_provider = "<=maxbound"
+bound = "<=maxbound"
+```
+
+In relational terms, a role is a supertype table: each declaring component adds its keys to it, keyed by (instance, key), and an `fk` with `key` is an ordinary foreign key to it.
+
+An `fk` names a role with `key`, and picks the instance with a scope, as for a scoped key across components (or with a [rule](#rules)):
+
+```toml
+# gwf-mvr period id1 / id2
+fk = { scope = "pname1", key = "mover_provider" }
+fk = { scope = "pname2", key = "mover_receiver" }
+```
+
+A key set is written as its path, which is either:
+
+- `"block.field"`: a list's unscoped `pk`, or a string array, as for an `fk`'s path within a component;
+- a bound `"<=dim"`, using the [Bounds](#bounds) syntax: any 1-based index from 1 to `dim`, a dimension the component can see. MODFLOW 6 checks a mover's ids against the package's size, not its rows (`Mover.f90:152-158`, `174-180`). A period block's list may differ by period, and its largest size is `maxbound`.
+
+MODFLOW 6 also rejects a mover row naming a package without its `MOVER` option set (`gwf-mvr.f90:942-971`). The spec doesn't say this; consumers check it.
+
+A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
+
+- each `key` an `fk` uses is declared by at least one component its scope can name (with a rule, by any component);
+- each declared `path` is valid in its component;
+- a `<=dim` path is referenced only by an integer column with `index: true`, and a `"block.field"` path by a column of the same type.
+
+The roles in MODFLOW 6:
+
+| role | declared by | referenced by |
+|---|---|---|
+| `mover_provider` | packages with a MOVER option: `<=maxbound` for standard boundary packages (`BoundaryPackage.f90:282-285`); `packagedata.ifno` for SFR, MAW and UZF; `outlets.outletno` for LAK | `gwf-mvr`'s `id1` |
+| `mover_receiver` | `packagedata.ifno` for SFR, MAW, UZF and LAK (its lakes) | `gwf-mvr`'s `id2` |
+| `bound` | `<=maxbound` for every non-utility package with a `maxbound` dimension | `utl-spc`'s `bndno` |
+
+These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbound, 0)` for a standard boundary package, `(maxbound, maxbound)` for SFR (`gwf-sfr.f90:1775`, `maxbound` being NREACHES) and UZF (`gwf-uzf.f90:260`, NUZFCELLS), `(nmawwells, nmawwells)` for MAW (`gwf-maw.f90:2100`), and `(noutlets, nlakes)` for LAK (`gwf-lak.f90:3276`).
+
+```toml
+# utl-spc period bndno: a bound of the flow package its SSM row names
+pk = true
+fk = { key = "bound", rule = "ssm_package" }
+```
+
+MODFLOW 6 checks `bndno` only against SPC's own `maxbound`, which must be at least the flow package's bound count (`TspSpc.f90:326-349`).
+
+[Observations](#observations) use the same idea, keyed by observation type: each component says what an observation's ID names, on the target side.
+
+#### Rules
+
+Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's mover may name only the exchange's two models; a transport model's SSM names packages of whichever flow model an exchange pairs it with. No path or sibling scope can say this. Instead, the `fk` names a **rule** in place of a scope: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+
+```toml
+# gwf-mvr packages.mname, period mname1/mname2
+fk = { path = "sim-nam.models.mname", rule = "exchange_models" }
+
+# gwt-ssm / gwe-ssm sources.pname and fileinput.pname
+pk = true
+fk = { path = "gwf-nam.packages.pname", rule = "flow_model" }
+```
+
+The rest of the `fk` is checked as if unscoped: its path must name a `pk` (or string array), and its `key` must be declared by some component. A rule narrows which instance, or which of the target's values, the reference is checked against. A consumer that doesn't implement a rule skips the check; the rest of the `fk` still says what kind of thing the value names.
+
+| rule | meaning | MODFLOW 6 |
+|---|---|---|
+| `exchange_models` | one of the two models (`exgmnamea`, `exgmnameb`) of the exchange whose `MVR6` option binds this mover. In a model's own mover the model names are absent (`MODELNAMES` is rejected there). | `GwfExchangeMover.f90:87-93` |
+| `flow_model` | in the flow model that a GWF-GWT or GWF-GWE exchange pairs with this transport model (its `exgmnamea`, where the transport model is `exgmnameb`). With flows read from a budget file there is no such exchange, and the reference isn't checked. | `exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`, `tsp-ssm.f90:800-811` |
+| `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file | `TspSpc.f90:326-349` |
+
+The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
 
 ## Memory catalog
 

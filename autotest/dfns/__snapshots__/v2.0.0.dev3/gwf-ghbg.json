@@ -343,5 +343,9 @@
         }
       }
     }
+  },
+  "keys": {
+    "mover_provider": "<=maxbound",
+    "bound": "<=maxbound"
   }
 }

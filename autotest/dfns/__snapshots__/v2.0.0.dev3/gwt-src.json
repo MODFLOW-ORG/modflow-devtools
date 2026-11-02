@@ -346,5 +346,8 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": "<=maxbound"
   }
 }

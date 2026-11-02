@@ -323,5 +323,8 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": "<=maxbound"
   }
 }

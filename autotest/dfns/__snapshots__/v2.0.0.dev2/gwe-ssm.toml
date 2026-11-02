@@ -32,6 +32,11 @@ type = "string"
 longname = "package name"
 description = "name of the flow package for which an auxiliary variable contains a source temperature.  If this flow package is represented using an advanced transport package (SFE, LKE, MWE, or UZE), then the advanced transport package will override SSM terms specified here."
 tagged = false
+pk = true
+
+[blocks.sources.fields.sources.item.fields.pname.fk]
+path = "gwf-nam.packages.pname"
+rule = "flow_model"
 
 [blocks.sources.fields.sources.item.fields.srctype]
 type = "string"
@@ -58,6 +63,11 @@ type = "string"
 longname = "package name"
 description = "name of the flow package for which an SPC6 input file contains a source temperature.  If this flow package is represented using an advanced transport package (SFE, LKE, MWE, or UZE), then the advanced transport package will override SSM terms specified here."
 tagged = false
+pk = true
+
+[blocks.fileinput.fields.fileinput.item.fields.pname.fk]
+path = "gwf-nam.packages.pname"
+rule = "flow_model"
 
 [blocks.fileinput.fields.fileinput.item.fields.spc6]
 type = "keyword"

@@ -627,5 +627,9 @@
         }
       }
     }
+  },
+  "keys": {
+    "mover_provider": "packagedata.ifno",
+    "mover_receiver": "packagedata.ifno"
   }
 }

@@ -280,3 +280,6 @@ tagged = false
 [observations.chd.arms.boundname]
 type = "string"
 tagged = false
+
+[keys]
+bound = "<=maxbound"

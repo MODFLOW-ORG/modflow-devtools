@@ -14,6 +14,8 @@ from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
     _fix_model_nam_package_keys,
     _fix_model_name_relations,
     _fix_mvr_relations,
+    _fix_spc_relations,
+    _fix_ssm_relations,
     to_v2_0_0_dev2,
 )
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
@@ -378,16 +380,77 @@ def test_migrate_mvr_keys(dfn_dir):
     blocks = component.blocks
     packages = blocks["packages"].fields["packages"].item.fields
     period = blocks["period"].fields["stress_period_data"].item.fields
-    model = v2.ForeignKey(path="sim-nam.models.mname")
+    # a model, and one of the exchange's two (MF6's xmvr_check_packages)
+    model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
     assert packages["mname"].fk == model
     assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
     assert packages["pname"].fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname")
     for i in ("1", "2"):
         assert period[f"mname{i}"].fk == model
         assert period[f"pname{i}"].fk == v2.ForeignKey(path="packages.pname", scope=f"mname{i}")
-        assert period[f"id{i}"].fk is None
+    # a provider's / receiver's feature, as the package pname1 / pname2 names says
+    assert period["id1"].fk == v2.ForeignKey(scope="pname1", key="mover_provider")
+    assert period["id2"].fk == v2.ForeignKey(scope="pname2", key="mover_receiver")
     # unchanged by a second pass
     assert _fix_mvr_relations("gwf-mvr", blocks) == blocks
+
+
+_PROVIDER = {"path": "<=maxbound"}
+_BOUND = {"path": "<=maxbound"}
+
+
+@pytest.mark.parametrize(
+    "name, keys",
+    [
+        # standard boundary packages with a MOVER option: provide by bound
+        ("gwf-wel", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwf-drn", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwf-ghb", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwf-riv", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwf-welg", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwf-api", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        ("gwt-api", {"mover_provider": _PROVIDER, "bound": _BOUND}),
+        # no MOVER option
+        ("gwf-chd", {"bound": _BOUND}),
+        ("gwt-src", {"bound": _BOUND}),
+        # advanced: provide and receive by feature, LAK by outlet and lake
+        *(
+            (
+                name,
+                {
+                    "mover_provider": {"path": "packagedata.ifno"},
+                    "mover_receiver": {"path": "packagedata.ifno"},
+                },
+            )
+            for name in ("gwf-sfr", "gwf-maw", "gwf-uzf")
+        ),
+        (
+            "gwf-lak",
+            {
+                "mover_provider": {"path": "outlets.outletno"},
+                "mover_receiver": {"path": "packagedata.ifno"},
+            },
+        ),
+        # SPC's maxbound sizes its own list, it isn't a host
+        ("utl-spc", None),
+        ("gwf-rcha", None),
+        ("gwf-npf", None),
+    ],
+)
+def test_migrate_component_keys(dfn_dir, name, keys):
+    component = _migrate_dev3(dfn_dir, name)
+    got = {k: v.model_dump(exclude_none=True) for k, v in (component.keys or {}).items()}
+    assert (got or None) == keys
+
+
+def test_migrate_spc_bndno(dfn_dir):
+    """SPC's bndno is one row per bound, and names a bound of the flow
+    package its SSM row names."""
+    blocks = _migrate_dev3(dfn_dir, "utl-spc").blocks
+    bndno = blocks["period"].fields["stress_period_data"].item.fields["bndno"]
+    assert bndno.pk == v2.PrimaryKey()
+    assert bndno.fk == v2.ForeignKey(key="bound", rule="ssm_package")
+    assert _fix_spc_relations("utl-spc", blocks) == blocks
 
 
 def test_migrate_mvr_model_names_when_option(dfn_dir):
@@ -1117,3 +1180,15 @@ def test_migrate_period_lists_named_stress_period_data(dev3):
     assert "perioddata" in components["sim-tdis"].blocks["perioddata"].fields
     assert "perioddata" in components["utl-ats"].blocks["perioddata"].fields
     assert {"recharge", "irch"} <= set(components["gwf-rcha"].blocks["period"].fields)
+
+
+@pytest.mark.parametrize("name", ["gwt-ssm", "gwe-ssm"])
+def test_migrate_ssm_pname(dfn_dir, name):
+    """SSM names each flow package once per list, in the flow model a
+    GWF-GWT/GWF-GWE exchange pairs with it."""
+    blocks = _migrate_dev3(dfn_dir, name).blocks
+    for block in ("sources", "fileinput"):
+        pname = blocks[block].fields[block].item.fields["pname"]
+        assert pname.pk == v2.PrimaryKey()
+        assert pname.fk == v2.ForeignKey(path="gwf-nam.packages.pname", rule="flow_model")
+    assert _fix_ssm_relations(name, blocks) == blocks
