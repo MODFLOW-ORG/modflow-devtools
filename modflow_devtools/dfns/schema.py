@@ -142,31 +142,103 @@ class Keyword(_DerivedTagged):
         return True
 
 
+# A context name, `^name`: `name` in the nearest context that has it, i.e. a
+# column of the binding rows from the instance up to the simulation, or a name
+# an exchange `provides`. See `_context_names`.
+CONTEXT = "^"
+_SCOPE_ENTRY_RE = re.compile(r"^\^?[A-Za-z_]\w*$")
+_CONTEXT_RE = re.compile(r"^\^[A-Za-z_]\w*$")
+_IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
+
+# A scope picks an instance: a sibling column (`"mname1"`), a context name
+# (`"^pname"`), or a list of these, the first that resolves winning, as SQL's
+# COALESCE (`["^exgmnamea", "^mname"]`). A one-entry list is that entry.
+Scope = str | tuple[str, ...]
+
+
+def _load_scope(v: Any) -> Any:
+    if isinstance(v, list | tuple):
+        v = tuple(v)
+        if not v:
+            raise ValueError("a scope list must name at least one column")
+        if len(v) == 1:
+            v = v[0]
+    for entry in (v,) if isinstance(v, str) else v if isinstance(v, tuple) else ():
+        if not isinstance(entry, str) or not _SCOPE_ENTRY_RE.match(entry):
+            raise ValueError(
+                f"scope entry {entry!r} must be a sibling column name or a context name '^name'"
+            )
+    return v
+
+
+def scope_entries(scope: "Scope | None") -> tuple[str, ...]:
+    """A scope's entries, in order: one for a single column or name."""
+    if scope is None:
+        return ()
+    return (scope,) if isinstance(scope, str) else scope
+
+
+def _plain(v: Any) -> Any:
+    """A tuple as a list, for dumping to TOML/YAML/JSON."""
+    return list(v) if isinstance(v, tuple) else v
+
+
 class PrimaryKey(BaseModel):
-    """A list item column's key: rows are unique by it. With a `scope`, the
-    name of a sibling column, rows are unique by (scope, key) instead, e.g.
-    MVR's `pname` within `mname`. Written `pk = true` when unscoped."""
+    """A list item column's key: rows are unique by it. With a `scope` (see
+    `Scope`), rows are unique by (scope, key) instead, e.g. MVR's `pname`
+    within `mname`. Written `pk = true` when unscoped."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    scope: str | None = None
+    scope: Scope | None = None
+
+    _check_scope = field_validator("scope", mode="before")(_load_scope)
 
 
 class ForeignKey(BaseModel):
-    """A reference to a `pk` column (or a string array's entries), by its
-    path, `[component.]block.field`. With a `scope`, the name of a sibling
-    column, that column qualifies the reference: within a component, it
-    matches the target pk's own scope; across components, it picks the
-    target component's instance. Written `fk = "<path>"` when unscoped."""
+    """A reference to a `pk` column (or a string array's entries), one of:
+
+    - `path`, `[component.]block.field`. With a `scope` (see `Scope`), the
+      scope qualifies the reference: within a component, a sibling column
+      matching the target pk's own scope; across components, it picks the
+      target component's instance. Written `fk = "<path>"` when unscoped.
+    - `path` as context columns, `["^exgmnamea", "^exgmnameb"]`: the keys are
+      the values those columns have in the instance's context (see
+      `CONTEXT`). Written as the list; `"^x"` is the same as `["^x"]`.
+    - `key`, with a `scope`: a key set (see `KeySet`) that the component of
+      the instance the scope picks declares, by name, in its `keys`. For an
+      instance whose type is known only at runtime (MVR's `id1`).
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    path: str
-    scope: str | None = None
+    path: str | tuple[str, ...] | None = None
+    scope: Scope | None = None
+    key: str | None = None
+
+    _check_scope = field_validator("scope", mode="before")(_load_scope)
+
+    @field_validator("path", mode="before")
+    @classmethod
+    def _load_path(cls, v: Any) -> Any:
+        if isinstance(v, str) and v.startswith(CONTEXT):
+            return (v,)
+        if isinstance(v, list):
+            return tuple(v)
+        return v
 
     @field_validator("path")
     @classmethod
-    def _check_path(cls, v: str) -> str:
+    def _check_path(cls, v: "str | tuple[str, ...] | None") -> "str | tuple[str, ...] | None":
+        if v is None:
+            return v
+        if isinstance(v, tuple):
+            if not v:
+                raise ValueError("an fk's context columns must name at least one")
+            for entry in v:
+                if not _CONTEXT_RE.match(entry):
+                    raise ValueError(f"fk context column {entry!r} must be a context name '^name'")
+            return v
         parts = v.split(".")
         if len(parts) not in (2, 3) or not all(parts):
             raise ValueError(
@@ -174,23 +246,56 @@ class ForeignKey(BaseModel):
             )
         return v
 
+    @field_validator("key")
+    @classmethod
+    def _check_key(cls, v: str | None) -> str | None:
+        if v is not None and not _IDENT_RE.match(v):
+            raise ValueError(f"fk key {v!r} must be a key set name")
+        return v
+
+    @model_validator(mode="after")
+    def _check_form(self) -> "ForeignKey":
+        if (self.path is None) == (self.key is None):
+            raise ValueError("an fk needs exactly one of path and key")
+        if self.key is not None and self.scope is None:
+            raise ValueError("an fk with a key needs a scope, which picks the instance")
+        if self.context is not None and self.scope is not None:
+            raise ValueError("an fk to context columns can't be scoped")
+        return self
+
+    @property
+    def context(self) -> tuple[str, ...] | None:
+        """The context columns' names (without `^`), or None for a path or key."""
+        if isinstance(self.path, tuple):
+            return tuple(p[len(CONTEXT) :] for p in self.path)
+        return None
+
+    @property
+    def simple(self) -> bool:
+        """Whether it's written `fk = "<path>"`."""
+        return isinstance(self.path, str) and self.scope is None
+
     @property
     def component(self) -> str | None:
-        """The target component, or None for this one."""
+        """The target component, or None for this one (or for context
+        columns or a key, whose target is resolved at runtime)."""
+        if not isinstance(self.path, str):
+            return None
         parts = self.path.split(".")
         return parts[0] if len(parts) == 3 else None
 
     @property
-    def block(self) -> str:
-        return self.path.split(".")[-2]
+    def block(self) -> str | None:
+        return self.path.split(".")[-2] if isinstance(self.path, str) else None
 
     @property
-    def field(self) -> str:
-        return self.path.split(".")[-1]
+    def field(self) -> str | None:
+        return self.path.split(".")[-1] if isinstance(self.path, str) else None
 
 
-# Keys load from their TOML shorthand (`pk = true`, `fk = "<path>"`) and dump
-# back to it when unscoped, so they're always objects in Python.
+# Keys load from their TOML shorthand (`pk = true`, `fk = "<path>"`,
+# `fk = ["^x", ...]`) and dump back to it where they can, so they're always
+# objects in Python.
 def _load_pk(v: Any) -> Any:
     if isinstance(v, bool):
         return PrimaryKey() if v else None
@@ -198,15 +303,17 @@ def _load_pk(v: Any) -> Any:
 
 
 def _load_fk(v: Any) -> Any:
-    return ForeignKey(path=v) if isinstance(v, str) else v
+    return ForeignKey(path=cast(Any, v)) if isinstance(v, str | list | tuple) else v
 
 
 def _dump_pk(key: PrimaryKey) -> Any:
-    return True if key.scope is None else key.model_dump(exclude_none=True)
+    return True if key.scope is None else {"scope": _plain(key.scope)}
 
 
 def _dump_fk(key: ForeignKey) -> Any:
-    return key.path if key.scope is None else key.model_dump(exclude_none=True)
+    if key.simple or (key.context is not None):
+        return _plain(key.path)
+    return {k: _plain(v) for k, v in key.model_dump(exclude_none=True).items()}
 
 
 PK = Annotated[
@@ -216,9 +323,54 @@ PK = Annotated[
 ]
 FK = Annotated[
     ForeignKey | None,
-    BeforeValidator(_load_fk, json_schema_input_type=str | ForeignKey | None),
+    BeforeValidator(_load_fk, json_schema_input_type=str | list[str] | ForeignKey | None),
     PlainSerializer(_dump_fk, when_used="unless-none"),
 ]
+
+
+class KeySet(BaseModel):
+    """A named key set a component declares in `keys`, which an fk elsewhere
+    names by `key` (see `ForeignKey`) without knowing the component's type,
+    like an interface: MVR's `id1` names a feature of whatever package
+    `pname1` names, and each mover-capable package says which.
+
+    `path` is `block.field`, a list's (unscoped) pk or a string array, or a
+    bound `<=dim`, any index in `1..dim`. `when` names a keyword option of the
+    component that must be set for the key set to exist (MOVER)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    path: str
+    when: str | None = None
+
+    @field_validator("path")
+    @classmethod
+    def _check_path(cls, v: str) -> str:
+        if v.startswith("<="):
+            if _IDENT_RE.match(v[2:]):
+                return v
+        else:
+            parts = v.split(".")
+            if len(parts) == 2 and all(_IDENT_RE.match(p) for p in parts):
+                return v
+        raise ValueError(f"key set path {v!r} must be 'block.field' or a bound '<=dim'")
+
+    @property
+    def bound(self) -> str | None:
+        """The dimension a `<=dim` path bounds the index by, or None."""
+        return self.path[2:] if self.path.startswith("<=") else None
+
+
+class Provide(BaseModel):
+    """A name an exchange gives one of its models (see `Package.provides`):
+    below the model that its binding row's column `to` names, `^<name>`
+    resolves to the value of its column `value`. GWF-GWT gives the GWT model
+    its flow model, `exgmnamea`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    to: str
+    value: str
 
 
 class String(InputFieldBase):
@@ -245,9 +397,11 @@ class String(InputFieldBase):
         if self.fk is None:
             raise ValueError(f"String {self.name!r}: dynamic requires an fk naming its keywords")
         # Its keywords must be known before its line is read, so they can't
-        # depend on a scope later on that line.
+        # depend on a scope later on that line, or on the instance's context.
         if self.fk.scope is not None:
             raise ValueError(f"String {self.name!r}: a dynamic keyword's fk can't be scoped")
+        if not isinstance(self.fk.path, str):
+            raise ValueError(f"String {self.name!r}: a dynamic keyword's fk must be a path")
         return self
 
 
@@ -276,6 +430,10 @@ class Integer(InputFieldBase):
 
     @model_validator(mode="after")
     def _check_allow_zero(self) -> "Integer":
+        if self.fk is not None and self.fk.context is not None:
+            raise ValueError(
+                f"Integer {self.name!r}: only a string column may reference context columns"
+            )
         if self.allow_zero and (self.fk is None or self.index is not True):
             raise ValueError(
                 f"Integer {self.name!r}: allow_zero requires an fk and index=true "
@@ -366,6 +524,8 @@ class Array(InputFieldBase):
                 )
             if self.fk.scope is not None:
                 raise ValueError(f"Array {self.name!r}: an array's fk can't be scoped")
+            if not isinstance(self.fk.path, str):
+                raise ValueError(f"Array {self.name!r}: an array's fk must be a path")
         return self
 
 
@@ -1308,6 +1468,17 @@ class ComponentBase(BaseModel):
     # Observation types this component accepts in its OBS file, keyed by
     # (lower-case) name. See `ObservationField`.
     observations: dict[str, ObservationField] | None = None
+    # Named key sets other components' fks can name by `key`, without knowing
+    # this component's type (MVR's `id1`: `mover_provider`). See `KeySet`.
+    keys: dict[str, KeySet] | None = None
+
+    @field_validator("keys")
+    @classmethod
+    def _check_key_names(cls, v: dict[str, KeySet] | None) -> dict[str, KeySet] | None:
+        for name in v or {}:
+            if not _IDENT_RE.match(name):
+                raise ValueError(f"key set name {name!r} must be an identifier")
+        return v
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
@@ -1350,6 +1521,18 @@ class Package(ComponentBase):
     type: Literal["package"] = "package"
     multi: bool = False
     subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
+    # Names an exchange gives one of its models, which components below that
+    # model reference as `^<name>`, e.g. GWF-GWT's `flow_model`. See `Provide`.
+    provides: dict[str, Provide] | None = None
+
+    @model_validator(mode="after")
+    def _check_provides(self) -> "Package":
+        for name in self.provides or {}:
+            if self.subtype != "exchange":
+                raise ValueError(f"{self.name}: only an exchange may declare provides")
+            if not _IDENT_RE.match(name):
+                raise ValueError(f"{self.name}: provides name {name!r} must be an identifier")
+        return self
 
 
 Component = Annotated[
@@ -1582,16 +1765,23 @@ def _validate_list_shape_element(
     _check_shape_element(element, list_field, known_dims)
 
 
-def _key_scopes(field: "InputField") -> set[str]:
+def _key_scopes(field: "InputField") -> "set[Scope]":
     keys = (getattr(field, "pk", None), getattr(field, "fk", None))
     return {k.scope for k in keys if k is not None and k.scope is not None}
+
+
+def _sibling_scopes(field: "InputField") -> list[str]:
+    """The sibling columns among a column's key scopes (not context names)."""
+    return [e for s in _key_scopes(field) for e in scope_entries(s) if not e.startswith(CONTEXT)]
 
 
 def _check_record_keys(fields: dict) -> None:
     """
     Check a record's keys among its columns: at most one `pk`, and every
-    scope names another String/Integer column, without cycles. A column's
-    `pk` and `fk`, if both scoped, share the scope.
+    sibling scope entry names another String/Integer column, without cycles.
+    A column's `pk` and `fk`, if both scoped, share the scope. Context names
+    (`^name`) are checked against the component's context, in
+    `_validate_fk_fields`.
     """
     pks = [n for n, f in fields.items() if getattr(f, "pk", None) is not None]
     if len(pks) > 1:
@@ -1599,20 +1789,132 @@ def _check_record_keys(fields: dict) -> None:
     for name, field in fields.items():
         scopes = _key_scopes(field)
         if len(scopes) > 1:
-            raise ValueError(f"Field {name!r}: pk and fk scopes differ, {sorted(scopes)!r}")
-        for scope in scopes:
+            raise ValueError(
+                f"Field {name!r}: pk and fk scopes differ, {sorted(map(str, scopes))!r}"
+            )
+        for scope in _sibling_scopes(field):
             if scope == name or not isinstance(fields.get(scope), String | Integer):
                 raise ValueError(
                     f"Field {name!r} scope={scope!r}: not another String or Integer "
                     f"field in the same record"
                 )
-    for name in fields:
-        chain = [name]
-        while scopes := _key_scopes(fields[chain[-1]]):
-            (scope,) = scopes
+
+    def _visit(chain: list[str]) -> None:
+        for scope in _sibling_scopes(fields[chain[-1]]):
             if scope in chain:
-                raise ValueError(f"Fields {chain!r}: scopes form a cycle")
-            chain.append(scope)
+                raise ValueError(f"Fields {[*chain, scope]!r}: scopes form a cycle")
+            _visit([*chain, scope])
+
+    for name in fields:
+        _visit([name])
+
+
+# A binding row: the record, in a parent component's input, with a File that
+# links the bound component (a name file's `packages` row, an exchange's
+# `MVR6 FILEIN` option), as (parent, the record's fields).
+BindingRow = tuple["ComponentBase", "Mapping[str, InputField]"]
+
+
+def _binding_rows(spec: "Dfns", component: "ComponentBase") -> list[BindingRow]:
+    """The records that can bind `component` in a parent: those with an input
+    File whose `component` admits it, in a component its `parent` admits."""
+    rows: list[BindingRow] = []
+    for parent in spec.components.values():
+        if parent.name == component.name or not admits(component.parent, parent):
+            continue
+        for block in (parent.blocks or {}).values():
+            for file, siblings in _iter_files(block.fields):
+                if (
+                    file.direction == "in"
+                    and file.component is not None
+                    and admits(file.component, component)
+                ):
+                    rows.append((parent, siblings))
+    return rows
+
+
+# Where a context name may resolve: (the component holding the row, the row's
+# fields, the column).
+ContextColumn = tuple["ComponentBase", "Mapping[str, InputField]", "InputField"]
+
+
+def _context_names(spec: "Dfns", component: "ComponentBase") -> dict[str, list[ContextColumn]]:
+    """
+    The names `^name` may resolve to for `component`, statically: each
+    String/Integer column of a binding row of the component or one of its
+    possible ancestors, and each name an exchange `provides` (resolving to
+    its `value` column in the exchange's binding rows).
+    """
+    names: dict[str, list[ContextColumn]] = {}
+    seen: set[str] = set()
+    todo = [component]
+    while todo:
+        c = todo.pop()
+        if c.name in seen:
+            continue
+        seen.add(c.name)
+        for parent, row in _binding_rows(spec, c):
+            for col_name, col in row.items():
+                if isinstance(col, String | Integer):
+                    names.setdefault(col_name, []).append((parent, row, col))
+            todo.append(parent)
+    for exchange in spec.components.values():
+        for name, provide in (getattr(exchange, "provides", None) or {}).items():
+            for parent, row in _binding_rows(spec, exchange):
+                if (provided := row.get(provide.value)) is not None:
+                    names.setdefault(name, []).append((parent, row, provided))
+    return names
+
+
+def _named_components(
+    spec: "Dfns",
+    owner: "ComponentBase",
+    row: "Mapping[str, InputField]",
+    column: "InputField",
+    seen: frozenset[tuple[str, str]] = frozenset(),
+) -> set[str]:
+    """
+    The components whose instance a column's value can name: whatever its
+    fk's target column names, following fks across components and through
+    context columns (MVR's `pname1` names a `packages` row, whose `pname`
+    names a package in a model), or, for a column without an fk that is the
+    pk of a binding row, the components that row binds (a name file's
+    `pname`). An fk comes first: SSM's `fileinput.pname` is its row's pk
+    and names a flow package, not the SPC file the row binds.
+    """
+    if (owner.name, column.name) in seen:
+        return set()
+    seen = seen | {(owner.name, column.name)}
+    fk: ForeignKey | None = getattr(column, "fk", None)
+    if fk is None and getattr(column, "pk", None) is not None:
+        selectors = [
+            f.component
+            for f in row.values()
+            if isinstance(f, File) and f.direction == "in" and f.component is not None
+        ]
+        return {
+            n
+            for n, c in spec.components.items()
+            if any(admits(s, c) for s in selectors) and admits(c.parent, owner)
+        }
+    if fk is None or fk.key is not None:
+        return set()
+    if fk.context is not None:
+        context = _context_names(spec, owner)
+        return {
+            n
+            for name in fk.context
+            for o, r, c in context.get(name, [])
+            for n in _named_components(spec, o, r, c, seen)
+        }
+    target = spec.components.get(fk.component) if fk.component else owner
+    lst = _find_list_in_block(target, fk.block) if target and fk.block else None
+    if target is None or lst is None or not isinstance(lst.item, Record):
+        return set()
+    target_col = lst.item.fields.get(fk.field)  # type: ignore[arg-type]
+    if target_col is None:
+        return set()
+    return _named_components(spec, target, lst.item.fields, target_col, seen)
 
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
@@ -1627,16 +1929,61 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     component; with one, in that component via `spec.components`. A dynamic
     key (see `_is_dynamic_key`) is checked like any other String.
 
-    A scoped fk within a component targets a pk scoped the same way: if both
-    scope columns have an fk, it's the same. A scoped fk to another component
-    picks its instance by the scope column, which must be an fk to the row
-    binding that component in its parent, i.e. a list whose item has a File
-    whose `component` admits the target. See also `_check_record_keys`.
+    A scoped fk within a component targets a pk scoped the same way, by a
+    sibling column: if both scope columns have an fk, it's the same. A
+    scoped fk to another component picks its instance by each scope entry,
+    a sibling column or a context name, which must name (see
+    `_named_components`) an instance of the target component.
+
+    Every context name a key uses (`^name`, in a scope or as an fk's
+    context columns) must resolve somewhere (see `_context_names`). An fk
+    with a `key` names a key set declared by at least one component its scope
+    can name, and fits each declaration: a `<=dim` path needs an integer
+    index column, a `block.field` path a column of the same type.
 
     Observation fields (see `ObservationField`) are checked like a list item's.
     """
+    context_cache: dict[str, list[ContextColumn]] | None = None
+
+    def _context() -> dict[str, list[ContextColumn]]:
+        nonlocal context_cache
+        if context_cache is None:
+            context_cache = _context_names(spec, component)
+        return context_cache
+
+    def _check_context_name(field: "InputField", entry: str) -> None:
+        name = entry[len(CONTEXT) :]
+        if name not in _context():
+            raise ValueError(
+                f"Field {field.name!r}: context name {entry!r} resolves nowhere: no binding "
+                f"row of {component.name!r} or its ancestors has a column {name!r}, and "
+                f"no exchange provides it"
+            )
+
+    def _scope_names(field: "InputField", scope: "Scope", fields: dict) -> set[str]:
+        """The components the scope's entries can name an instance of."""
+        named: set[str] = set()
+        for entry in scope_entries(scope):
+            if entry.startswith(CONTEXT):
+                for owner, row, col in _context()[entry[len(CONTEXT) :]]:
+                    named |= _named_components(spec, owner, row, col)
+            else:
+                named |= _named_components(spec, component, fields, fields[entry])
+        return named
 
     def _check_fk(field: "InputField", fk: ForeignKey, fields: dict) -> None:
+        for key in (getattr(field, "pk", None), fk):
+            for entry in scope_entries(key.scope if key is not None else None):
+                if entry.startswith(CONTEXT):
+                    _check_context_name(field, entry)
+        if fk.context is not None:
+            for entry in fk.path:  # type: ignore[union-attr]
+                _check_context_name(field, entry)
+            return
+        if fk.key is not None:
+            _check_key(field, fk, fields)
+            return
+        assert isinstance(fk.path, str) and fk.block is not None and fk.field is not None
         where_fk = f"Field {field.name!r} fk={fk.path!r}"
         target = component
         where = "this component"
@@ -1669,6 +2016,12 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                     f"{target_pk.scope!r}; both or neither must be scoped"
                 )
             if fk.scope is not None and target_pk.scope is not None:
+                for scope in (fk.scope, target_pk.scope):
+                    if not isinstance(scope, str) or scope.startswith(CONTEXT):
+                        raise ValueError(
+                            f"{where_fk}: scope {scope!r}: within a component, a key's "
+                            f"scope must be a single sibling column"
+                        )
                 ours = getattr(fields[fk.scope], "fk", None)
                 theirs = getattr(item_fields[target_pk.scope], "fk", None)
                 if ours is not None and theirs is not None and ours != theirs:
@@ -1677,23 +2030,41 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                         f"target's scope {target_pk.scope!r} references {theirs.path!r}"
                     )
         elif fk.scope is not None:
-            _check_instance_scope(field, fk, fields[fk.scope])
+            if fk.component not in _scope_names(field, fk.scope, fields):
+                raise ValueError(
+                    f"{where_fk}: scope {fk.scope!r} must be an fk to the row binding "
+                    f"{fk.component!r} in its parent (directly, through fks, or as a "
+                    f"context name)"
+                )
 
-    def _check_instance_scope(field: "InputField", fk: ForeignKey, scope_field: Any) -> None:
-        where_fk = f"Field {field.name!r} fk={fk.path!r}"
-        scope_fk: ForeignKey | None = getattr(scope_field, "fk", None)
-        problem = f"{where_fk}: scope {scope_field.name!r} must be an fk to the row binding "
-        problem += f"{fk.component!r} in its parent"
-        if scope_fk is None:
-            raise ValueError(problem)
-        owner = spec.components.get(scope_fk.component) if scope_fk.component else component
-        binding = _find_list_in_block(owner, scope_fk.block) if owner else None
-        if binding is None or not isinstance(binding.item, Record):
-            raise ValueError(problem)
-        target = spec.components[fk.component]  # type: ignore[index]
-        files = [f for f in binding.item.fields.values() if isinstance(f, File)]
-        if not any(f.component is not None and admits(f.component, target) for f in files):
-            raise ValueError(problem)
+    def _check_key(field: "InputField", fk: ForeignKey, fields: dict) -> None:
+        assert fk.key is not None and fk.scope is not None
+        where_fk = f"Field {field.name!r} fk key={fk.key!r}"
+        if not isinstance(field, Integer | String):
+            raise ValueError(f"{where_fk}: only an integer or string column may name a key")
+        named = sorted(_scope_names(field, fk.scope, fields))
+        declaring = [spec.components[n] for n in named if fk.key in (spec.components[n].keys or {})]
+        if not declaring:
+            raise ValueError(
+                f"{where_fk}: no component the scope {fk.scope!r} can name declares "
+                f"key {fk.key!r} (it can name {named!r})"
+            )
+        for target in declaring:
+            keyset = (target.keys or {})[fk.key]
+            where = f"{where_fk}: {target.name}'s {keyset.path!r}"
+            if keyset.bound is not None:
+                if not (isinstance(field, Integer) and field.index is True):
+                    raise ValueError(f"{where}: a '<=dim' key needs an integer index column")
+                continue
+            column = _keyset_column(target, keyset)
+            if isinstance(field, Integer) != isinstance(column, Integer):
+                raise ValueError(f"{where}: the column's type doesn't match {field.type!r}")
+
+    def _check_pk_context(field: "InputField") -> None:
+        pk: PrimaryKey | None = getattr(field, "pk", None)
+        for entry in scope_entries(pk.scope if pk is not None else None):
+            if entry.startswith(CONTEXT):
+                _check_context_name(field, entry)
 
     def _check_fields(fields: dict, record: bool = False) -> None:
         if record:
@@ -1702,6 +2073,8 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
             fk: ForeignKey | None = getattr(field, "fk", None)
             if fk is not None:
                 _check_fk(field, fk, fields)
+            else:
+                _check_pk_context(field)
 
             if isinstance(field, Record):
                 _check_fields(field.fields, record=True)
@@ -1720,6 +2093,63 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     for block in (component.blocks or {}).values():
         _check_fields(block.fields)
     _check_fields(component.observations or {}, record=True)
+
+
+def _keyset_column(component: "ComponentBase", keyset: "KeySet") -> "InputField":
+    """The column a `block.field` key set names: a list's unscoped pk, or a
+    string array. Raises if it names neither."""
+    block_name, field_name = keyset.path.split(".")
+    where = f"{component.name}: key set path {keyset.path!r}"
+    block = (component.blocks or {}).get(block_name)
+    array = block.fields.get(field_name) if block else None
+    if isinstance(array, Array) and array.dtype == "string":
+        return array
+    lst = _find_list_in_block(component, block_name)
+    if lst is None or not isinstance(lst.item, Record):
+        raise ValueError(f"{where}: {block_name!r} is not a list block or string array")
+    column = lst.item.fields.get(field_name)
+    pk: PrimaryKey | None = getattr(column, "pk", None)
+    if column is None or pk is None:
+        raise ValueError(f"{where}: {field_name!r} is not the pk of list {lst.name!r}")
+    if pk.scope is not None:
+        raise ValueError(f"{where}: the pk is scoped, so a key alone can't name a row")
+    return column
+
+
+def _validate_keys(component: "ComponentBase", spec: "Dfns") -> None:
+    """Each declared key set's path is valid in the component: a list's
+    unscoped pk or a string array (see `_keyset_column`), or `<=dim` with a
+    dimension the component can see; its `when` names a keyword option."""
+    options = (component.blocks or {}).get("options")
+    keywords = {n for n, f in (options.fields if options else {}).items() if isinstance(f, Keyword)}
+    for name, keyset in (component.keys or {}).items():
+        where = f"{component.name}: key set {name!r}"
+        if keyset.when is not None and keyset.when not in keywords:
+            raise ValueError(f"{where}: when={keyset.when!r} names no keyword option")
+        if keyset.bound is not None:
+            if keyset.bound not in spec.input_dims(component.name):
+                raise ValueError(f"{where}: {keyset.path!r} names no dimension of {component.name}")
+        else:
+            _keyset_column(component, keyset)
+
+
+def _validate_provides(component: "ComponentBase", spec: "Dfns") -> None:
+    """Each name an exchange provides takes `to` and `value` from String
+    columns of one of the exchange's binding rows (`sim-nam`'s `exchanges`)."""
+    provides = getattr(component, "provides", None) or {}
+    if not provides:
+        return
+    rows = [row for _, row in _binding_rows(spec, component)]
+    for name, provide in provides.items():
+        if not any(
+            isinstance(row.get(provide.to), String) and isinstance(row.get(provide.value), String)
+            for row in rows
+        ):
+            raise ValueError(
+                f"{component.name}: provides {name!r}: to={provide.to!r} and "
+                f"value={provide.value!r} must be String columns of a row binding "
+                f"{component.name!r} in its parent"
+            )
 
 
 def _iter_files(fields: "Mapping[str, InputField]"):
@@ -2205,6 +2635,10 @@ class Dfns(BaseModel):
         for name, component in self.components.items():
             if component.dims:
                 _resolve_derived_dims(component, self.dims(name))
+        for name, component in self.components.items():
+            _validate_keys(component, self)
+        for name, component in self.components.items():
+            _validate_provides(component, self)
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
         for name, component in self.components.items():
