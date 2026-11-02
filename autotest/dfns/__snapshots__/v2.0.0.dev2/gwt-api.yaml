@@ -66,5 +66,7 @@ blocks:
         description: integer value specifying the maximum number of api boundary cells that will be specified
           for use during any stress period.
 keys:
-  mover_provider: <=maxbound
   bound: <=maxbound
+  mover_provider:
+    path: <=maxbound
+    when: mover

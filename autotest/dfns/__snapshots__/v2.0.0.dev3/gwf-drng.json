@@ -363,7 +363,10 @@
     }
   },
   "keys": {
-    "mover_provider": "<=maxbound",
-    "bound": "<=maxbound"
+    "bound": "<=maxbound",
+    "mover_provider": {
+      "path": "<=maxbound",
+      "when": "mover"
+    }
   }
 }

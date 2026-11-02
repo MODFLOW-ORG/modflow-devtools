@@ -199,5 +199,7 @@ blocks:
         tagged: false
         index: true
 keys:
-  mover_provider: <=maxbound
   bound: <=maxbound
+  mover_provider:
+    path: <=maxbound
+    when: mover

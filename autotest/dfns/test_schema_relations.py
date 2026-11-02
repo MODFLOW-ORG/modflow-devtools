@@ -971,6 +971,18 @@ def test_keys_load_and_dump_as_paths():
     assert pkg.model_dump(exclude_defaults=True)["keys"] == {"bound": "<=maxbound"}
 
 
+def test_keys_with_when_load_and_dump_as_tables():
+    """A key set switched on by an option is written `{path, when}`; one
+    without stays its path alone."""
+    keys = {
+        "mover_provider": {"path": "<=maxbound", "when": "mover"},
+        "bound": "<=maxbound",
+    }
+    pkg = Package.model_validate({"name": "gwf-wel", "keys": keys})
+    assert pkg.keys["mover_provider"] == KeySet(path="<=maxbound", when="mover")
+    assert pkg.model_dump(exclude_defaults=True)["keys"] == keys
+
+
 def _list_block(name, *fields, list_name=None):
     item = Record(name=name, fields={f.name: f for f in fields})
     return Block(name=name, fields={list_name or name: List(name=list_name or name, item=item)})
@@ -1211,6 +1223,19 @@ def test_dfns_validate_key_bound_needs_index():
 def test_dfns_validate_keyset_bad(keyset, match):
     pkgs = _mover_pkgs(lak_keys={"mover_provider": keyset})
     with pytest.raises(ValueError, match=match):
+        Dfns(components=_ctx_mvr(**pkgs))
+
+
+def test_dfns_validate_keyset_when():
+    """A key set's `when` names a keyword option, as a field's does."""
+    pkgs = _mover_pkgs(
+        wel_keys={"mover_provider": KeySet(path="<=maxbound", when="mover")},
+    )
+    Dfns(components=_ctx_mvr(**pkgs))
+    pkgs = _mover_pkgs(
+        wel_keys={"mover_provider": KeySet(path="<=maxbound", when="nope")},
+    )
+    with pytest.raises(ValueError, match="when='nope' names no keyword option"):
         Dfns(components=_ctx_mvr(**pkgs))
 
 

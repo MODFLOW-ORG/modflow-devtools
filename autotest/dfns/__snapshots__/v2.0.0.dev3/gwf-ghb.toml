@@ -317,5 +317,8 @@ type = "string"
 tagged = false
 
 [keys]
-mover_provider = "<=maxbound"
 bound = "<=maxbound"
+
+[keys.mover_provider]
+path = "<=maxbound"
+when = "mover"

@@ -1112,6 +1112,10 @@ observations:
         type: string
         tagged: false
 keys:
-  mover_provider: outlets.outletno
-  mover_receiver: packagedata.ifno
   bound: <=nlakeconn
+  mover_provider:
+    path: outlets.outletno
+    when: mover
+  mover_receiver:
+    path: packagedata.ifno
+    when: mover
