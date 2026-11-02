@@ -284,6 +284,9 @@ description = "integer value that defines the GWF connection number for this lak
 tagged = false
 index = true
 
+[blocks.connectiondata.fields.connectiondata.item.fields.iconn.pk]
+scope = "ifno"
+
 [blocks.connectiondata.fields.connectiondata.item.fields.cellid]
 type = "cellid"
 longname = "cell identifier"
@@ -685,3 +688,4 @@ index = true
 [keys]
 mover_provider = "outlets.outletno"
 mover_receiver = "packagedata.ifno"
+bound = "<=nlakeconn"

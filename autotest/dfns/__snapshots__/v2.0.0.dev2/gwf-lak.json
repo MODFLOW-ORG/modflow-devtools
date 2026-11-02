@@ -309,7 +309,10 @@
                 "longname": "connection number for this entry",
                 "description": "integer value that defines the GWF connection number for this lake connection entry. ICONN must be greater than zero and less than or equal to NLAKECONN for lake IFNO.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": {
+                  "scope": "ifno"
+                }
               },
               "cellid": {
                 "type": "cellid",
@@ -766,6 +769,7 @@
   },
   "keys": {
     "mover_provider": "outlets.outletno",
-    "mover_receiver": "packagedata.ifno"
+    "mover_receiver": "packagedata.ifno",
+    "bound": "<=nlakeconn"
   }
 }

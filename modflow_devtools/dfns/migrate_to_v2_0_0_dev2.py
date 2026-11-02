@@ -22,6 +22,9 @@ _V1_SHAPE_FIXES: dict[tuple[str, str], str] = {
     ("utl-ts", "sfacval"): "(time_series_names)",
     ("gwf-sfr", "ic"): "(ncon(ifno))",
     ("gwf-lak", "connectiondata"): "(sum(nlakeconn))",
+    # MAW gives no shape, but reads exactly one row per connection, like LAK
+    # (`gwf-maw.f90`, MAXBOUND = sum(ngwfnodes)).
+    ("gwf-maw", "connectiondata"): "(sum(ngwfnodes))",
 }
 
 
@@ -979,6 +982,51 @@ _FK_ALLOW_ZERO: dict[str, tuple[str, set[str]]] = {
 }
 
 
+# Indices numbering a feature's connections or diversions: unique within the
+# feature, so `pk = {scope = "ifno"}`, and referenced elsewhere with the
+# feature. Entries: component -> [(block, {column: (pk, fk path)})], `pk`
+# whether the column is its list's pk, the fk path scoped by `ifno` (in the
+# same row, or for SFR's period `diversion` arm, the list item's). MF6
+# rejects a repeat in each list with a pk ("specified more than once":
+# `gwf-lak.f90` connectiondata, `gwf-maw.f90` connectiondata and angledata,
+# `gwf-sfr.f90` diversions), and range-checks each index against its
+# feature's count (NLAKECONN, NGWFNODES, NDV). A missing block is skipped
+# (`angledata` is newer than 6.7); a missing column in a present one raises.
+_SCOPED_INDEX_KEYS: dict[str, list[tuple[str, dict[str, tuple[bool, str | None]]]]] = {
+    "gwf-lak": [("connectiondata", {"iconn": (True, None)})],
+    "gwf-maw": [
+        ("connectiondata", {"icon": (True, None)}),
+        ("angledata", {"icon": (True, "connectiondata.icon")}),
+    ],
+    "gwf-sfr": [
+        ("diversions", {"idv": (True, None)}),
+        ("period", {"idv": (False, "diversions.idv")}),
+    ],
+}
+
+
+def _fix_scoped_index_keys(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Set the scoped keys in `_SCOPED_INDEX_KEYS`. After `_mark_lonely_pk`,
+    which marks only a record with no pk."""
+    for block_name, columns in _SCOPED_INDEX_KEYS.get(name, []):
+        if block_name not in blocks:
+            continue
+
+        def _replace(field: Any, _in_union: bool, columns=columns) -> Any:
+            if not isinstance(field, v2.Integer) or field.index is not True:
+                raise ValueError(f"{name}: {field.name!r} is not an integer index")
+            pk, fk = columns[field.name]
+            update: dict[str, Any] = {}
+            if pk:
+                update["pk"] = v2.PrimaryKey(scope="ifno")
+            if fk is not None:
+                update["fk"] = v2.ForeignKey(path=fk, scope="ifno")
+            return field.model_copy(update=update)
+
+        blocks = _replace_named(name, blocks, block_name, _replace, set(columns))
+    return blocks
+
+
 def _fix_fk_allow_zero(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Mark this component's integer fks that may give 0 for no row. See
     `_FK_ALLOW_ZERO`. After the fk backfill, which gives `ivertcon` its fk."""
@@ -1715,6 +1763,20 @@ _MOVER_KEYS: dict[str, tuple[str, str]] = {
     "gwf-lak": ("outlets.outletno", "packagedata.ifno"),
 }
 
+# What an advanced package's bounds are, which SPC's `bndno` numbers when SSM
+# binds SPC to it (with no advanced transport package paired, `tsp-ssm.f90`
+# `iatp`). Not sized by a `maxbound` dim, unlike a standard package's. SFR
+# and UZF have a bound per feature (MAXBOUND = NREACHES, NUZFCELLS); LAK
+# and MAW one per connection, numbered through all features' connections
+# in feature order (`gwf-lak.f90` NLAKECONN; `gwf-maw.f90:935`,
+# `maxbound = sum(ngwfnodes)`, and `imap`).
+_BOUND_KEYS: dict[str, str] = {
+    "gwf-sfr": "packagedata.ifno",
+    "gwf-uzf": "packagedata.ifno",
+    "gwf-lak": "<=nlakeconn",
+    "gwf-maw": "<=ngwfnodes",
+}
+
 
 def _component_keys(
     name: str, blocks: dict[str, v2.Block], dims: Mapping[str, Any]
@@ -1727,11 +1789,12 @@ def _component_keys(
       keyword: per `_MOVER_KEYS`, else a provider only, by bound,
       `<=maxbound` (skipped without a `maxbound` dim). MF6 also requires the
       named package to have MOVER set, which consumers check.
-    - `bound`, `<=maxbound`, in a non-utility package with a `maxbound`
-      dim: a standard boundary package's bounds, numbered by its position
-      in MF6's bound list (`BoundaryPackage.f90`), which SPC's `bndno`
-      names. Advanced packages declare none: their bound lists (lake or
-      well connections, reaches) aren't sized by a `maxbound` dim.
+    - `bound`, what SPC's `bndno` names: `<=maxbound` in a non-utility
+      package with a `maxbound` dim, a standard boundary package's bounds,
+      numbered by position in MF6's bound list (`BoundaryPackage.f90`); in
+      an advanced package, per `_BOUND_KEYS`. Array-based packages (RCHA,
+      EVTA) have none: MF6 pairs them only with array-based SPC, which has
+      no `bndno`.
     """
     keys: dict[str, v2.KeySet] = {}
     options = blocks.get("options")
@@ -1743,7 +1806,9 @@ def _component_keys(
             keys[MOVER_RECEIVER] = v2.KeySet(path=receiver)
         elif has_maxbound:
             keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound")
-    if has_maxbound and not name.startswith("utl-"):
+    if name in _BOUND_KEYS:
+        keys[BOUND] = v2.KeySet(path=_BOUND_KEYS[name])
+    elif has_maxbound and not name.startswith("utl-"):
         keys[BOUND] = v2.KeySet(path="<=maxbound")
     return keys or None
 
@@ -1787,7 +1852,8 @@ def _fix_ssm_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     rejects a package given twice (`814-821`, `912-919`). FMI's packages
     are the flow model's boundary packages, named by their package names
     (`tsp-fmi.f90:741-742`), a subset of the name file's. The repeat check
-    spans both blocks, which a pk on each list can't say. With flows from a
+    spans both blocks, which a pk on each list can't say, so consumers check
+    it (`dfnspec.md`, "Consumer checks"). With flows from a
     budget file there's no exchange, and the key isn't checked.
     """
     if name not in ("gwt-ssm", "gwe-ssm"):
@@ -2749,6 +2815,7 @@ def to_v2_0_0_dev2(
     blocks = _link_namefile_fields(name, blocks)
     blocks = _fix_model_nam_package_keys(name, blocks)
     blocks = _fix_spc_relations(name, blocks)
+    blocks = _fix_scoped_index_keys(name, blocks)
     blocks = _name_period_lists(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 

@@ -199,6 +199,66 @@ def test_dfns_validate_scope_cycle():
         Dfns(components=_mvr_ctx(period_extra=extra))
 
 
+def _sfr_ctx(arm_idv_fk=None, item_ifno="ifno"):
+    """
+    A package whose `diversions` rows are keyed by (ifno, idv), and whose
+    period rows give a diversion in a union arm, its `idv` scoped by the
+    list item's `ifno` (SFR's).
+    """
+    ifno_pk = Integer(name="ifno", index=True, pk=True)
+    pkg_item = Record(name="packagedata", fields={"ifno": ifno_pk})
+    pkg = Block(name="packagedata", fields={"packagedata": List(name="packagedata", item=pkg_item)})
+    div_item = Record(
+        name="diversions",
+        fields={
+            "ifno": Integer(name="ifno", index=True, fk="packagedata.ifno"),
+            "idv": Integer(name="idv", index=True, pk={"scope": "ifno"}),
+        },
+    )
+    div = Block(name="diversions", fields={"diversions": List(name="diversions", item=div_item)})
+    arm = Record(
+        name="diversionrecord",
+        fields={
+            "diversion": Keyword(name="diversion"),
+            "idv": Integer(
+                name="idv",
+                index=True,
+                fk=arm_idv_fk or {"path": "diversions.idv", "scope": "ifno"},
+            ),
+            "divflow": Double(name="divflow"),
+        },
+    )
+    setting = Union(name="sfrsetting", arms={"diversionrecord": arm})
+    period_item = Record(
+        name="perioddata",
+        fields={
+            item_ifno: Integer(name=item_ifno, index=True, fk="packagedata.ifno"),
+            "sfrsetting": setting,
+        },
+    )
+    period = Block(name="period", fields={"perioddata": List(name="perioddata", item=period_item)})
+    sfr = Package(
+        name="gwf-sfr",
+        parent="gwf-nam",
+        blocks={"packagedata": pkg, "diversions": div, "period": period},
+    )
+    return {"gwf-nam": Model(name="gwf-nam"), "gwf-sfr": sfr}
+
+
+def test_dfns_validate_scope_in_enclosing_record():
+    Dfns(components=_sfr_ctx())
+
+
+def test_dfns_validate_scope_not_in_enclosing_record():
+    with pytest.raises(ValueError, match="same or an enclosing record"):
+        Dfns(components=_sfr_ctx(item_ifno="rno"))
+
+
+def test_dfns_validate_enclosing_scope_must_match_target():
+    with pytest.raises(ValueError, match="both or neither must be scoped"):
+        Dfns(components=_sfr_ctx(arm_idv_fk="diversions.idv"))
+
+
 def test_dfns_validate_two_pks_rejected():
     extra = {"id": Integer(name="id", pk=True), "id2": Integer(name="id2", pk=True)}
     with pytest.raises(ValueError, match="only one pk"):

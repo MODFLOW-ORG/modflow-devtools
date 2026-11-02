@@ -1715,28 +1715,33 @@ def _key_scopes(field: "InputField") -> set[str]:
     return {k.scope for k in keys if k is not None and k.scope is not None}
 
 
-def _check_record_keys(fields: dict) -> None:
+def _check_record_keys(fields: dict, outer: "Mapping[str, InputField] | None" = None) -> None:
     """
     Check a record's keys among its columns: at most one `pk`, and every
     scope names another String/Integer column, without cycles. A column's
     `pk` and `fk`, if both scoped, share the scope.
+
+    A scope may also name a column of an enclosing record, `outer` (SFR's
+    period `diversion` arm's `idv`, scoped by the list item's `ifno`), the
+    nearer column winning a name both have.
     """
     pks = [n for n, f in fields.items() if getattr(f, "pk", None) is not None]
     if len(pks) > 1:
         raise ValueError(f"Fields {pks!r}: a row may have only one pk")
+    visible = {**(outer or {}), **fields}
     for name, field in fields.items():
         scopes = _key_scopes(field)
         if len(scopes) > 1:
             raise ValueError(f"Field {name!r}: pk and fk scopes differ, {sorted(scopes)!r}")
         for scope in scopes:
-            if scope == name or not isinstance(fields.get(scope), String | Integer):
+            if scope == name or not isinstance(visible.get(scope), String | Integer):
                 raise ValueError(
                     f"Field {name!r} scope={scope!r}: not another String or Integer "
-                    f"field in the same record"
+                    f"field in the same or an enclosing record"
                 )
     for name in fields:
         chain = [name]
-        while scopes := _key_scopes(fields[chain[-1]]):
+        while scopes := _key_scopes(visible[chain[-1]]):
             (scope,) = scopes
             if scope in chain:
                 raise ValueError(f"Fields {chain!r}: scopes form a cycle")
@@ -1886,18 +1891,22 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
             if isinstance(field, Integer) != isinstance(column, Integer):
                 raise ValueError(f"{where}: the column's type doesn't match {field.type!r}")
 
-    def _check_fields(fields: dict, record: bool = False) -> None:
+    def _check_fields(fields: dict, record: bool = False, outer: dict | None = None) -> None:
+        # `outer`: the columns of the records enclosing these, within a list
+        # item, which a scope may also name (see `_check_record_keys`).
         if record:
-            _check_record_keys(fields)
+            _check_record_keys(fields, outer)
+        visible = {**(outer or {}), **fields}
+        inner = visible if record else outer
         for field in fields.values():
             fk: ForeignKey | None = getattr(field, "fk", None)
             if fk is not None:
-                _check_fk(field, fk, fields)
+                _check_fk(field, fk, visible)
 
             if isinstance(field, Record):
-                _check_fields(field.fields, record=True)
+                _check_fields(field.fields, record=True, outer=inner)
             elif isinstance(field, Union):
-                _check_fields(field.arms)
+                _check_fields(field.arms, outer=inner)
             elif isinstance(field, List):
                 item = field.item
                 # Each arm of a Union item is a distinct line form, checked like

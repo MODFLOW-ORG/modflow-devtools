@@ -875,7 +875,7 @@ A cross-component `fk` resolves in the current context: against the singleton co
 
 #### Scoped keys
 
-MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it. The scope belongs to the key, so it's written inside `pk` or `fk`:
+MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it, or of a record enclosing it within the same list item (a union arm's column may be scoped by the list item's). The scope belongs to the key, so it's written inside `pk` or `fk`:
 
 ```toml
 pk = { scope = "mname" }
@@ -889,6 +889,7 @@ fk = { path = "packages.pname", scope = "mname1" }
 - An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
 - A scope column's own key may be scoped, forming a chain, but not a cycle.
 - If a column's `pk` and `fk` are both scoped, the scope is the same column.
+- A scope names the nearest column of that name: in the key's own record, then in each enclosing record of the same list item.
 
 For example, MODFLOW 6 rejects a mover whose `packages` block lists the same model and package twice, and looks each period row's provider and receiver up among those rows:
 
@@ -910,7 +911,19 @@ A scoped key is a composite key whose columns form a hierarchy. In database term
 | "if both scope columns have an `fk`, it must be the same" | a composite foreign key's column correspondence |
 | an absent scope value means the current one | no equivalent: with SQL's default `MATCH SIMPLE`, a NULL skips the check |
 
-Every composite key in MODFLOW 6 is hierarchical, so there is no separate tuple form.
+Every composite key in MODFLOW 6 is hierarchical, so there is no separate tuple form. Features' connections and diversions are numbered within the feature:
+
+```toml
+# gwf-sfr diversions: (ifno, idv) is unique ("specified more than once")
+[blocks.diversions.fields.diversions.item.fields.idv]
+pk = { scope = "ifno" }
+
+# gwf-sfr period: the diversion arm's idv is one of the row's reach's diversions
+[blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.diversionrecord.fields.idv]
+fk = { path = "diversions.idv", scope = "ifno" }
+```
+
+Likewise `gwf-lak`'s `connectiondata.iconn` and `gwf-maw`'s `connectiondata.icon` are scoped by `ifno`. MAW's `angledata.icon` and the LAK and MAW observations' connection numbers reference them, with the same scope.
 
 #### Key sets
 
@@ -943,7 +956,7 @@ A key set is written as its path, which is either:
 - `"block.field"`: a list's unscoped `pk`, or a string array, as for an `fk`'s path within a component;
 - a bound `"<=dim"`, using the [Bounds](#bounds) syntax: any 1-based index from 1 to `dim`, a dimension the component can see. MODFLOW 6 checks a mover's ids against the package's size, not its rows (`Mover.f90:152-158`, `174-180`). A period block's list may differ by period, and its largest size is `maxbound`.
 
-MODFLOW 6 also rejects a mover row naming a package without its `MOVER` option set (`gwf-mvr.f90:942-971`). The spec doesn't say this; consumers check it.
+MODFLOW 6 also rejects a mover row naming a package without its `MOVER` option set. The spec doesn't say this; consumers check it (see [Consumer checks](#consumer-checks)).
 
 A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
 
@@ -957,7 +970,7 @@ The roles in MODFLOW 6:
 |---|---|---|
 | `mover_provider` | packages with a MOVER option: `<=maxbound` for standard boundary packages (`BoundaryPackage.f90:282-285`); `packagedata.ifno` for SFR, MAW and UZF; `outlets.outletno` for LAK | `gwf-mvr`'s `id1` |
 | `mover_receiver` | `packagedata.ifno` for SFR, MAW, UZF and LAK (its lakes) | `gwf-mvr`'s `id2` |
-| `bound` | `<=maxbound` for every non-utility package with a `maxbound` dimension | `utl-spc`'s `bndno` |
+| `bound` | `<=maxbound` for every non-utility package with a `maxbound` dimension; `packagedata.ifno` for SFR and UZF; `<=nlakeconn` for LAK; `<=ngwfnodes` for MAW | `utl-spc`'s `bndno` |
 
 These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbound, 0)` for a standard boundary package, `(maxbound, maxbound)` for SFR (`gwf-sfr.f90:1775`, `maxbound` being NREACHES) and UZF (`gwf-uzf.f90:260`, NUZFCELLS), `(nmawwells, nmawwells)` for MAW (`gwf-maw.f90:2100`), and `(noutlets, nlakes)` for LAK (`gwf-lak.f90:3276`).
 
@@ -968,6 +981,8 @@ fk = { key = "bound", rule = "ssm_package" }
 ```
 
 MODFLOW 6 checks `bndno` only against SPC's own `maxbound`, which must be at least the flow package's bound count (`TspSpc.f90:326-349`).
+
+An advanced package's bounds are its features or its connections. SFR and UZF have one per reach or UZF cell. LAK and MAW have one per connection, numbered through every feature's connections in feature order, NLAKECONN or `sum(ngwfnodes)` in all (`gwf-maw.f90:935`). SSM applies SPC to an advanced package only when no advanced transport package is paired with it (`tsp-ssm.f90:195`). Array-based packages (`gwf-rcha`, `gwf-evta`) declare no `bound`: MODFLOW 6 pairs them only with array-based SPC (`utl-spca`), which has no `bndno` (`TspSpc.f90:351-383`).
 
 [Observations](#observations) use the same idea, keyed by observation type: each component says what an observation's ID names, on the target side.
 
@@ -993,6 +1008,15 @@ The rest of the `fk` is checked as if unscoped: its path must name a `pk` (or st
 | `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file | `TspSpc.f90:326-349` |
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
+
+#### Consumer checks
+
+Some constraints MODFLOW 6 enforces have no spec form. Each would need a construct only it uses, so the spec states them here and consumers check them:
+
+| constraint | MODFLOW 6 |
+|---|---|
+| a mover row names only packages with their `MOVER` option set | `gwf-mvr.f90:942-971` |
+| SSM names a flow package at most once across `sources` and `fileinput`; each list's `pk` catches a repeat within it | `tsp-ssm.f90:814-821`, `912-919` |
 
 ## Memory catalog
 

@@ -10,6 +10,8 @@ dims:
     value: nmawwells
   auxiliary:
     value: len(auxiliary)
+  ngwfnodes:
+    value: sum(packagedata.ngwfnodes)
 blocks:
   options:
     fields:
@@ -338,6 +340,8 @@ blocks:
                 for multi-aquifer well IFNO.
               tagged: false
               index: true
+              pk:
+                scope: ifno
             cellid:
               type: cellid
               longname: cell identifier
@@ -392,6 +396,8 @@ blocks:
                 CUMULATIVE, or MEAN, the program will terminate with an error if  RADIUS_SKIN is less
                 than or equal to the RADIUS for the multi-aquifer well.
               tagged: false
+        shape:
+          - ngwfnodes
   period:
     fields:
       stress_period_data:
@@ -707,6 +713,9 @@ observations:
             type: integer
             tagged: false
             index: true
+            fk:
+              path: connectiondata.icon
+              scope: ifno
       ifno_boundname:
         type: record
         fields:
@@ -736,6 +745,9 @@ observations:
             type: integer
             tagged: false
             index: true
+            fk:
+              path: connectiondata.icon
+              scope: ifno
       ifno_boundname:
         type: record
         fields:
@@ -753,3 +765,4 @@ observations:
 keys:
   mover_provider: packagedata.ifno
   mover_receiver: packagedata.ifno
+  bound: <=ngwfnodes
