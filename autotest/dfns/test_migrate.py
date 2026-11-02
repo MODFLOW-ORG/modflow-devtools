@@ -399,7 +399,8 @@ def test_migrate_mvr_keys(dfn_dir):
     assert _fix_mvr_relations("gwf-mvr", blocks) == blocks
 
 
-_PROVIDER = {"path": "<=maxbound"}
+# a package plays the mover roles only with MOVER set
+_PROVIDER = {"path": "<=maxbound", "when": "mover"}
 _BOUND = {"path": "<=maxbound"}
 
 
@@ -423,8 +424,8 @@ _BOUND = {"path": "<=maxbound"}
             (
                 name,
                 {
-                    "mover_provider": {"path": "packagedata.ifno"},
-                    "mover_receiver": {"path": "packagedata.ifno"},
+                    "mover_provider": {"path": "packagedata.ifno", "when": "mover"},
+                    "mover_receiver": {"path": "packagedata.ifno", "when": "mover"},
                     "bound": {"path": bound},
                 },
             )
@@ -437,8 +438,8 @@ _BOUND = {"path": "<=maxbound"}
         (
             "gwf-lak",
             {
-                "mover_provider": {"path": "outlets.outletno"},
-                "mover_receiver": {"path": "packagedata.ifno"},
+                "mover_provider": {"path": "outlets.outletno", "when": "mover"},
+                "mover_receiver": {"path": "packagedata.ifno", "when": "mover"},
                 "bound": {"path": "<=nlakeconn"},
             },
         ),

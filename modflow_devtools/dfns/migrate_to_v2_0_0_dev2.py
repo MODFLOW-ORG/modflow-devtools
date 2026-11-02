@@ -1673,7 +1673,8 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     - `packages.pname` is unique within `mname`: `read_packages` rejects a
       repeated memory path (since modflow6 #3077, case-insensitively), and
       each must name a package in that model with its MOVER option set
-      (`check_packages`, `gwf-mvr.f90:942-971`). So `pk = {scope =
+      (`check_packages`, `gwf-mvr.f90:942-971`), i.e. one whose mover key
+      sets are switched on (see `_component_keys`). So `pk = {scope =
       "mname"}`, `fk = {path = "gwf-nam.packages.pname", scope = "mname",
       rule = "mover_enabled"}`.
     - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
@@ -1791,9 +1792,10 @@ def _component_keys(
 
     - `mover_provider`/`mover_receiver`, if the options block has a `mover`
       keyword: per `_MOVER_KEYS`, else a provider only, by bound,
-      `<=maxbound` (skipped without a `maxbound` dim). MF6 also requires the
-      named package to have MOVER set: MVR's `packages.pname` rule
-      `mover_enabled` (see `_fix_mvr_relations`).
+      `<=maxbound` (skipped without a `maxbound` dim). Both are switched on
+      by MOVER (`when = "mover"`): MF6 rejects a mover row naming a package
+      without it (`gwf-mvr.f90:942-971`). MVR's `packages.pname` rule
+      `mover_enabled` refers to these (see `_fix_mvr_relations`).
     - `bound`, what SPC's `bndno` names: `<=maxbound` in a non-utility
       package with a `maxbound` dim, a standard boundary package's bounds,
       numbered by position in MF6's bound list (`BoundaryPackage.f90`); in
@@ -1810,10 +1812,10 @@ def _component_keys(
     if options is not None and isinstance(options.fields.get("mover"), v2.Keyword):
         if name in _MOVER_KEYS:
             provider, receiver = _MOVER_KEYS[name]
-            keys[MOVER_PROVIDER] = v2.KeySet(path=provider)
-            keys[MOVER_RECEIVER] = v2.KeySet(path=receiver)
+            keys[MOVER_PROVIDER] = v2.KeySet(path=provider, when="mover")
+            keys[MOVER_RECEIVER] = v2.KeySet(path=receiver, when="mover")
         elif has_maxbound:
-            keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound")
+            keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound", when="mover")
     if name in _BOUND_KEYS:
         keys[BOUND] = v2.KeySet(path=_BOUND_KEYS[name])
     elif has_maxbound and not name.startswith("utl-"):

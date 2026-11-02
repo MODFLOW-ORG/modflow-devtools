@@ -146,9 +146,10 @@ _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 
 # Named rules an fk can carry (see `ForeignKey.rule`): constraints the spec
 # states in prose (`docs/md/dfnspec.md`, "Rules") and consumers implement in
-# code, like JSON Schema's `format`. Each depends on where the component's
-# file is bound in a simulation, which no static path can say. A consumer
-# that doesn't implement a rule skips its check.
+# code, like JSON Schema's `format`. Each names a subset of the fk's target
+# that the value must fall in, which no path or scope can say: most depend
+# on where the component's file is bound in a simulation. A consumer that
+# doesn't implement a rule skips its check.
 RULES: dict[str, str] = {
     "exchange_models": (
         "one of the two models (exgmnamea, exgmnameb) of the exchange whose "
@@ -164,7 +165,11 @@ RULES: dict[str, str] = {
         "SPC file (TspSpc.f90:326-349); unchecked if an advanced transport "
         "package is paired with it (tsp-ssm.f90:195)"
     ),
-    "mover_enabled": "a package with its MOVER option set (gwf-mvr.f90:942-971)",
+    "mover_enabled": (
+        "a package that plays mover_provider or mover_receiver, i.e. whose "
+        "mover key sets are switched on by their when (MOVER) "
+        "(gwf-mvr.f90:942-971)"
+    ),
 }
 
 
@@ -190,10 +195,10 @@ class ForeignKey(BaseModel):
       component of the picked instance declares, by name, in its `keys`. For
       an instance whose type is known only at runtime (MVR's `id1`).
 
-    A `rule` (see `RULES`) says which instance, or which of the target's
-    values, the reference is checked against. Without a `scope`, the rule
-    picks the instance; with one, the scope picks it and the rule narrows
-    its values (MVR's `packages.pname`: `mover_enabled`).
+    A `rule` (see `RULES`) names a subset of the target the value must fall
+    in. It may stand in for a `scope` (MVR's `mname1`: `exchange_models`) or
+    restrict a scoped target further (MVR's `packages.pname`:
+    `mover_enabled`).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -306,11 +311,17 @@ class KeySet(BaseModel):
     It may instead be several `block.field` paths, columns of one type: the
     set is their union, and as a supertype table's key, a value is unique
     across them. SSM's `source`: a flow package is named in `sources` or
-    `fileinput`, not both (MF6's `isrctype`)."""
+    `fileinput`, not both (MF6's `isrctype`).
+
+    `when`, as on a field, names a keyword in the component's options block
+    that switches the key set on: without it, the component plays no part
+    in the role. A package plays the mover roles only with MOVER set.
+    Written `{path, when}`."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     path: str | tuple[str, ...]
+    when: str | None = None
 
     @field_validator("path", mode="before")
     @classmethod
@@ -353,13 +364,18 @@ class KeySet(BaseModel):
         return None
 
 
+def _dump_keyset(k: KeySet) -> Any:
+    path = k.path if isinstance(k.path, str) else list(k.path)
+    return path if k.when is None else {"path": path, "when": k.when}
+
+
 KeySetT = Annotated[
     KeySet,
     BeforeValidator(
         lambda v: KeySet(path=v) if isinstance(v, str | list | tuple) else v,
         json_schema_input_type=str | list[str] | KeySet,
     ),
-    PlainSerializer(lambda k: k.path if isinstance(k.path, str) else list(k.path)),
+    PlainSerializer(_dump_keyset),
 ]
 
 
@@ -1976,9 +1992,14 @@ def _keyset_column(component: "ComponentBase", path: str) -> "InputField":
 def _validate_keys(component: "ComponentBase", spec: "Dfns") -> None:
     """Each declared key set's path is valid in the component: a list's
     unscoped pk or a string array (see `_keyset_column`), or `<=dim` with a
-    dimension the component can see. Several paths name columns of one type."""
+    dimension the component can see. Several paths name columns of one type.
+    A `when` names a keyword option, as a field's does."""
+    options = (component.blocks or {}).get("options")
+    keywords = {n for n, f in (options.fields if options else {}).items() if isinstance(f, Keyword)}
     for name, keyset in (component.keys or {}).items():
         where = f"{component.name}: key set {name!r}"
+        if keyset.when is not None and keyset.when not in keywords:
+            raise ValueError(f"{where}: when={keyset.when!r} names no keyword option")
         if keyset.bound is not None:
             if keyset.bound not in spec.input_dims(component.name):
                 raise ValueError(f"{where}: {keyset.path!r} names no dimension of {component.name}")

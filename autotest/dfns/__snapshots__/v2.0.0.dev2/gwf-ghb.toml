@@ -158,5 +158,8 @@ tagged = false
 index = true
 
 [keys]
-mover_provider = "<=maxbound"
 bound = "<=maxbound"
+
+[keys.mover_provider]
+path = "<=maxbound"
+when = "mover"
