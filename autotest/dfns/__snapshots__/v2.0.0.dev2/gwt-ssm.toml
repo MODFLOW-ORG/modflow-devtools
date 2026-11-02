@@ -90,3 +90,9 @@ type = "keyword"
 longname = "mixed keyword"
 description = "keyword to specify that these stress package boundaries will have the mixed condition.  The MIXED condition is described in the SOURCES block for AUXMIXED.  The MIXED condition allows for water to be withdrawn at a concentration that is less than the cell concentration.  It is intended primarily for representing evapotranspiration."
 optional = true
+
+[keys]
+source = [
+    "sources.pname",
+    "fileinput.pname",
+]

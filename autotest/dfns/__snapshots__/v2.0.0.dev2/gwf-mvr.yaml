@@ -106,6 +106,7 @@ blocks:
               fk:
                 path: gwf-nam.packages.pname
                 scope: mname
+                rule: mover_enabled
         shape:
           - maxpackages
   period:

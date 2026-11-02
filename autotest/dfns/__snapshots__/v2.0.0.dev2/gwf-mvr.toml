@@ -104,6 +104,7 @@ scope = "mname"
 [blocks.packages.fields.packages.item.fields.pname.fk]
 path = "gwf-nam.packages.pname"
 scope = "mname"
+rule = "mover_enabled"
 
 [blocks.period.fields.stress_period_data]
 type = "list"

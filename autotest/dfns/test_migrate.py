@@ -385,7 +385,10 @@ def test_migrate_mvr_keys(dfn_dir):
     model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
     assert packages["mname"].fk == model
     assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
-    assert packages["pname"].fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname")
+    # a package of that model, with its MOVER option set (MF6's check_packages)
+    assert packages["pname"].fk == v2.ForeignKey(
+        path="gwf-nam.packages.pname", scope="mname", rule="mover_enabled"
+    )
     for i in ("1", "2"):
         assert period[f"mname{i}"].fk == model
         assert period[f"pname{i}"].fk == v2.ForeignKey(path="packages.pname", scope=f"mname{i}")
@@ -438,6 +441,11 @@ _BOUND = {"path": "<=maxbound"}
                 "mover_receiver": {"path": "packagedata.ifno"},
                 "bound": {"path": "<=nlakeconn"},
             },
+        ),
+        # SSM names a flow package in sources or fileinput, not both
+        *(
+            (name, {"source": {"path": ("sources.pname", "fileinput.pname")}})
+            for name in ("gwt-ssm", "gwe-ssm")
         ),
         # SPC's maxbound sizes its own list, it isn't a host
         ("utl-spc", None),

@@ -118,3 +118,7 @@ memory:
   pname_sources:
     source: pname
     type: string
+keys:
+  source:
+    - sources.pname
+    - fileinput.pname

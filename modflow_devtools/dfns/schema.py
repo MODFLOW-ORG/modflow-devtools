@@ -161,8 +161,10 @@ RULES: dict[str, str] = {
     ),
     "ssm_package": (
         "in the flow package named by the SSM fileinput row that binds this "
-        "SPC file (TspSpc.f90:326-349)"
+        "SPC file (TspSpc.f90:326-349); unchecked if an advanced transport "
+        "package is paired with it (tsp-ssm.f90:195)"
     ),
+    "mover_enabled": "a package with its MOVER option set (gwf-mvr.f90:942-971)",
 }
 
 
@@ -188,9 +190,10 @@ class ForeignKey(BaseModel):
       component of the picked instance declares, by name, in its `keys`. For
       an instance whose type is known only at runtime (MVR's `id1`).
 
-    A `rule` (see `RULES`) takes the place of a `scope`: the named rule says
-    which instance, or which of the target's values, the reference is
-    checked against.
+    A `rule` (see `RULES`) says which instance, or which of the target's
+    values, the reference is checked against. Without a `scope`, the rule
+    picks the instance; with one, the scope picks it and the rule narrows
+    its values (MVR's `packages.pname`: `mover_enabled`).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -230,8 +233,6 @@ class ForeignKey(BaseModel):
     def _check_form(self) -> "ForeignKey":
         if (self.path is None) == (self.key is None):
             raise ValueError("an fk needs exactly one of path and key")
-        if self.scope is not None and self.rule is not None:
-            raise ValueError("an fk takes a scope or a rule, not both")
         if self.key is not None and self.scope is None and self.rule is None:
             raise ValueError("an fk with a key needs a scope or rule, which picks the instance")
         return self
@@ -300,37 +301,65 @@ class KeySet(BaseModel):
     a supertype table each declaring component adds its rows to.
 
     `path` is `block.field`, a list's (unscoped) pk or a string array, or a
-    bound `<=dim`, any index in `1..dim`. Written as the path alone."""
+    bound `<=dim`, any index in `1..dim`. Written as the path alone.
+
+    It may instead be several `block.field` paths, columns of one type: the
+    set is their union, and as a supertype table's key, a value is unique
+    across them. SSM's `source`: a flow package is named in `sources` or
+    `fileinput`, not both (MF6's `isrctype`)."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    path: str
+    path: str | tuple[str, ...]
 
-    @field_validator("path")
+    @field_validator("path", mode="before")
     @classmethod
-    def _check_path(cls, v: str) -> str:
-        if v.startswith("<="):
-            if _IDENT_RE.match(v[2:]):
-                return v
-        else:
-            parts = v.split(".")
-            if len(parts) == 2 and all(_IDENT_RE.match(p) for p in parts):
-                return v
-        raise ValueError(f"key set path {v!r} must be 'block.field' or a bound '<=dim'")
+    def _check_path(cls, v: Any) -> Any:
+        if isinstance(v, list | tuple):
+            v = tuple(v)
+            if not v:
+                raise ValueError("a key set needs at least one path")
+            if len(v) == 1:
+                v = v[0]
+            elif len(set(v)) != len(v):
+                raise ValueError(f"key set paths {list(v)!r} repeat a path")
+        for path in (v,) if isinstance(v, str) else v:
+            if not isinstance(path, str):
+                raise ValueError(f"key set path {path!r} must be a string")
+            if path.startswith("<="):
+                if not isinstance(v, str):
+                    raise ValueError(
+                        f"key set path {path!r}: a bound can't be one of several paths"
+                    )
+                if _IDENT_RE.match(path[2:]):
+                    continue
+            else:
+                parts = path.split(".")
+                if len(parts) == 2 and all(_IDENT_RE.match(p) for p in parts):
+                    continue
+            raise ValueError(f"key set path {path!r} must be 'block.field' or a bound '<=dim'")
+        return v
+
+    @property
+    def paths(self) -> tuple[str, ...]:
+        """The paths, one or more."""
+        return (self.path,) if isinstance(self.path, str) else self.path
 
     @property
     def bound(self) -> str | None:
         """The dimension a `<=dim` path bounds the index by, or None."""
-        return self.path[2:] if self.path.startswith("<=") else None
+        if isinstance(self.path, str) and self.path.startswith("<="):
+            return self.path[2:]
+        return None
 
 
 KeySetT = Annotated[
     KeySet,
     BeforeValidator(
-        lambda v: KeySet(path=v) if isinstance(v, str) else v,
-        json_schema_input_type=str | KeySet,
+        lambda v: KeySet(path=v) if isinstance(v, str | list | tuple) else v,
+        json_schema_input_type=str | list[str] | KeySet,
     ),
-    PlainSerializer(lambda k: k.path),
+    PlainSerializer(lambda k: k.path if isinstance(k.path, str) else list(k.path)),
 ]
 
 
@@ -1805,7 +1834,8 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     scope columns have an fk, it's the same. A scoped fk to another component
     picks its instance by the scope column, which must name (see
     `_named_components`) an instance of the target component. An fk with a
-    `rule` (see `RULES`) is checked as unscoped; the rule is the consumer's.
+    `rule` (see `RULES`) is checked as unscoped, or by its scope if it has
+    one; the rule is the consumer's.
 
     An fk with a `key` names a key set declared by at least one component its
     scope can name (with a rule, by any component), and fits each
@@ -1887,7 +1917,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 if not (isinstance(field, Integer) and field.index is True):
                     raise ValueError(f"{where}: a '<=dim' key needs an integer index column")
                 continue
-            column = _keyset_column(target, keyset)
+            column = _keyset_column(target, keyset.paths[0])
             if isinstance(field, Integer) != isinstance(column, Integer):
                 raise ValueError(f"{where}: the column's type doesn't match {field.type!r}")
 
@@ -1922,11 +1952,11 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     _check_fields(component.observations or {}, record=True)
 
 
-def _keyset_column(component: "ComponentBase", keyset: "KeySet") -> "InputField":
-    """The column a `block.field` key set names: a list's unscoped pk, or a
-    string array. Raises if it names neither."""
-    block_name, field_name = keyset.path.split(".")
-    where = f"{component.name}: key set path {keyset.path!r}"
+def _keyset_column(component: "ComponentBase", path: str) -> "InputField":
+    """The column a key set's `block.field` path names: a list's unscoped
+    pk, or a string array. Raises if it names neither."""
+    block_name, field_name = path.split(".")
+    where = f"{component.name}: key set path {path!r}"
     block = (component.blocks or {}).get(block_name)
     array = block.fields.get(field_name) if block else None
     if isinstance(array, Array) and array.dtype == "string":
@@ -1946,14 +1976,17 @@ def _keyset_column(component: "ComponentBase", keyset: "KeySet") -> "InputField"
 def _validate_keys(component: "ComponentBase", spec: "Dfns") -> None:
     """Each declared key set's path is valid in the component: a list's
     unscoped pk or a string array (see `_keyset_column`), or `<=dim` with a
-    dimension the component can see."""
+    dimension the component can see. Several paths name columns of one type."""
     for name, keyset in (component.keys or {}).items():
         where = f"{component.name}: key set {name!r}"
         if keyset.bound is not None:
             if keyset.bound not in spec.input_dims(component.name):
                 raise ValueError(f"{where}: {keyset.path!r} names no dimension of {component.name}")
-        else:
-            _keyset_column(component, keyset)
+            continue
+        columns = [_keyset_column(component, path) for path in keyset.paths]
+        if len({isinstance(c, Integer) for c in columns}) > 1:
+            paths = list(keyset.paths)
+            raise ValueError(f"{where}: paths {paths!r} name columns of different types")
 
 
 def _iter_files(fields: "Mapping[str, InputField]"):

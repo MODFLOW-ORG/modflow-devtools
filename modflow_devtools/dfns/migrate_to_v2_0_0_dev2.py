@@ -1672,9 +1672,10 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
     - `packages.pname` is unique within `mname`: `read_packages` rejects a
       repeated memory path (since modflow6 #3077, case-insensitively), and
-      each must name a package in that model (`check_packages`). So
-      `pk = {scope = "mname"}`, `fk = {path = "gwf-nam.packages.pname",
-      scope = "mname"}`.
+      each must name a package in that model with its MOVER option set
+      (`check_packages`, `gwf-mvr.f90:942-971`). So `pk = {scope =
+      "mname"}`, `fk = {path = "gwf-nam.packages.pname", scope = "mname",
+      rule = "mover_enabled"}`.
     - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
       `fk = {path = "sim-nam.models.mname", rule = "exchange_models"}`: a
       model, and one of the exchange's two, which MF6 requires
@@ -1723,7 +1724,9 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             "mname": {"fk": model},
             "pname": {
                 "pk": v2.PrimaryKey(scope="mname"),
-                "fk": v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname"),
+                "fk": v2.ForeignKey(
+                    path="gwf-nam.packages.pname", scope="mname", rule="mover_enabled"
+                ),
             },
         },
     )
@@ -1746,6 +1749,7 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 MOVER_PROVIDER = "mover_provider"
 MOVER_RECEIVER = "mover_receiver"
 BOUND = "bound"
+SOURCE = "source"
 
 # What MVR's `id1` (provider) and `id2` (receiver) number in a package with a
 # MOVER option, mirroring its `pakmvrobj%ar(nproviders, nreceivers)` in MF6,
@@ -1788,13 +1792,17 @@ def _component_keys(
     - `mover_provider`/`mover_receiver`, if the options block has a `mover`
       keyword: per `_MOVER_KEYS`, else a provider only, by bound,
       `<=maxbound` (skipped without a `maxbound` dim). MF6 also requires the
-      named package to have MOVER set, which consumers check.
+      named package to have MOVER set: MVR's `packages.pname` rule
+      `mover_enabled` (see `_fix_mvr_relations`).
     - `bound`, what SPC's `bndno` names: `<=maxbound` in a non-utility
       package with a `maxbound` dim, a standard boundary package's bounds,
       numbered by position in MF6's bound list (`BoundaryPackage.f90`); in
       an advanced package, per `_BOUND_KEYS`. Array-based packages (RCHA,
       EVTA) have none: MF6 pairs them only with array-based SPC, which has
       no `bndno`.
+    - `source`, in SSM: `sources.pname` and `fileinput.pname` together,
+      so a flow package is named in one of them at most (see
+      `_fix_ssm_relations`). Nothing references it; it's there for its key.
     """
     keys: dict[str, v2.KeySet] = {}
     options = blocks.get("options")
@@ -1810,7 +1818,16 @@ def _component_keys(
         keys[BOUND] = v2.KeySet(path=_BOUND_KEYS[name])
     elif has_maxbound and not name.startswith("utl-"):
         keys[BOUND] = v2.KeySet(path="<=maxbound")
+    if name in ("gwt-ssm", "gwe-ssm"):
+        sources = [b for b in ("sources", "fileinput") if _ssm_pname_keyed(blocks, b)]
+        if len(sources) == 2:
+            keys[SOURCE] = v2.KeySet(path=tuple(f"{b}.pname" for b in sources))
     return keys or None
+
+
+def _ssm_pname_keyed(blocks: dict[str, v2.Block], block_name: str) -> bool:
+    pname = _list_item_field(blocks, block_name, "pname")
+    return isinstance(pname, v2.String) and pname.pk is not None and pname.pk.scope is None
 
 
 def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
@@ -1849,12 +1866,13 @@ def _fix_ssm_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
 
     MF6 looks each up among FMI's flow packages, fatal if missing ("Flow
     package cannot be found", `tsp-ssm.f90:800-811` and `898-909`), and
-    rejects a package given twice (`814-821`, `912-919`). FMI's packages
-    are the flow model's boundary packages, named by their package names
-    (`tsp-fmi.f90:741-742`), a subset of the name file's. The repeat check
-    spans both blocks, which a pk on each list can't say, so consumers check
-    it (`dfnspec.md`, "Consumer checks"). With flows from a
-    budget file there's no exchange, and the key isn't checked.
+    rejects a package given twice, within a list or across both, through
+    the shared `isrctype` (`814-821`, `912-919`). FMI's packages are the
+    flow model's boundary packages, named by their package names
+    (`tsp-fmi.f90:741-742`), a subset of the name file's. The repeat across
+    both lists is the `source` key set's key (see `_component_keys`). With
+    flows from a budget file there's no exchange, and the key isn't
+    checked.
     """
     if name not in ("gwt-ssm", "gwe-ssm"):
         return blocks
@@ -1879,6 +1897,12 @@ def _list_item_field(
     return item.fields.get(field_name) if isinstance(item, v2.Record) else None
 
 
+def _unscoped(key: v2.PrimaryKey | v2.ForeignKey) -> v2.PrimaryKey | v2.ForeignKey:
+    if isinstance(key, v2.ForeignKey):
+        return key.model_copy(update={"scope": None, "rule": None})
+    return key.model_copy(update={"scope": None})
+
+
 def _set_list_item_attrs(
     blocks: dict[str, v2.Block],
     block_name: str,
@@ -1888,9 +1912,9 @@ def _set_list_item_attrs(
     """
     Set keys on fields of the item record of the list `list_name` (default:
     sharing `block_name`'s name), e.g. `{"mname": {"pk": v2.PrimaryKey()}}`.
-    Leaves any key that's already set, unless it's the unscoped form of a
-    scoped one given, which it upgrades. The fields must exist (see
-    `_list_item_field`).
+    Leaves any key that's already set, unless it's the unscoped (and
+    rule-less) form of a scoped one given, which it upgrades. The fields
+    must exist (see `_list_item_field`).
     """
     list_name = list_name or block_name
     block = blocks[block_name]
@@ -1901,8 +1925,7 @@ def _set_list_item_attrs(
         update = {
             k: v
             for k, v in field_attrs.items()
-            if (current := getattr(field, k)) is None
-            or current == v.model_copy(update={"scope": None})
+            if (current := getattr(field, k)) is None or current == _unscoped(v)
         }
         if update:
             item_fields[field_name] = field.model_copy(update=update)

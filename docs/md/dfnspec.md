@@ -201,7 +201,7 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 
 #### `keys`
 
-`{string: string} (default: {})`. Named key sets that a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types. See [Key sets](#key-sets).
+`{string: string | [string]} (default: {})`. Named key sets: what a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types, or a key spanning several lists. See [Key sets](#key-sets).
 
 ### Component types
 
@@ -956,7 +956,17 @@ A key set is written as its path, which is either:
 - `"block.field"`: a list's unscoped `pk`, or a string array, as for an `fk`'s path within a component;
 - a bound `"<=dim"`, using the [Bounds](#bounds) syntax: any 1-based index from 1 to `dim`, a dimension the component can see. MODFLOW 6 checks a mover's ids against the package's size, not its rows (`Mover.f90:152-158`, `174-180`). A period block's list may differ by period, and its largest size is `maxbound`.
 
-MODFLOW 6 also rejects a mover row naming a package without its `MOVER` option set. The spec doesn't say this; consumers check it (see [Consumer checks](#consumer-checks)).
+Or it's written as several `"block.field"` paths, columns of one type. The key set is then their union, and since it's a supertype table, its key spans them: a value appears at most once across all of them. That's how a key spans two lists. SSM names a flow package in `sources` or `fileinput`, not both. MODFLOW 6 records each package's source type in one array, `isrctype`, and rejects a second (`tsp-ssm.f90:814-821`, `912-919`):
+
+```toml
+# gwt-ssm, gwe-ssm
+[keys]
+source = ["sources.pname", "fileinput.pname"]
+```
+
+A key set needn't be named by any `fk`; this one is there for its key. A bound can't be one of several paths.
+
+MODFLOW 6 also rejects a mover row naming a package without its `MOVER` option set. That's the [rule](#rules) `mover_enabled` on `gwf-mvr`'s `packages.pname`, which every mover row's package must be listed in.
 
 A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
 
@@ -971,6 +981,7 @@ The roles in MODFLOW 6:
 | `mover_provider` | packages with a MOVER option: `<=maxbound` for standard boundary packages (`BoundaryPackage.f90:282-285`); `packagedata.ifno` for SFR, MAW and UZF; `outlets.outletno` for LAK | `gwf-mvr`'s `id1` |
 | `mover_receiver` | `packagedata.ifno` for SFR, MAW, UZF and LAK (its lakes) | `gwf-mvr`'s `id2` |
 | `bound` | `<=maxbound` for every non-utility package with a `maxbound` dimension; `packagedata.ifno` for SFR and UZF; `<=nlakeconn` for LAK; `<=ngwfnodes` for MAW | `utl-spc`'s `bndno` |
+| `source` | `["sources.pname", "fileinput.pname"]` for `gwt-ssm` and `gwe-ssm` | nothing: its key is the point |
 
 These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbound, 0)` for a standard boundary package, `(maxbound, maxbound)` for SFR (`gwf-sfr.f90:1775`, `maxbound` being NREACHES) and UZF (`gwf-uzf.f90:260`, NUZFCELLS), `(nmawwells, nmawwells)` for MAW (`gwf-maw.f90:2100`), and `(noutlets, nlakes)` for LAK (`gwf-lak.f90:3276`).
 
@@ -988,35 +999,33 @@ An advanced package's bounds are its features or its connections. SFR and UZF ha
 
 #### Rules
 
-Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's mover may name only the exchange's two models; a transport model's SSM names packages of whichever flow model an exchange pairs it with. No path or sibling scope can say this. Instead, the `fk` names a **rule** in place of a scope: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's mover may name only the exchange's two models; a transport model's SSM names packages of whichever flow model an exchange pairs it with. No path or sibling scope can say this. Instead, the `fk` names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+
+A rule narrows which instance, or which of the target's values, the reference is checked against. Without a scope, the rule picks the instance. With one, the scope picks it and the rule narrows its values:
 
 ```toml
-# gwf-mvr packages.mname, period mname1/mname2
+# gwf-mvr packages.mname, period mname1/mname2: the rule picks the instance
 fk = { path = "sim-nam.models.mname", rule = "exchange_models" }
 
 # gwt-ssm / gwe-ssm sources.pname and fileinput.pname
 pk = true
 fk = { path = "gwf-nam.packages.pname", rule = "flow_model" }
+
+# gwf-mvr packages.pname: the scope picks the model, the rule narrows its packages
+pk = { scope = "mname" }
+fk = { path = "gwf-nam.packages.pname", scope = "mname", rule = "mover_enabled" }
 ```
 
-The rest of the `fk` is checked as if unscoped: its path must name a `pk` (or string array), and its `key` must be declared by some component. A rule narrows which instance, or which of the target's values, the reference is checked against. A consumer that doesn't implement a rule skips the check; the rest of the `fk` still says what kind of thing the value names.
+The rest of the `fk` is checked as usual, by its scope or as if unscoped: its path must name a `pk` (or string array), and its `key` must be declared by some component. A consumer that doesn't implement a rule skips the check; the rest of the `fk` still says what kind of thing the value names.
 
 | rule | meaning | MODFLOW 6 |
 |---|---|---|
 | `exchange_models` | one of the two models (`exgmnamea`, `exgmnameb`) of the exchange whose `MVR6` option binds this mover. In a model's own mover the model names are absent (`MODELNAMES` is rejected there). | `GwfExchangeMover.f90:87-93` |
 | `flow_model` | in the flow model that a GWF-GWT or GWF-GWE exchange pairs with this transport model (its `exgmnamea`, where the transport model is `exgmnameb`). With flows read from a budget file there is no such exchange, and the reference isn't checked. | `exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`, `tsp-ssm.f90:800-811` |
 | `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file. If an advanced transport package is paired with that flow package, SSM doesn't apply the SPC file and the reference isn't checked. | `TspSpc.f90:326-349`, `tsp-ssm.f90:195` |
+| `mover_enabled` | a package with its `MOVER` option set | `gwf-mvr.f90:942-971` |
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
-
-#### Consumer checks
-
-Some constraints MODFLOW 6 enforces have no spec form. Each would need a construct only it uses, so the spec states them here and consumers check them. Unlike a [rule](#rules), which narrows a field's `fk`, these aren't attached to any field:
-
-| constraint | MODFLOW 6 |
-|---|---|
-| a mover row names only packages with their `MOVER` option set | `gwf-mvr.f90:942-971` |
-| SSM names a flow package at most once across `sources` and `fileinput`; each list's `pk` catches a repeat within it | `tsp-ssm.f90:814-821`, `912-919` |
 
 ## Memory catalog
 

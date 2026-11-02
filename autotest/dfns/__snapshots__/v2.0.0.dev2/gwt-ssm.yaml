@@ -114,3 +114,7 @@ blocks:
                 condition allows for water to be withdrawn at a concentration that is less than the cell
                 concentration.  It is intended primarily for representing evapotranspiration.
               optional: true
+keys:
+  source:
+    - sources.pname
+    - fileinput.pname

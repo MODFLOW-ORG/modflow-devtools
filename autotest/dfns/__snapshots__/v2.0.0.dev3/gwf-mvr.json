@@ -115,7 +115,8 @@
                 },
                 "fk": {
                   "path": "gwf-nam.packages.pname",
-                  "scope": "mname"
+                  "scope": "mname",
+                  "rule": "mover_enabled"
                 }
               }
             }
