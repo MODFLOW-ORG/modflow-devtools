@@ -384,10 +384,6 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[keys.mover_provider]
-path = "packagedata.ifno"
-when = "mover"
-
-[keys.mover_receiver]
-path = "packagedata.ifno"
-when = "mover"
+[keys]
+mover_provider = "packagedata.ifno"
+mover_receiver = "packagedata.ifno"

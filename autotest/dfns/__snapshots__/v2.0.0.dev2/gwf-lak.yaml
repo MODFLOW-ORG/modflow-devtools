@@ -824,9 +824,5 @@ blocks:
         tagged: false
         index: true
 keys:
-  mover_provider:
-    path: outlets.outletno
-    when: mover
-  mover_receiver:
-    path: packagedata.ifno
-    when: mover
+  mover_provider: outlets.outletno
+  mover_receiver: packagedata.ifno

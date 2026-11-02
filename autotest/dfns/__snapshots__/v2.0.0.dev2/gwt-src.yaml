@@ -182,5 +182,4 @@ blocks:
         tagged: false
         index: true
 keys:
-  bound:
-    path: <=maxbound
+  bound: <=maxbound

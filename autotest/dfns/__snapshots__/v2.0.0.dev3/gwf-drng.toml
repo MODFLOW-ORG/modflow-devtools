@@ -332,9 +332,6 @@ tagged = false
 type = "string"
 tagged = false
 
-[keys.mover_provider]
-path = "<=maxbound"
-when = "mover"
-
-[keys.bound]
-path = "<=maxbound"
+[keys]
+mover_provider = "<=maxbound"
+bound = "<=maxbound"

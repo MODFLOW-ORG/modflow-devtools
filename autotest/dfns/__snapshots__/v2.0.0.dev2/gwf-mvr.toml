@@ -88,10 +88,10 @@ type = "string"
 description = "name of model containing the package.  Model names are assigned by the user in the simulation name file."
 when = "modelnames"
 tagged = false
-fk = [
-    "^exgmnamea",
-    "^exgmnameb",
-]
+
+[blocks.packages.fields.packages.item.fields.mname.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
@@ -117,10 +117,10 @@ type = "string"
 description = "name of model containing the package, PNAME1."
 when = "modelnames"
 tagged = false
-fk = [
-    "^exgmnamea",
-    "^exgmnameb",
-]
+
+[blocks.period.fields.stress_period_data.item.fields.mname1.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
@@ -148,10 +148,10 @@ type = "string"
 description = "name of model containing the package, PNAME2."
 when = "modelnames"
 tagged = false
-fk = [
-    "^exgmnamea",
-    "^exgmnameb",
-]
+
+[blocks.period.fields.stress_period_data.item.fields.mname2.fk]
+path = "sim-nam.models.mname"
+rule = "exchange_models"
 
 [blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"

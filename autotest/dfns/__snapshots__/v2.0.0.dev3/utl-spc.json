@@ -73,8 +73,8 @@
                 "index": true,
                 "pk": true,
                 "fk": {
-                  "scope": "^pname",
-                  "key": "bound"
+                  "key": "bound",
+                  "rule": "ssm_package"
                 }
               },
               "spcsetting": {

@@ -325,8 +325,5 @@ observations:
         type: string
         tagged: false
 keys:
-  mover_provider:
-    path: <=maxbound
-    when: mover
-  bound:
-    path: <=maxbound
+  mover_provider: <=maxbound
+  bound: <=maxbound

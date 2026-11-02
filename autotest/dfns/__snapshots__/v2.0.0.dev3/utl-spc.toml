@@ -63,8 +63,8 @@ index = true
 pk = true
 
 [blocks.period.fields.stress_period_data.item.fields.bndno.fk]
-scope = "^pname"
 key = "bound"
+rule = "ssm_package"
 
 [blocks.period.fields.stress_period_data.item.fields.spcsetting]
 type = "union"

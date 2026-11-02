@@ -41,7 +41,7 @@ blocks:
               pk: true
               fk:
                 path: gwf-nam.packages.pname
-                scope: ^flow_model
+                rule: flow_model
             srctype:
               type: string
               longname: source type
@@ -88,7 +88,7 @@ blocks:
               pk: true
               fk:
                 path: gwf-nam.packages.pname
-                scope: ^flow_model
+                rule: flow_model
             spc6:
               type: keyword
               longname: head keyword

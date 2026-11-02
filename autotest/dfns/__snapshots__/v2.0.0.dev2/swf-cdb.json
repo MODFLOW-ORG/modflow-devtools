@@ -146,8 +146,6 @@
     }
   },
   "keys": {
-    "bound": {
-      "path": "<=maxbound"
-    }
+    "bound": "<=maxbound"
   }
 }

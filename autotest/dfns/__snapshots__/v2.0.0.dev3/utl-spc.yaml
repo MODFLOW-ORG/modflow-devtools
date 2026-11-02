@@ -64,8 +64,8 @@ blocks:
               index: true
               pk: true
               fk:
-                scope: ^pname
                 key: bound
+                rule: ssm_package
             spcsetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values

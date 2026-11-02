@@ -90,8 +90,8 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                - ^exgmnamea
-                - ^exgmnameb
+                path: sim-nam.models.mname
+                rule: exchange_models
             pname:
               type: string
               description: is the name of a package that may be included in a subsequent stress period
@@ -122,8 +122,8 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                - ^exgmnamea
-                - ^exgmnameb
+                path: sim-nam.models.mname
+                rule: exchange_models
             pname1:
               type: string
               longname: provider package name
@@ -156,8 +156,8 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                - ^exgmnamea
-                - ^exgmnameb
+                path: sim-nam.models.mname
+                rule: exchange_models
             pname2:
               type: string
               longname: receiver package name

@@ -294,5 +294,5 @@ tagged = false
 type = "string"
 tagged = false
 
-[keys.bound]
-path = "<=maxbound"
+[keys]
+bound = "<=maxbound"

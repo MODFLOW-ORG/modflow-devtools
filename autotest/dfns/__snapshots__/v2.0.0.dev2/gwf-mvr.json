@@ -101,10 +101,10 @@
                 "description": "name of model containing the package.  Model names are assigned by the user in the simulation name file.",
                 "when": "modelnames",
                 "tagged": false,
-                "fk": [
-                  "^exgmnamea",
-                  "^exgmnameb"
-                ]
+                "fk": {
+                  "path": "sim-nam.models.mname",
+                  "rule": "exchange_models"
+                }
               },
               "pname": {
                 "type": "string",
@@ -139,10 +139,10 @@
                 "description": "name of model containing the package, PNAME1.",
                 "when": "modelnames",
                 "tagged": false,
-                "fk": [
-                  "^exgmnamea",
-                  "^exgmnameb"
-                ]
+                "fk": {
+                  "path": "sim-nam.models.mname",
+                  "rule": "exchange_models"
+                }
               },
               "pname1": {
                 "type": "string",
@@ -170,10 +170,10 @@
                 "description": "name of model containing the package, PNAME2.",
                 "when": "modelnames",
                 "tagged": false,
-                "fk": [
-                  "^exgmnamea",
-                  "^exgmnameb"
-                ]
+                "fk": {
+                  "path": "sim-nam.models.mname",
+                  "rule": "exchange_models"
+                }
               },
               "pname2": {
                 "type": "string",

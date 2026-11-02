@@ -4,11 +4,5 @@
   "name": "exg-gwfgwe",
   "parent": "sim-nam",
   "ftype": "GWF6-GWE6",
-  "subtype": "exchange",
-  "provides": {
-    "flow_model": {
-      "to": "exgmnameb",
-      "value": "exgmnamea"
-    }
-  }
+  "subtype": "exchange"
 }

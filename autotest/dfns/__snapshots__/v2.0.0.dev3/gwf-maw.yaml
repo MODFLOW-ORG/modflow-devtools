@@ -751,9 +751,5 @@ observations:
         type: string
         tagged: false
 keys:
-  mover_provider:
-    path: packagedata.ifno
-    when: mover
-  mover_receiver:
-    path: packagedata.ifno
-    when: mover
+  mover_provider: packagedata.ifno
+  mover_receiver: packagedata.ifno

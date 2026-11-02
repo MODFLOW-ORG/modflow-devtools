@@ -562,10 +562,6 @@ tagged = false
 type = "double"
 tagged = false
 
-[keys.mover_provider]
-path = "packagedata.ifno"
-when = "mover"
-
-[keys.mover_receiver]
-path = "packagedata.ifno"
-when = "mover"
+[keys]
+mover_provider = "packagedata.ifno"
+mover_receiver = "packagedata.ifno"

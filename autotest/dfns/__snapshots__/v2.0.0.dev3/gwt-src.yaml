@@ -317,5 +317,4 @@ observations:
         type: string
         tagged: false
 keys:
-  bound:
-    path: <=maxbound
+  bound: <=maxbound

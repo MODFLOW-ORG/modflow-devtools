@@ -151,5 +151,5 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[keys.bound]
-path = "<=maxbound"
+[keys]
+bound = "<=maxbound"

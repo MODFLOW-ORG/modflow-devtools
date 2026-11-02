@@ -18,7 +18,6 @@ from modflow_devtools.dfns.schema import (
     Model,
     Package,
     PrimaryKey,
-    Provide,
     Record,
     Simulation,
     String,
@@ -811,51 +810,36 @@ def test_integer_allow_zero_round_trips():
     assert Integer.model_validate(col.model_dump()) == col
 
 
-# Context references: `^name`, scope lists, fks to context columns, component
-# `keys` named by an fk's `key`, and an exchange's `provides`.
+# Component `keys` named by an fk's `key`, and named rules (`fk.rule`).
 
 
 @pytest.mark.parametrize(
     "toml, obj",
     [
-        ("^exgmnamea", ForeignKey(path=("^exgmnamea",))),
-        (["^exgmnamea"], ForeignKey(path=("^exgmnamea",))),
-        (["^exgmnamea", "^exgmnameb"], ForeignKey(path=("^exgmnamea", "^exgmnameb"))),
         (
             {"scope": "pname1", "key": "mover_provider"},
             ForeignKey(scope="pname1", key="mover_provider"),
         ),
+        ({"key": "bound", "rule": "ssm_package"}, ForeignKey(key="bound", rule="ssm_package")),
         (
-            {"path": "gwf-nam.packages.pname", "scope": "^flow_model"},
-            ForeignKey(path="gwf-nam.packages.pname", scope="^flow_model"),
-        ),
-        (
-            {"path": "gwf-nam.packages.pname", "scope": ["^exgmnamea", "^mname"]},
-            ForeignKey(path="gwf-nam.packages.pname", scope=("^exgmnamea", "^mname")),
+            {"path": "gwf-nam.packages.pname", "rule": "flow_model"},
+            ForeignKey(path="gwf-nam.packages.pname", rule="flow_model"),
         ),
     ],
 )
-def test_context_fks_load(toml, obj):
+def test_key_and_rule_fks_load(toml, obj):
     field = String.model_validate({"name": "x", "fk": toml})
     assert field.fk == obj
-    # dumps as a list (context columns) or a table, and loads back the same
     dumped = field.model_dump(exclude_defaults=True)["fk"]
+    assert dumped == toml
     assert String.model_validate({"name": "x", "fk": dumped}).fk == obj
-    if obj.context is not None:
-        assert dumped == list(obj.path)
 
 
-def test_context_fk_parts():
-    fk = ForeignKey(path=["^exgmnamea", "^exgmnameb"])
-    assert fk.context == ("exgmnamea", "exgmnameb")
-    assert (fk.component, fk.block, fk.field) == (None, None, None)
+def test_key_fk_parts():
     fk = ForeignKey(scope="pname1", key="mover_provider")
-    assert (fk.context, fk.component, fk.block, fk.field) == (None, None, None, None)
-
-
-def test_scope_one_entry_list_is_the_entry():
-    assert PrimaryKey(scope=["mname"]).scope == "mname"
-    assert Integer(name="x", pk={"scope": ["^a", "b"]}).model_dump()["pk"] == {"scope": ["^a", "b"]}
+    assert (fk.component, fk.block, fk.field, fk.simple) == (None, None, None, False)
+    fk = ForeignKey(path="gwf-nam.packages.pname", rule="flow_model")
+    assert (fk.component, fk.block, fk.field, fk.simple) == ("gwf-nam", "packages", "pname", False)
 
 
 @pytest.mark.parametrize(
@@ -863,13 +847,10 @@ def test_scope_one_entry_list_is_the_entry():
     [
         ({}, "exactly one of path and key"),
         ({"path": "a.b", "key": "k", "scope": "s"}, "exactly one of path and key"),
-        ({"key": "mover_provider"}, "needs a scope"),
-        ({"path": ["^a"], "scope": "s"}, "context columns can't be scoped"),
-        ({"path": ["exgmnamea"]}, "must be a context name"),
-        ({"path": []}, "must name at least one"),
-        ({"path": "a.b", "scope": "a.b"}, "sibling column name or a context name"),
-        ({"path": "a.b", "scope": []}, "must name at least one column"),
+        ({"key": "mover_provider"}, "needs a scope or rule"),
         ({"key": "a.b", "scope": "s"}, "must be a key set name"),
+        ({"path": "a.b", "rule": "nope"}, "fk rule 'nope' is not one of"),
+        ({"path": "a.b", "scope": "s", "rule": "flow_model"}, "a scope or a rule, not both"),
     ],
 )
 def test_fk_form_errors(kwargs, match):
@@ -877,13 +858,12 @@ def test_fk_form_errors(kwargs, match):
         ForeignKey(**kwargs)
 
 
-def test_context_fk_only_on_strings():
-    with pytest.raises(ValueError, match="only a string column may reference context"):
-        Integer(name="x", fk=["^a"])
-    with pytest.raises(ValueError, match="an array's fk must be a path"):
-        Array(name="x", dtype="string", fk=["^a"])
-    with pytest.raises(ValueError, match="dynamic keyword's fk must be a path"):
-        String(name="x", tagged=False, dynamic=True, fk=["^a"])
+def test_rule_fk_not_on_arrays_or_dynamic_keywords():
+    fk = {"path": "a.b", "rule": "flow_model"}
+    with pytest.raises(ValueError, match="an array's fk must be a plain path"):
+        Array(name="x", dtype="string", fk=fk)
+    with pytest.raises(ValueError, match="dynamic keyword's fk must be a plain path"):
+        String(name="x", tagged=False, dynamic=True, fk=fk)
 
 
 @pytest.mark.parametrize("path", ["a.b.c", "a", "<maxbound", ">=maxbound", "<=n + 1", "<="])
@@ -897,9 +877,10 @@ def test_keyset_bound():
     assert KeySet(path="outlets.outletno").bound is None
 
 
-def test_provides_only_on_exchanges():
-    with pytest.raises(ValueError, match="only an exchange may declare provides"):
-        Package(name="gwf-wel", provides={"x": Provide(to="a", value="b")})
+def test_keys_load_and_dump_as_paths():
+    pkg = Package.model_validate({"name": "gwf-wel", "keys": {"bound": "<=maxbound"}})
+    assert pkg.keys == {"bound": KeySet(path="<=maxbound")}
+    assert pkg.model_dump(exclude_defaults=True)["keys"] == {"bound": "<=maxbound"}
 
 
 def _list_block(name, *fields, list_name=None):
@@ -1002,8 +983,8 @@ def _mover_pkgs(lak_keys=None, wel_keys=None, wel_options=("mover",)):
         keys=lak_keys
         if lak_keys is not None
         else {
-            "mover_provider": KeySet(path="outlets.outletno", when="mover"),
-            "mover_receiver": KeySet(path="packagedata.ifno", when="mover"),
+            "mover_provider": KeySet(path="outlets.outletno"),
+            "mover_receiver": KeySet(path="packagedata.ifno"),
         },
     )
     wel = Package(
@@ -1019,17 +1000,20 @@ def _mover_pkgs(lak_keys=None, wel_keys=None, wel_options=("mover",)):
         keys=wel_keys
         if wel_keys is not None
         else {
-            "mover_provider": KeySet(path="<=maxbound", when="mover"),
+            "mover_provider": KeySet(path="<=maxbound"),
             "bound": KeySet(path="<=maxbound"),
         },
     )
     return {"gwf-lak": lak, "gwf-wel": wel}
 
 
-def _ctx_mvr(mname_fk=("^exgmnamea", "^exgmnameb"), id1_fk=None, id2_fk=None, **pkgs):
+_MNAME_FK = {"path": "sim-nam.models.mname", "rule": "exchange_models"}
+
+
+def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, **pkgs):
     """`_ctx_sim` plus a mover, in a model or the GWF-GWF exchange, whose
-    rows name a model by the exchange's columns, then a package in it, then
-    a feature of that package by the role it plays."""
+    rows name one of the exchange's models, then a package in it, then a
+    feature of that package by the role it plays."""
     packages = _list_block(
         "packages",
         String(name="mname", tagged=False, when="modelnames", fk=mname_fk),
@@ -1069,22 +1053,19 @@ def _ctx_mvr(mname_fk=("^exgmnamea", "^exgmnameb"), id1_fk=None, id2_fk=None, **
     return {**_ctx_sim()[0], "gwf-mvr": mvr, **(pkgs or _mover_pkgs())}
 
 
-def test_dfns_validate_mover_context_refs():
+def test_dfns_validate_mover_keys():
     spec = Dfns(components=_ctx_mvr())
     period = spec.components["gwf-mvr"].blocks["period"].fields["stress_period_data"]
     assert period.item.fields["id1"].fk == ForeignKey(scope="pname1", key="mover_provider")
-    assert period.item.fields["mname1"].fk.context == ("exgmnamea", "exgmnameb")
+    assert period.item.fields["mname1"].fk.rule == "exchange_models"
     assert spec.components["gwf-wel"].keys["mover_provider"].bound == "maxbound"
 
 
-def test_dfns_validate_context_name_unresolved():
-    with pytest.raises(ValueError, match=r"context name '\^nope' resolves nowhere"):
-        Dfns(components=_ctx_mvr(mname_fk=["^nope"]))
-
-
-def test_dfns_validate_context_scope_unresolved():
-    with pytest.raises(ValueError, match=r"context name '\^nope' resolves nowhere"):
-        Dfns(components=_ctx_mvr(id1_fk={"scope": ["pname1", "^nope"], "key": "mover_provider"}))
+def test_dfns_validate_rule_fk_path_checked():
+    with pytest.raises(ValueError, match="'nope' is not the pk of list 'models'"):
+        Dfns(
+            components=_ctx_mvr(mname_fk={"path": "sim-nam.models.nope", "rule": "exchange_models"})
+        )
 
 
 def test_dfns_validate_key_undeclared():
@@ -1118,7 +1099,6 @@ def test_dfns_validate_key_bound_needs_index():
         (KeySet(path="nope.ifno"), "'nope' is not a list block"),
         (KeySet(path="outlets.nope"), "'nope' is not the pk of list"),
         (KeySet(path="<=nodim"), "names no dimension of gwf-lak"),
-        (KeySet(path="outlets.outletno", when="nomover"), "when='nomover' names no keyword"),
     ],
 )
 def test_dfns_validate_keyset_bad(keyset, match):
@@ -1140,20 +1120,11 @@ def test_dfns_validate_keyset_scoped_pk_rejected():
         Dfns(components=_ctx_mvr(**pkgs))
 
 
-def _ctx_transport(provides=None, ssm_scope="^flow_model"):
-    """`_ctx_sim` plus a GWF-GWT exchange giving the GWT model its flow
-    model, an SSM naming flow packages, and an SPC under SSM naming a bound
-    of the flow package its SSM row names."""
-    gwfgwt = Package(
-        name="exg-gwfgwt",
-        parent="sim-nam",
-        subtype="exchange",
-        ftype="GWF6-GWT6",
-        provides={"flow_model": Provide(to="exgmnameb", value="exgmnamea")}
-        if provides is None
-        else provides,
-    )
-    pname_fk = {"path": "gwf-nam.packages.pname", "scope": ssm_scope}
+def _ctx_transport(spc_key="bound"):
+    """`_ctx_sim` plus an SSM naming packages of its flow model, and an SPC
+    under SSM naming a bound of the flow package its SSM row names, both by
+    named rules."""
+    pname_fk = {"path": "gwf-nam.packages.pname", "rule": "flow_model"}
     ssm = Package(
         name="gwt-ssm",
         parent="gwt-nam",
@@ -1185,7 +1156,7 @@ def _ctx_transport(provides=None, ssm_scope="^flow_model"):
                     tagged=False,
                     index=True,
                     pk=True,
-                    fk={"scope": "^pname", "key": "bound"},
+                    fk={"key": spc_key, "rule": "ssm_package"},
                 ),
                 Double(name="concentration", tagged=False),
                 list_name="stress_period_data",
@@ -1195,33 +1166,19 @@ def _ctx_transport(provides=None, ssm_scope="^flow_model"):
     return {
         **_ctx_mvr(),
         "gwt-nam": _ctx_sim()[1]("gwt-nam", "GWT6"),
-        "exg-gwfgwt": gwfgwt,
         "gwt-ssm": ssm,
         "utl-spc": spc,
     }
 
 
-def test_dfns_validate_provides_and_spc():
+def test_dfns_validate_ssm_and_spc_rules():
     spec = Dfns(components=_ctx_transport())
-    exg = spec.components["exg-gwfgwt"]
-    assert exg.provides == {"flow_model": Provide(to="exgmnameb", value="exgmnamea")}
     item = spec.components["gwt-ssm"].blocks["fileinput"].fields["fileinput"].item
-    assert item.fields["pname"].fk.scope == "^flow_model"
+    assert item.fields["pname"].fk.rule == "flow_model"
+    period = spec.components["utl-spc"].blocks["period"].fields["stress_period_data"]
+    assert period.item.fields["bndno"].fk == ForeignKey(key="bound", rule="ssm_package")
 
 
-def test_dfns_validate_provided_name_missing():
-    with pytest.raises(ValueError, match=r"context name '\^flow_model' resolves nowhere"):
-        Dfns(components=_ctx_transport(provides={}))
-
-
-@pytest.mark.parametrize("to, value", [("nope", "exgmnamea"), ("exgmnameb", "exgfile")])
-def test_dfns_validate_provides_bad_columns(to, value):
-    with pytest.raises(ValueError, match="must be String columns of a row binding"):
-        Dfns(components=_ctx_transport(provides={"flow_model": Provide(to=to, value=value)}))
-
-
-def test_dfns_validate_context_scope_names_wrong_component():
-    # `^ftype` resolves (the SSM's row in its model's name file) but names no
-    # instance of the scoped fk's target component
-    with pytest.raises(ValueError, match="must be an fk to the row binding 'gwf-nam'"):
-        Dfns(components=_ctx_transport(ssm_scope="^ftype"))
+def test_dfns_validate_rule_key_undeclared():
+    with pytest.raises(ValueError, match="no component in the spec declares key 'nope'"):
+        Dfns(components=_ctx_transport(spc_key="nope"))

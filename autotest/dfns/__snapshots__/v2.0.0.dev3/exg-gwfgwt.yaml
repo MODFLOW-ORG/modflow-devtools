@@ -4,7 +4,3 @@ name: exg-gwfgwt
 parent: sim-nam
 ftype: GWF6-GWT6
 subtype: exchange
-provides:
-  flow_model:
-    to: exgmnameb
-    value: exgmnamea

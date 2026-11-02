@@ -39,7 +39,7 @@
                 "pk": true,
                 "fk": {
                   "path": "gwf-nam.packages.pname",
-                  "scope": "^flow_model"
+                  "rule": "flow_model"
                 }
               },
               "srctype": {
@@ -76,7 +76,7 @@
                 "pk": true,
                 "fk": {
                   "path": "gwf-nam.packages.pname",
-                  "scope": "^flow_model"
+                  "rule": "flow_model"
                 }
               },
               "spc6": {

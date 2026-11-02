@@ -167,9 +167,6 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[keys.mover_provider]
-path = "<=maxbound"
-when = "mover"
-
-[keys.bound]
-path = "<=maxbound"
+[keys]
+mover_provider = "<=maxbound"
+bound = "<=maxbound"

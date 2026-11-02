@@ -36,7 +36,7 @@ pk = true
 
 [blocks.sources.fields.sources.item.fields.pname.fk]
 path = "gwf-nam.packages.pname"
-scope = "^flow_model"
+rule = "flow_model"
 
 [blocks.sources.fields.sources.item.fields.srctype]
 type = "string"
@@ -67,7 +67,7 @@ pk = true
 
 [blocks.fileinput.fields.fileinput.item.fields.pname.fk]
 path = "gwf-nam.packages.pname"
-scope = "^flow_model"
+rule = "flow_model"
 
 [blocks.fileinput.fields.fileinput.item.fields.spc6]
 type = "keyword"

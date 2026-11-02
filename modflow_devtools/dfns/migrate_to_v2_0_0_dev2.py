@@ -1628,11 +1628,10 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       `pk = {scope = "mname"}`, `fk = {path = "gwf-nam.packages.pname",
       scope = "mname"}`.
     - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
-      `fk = ["^exgmnamea", "^exgmnameb"]`, one of the exchange's two
-      models, which MF6 requires (`xmvr_check_packages`,
-      `GwfExchangeMover.f90:87-93`). Those columns are fks to
-      `sim-nam.models.mname` themselves. In a model's mover nothing in the
-      context has them, but MF6 rejects `MODELNAMES` there anyway.
+      `fk = {path = "sim-nam.models.mname", rule = "exchange_models"}`: a
+      model, and one of the exchange's two, which MF6 requires
+      (`xmvr_check_packages`, `GwfExchangeMover.f90:87-93`). In a model's
+      mover they're absent, since MF6 rejects `MODELNAMES` there.
     - `pname1`/`pname2`: `fk = {path = "packages.pname", scope = "mname1"}`
       (`"mname2"`), since `mvr_rp` looks each provider/receiver up among
       the `packages` rows, fatal if unlisted.
@@ -1668,7 +1667,7 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     ):
         return blocks
 
-    model = v2.ForeignKey(path=("^exgmnamea", "^exgmnameb"))
+    model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
     blocks = _set_list_item_attrs(
         blocks,
         "packages",
@@ -1724,9 +1723,10 @@ def _component_keys(
     The key sets a component declares for others' fks to name (see
     `v2.KeySet`):
 
-    - `mover_provider`/`mover_receiver`, when MOVER, if the options block
-      has a `mover` keyword: per `_MOVER_KEYS`, else a provider only, by
-      bound, `<=maxbound` (skipped without a `maxbound` dim).
+    - `mover_provider`/`mover_receiver`, if the options block has a `mover`
+      keyword: per `_MOVER_KEYS`, else a provider only, by bound,
+      `<=maxbound` (skipped without a `maxbound` dim). MF6 also requires the
+      named package to have MOVER set, which consumers check.
     - `bound`, `<=maxbound`, in a non-utility package with a `maxbound`
       dim: a standard boundary package's bounds, numbered by its position
       in MF6's bound list (`BoundaryPackage.f90`), which SPC's `bndno`
@@ -1739,10 +1739,10 @@ def _component_keys(
     if options is not None and isinstance(options.fields.get("mover"), v2.Keyword):
         if name in _MOVER_KEYS:
             provider, receiver = _MOVER_KEYS[name]
-            keys[MOVER_PROVIDER] = v2.KeySet(path=provider, when="mover")
-            keys[MOVER_RECEIVER] = v2.KeySet(path=receiver, when="mover")
+            keys[MOVER_PROVIDER] = v2.KeySet(path=provider)
+            keys[MOVER_RECEIVER] = v2.KeySet(path=receiver)
         elif has_maxbound:
-            keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound", when="mover")
+            keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound")
     if has_maxbound and not name.startswith("utl-"):
         keys[BOUND] = v2.KeySet(path="<=maxbound")
     return keys or None
@@ -1751,8 +1751,8 @@ def _component_keys(
 def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     SPC's `bndno` names a bound of the flow package its SSM `fileinput` row
-    (its binding row) names, so `fk = {scope = "^pname", key = "bound"}`,
-    keeping its `pk` (one row per bound per period). MF6 reads `bndno`
+    (its binding row) names, so `fk = {key = "bound", rule =
+    "ssm_package"}`, keeping its `pk` (one row per bound per period). MF6 reads `bndno`
     against SPC's own `maxbound` and requires that to be at least the flow
     package's bound count (`TspSpc.f90:326-349`).
 
@@ -1770,30 +1770,17 @@ def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return _set_list_item_attrs(
         blocks,
         "period",
-        {"bndno": {"fk": v2.ForeignKey(scope="^pname", key=BOUND)}},
+        {"bndno": {"fk": v2.ForeignKey(key=BOUND, rule="ssm_package")}},
         list_name=period_list,
     )
-
-
-# The name each exchange gives its second model (`exgmnameb`): the flow model,
-# its first (`exgmnamea`). MF6's GWF-GWT and GWF-GWE exchanges point the
-# transport model's FMI at the flow model's packages, so its flows don't come
-# from a budget file (`exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`).
-# GWF-PRT does the same (`exg-gwfprt.f90:112-116`), but nothing in PRT names
-# a flow package, so it provides nothing.
-FLOW_MODEL = "flow_model"
-_PROVIDES: dict[str, dict[str, v2.Provide]] = {
-    "exg-gwfgwt": {FLOW_MODEL: v2.Provide(to="exgmnameb", value="exgmnamea")},
-    "exg-gwfgwe": {FLOW_MODEL: v2.Provide(to="exgmnameb", value="exgmnamea")},
-}
 
 
 def _fix_ssm_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     SSM's `sources.pname` and `fileinput.pname` name a package of the flow
-    model (`^flow_model`, which a GWF-GWT or GWF-GWE exchange provides), and
-    each list names a package once: `pk = true`, `fk = {path =
-    "gwf-nam.packages.pname", scope = "^flow_model"}`.
+    model (the one a GWF-GWT or GWF-GWE exchange pairs with the transport
+    model, rule `flow_model`), and each list names a package once: `pk =
+    true`, `fk = {path = "gwf-nam.packages.pname", rule = "flow_model"}`.
 
     MF6 looks each up among FMI's flow packages, fatal if missing ("Flow
     package cannot be found", `tsp-ssm.f90:800-811` and `898-909`), and
@@ -1801,14 +1788,13 @@ def _fix_ssm_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     are the flow model's boundary packages, named by their package names
     (`tsp-fmi.f90:741-742`), a subset of the name file's. The repeat check
     spans both blocks, which a pk on each list can't say. With flows from a
-    budget file there's no exchange, `^flow_model` doesn't resolve, and the
-    key isn't checked.
+    budget file there's no exchange, and the key isn't checked.
     """
     if name not in ("gwt-ssm", "gwe-ssm"):
         return blocks
     key: dict[str, v2.PrimaryKey | v2.ForeignKey] = {
         "pk": v2.PrimaryKey(),
-        "fk": v2.ForeignKey(path="gwf-nam.packages.pname", scope=f"^{FLOW_MODEL}"),
+        "fk": v2.ForeignKey(path="gwf-nam.packages.pname", rule="flow_model"),
     }
     for block_name in ("sources", "fileinput"):
         if isinstance(_list_item_field(blocks, block_name, "pname"), v2.String):
@@ -2798,7 +2784,7 @@ def to_v2_0_0_dev2(
         is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
     multi = is_multi_package(meta) and name not in _SINGLE_INSTANCE
-    return v2.Package(**d, subtype=subtype, multi=multi, provides=_PROVIDES.get(name))
+    return v2.Package(**d, subtype=subtype, multi=multi)
 
 
 def subpackage_keys(metas: Mapping[str, list[str]]) -> dict[str, str]:
