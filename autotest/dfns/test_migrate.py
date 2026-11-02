@@ -15,6 +15,7 @@ from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
     _fix_model_name_relations,
     _fix_mvr_relations,
     _fix_spc_relations,
+    _fix_ssm_relations,
     to_v2_0_0_dev2,
 )
 from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
@@ -1179,3 +1180,29 @@ def test_migrate_period_lists_named_stress_period_data(dev3):
     assert "perioddata" in components["sim-tdis"].blocks["perioddata"].fields
     assert "perioddata" in components["utl-ats"].blocks["perioddata"].fields
     assert {"recharge", "irch"} <= set(components["gwf-rcha"].blocks["period"].fields)
+
+
+@pytest.mark.parametrize("name", ["gwt-ssm", "gwe-ssm"])
+def test_migrate_ssm_pname(dfn_dir, name):
+    """SSM names each flow package once per list, in the flow model an
+    exchange provides."""
+    blocks = _migrate_dev3(dfn_dir, name).blocks
+    for block in ("sources", "fileinput"):
+        pname = blocks[block].fields[block].item.fields["pname"]
+        assert pname.pk == v2.PrimaryKey()
+        assert pname.fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="^flow_model")
+    assert _fix_ssm_relations(name, blocks) == blocks
+
+
+@pytest.mark.parametrize(
+    "name, provides",
+    [
+        ("exg-gwfgwt", {"flow_model": v2.Provide(to="exgmnameb", value="exgmnamea")}),
+        ("exg-gwfgwe", {"flow_model": v2.Provide(to="exgmnameb", value="exgmnamea")}),
+        # PRT has FMI but nothing names a flow package
+        ("exg-gwfprt", None),
+        ("exg-gwfgwf", None),
+    ],
+)
+def test_migrate_exchange_provides(dfn_dir, name, provides):
+    assert _migrate_dev3(dfn_dir, name).provides == provides

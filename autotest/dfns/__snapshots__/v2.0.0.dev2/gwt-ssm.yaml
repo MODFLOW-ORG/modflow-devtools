@@ -38,6 +38,10 @@ blocks:
                 (SFT, LKT, MWT, or UZT), then the advanced transport package will override SSM terms specified
                 here.
               tagged: false
+              pk: true
+              fk:
+                path: gwf-nam.packages.pname
+                scope: ^flow_model
             srctype:
               type: string
               longname: source type
@@ -81,6 +85,10 @@ blocks:
                 this flow package is represented using an advanced transport package (SFT, LKT, MWT, or
                 UZT), then the advanced transport package will override SSM terms specified here.
               tagged: false
+              pk: true
+              fk:
+                path: gwf-nam.packages.pname
+                scope: ^flow_model
             spc6:
               type: keyword
               longname: head keyword

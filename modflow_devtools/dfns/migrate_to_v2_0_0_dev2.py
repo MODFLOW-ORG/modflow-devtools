@@ -1775,6 +1775,47 @@ def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     )
 
 
+# The name each exchange gives its second model (`exgmnameb`): the flow model,
+# its first (`exgmnamea`). MF6's GWF-GWT and GWF-GWE exchanges point the
+# transport model's FMI at the flow model's packages, so its flows don't come
+# from a budget file (`exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`).
+# GWF-PRT does the same (`exg-gwfprt.f90:112-116`), but nothing in PRT names
+# a flow package, so it provides nothing.
+FLOW_MODEL = "flow_model"
+_PROVIDES: dict[str, dict[str, v2.Provide]] = {
+    "exg-gwfgwt": {FLOW_MODEL: v2.Provide(to="exgmnameb", value="exgmnamea")},
+    "exg-gwfgwe": {FLOW_MODEL: v2.Provide(to="exgmnameb", value="exgmnamea")},
+}
+
+
+def _fix_ssm_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    SSM's `sources.pname` and `fileinput.pname` name a package of the flow
+    model (`^flow_model`, which a GWF-GWT or GWF-GWE exchange provides), and
+    each list names a package once: `pk = true`, `fk = {path =
+    "gwf-nam.packages.pname", scope = "^flow_model"}`.
+
+    MF6 looks each up among FMI's flow packages, fatal if missing ("Flow
+    package cannot be found", `tsp-ssm.f90:800-811` and `898-909`), and
+    rejects a package given twice (`814-821`, `912-919`). FMI's packages
+    are the flow model's boundary packages, named by their package names
+    (`tsp-fmi.f90:741-742`), a subset of the name file's. The repeat check
+    spans both blocks, which a pk on each list can't say. With flows from a
+    budget file there's no exchange, `^flow_model` doesn't resolve, and the
+    key isn't checked.
+    """
+    if name not in ("gwt-ssm", "gwe-ssm"):
+        return blocks
+    key: dict[str, v2.PrimaryKey | v2.ForeignKey] = {
+        "pk": v2.PrimaryKey(),
+        "fk": v2.ForeignKey(path="gwf-nam.packages.pname", scope=f"^{FLOW_MODEL}"),
+    }
+    for block_name in ("sources", "fileinput"):
+        if isinstance(_list_item_field(blocks, block_name, "pname"), v2.String):
+            blocks = _set_list_item_attrs(blocks, block_name, {"pname": key})
+    return blocks
+
+
 def _list_item_field(
     blocks: dict[str, v2.Block], block_name: str, field_name: str, list_name: str | None = None
 ):
@@ -2700,6 +2741,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_mvr_relations(name, blocks)
     blocks = _fix_model_name_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
+    blocks = _fix_ssm_relations(name, blocks)
     blocks = _fix_optional_blocks(name, blocks)
     blocks = _wrap_grid_aux(blocks, fields)
     # Must run after `_fix_lak_relations`: LAK's period `number` field looks
@@ -2756,7 +2798,7 @@ def to_v2_0_0_dev2(
         is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
     multi = is_multi_package(meta) and name not in _SINGLE_INSTANCE
-    return v2.Package(**d, subtype=subtype, multi=multi)
+    return v2.Package(**d, subtype=subtype, multi=multi, provides=_PROVIDES.get(name))
 
 
 def subpackage_keys(metas: Mapping[str, list[str]]) -> dict[str, str]:
