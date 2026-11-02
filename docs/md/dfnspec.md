@@ -1005,13 +1005,13 @@ The rest of the `fk` is checked as if unscoped: its path must name a `pk` (or st
 |---|---|---|
 | `exchange_models` | one of the two models (`exgmnamea`, `exgmnameb`) of the exchange whose `MVR6` option binds this mover. In a model's own mover the model names are absent (`MODELNAMES` is rejected there). | `GwfExchangeMover.f90:87-93` |
 | `flow_model` | in the flow model that a GWF-GWT or GWF-GWE exchange pairs with this transport model (its `exgmnamea`, where the transport model is `exgmnameb`). With flows read from a budget file there is no such exchange, and the reference isn't checked. | `exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`, `tsp-ssm.f90:800-811` |
-| `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file | `TspSpc.f90:326-349` |
+| `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file. If an advanced transport package is paired with that flow package, SSM doesn't apply the SPC file and the reference isn't checked. | `TspSpc.f90:326-349`, `tsp-ssm.f90:195` |
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
 
 #### Consumer checks
 
-Some constraints MODFLOW 6 enforces have no spec form. Each would need a construct only it uses, so the spec states them here and consumers check them:
+Some constraints MODFLOW 6 enforces have no spec form. Each would need a construct only it uses, so the spec states them here and consumers check them. Unlike a [rule](#rules), which narrows a field's `fk`, these aren't attached to any field:
 
 | constraint | MODFLOW 6 |
 |---|---|
