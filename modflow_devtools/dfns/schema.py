@@ -270,6 +270,18 @@ class Integer(InputFieldBase):
     index: Index = False
     pk: PK = None
     fk: FK = None
+    # Whether an fk may give 0 for no row (e.g. LAK's `lakeout`, an outlet
+    # discharging out of the model). Not `optional`: the 0 is still written.
+    allow_zero: bool = False
+
+    @model_validator(mode="after")
+    def _check_allow_zero(self) -> "Integer":
+        if self.allow_zero and (self.fk is None or self.index is not True):
+            raise ValueError(
+                f"Integer {self.name!r}: allow_zero requires an fk and index=true "
+                "(0 is no row, as no 1-based index is 0)"
+            )
+        return self
 
 
 class Double(InputFieldBase):

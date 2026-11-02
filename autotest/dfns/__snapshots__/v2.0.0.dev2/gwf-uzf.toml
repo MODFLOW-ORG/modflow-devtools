@@ -251,6 +251,7 @@ description = "integer value set to specify underlying UZF cell that receives wa
 tagged = false
 index = true
 fk = "packagedata.ifno"
+allow_zero = true
 
 [blocks.packagedata.fields.packagedata.item.fields.surfdep]
 type = "double"

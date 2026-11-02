@@ -789,3 +789,21 @@ def test_dfns_validate_when_names_keyword_option():
 def test_dfns_validate_when_names_no_keyword_option(option):
     with pytest.raises(ValueError, match="when='surf' names no keyword option of gwf-evt"):
         Dfns(components=_when_ctx("surf", option))
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"index": True},
+        {"fk": "packagedata.ifno"},
+        {"fk": "packagedata.ifno", "index": "signed"},
+    ],
+)
+def test_integer_allow_zero_requires_index_fk(kwargs):
+    with pytest.raises(ValueError, match="allow_zero requires an fk and index=true"):
+        Integer(name="lakeout", allow_zero=True, **kwargs)
+
+
+def test_integer_allow_zero_round_trips():
+    col = Integer(name="lakeout", index=True, fk="packagedata.ifno", allow_zero=True)
+    assert Integer.model_validate(col.model_dump()) == col

@@ -397,6 +397,7 @@ description = "integer value that defines the lake number that outlet discharge 
 tagged = false
 index = true
 fk = "packagedata.ifno"
+allow_zero = true
 
 [blocks.outlets.fields.outlets.item.fields.couttype]
 type = "string"

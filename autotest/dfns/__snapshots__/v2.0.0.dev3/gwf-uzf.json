@@ -271,7 +271,8 @@
                 "description": "integer value set to specify underlying UZF cell that receives water flowing to bottom of cell. If unsaturated zone flow reaches the water table before the cell bottom, then water is added to the GWF cell instead of flowing to the underlying UZF cell. A value of 0 indicates the UZF cell is not connected to an underlying UZF cell.",
                 "tagged": false,
                 "index": true,
-                "fk": "packagedata.ifno"
+                "fk": "packagedata.ifno",
+                "allow_zero": true
               },
               "surfdep": {
                 "type": "double",

@@ -272,6 +272,7 @@ blocks:
               tagged: false
               index: true
               fk: packagedata.ifno
+              allow_zero: true
             surfdep:
               type: double
               longname: surface depression depth
