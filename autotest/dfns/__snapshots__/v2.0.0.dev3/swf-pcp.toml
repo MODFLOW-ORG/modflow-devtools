@@ -290,3 +290,6 @@ tagged = false
 [observations.pcp.arms.boundname]
 type = "string"
 tagged = false
+
+[keys.bound]
+path = "<=maxbound"

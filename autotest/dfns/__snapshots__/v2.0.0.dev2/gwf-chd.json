@@ -173,5 +173,10 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": {
+      "path": "<=maxbound"
+    }
   }
 }

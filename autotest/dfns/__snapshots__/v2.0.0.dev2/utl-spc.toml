@@ -62,6 +62,10 @@ tagged = false
 index = true
 pk = true
 
+[blocks.period.fields.stress_period_data.item.fields.bndno.fk]
+scope = "^pname"
+key = "bound"
+
 [blocks.period.fields.stress_period_data.item.fields.spcsetting]
 type = "union"
 description = "line of information that is parsed into a keyword and values.  Keyword values that can be used to start the SPCSETTING string include: CONCENTRATION and TEMPERATURE."

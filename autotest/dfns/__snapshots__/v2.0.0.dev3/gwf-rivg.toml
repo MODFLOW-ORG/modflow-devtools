@@ -325,3 +325,10 @@ tagged = false
 [observations.to-mvr.arms.boundname]
 type = "string"
 tagged = false
+
+[keys.mover_provider]
+path = "<=maxbound"
+when = "mover"
+
+[keys.bound]
+path = "<=maxbound"

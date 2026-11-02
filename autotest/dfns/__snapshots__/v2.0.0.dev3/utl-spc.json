@@ -71,7 +71,11 @@
                 "description": "integer value that defines the boundary package feature number associated with the specified PERIOD data on the line. BNDNO must be greater than zero and less than or equal to MAXBOUND.",
                 "tagged": false,
                 "index": true,
-                "pk": true
+                "pk": true,
+                "fk": {
+                  "scope": "^pname",
+                  "key": "bound"
+                }
               },
               "spcsetting": {
                 "type": "union",

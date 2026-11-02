@@ -295,3 +295,6 @@ tagged = false
 [observations.ctp.arms.boundname]
 type = "string"
 tagged = false
+
+[keys.bound]
+path = "<=maxbound"

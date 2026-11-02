@@ -145,5 +145,10 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": {
+      "path": "<=maxbound"
+    }
   }
 }

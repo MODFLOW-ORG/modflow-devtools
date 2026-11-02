@@ -166,5 +166,10 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": {
+      "path": "<=maxbound"
+    }
   }
 }

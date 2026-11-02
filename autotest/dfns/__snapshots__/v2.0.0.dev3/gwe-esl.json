@@ -335,5 +335,10 @@
         }
       }
     }
+  },
+  "keys": {
+    "bound": {
+      "path": "<=maxbound"
+    }
   }
 }

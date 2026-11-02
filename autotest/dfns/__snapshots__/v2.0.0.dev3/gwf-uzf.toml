@@ -561,3 +561,11 @@ tagged = false
 [observations.water-content.fields.depth]
 type = "double"
 tagged = false
+
+[keys.mover_provider]
+path = "packagedata.ifno"
+when = "mover"
+
+[keys.mover_receiver]
+path = "packagedata.ifno"
+when = "mover"

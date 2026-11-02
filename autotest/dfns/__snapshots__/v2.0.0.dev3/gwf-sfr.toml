@@ -908,3 +908,11 @@ fk = "packagedata.ifno"
 [observations.wet-width.arms.boundname]
 type = "string"
 tagged = false
+
+[keys.mover_provider]
+path = "packagedata.ifno"
+when = "mover"
+
+[keys.mover_receiver]
+path = "packagedata.ifno"
+when = "mover"

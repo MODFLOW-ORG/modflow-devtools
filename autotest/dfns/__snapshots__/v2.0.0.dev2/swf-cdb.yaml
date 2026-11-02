@@ -151,3 +151,6 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+keys:
+  bound:
+    path: <=maxbound

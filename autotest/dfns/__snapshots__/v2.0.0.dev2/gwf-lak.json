@@ -763,5 +763,15 @@
         }
       }
     }
+  },
+  "keys": {
+    "mover_provider": {
+      "path": "outlets.outletno",
+      "when": "mover"
+    },
+    "mover_receiver": {
+      "path": "packagedata.ifno",
+      "when": "mover"
+    }
   }
 }

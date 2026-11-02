@@ -365,5 +365,14 @@
         }
       }
     }
+  },
+  "keys": {
+    "mover_provider": {
+      "path": "<=maxbound",
+      "when": "mover"
+    },
+    "bound": {
+      "path": "<=maxbound"
+    }
   }
 }

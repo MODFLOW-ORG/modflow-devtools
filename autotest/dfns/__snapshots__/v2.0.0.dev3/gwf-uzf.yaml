@@ -600,3 +600,10 @@ observations:
       depth:
         type: double
         tagged: false
+keys:
+  mover_provider:
+    path: packagedata.ifno
+    when: mover
+  mover_receiver:
+    path: packagedata.ifno
+    when: mover

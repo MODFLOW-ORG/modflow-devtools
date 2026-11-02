@@ -1006,3 +1006,11 @@ fk = "outlets.outletno"
 [observations.outlet.arms.boundname]
 type = "string"
 tagged = false
+
+[keys.mover_provider]
+path = "outlets.outletno"
+when = "mover"
+
+[keys.mover_receiver]
+path = "packagedata.ifno"
+when = "mover"

@@ -1628,22 +1628,23 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       `pk = {scope = "mname"}`, `fk = {path = "gwf-nam.packages.pname",
       scope = "mname"}`.
     - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
-      `fk = "sim-nam.models.mname"`. MF6 also requires an exchange mover's
-      models to be the exchange's two, which a key can't say.
+      `fk = ["^exgmnamea", "^exgmnameb"]`, one of the exchange's two
+      models, which MF6 requires (`xmvr_check_packages`,
+      `GwfExchangeMover.f90:87-93`). Those columns are fks to
+      `sim-nam.models.mname` themselves. In a model's mover nothing in the
+      context has them, but MF6 rejects `MODELNAMES` there anyway.
     - `pname1`/`pname2`: `fk = {path = "packages.pname", scope = "mname1"}`
       (`"mname2"`), since `mvr_rp` looks each provider/receiver up among
       the `packages` rows, fatal if unlisted.
+    - `id1`/`id2`: a feature of the package `pname1`/`pname2` names, which
+      kind depending on its type, so `fk = {scope = "pname1", key =
+      "mover_provider"}` (`"pname2"`, `"mover_receiver"`). Each package says
+      which in its `keys` (see `_component_keys`). MF6 checks each against
+      the package's provider/receiver count (`Mover.f90:152-158`,
+      `174-180`).
 
     Upgrades an unscoped key with the expected path (from an earlier pass)
     to its scoped form, leaving any other key alone.
-
-    Does *not* annotate `id1`/`id2`. Each identifies a feature within the
-    package named by the sibling `pname1`/`pname2` field, but which block
-    that resolves to depends on that package's *type*: `packagedata`'s pk
-    for SFR/MAW/UZF, `outlets.outletno` for LAK, and a positional row index
-    (no `pk`-flagged column at all) for ordinary boundary packages like
-    WEL/DRN/RIV. A single static `fk` value can't express a target that's
-    conditional on resolved data like that.
     """
     if name != "gwf-mvr" or "period" not in blocks:
         return blocks
@@ -1661,8 +1662,13 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             for c in columns
         ):
             return blocks
+    ids = ("id1", "id2")
+    if not all(
+        isinstance(_list_item_field(blocks, "period", c, period_list), v2.Integer) for c in ids
+    ):
+        return blocks
 
-    model = v2.ForeignKey(path="sim-nam.models.mname")
+    model = v2.ForeignKey(path=("^exgmnamea", "^exgmnameb"))
     blocks = _set_list_item_attrs(
         blocks,
         "packages",
@@ -1682,7 +1688,89 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
             "mname2": {"fk": model},
             "pname1": {"fk": v2.ForeignKey(path="packages.pname", scope="mname1")},
             "pname2": {"fk": v2.ForeignKey(path="packages.pname", scope="mname2")},
+            "id1": {"fk": v2.ForeignKey(scope="pname1", key=MOVER_PROVIDER)},
+            "id2": {"fk": v2.ForeignKey(scope="pname2", key=MOVER_RECEIVER)},
         },
+        list_name=period_list,
+    )
+
+
+# Key set names (see `v2.KeySet`) that other components' fks name by `key`.
+MOVER_PROVIDER = "mover_provider"
+MOVER_RECEIVER = "mover_receiver"
+BOUND = "bound"
+
+# What MVR's `id1` (provider) and `id2` (receiver) number in a package with a
+# MOVER option, mirroring its `pakmvrobj%ar(nproviders, nreceivers)` in MF6,
+# whose sizes `Mover.f90:152-158`/`174-180` check the ids against. A package
+# not listed is a standard boundary package: `ar(maxbound, 0)`
+# (`BoundaryPackage.f90:282-285`), providing by bound and receiving nothing.
+# SFR (`gwf-sfr.f90:1775`, maxbound = NREACHES), MAW (`gwf-maw.f90:2100`,
+# nmawwells) and UZF (`gwf-uzf.f90:260`, maxbound = NUZFCELLS) provide and
+# receive by feature; LAK provides by outlet and receives by lake
+# (`gwf-lak.f90:3276`, `ar(noutlets, nlakes)`).
+_MOVER_KEYS: dict[str, tuple[str, str]] = {
+    "gwf-sfr": ("packagedata.ifno", "packagedata.ifno"),
+    "gwf-maw": ("packagedata.ifno", "packagedata.ifno"),
+    "gwf-uzf": ("packagedata.ifno", "packagedata.ifno"),
+    "gwf-lak": ("outlets.outletno", "packagedata.ifno"),
+}
+
+
+def _component_keys(
+    name: str, blocks: dict[str, v2.Block], dims: Mapping[str, Any]
+) -> dict[str, v2.KeySet] | None:
+    """
+    The key sets a component declares for others' fks to name (see
+    `v2.KeySet`):
+
+    - `mover_provider`/`mover_receiver`, when MOVER, if the options block
+      has a `mover` keyword: per `_MOVER_KEYS`, else a provider only, by
+      bound, `<=maxbound` (skipped without a `maxbound` dim).
+    - `bound`, `<=maxbound`, in a non-utility package with a `maxbound`
+      dim: a standard boundary package's bounds, numbered by its position
+      in MF6's bound list (`BoundaryPackage.f90`), which SPC's `bndno`
+      names. Advanced packages declare none: their bound lists (lake or
+      well connections, reaches) aren't sized by a `maxbound` dim.
+    """
+    keys: dict[str, v2.KeySet] = {}
+    options = blocks.get("options")
+    has_maxbound = "maxbound" in dims
+    if options is not None and isinstance(options.fields.get("mover"), v2.Keyword):
+        if name in _MOVER_KEYS:
+            provider, receiver = _MOVER_KEYS[name]
+            keys[MOVER_PROVIDER] = v2.KeySet(path=provider, when="mover")
+            keys[MOVER_RECEIVER] = v2.KeySet(path=receiver, when="mover")
+        elif has_maxbound:
+            keys[MOVER_PROVIDER] = v2.KeySet(path="<=maxbound", when="mover")
+    if has_maxbound and not name.startswith("utl-"):
+        keys[BOUND] = v2.KeySet(path="<=maxbound")
+    return keys or None
+
+
+def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    SPC's `bndno` names a bound of the flow package its SSM `fileinput` row
+    (its binding row) names, so `fk = {scope = "^pname", key = "bound"}`,
+    keeping its `pk` (one row per bound per period). MF6 reads `bndno`
+    against SPC's own `maxbound` and requires that to be at least the flow
+    package's bound count (`TspSpc.f90:326-349`).
+
+    Must run after `_mark_lonely_pk`, which marks only a column without an fk.
+    """
+    if name != "utl-spc" or "period" not in blocks:
+        return blocks
+    period_list = next(
+        (n for n, f in blocks["period"].fields.items() if isinstance(f, v2.List)), None
+    )
+    if period_list is None or not isinstance(
+        _list_item_field(blocks, "period", "bndno", period_list), v2.Integer
+    ):
+        return blocks
+    return _set_list_item_attrs(
+        blocks,
+        "period",
+        {"bndno": {"fk": v2.ForeignKey(scope="^pname", key=BOUND)}},
         list_name=period_list,
     )
 
@@ -2632,6 +2720,7 @@ def to_v2_0_0_dev2(
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)
     blocks = _fix_model_nam_package_keys(name, blocks)
+    blocks = _fix_spc_relations(name, blocks)
     blocks = _name_period_lists(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
@@ -2642,6 +2731,7 @@ def to_v2_0_0_dev2(
         "ftype": _ftype(name),
         "blocks": blocks or None,
         "dims": dims,
+        "keys": _component_keys(name, blocks, dims or {}),
     }
     if name == "sim-nam":
         return v2.Simulation(**d)

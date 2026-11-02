@@ -168,3 +168,9 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+keys:
+  mover_provider:
+    path: <=maxbound
+    when: mover
+  bound:
+    path: <=maxbound
