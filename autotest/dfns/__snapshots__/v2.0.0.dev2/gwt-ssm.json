@@ -106,5 +106,11 @@
         }
       }
     }
+  },
+  "keys": {
+    "source": [
+      "sources.pname",
+      "fileinput.pname"
+    ]
   }
 }

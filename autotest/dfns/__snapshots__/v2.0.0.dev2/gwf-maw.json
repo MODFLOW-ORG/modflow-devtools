@@ -12,6 +12,9 @@
     },
     "auxiliary": {
       "value": "len(auxiliary)"
+    },
+    "ngwfnodes": {
+      "value": "sum(packagedata.ngwfnodes)"
     }
   },
   "blocks": {
@@ -308,7 +311,10 @@
                 "longname": "connection number",
                 "description": "integer value that defines the GWF connection number for this multi-aquifer well connection entry. ICONN must be greater than zero and less than or equal to NGWFNODES for multi-aquifer well IFNO.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": {
+                  "scope": "ifno"
+                }
               },
               "cellid": {
                 "type": "cellid",
@@ -341,7 +347,10 @@
                 "tagged": false
               }
             }
-          }
+          },
+          "shape": [
+            "ngwfnodes"
+          ]
         }
       }
     },
@@ -517,6 +526,7 @@
   },
   "keys": {
     "mover_provider": "packagedata.ifno",
-    "mover_receiver": "packagedata.ifno"
+    "mover_receiver": "packagedata.ifno",
+    "bound": "<=ngwfnodes"
   }
 }

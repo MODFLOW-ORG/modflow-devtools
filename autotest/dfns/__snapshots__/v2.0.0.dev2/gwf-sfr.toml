@@ -398,6 +398,9 @@ description = "integer value that defines the downstream diversion number for th
 tagged = false
 index = true
 
+[blocks.diversions.fields.diversions.item.fields.idv.pk]
+scope = "ifno"
+
 [blocks.diversions.fields.diversions.item.fields.iconr]
 type = "integer"
 longname = "downstream reach number for diversion"
@@ -515,6 +518,10 @@ description = "an integer value specifying which diversion of reach IFNO that DI
 tagged = false
 index = true
 
+[blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.diversionrecord.fields.idv.fk]
+path = "diversions.idv"
+scope = "ifno"
+
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.diversionrecord.fields.divflow]
 type = "double"
 longname = "volumetric diversion flow rate"
@@ -581,3 +588,4 @@ index = true
 [keys]
 mover_provider = "packagedata.ifno"
 mover_receiver = "packagedata.ifno"
+bound = "packagedata.ifno"

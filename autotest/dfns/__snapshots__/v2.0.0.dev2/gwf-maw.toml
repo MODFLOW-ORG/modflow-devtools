@@ -12,6 +12,9 @@ value = "nmawwells"
 [dims.auxiliary]
 value = "len(auxiliary)"
 
+[dims.ngwfnodes]
+value = "sum(packagedata.ngwfnodes)"
+
 [blocks.options.fields.auxiliary]
 type = "array"
 longname = "keyword to specify aux variables"
@@ -260,6 +263,9 @@ tagged = false
 
 [blocks.connectiondata.fields.connectiondata]
 type = "list"
+shape = [
+    "ngwfnodes",
+]
 
 [blocks.connectiondata.fields.connectiondata.item]
 name = "connectiondata"
@@ -279,6 +285,9 @@ longname = "connection number"
 description = "integer value that defines the GWF connection number for this multi-aquifer well connection entry. ICONN must be greater than zero and less than or equal to NGWFNODES for multi-aquifer well IFNO."
 tagged = false
 index = true
+
+[blocks.connectiondata.fields.connectiondata.item.fields.icon.pk]
+scope = "ifno"
 
 [blocks.connectiondata.fields.connectiondata.item.fields.cellid]
 type = "cellid"
@@ -462,3 +471,4 @@ index = true
 [keys]
 mover_provider = "packagedata.ifno"
 mover_receiver = "packagedata.ifno"
+bound = "<=ngwfnodes"

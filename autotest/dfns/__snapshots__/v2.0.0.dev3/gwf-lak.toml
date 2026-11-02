@@ -284,6 +284,9 @@ description = "integer value that defines the GWF connection number for this lak
 tagged = false
 index = true
 
+[blocks.connectiondata.fields.connectiondata.item.fields.iconn.pk]
+scope = "ifno"
+
 [blocks.connectiondata.fields.connectiondata.item.fields.cellid]
 type = "cellid"
 longname = "cell identifier"
@@ -883,6 +886,10 @@ type = "integer"
 tagged = false
 index = true
 
+[observations.lak.arms.ifno_iconn.fields.iconn.fk]
+path = "connectiondata.iconn"
+scope = "ifno"
+
 [observations.lak.arms.ifno_boundname]
 type = "record"
 
@@ -917,6 +924,10 @@ type = "integer"
 tagged = false
 index = true
 
+[observations.wetted-area.arms.ifno_iconn.fields.iconn.fk]
+path = "connectiondata.iconn"
+scope = "ifno"
+
 [observations.wetted-area.arms.ifno_boundname]
 type = "record"
 
@@ -950,6 +961,10 @@ fk = "packagedata.ifno"
 type = "integer"
 tagged = false
 index = true
+
+[observations.conductance.arms.ifno_iconn.fields.iconn.fk]
+path = "connectiondata.iconn"
+scope = "ifno"
 
 [observations.conductance.arms.ifno_boundname]
 type = "record"
@@ -1010,3 +1025,4 @@ tagged = false
 [keys]
 mover_provider = "outlets.outletno"
 mover_receiver = "packagedata.ifno"
+bound = "<=nlakeconn"

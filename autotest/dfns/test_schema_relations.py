@@ -199,6 +199,66 @@ def test_dfns_validate_scope_cycle():
         Dfns(components=_mvr_ctx(period_extra=extra))
 
 
+def _sfr_ctx(arm_idv_fk=None, item_ifno="ifno"):
+    """
+    A package whose `diversions` rows are keyed by (ifno, idv), and whose
+    period rows give a diversion in a union arm, its `idv` scoped by the
+    list item's `ifno` (SFR's).
+    """
+    ifno_pk = Integer(name="ifno", index=True, pk=True)
+    pkg_item = Record(name="packagedata", fields={"ifno": ifno_pk})
+    pkg = Block(name="packagedata", fields={"packagedata": List(name="packagedata", item=pkg_item)})
+    div_item = Record(
+        name="diversions",
+        fields={
+            "ifno": Integer(name="ifno", index=True, fk="packagedata.ifno"),
+            "idv": Integer(name="idv", index=True, pk={"scope": "ifno"}),
+        },
+    )
+    div = Block(name="diversions", fields={"diversions": List(name="diversions", item=div_item)})
+    arm = Record(
+        name="diversionrecord",
+        fields={
+            "diversion": Keyword(name="diversion"),
+            "idv": Integer(
+                name="idv",
+                index=True,
+                fk=arm_idv_fk or {"path": "diversions.idv", "scope": "ifno"},
+            ),
+            "divflow": Double(name="divflow"),
+        },
+    )
+    setting = Union(name="sfrsetting", arms={"diversionrecord": arm})
+    period_item = Record(
+        name="perioddata",
+        fields={
+            item_ifno: Integer(name=item_ifno, index=True, fk="packagedata.ifno"),
+            "sfrsetting": setting,
+        },
+    )
+    period = Block(name="period", fields={"perioddata": List(name="perioddata", item=period_item)})
+    sfr = Package(
+        name="gwf-sfr",
+        parent="gwf-nam",
+        blocks={"packagedata": pkg, "diversions": div, "period": period},
+    )
+    return {"gwf-nam": Model(name="gwf-nam"), "gwf-sfr": sfr}
+
+
+def test_dfns_validate_scope_in_enclosing_record():
+    Dfns(components=_sfr_ctx())
+
+
+def test_dfns_validate_scope_not_in_enclosing_record():
+    with pytest.raises(ValueError, match="same or an enclosing record"):
+        Dfns(components=_sfr_ctx(item_ifno="rno"))
+
+
+def test_dfns_validate_enclosing_scope_must_match_target():
+    with pytest.raises(ValueError, match="both or neither must be scoped"):
+        Dfns(components=_sfr_ctx(arm_idv_fk="diversions.idv"))
+
+
 def test_dfns_validate_two_pks_rejected():
     extra = {"id": Integer(name="id", pk=True), "id2": Integer(name="id2", pk=True)}
     with pytest.raises(ValueError, match="only one pk"):
@@ -850,7 +910,6 @@ def test_key_fk_parts():
         ({"key": "mover_provider"}, "needs a scope or rule"),
         ({"key": "a.b", "scope": "s"}, "must be a key set name"),
         ({"path": "a.b", "rule": "nope"}, "fk rule 'nope' is not one of"),
-        ({"path": "a.b", "scope": "s", "rule": "flow_model"}, "a scope or a rule, not both"),
     ],
 )
 def test_fk_form_errors(kwargs, match):
@@ -870,6 +929,35 @@ def test_rule_fk_not_on_arrays_or_dynamic_keywords():
 def test_keyset_path_rejected(path):
     with pytest.raises(ValueError, match=r"must be 'block\.field' or a bound"):
         KeySet(path=path)
+
+
+@pytest.mark.parametrize(
+    "path, match",
+    [
+        ([], "at least one path"),
+        (["a.b", "a.b"], "repeat a path"),
+        (["a.b", "<=maxbound"], "a bound can't be one of several paths"),
+        (["a.b", "a.b.c"], r"must be 'block\.field' or a bound"),
+    ],
+)
+def test_keyset_paths_rejected(path, match):
+    with pytest.raises(ValueError, match=match):
+        KeySet(path=path)
+
+
+def test_keyset_paths():
+    """Several paths are a union; one path in a list is just that path."""
+    ks = KeySet(path=["sources.pname", "fileinput.pname"])
+    assert ks.path == ("sources.pname", "fileinput.pname")
+    assert ks.paths == ks.path and ks.bound is None
+    assert KeySet(path=["a.b"]) == KeySet(path="a.b")
+    assert KeySet(path="<=maxbound").paths == ("<=maxbound",)
+    pkg = Package.model_validate(
+        {"name": "gwt-ssm", "keys": {"source": ["sources.pname", "fileinput.pname"]}}
+    )
+    assert pkg.model_dump(exclude_defaults=True)["keys"] == {
+        "source": ["sources.pname", "fileinput.pname"]
+    }
 
 
 def test_keyset_bound():
@@ -1010,7 +1098,10 @@ def _mover_pkgs(lak_keys=None, wel_keys=None, wel_options=("mover",)):
 _MNAME_FK = {"path": "sim-nam.models.mname", "rule": "exchange_models"}
 
 
-def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, **pkgs):
+_PNAME_FK = {"path": "gwf-nam.packages.pname", "scope": "mname", "rule": "mover_enabled"}
+
+
+def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, pname_fk=_PNAME_FK, **pkgs):
     """`_ctx_sim` plus a mover, in a model or the GWF-GWF exchange, whose
     rows name one of the exchange's models, then a package in it, then a
     feature of that package by the role it plays."""
@@ -1021,7 +1112,7 @@ def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, **pkgs):
             name="pname",
             tagged=False,
             pk={"scope": "mname"},
-            fk={"path": "gwf-nam.packages.pname", "scope": "mname"},
+            fk=pname_fk,
         ),
     )
     period = _list_block(
@@ -1059,6 +1150,22 @@ def test_dfns_validate_mover_keys():
     assert period.item.fields["id1"].fk == ForeignKey(scope="pname1", key="mover_provider")
     assert period.item.fields["mname1"].fk.rule == "exchange_models"
     assert spec.components["gwf-wel"].keys["mover_provider"].bound == "maxbound"
+
+
+def test_dfns_validate_rule_with_scope():
+    """A scope picks the instance and a rule narrows its values: MVR's
+    `packages.pname` names a package of the row's model with MOVER on."""
+    spec = Dfns(components=_ctx_mvr())
+    item = spec.components["gwf-mvr"].blocks["packages"].fields["packages"].item
+    assert item.fields["pname"].fk == ForeignKey(**_PNAME_FK)
+    assert item.fields["pname"].model_dump(exclude_none=True)["fk"] == _PNAME_FK
+
+
+def test_dfns_validate_rule_with_scope_checks_scope():
+    """With a rule, the scope is still checked like any scope."""
+    bad = {**_PNAME_FK, "scope": "pname"}
+    with pytest.raises(ValueError, match="pk and fk scopes differ"):
+        Dfns(components=_ctx_mvr(pname_fk=bad))
 
 
 def test_dfns_validate_rule_fk_path_checked():
@@ -1120,7 +1227,10 @@ def test_dfns_validate_keyset_scoped_pk_rejected():
         Dfns(components=_ctx_mvr(**pkgs))
 
 
-def _ctx_transport(spc_key="bound"):
+_SOURCE = {"source": KeySet(path=["sources.pname", "fileinput.pname"])}
+
+
+def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
     """`_ctx_sim` plus an SSM naming packages of its flow model, and an SPC
     under SSM naming a bound of the flow package its SSM row names, both by
     named rules."""
@@ -1129,11 +1239,12 @@ def _ctx_transport(spc_key="bound"):
         name="gwt-ssm",
         parent="gwt-nam",
         ftype="SSM6",
+        keys=ssm_keys,
         blocks={
             "sources": _list_block(
                 "sources",
                 String(name="pname", tagged=False, pk=True, fk=pname_fk),
-                String(name="srctype", tagged=False),
+                srctype or String(name="srctype", tagged=False),
             ),
             "fileinput": _list_block(
                 "fileinput",
@@ -1177,6 +1288,30 @@ def test_dfns_validate_ssm_and_spc_rules():
     assert item.fields["pname"].fk.rule == "flow_model"
     period = spec.components["utl-spc"].blocks["period"].fields["stress_period_data"]
     assert period.item.fields["bndno"].fk == ForeignKey(key="bound", rule="ssm_package")
+
+
+def test_dfns_validate_multi_path_keyset():
+    spec = Dfns(components=_ctx_transport())
+    assert spec.components["gwt-ssm"].keys["source"].paths == ("sources.pname", "fileinput.pname")
+
+
+@pytest.mark.parametrize(
+    "keys, match",
+    [
+        ({"source": KeySet(path=["sources.pname", "nope.pname"])}, "'nope' is not a list block"),
+        ({"source": KeySet(path=["sources.srctype", "fileinput.pname"])}, "not the pk of list"),
+    ],
+)
+def test_dfns_validate_multi_path_keyset_bad(keys, match):
+    with pytest.raises(ValueError, match=match):
+        Dfns(components=_ctx_transport(ssm_keys=keys))
+
+
+def test_dfns_validate_multi_path_keyset_types_differ():
+    keys = {"source": KeySet(path=["sources.srctype", "fileinput.pname"])}
+    srctype = Integer(name="srctype", tagged=False, index=True, pk=True)
+    with pytest.raises(ValueError, match="name columns of different types"):
+        Dfns(components=_ctx_transport(ssm_keys=keys, srctype=srctype))
 
 
 def test_dfns_validate_rule_key_undeclared():

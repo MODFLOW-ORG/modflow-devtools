@@ -443,7 +443,10 @@
                 "longname": "downstream diversion number",
                 "description": "integer value that defines the downstream diversion number for the diversion for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach IFNO.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": {
+                  "scope": "ifno"
+                }
               },
               "iconr": {
                 "type": "integer",
@@ -572,7 +575,11 @@
                         "longname": "diversion number",
                         "description": "an integer value specifying which diversion of reach IFNO that DIVFLOW is being specified for.  Must be less or equal to ndv for the current reach (IFNO).",
                         "tagged": false,
-                        "index": true
+                        "index": true,
+                        "fk": {
+                          "path": "diversions.idv",
+                          "scope": "ifno"
+                        }
                       },
                       "divflow": {
                         "type": "double",
@@ -1019,6 +1026,7 @@
   },
   "keys": {
     "mover_provider": "packagedata.ifno",
-    "mover_receiver": "packagedata.ifno"
+    "mover_receiver": "packagedata.ifno",
+    "bound": "packagedata.ifno"
   }
 }

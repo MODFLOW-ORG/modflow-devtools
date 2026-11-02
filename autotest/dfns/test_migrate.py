@@ -14,6 +14,7 @@ from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
     _fix_model_nam_package_keys,
     _fix_model_name_relations,
     _fix_mvr_relations,
+    _fix_scoped_index_keys,
     _fix_spc_relations,
     _fix_ssm_relations,
     to_v2_0_0_dev2,
@@ -384,7 +385,10 @@ def test_migrate_mvr_keys(dfn_dir):
     model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
     assert packages["mname"].fk == model
     assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
-    assert packages["pname"].fk == v2.ForeignKey(path="gwf-nam.packages.pname", scope="mname")
+    # a package of that model, with its MOVER option set (MF6's check_packages)
+    assert packages["pname"].fk == v2.ForeignKey(
+        path="gwf-nam.packages.pname", scope="mname", rule="mover_enabled"
+    )
     for i in ("1", "2"):
         assert period[f"mname{i}"].fk == model
         assert period[f"pname{i}"].fk == v2.ForeignKey(path="packages.pname", scope=f"mname{i}")
@@ -413,23 +417,35 @@ _BOUND = {"path": "<=maxbound"}
         # no MOVER option
         ("gwf-chd", {"bound": _BOUND}),
         ("gwt-src", {"bound": _BOUND}),
-        # advanced: provide and receive by feature, LAK by outlet and lake
+        # advanced: provide and receive by feature, LAK by outlet and lake;
+        # bounds are features (SFR, UZF) or connections (MAW, LAK)
         *(
             (
                 name,
                 {
                     "mover_provider": {"path": "packagedata.ifno"},
                     "mover_receiver": {"path": "packagedata.ifno"},
+                    "bound": {"path": bound},
                 },
             )
-            for name in ("gwf-sfr", "gwf-maw", "gwf-uzf")
+            for name, bound in (
+                ("gwf-sfr", "packagedata.ifno"),
+                ("gwf-maw", "<=ngwfnodes"),
+                ("gwf-uzf", "packagedata.ifno"),
+            )
         ),
         (
             "gwf-lak",
             {
                 "mover_provider": {"path": "outlets.outletno"},
                 "mover_receiver": {"path": "packagedata.ifno"},
+                "bound": {"path": "<=nlakeconn"},
             },
+        ),
+        # SSM names a flow package in sources or fileinput, not both
+        *(
+            (name, {"source": {"path": ("sources.pname", "fileinput.pname")}})
+            for name in ("gwt-ssm", "gwe-ssm")
         ),
         # SPC's maxbound sizes its own list, it isn't a host
         ("utl-spc", None),
@@ -441,6 +457,54 @@ def test_migrate_component_keys(dfn_dir, name, keys):
     component = _migrate_dev3(dfn_dir, name)
     got = {k: v.model_dump(exclude_none=True) for k, v in (component.keys or {}).items()}
     assert (got or None) == keys
+
+
+_SCOPED = v2.PrimaryKey(scope="ifno")
+
+
+def test_migrate_scoped_index_keys(dfn_dir):
+    """A connection or diversion number is unique within its feature, and
+    SFR's period diversion names one of its reach's diversions."""
+
+    def item(component, block):
+        return component.blocks[block].fields[block].item.fields
+
+    lak = _migrate_dev3(dfn_dir, "gwf-lak")
+    assert item(lak, "connectiondata")["iconn"].pk == _SCOPED
+    maw = _migrate_dev3(dfn_dir, "gwf-maw")
+    assert item(maw, "connectiondata")["icon"].pk == _SCOPED
+    assert _list_shape(maw, "connectiondata") == ["ngwfnodes"]
+    assert maw.dims["ngwfnodes"].value == "sum(packagedata.ngwfnodes)"
+    sfr = _migrate_dev3(dfn_dir, "gwf-sfr")
+    assert item(sfr, "diversions")["idv"].pk == _SCOPED
+    period = sfr.blocks["period"].fields["stress_period_data"].item
+    idv = period.fields["sfrsetting"].arms["diversionrecord"].fields["idv"]
+    assert (idv.pk, idv.fk) == (None, v2.ForeignKey(path="diversions.idv", scope="ifno"))
+    assert _fix_scoped_index_keys("gwf-sfr", sfr.blocks) == sfr.blocks
+
+
+def test_migrate_scoped_index_keys_angledata():
+    """MAW's ANGLEDATA (newer than 6.7) names a connection of its well, once."""
+    icon = v2.Integer(name="icon", index=True)
+    ifno = v2.Integer(name="ifno", index=True, fk="packagedata.ifno")
+    angle = v2.Double(name="angle")
+    rec = v2.Record(name="angledata", fields={"ifno": ifno, "icon": icon, "angle": angle})
+    lst = v2.List(name="angledata", item=rec)
+    blocks = {
+        "connectiondata": v2.Block(
+            name="connectiondata",
+            fields={
+                "connectiondata": v2.List(
+                    name="connectiondata",
+                    item=v2.Record(name="connectiondata", fields={"ifno": ifno, "icon": icon}),
+                )
+            },
+        ),
+        "angledata": v2.Block(name="angledata", fields={"angledata": lst}),
+    }
+    got = _fix_scoped_index_keys("gwf-maw", blocks)["angledata"].fields["angledata"].item
+    assert got.fields["icon"].pk == _SCOPED
+    assert got.fields["icon"].fk == v2.ForeignKey(path="connectiondata.icon", scope="ifno")
 
 
 def test_migrate_spc_bndno(dfn_dir):
@@ -852,7 +916,7 @@ _NAME = ("boundname",)
             "gwf-lak",
             "lak",
             [
-                (("index", "packagedata.ifno"), ("index", None)),
+                (("index", "packagedata.ifno"), ("index", "connectiondata.iconn")),
                 (("index", "packagedata.ifno"), _NAME),
                 (_NAME,),
             ],
@@ -861,7 +925,7 @@ _NAME = ("boundname",)
             "gwf-maw",
             "conductance",
             [
-                (("index", "packagedata.ifno"), ("index", None)),
+                (("index", "packagedata.ifno"), ("index", "connectiondata.icon")),
                 (("index", "packagedata.ifno"), _NAME),
                 (_NAME,),
             ],

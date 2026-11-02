@@ -308,6 +308,8 @@ blocks:
                 entry. ICONN must be greater than zero and less than or equal to NLAKECONN for lake IFNO.
               tagged: false
               index: true
+              pk:
+                scope: ifno
             cellid:
               type: cellid
               longname: cell identifier
@@ -995,6 +997,9 @@ observations:
             type: integer
             tagged: false
             index: true
+            fk:
+              path: connectiondata.iconn
+              scope: ifno
       ifno_boundname:
         type: record
         fields:
@@ -1024,6 +1029,9 @@ observations:
             type: integer
             tagged: false
             index: true
+            fk:
+              path: connectiondata.iconn
+              scope: ifno
       ifno_boundname:
         type: record
         fields:
@@ -1053,6 +1061,9 @@ observations:
             type: integer
             tagged: false
             index: true
+            fk:
+              path: connectiondata.iconn
+              scope: ifno
       ifno_boundname:
         type: record
         fields:
@@ -1103,3 +1114,4 @@ observations:
 keys:
   mover_provider: outlets.outletno
   mover_receiver: packagedata.ifno
+  bound: <=nlakeconn

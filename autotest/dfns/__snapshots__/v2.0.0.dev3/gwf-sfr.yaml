@@ -465,6 +465,8 @@ blocks:
                 IFNO.
               tagged: false
               index: true
+              pk:
+                scope: ifno
             iconr:
               type: integer
               longname: downstream reach number for diversion
@@ -646,6 +648,9 @@ blocks:
                         is being specified for.  Must be less or equal to ndv for the current reach (IFNO).
                       tagged: false
                       index: true
+                      fk:
+                        path: diversions.idv
+                        scope: ifno
                     divflow:
                       type: double
                       longname: volumetric diversion flow rate
@@ -997,3 +1002,4 @@ observations:
 keys:
   mover_provider: packagedata.ifno
   mover_receiver: packagedata.ifno
+  bound: packagedata.ifno

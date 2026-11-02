@@ -422,6 +422,7 @@
   },
   "keys": {
     "mover_provider": "packagedata.ifno",
-    "mover_receiver": "packagedata.ifno"
+    "mover_receiver": "packagedata.ifno",
+    "bound": "packagedata.ifno"
   }
 }

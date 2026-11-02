@@ -14,9 +14,12 @@ from modflow_devtools.dfns import schema as v2
 _Field = v2.ObservationField
 
 
-def _index(name: str, fk: str | None = None) -> v2.Integer:
+def _index(name: str, fk: str | None = None, scope: str | None = None) -> v2.Integer:
     return v2.Integer(
-        name=name, tagged=False, index=True, fk=v2.ForeignKey(path=fk) if fk else None
+        name=name,
+        tagged=False,
+        index=True,
+        fk=v2.ForeignKey(path=fk, scope=scope) if fk else None,
     )
 
 
@@ -62,10 +65,12 @@ def _connection(pk: str, iconn: str = "iconn") -> v2.Union:
 def _connection_or_name(pk: str, iconn: str = "iconn") -> v2.Union:
     """A feature and one of its connections, or a boundname for all of them,
     after a feature number or not (MF6 then ignores the number). LAK and MAW
-    read a boundname as ID2; the APT packages read ID2 as a number only."""
+    read a boundname as ID2; the APT packages read ID2 as a number only.
+    The connection is one of the feature's (`connectiondata`, scoped by it)."""
     feature = _index(pk, fk=f"packagedata.{pk}")
+    connection = _index(iconn, fk=f"connectiondata.{iconn}", scope=pk)
     boundname = v2.String(name="boundname", tagged=False)
-    arms = (_record(feature, _index(iconn)), _record(feature, boundname), boundname)
+    arms = (_record(feature, connection), _record(feature, boundname), boundname)
     return v2.Union(name=pk, arms={arm.name: arm for arm in arms})
 
 
