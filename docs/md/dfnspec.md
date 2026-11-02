@@ -14,6 +14,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`dims`](#dims)
     - [`memory`](#memory)
     - [`observations`](#observations)
+    - [`keys`](#keys)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -24,6 +25,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
       - [Type-specific attributes](#type-specific-attributes-1)
         - [`multi`](#multi)
         - [`subtype`](#subtype)
+        - [`provides`](#provides)
 - [Blocks](#blocks-1)
   - [Attributes](#attributes)
     - [`name`](#name-1)
@@ -94,6 +96,11 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Dimension scope](#dimension-scope)
   - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Scoped keys](#scoped-keys)
+    - [Context names](#context-names)
+    - [Scopes](#scopes)
+    - [References to context columns](#references-to-context-columns)
+    - [Key sets](#key-sets)
+    - [Names an exchange provides](#names-an-exchange-provides)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -129,6 +136,7 @@ Component definitions consist of a number of attributes:
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
 - `memory`: API-accessible runtime variable definitions
 - `observations`: the observation types the component accepts in its OBS file
+- `keys`: named key sets other components' foreign keys can name without knowing this component's type
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
@@ -195,6 +203,10 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 
 `{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name. Each is an untagged field for the values that follow the observation type: its ID and ID2.
 
+#### `keys`
+
+`{string: {path, when}} (default: {})`. Named key sets that a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types. See [Key sets](#key-sets).
+
 ### Component types
 
 Three component types can be distinguished: simulation, model, and package.
@@ -243,6 +255,10 @@ Optional discriminator indicating the package's functional role. Several package
 - `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi`.
 
 `subtype: null` (the default) covers packages that don't fall into any named category, such as output control packages.
+
+###### `provides`
+
+`{string: {to, value}} (default: {})`. Only on an exchange. Names the exchange gives one of its models, which components below that model reference as `^name`. See [Names an exchange provides](#names-an-exchange-provides).
 
 ## Blocks
 
@@ -431,15 +447,21 @@ Type `string`.
 
 ###### `pk`
 
-`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = "<column>" }` for a key unique only within another column's value (see [Scoped keys](#scoped-keys)).
+`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = <scope> }` for a key unique only within the instance or value the [scope](#scopes) picks (see [Scoped keys](#scoped-keys)).
 
 ###### `fk`
 
-`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`). See "Primary/foreign keys".
+`string | [string] | {path, scope} | {scope, key} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. One of:
+
+- a hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = <scope> }` (see [Scoped keys](#scoped-keys)). A string's path may also name a string array, whose entries are then the valid values (e.g. `"options.auxiliary"`);
+- a list of context names, `["^exgmnamea", "^exgmnameb"]`, whose values in the instance's context are the valid values (see [References to context columns](#references-to-context-columns)). `"^name"` is the same as `["^name"]`. Only on a string;
+- a table `{ scope = <scope>, key = "<name>" }`, naming a key set of the instance the scope picks (see [Key sets](#key-sets)).
+
+See "Primary/foreign keys".
 
 ###### `dynamic`
 
-`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an unscoped `fk`, and is valid only on a record's first field. Its keywords must be known before its line is read, so they can't depend on a scope later on the line. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
+`boolean (default: false)`. Marks this string as a **dynamic keyword**: its value is itself a keyword, one of the keys its `fk` names, so a record it begins is keyword-led (see [List](#list)). Requires `tagged: false` and an unscoped `fk` with a path, and is valid only on a record's first field. Its keywords must be known before its line is read, so they can't depend on a scope later on the line, or on the instance's context. This is a fact about the input grammar, separate from `fk`, which only says what the value references. A leading untagged string with an `fk` is otherwise data: for example, `utl-hpc`'s `partitions` rows begin with a model name, an `fk` to `sim-nam.models.mname`, but are an untagged table.
 
 #### Integer
 
@@ -463,11 +485,11 @@ Type `integer`.
 
 ###### `pk`
 
-`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = "<column>" }` for a key unique only within another column's value (see [Scoped keys](#scoped-keys)).
+`boolean | {scope} (default: false)`. Marks this scalar as the primary key of its containing list's item record: no two rows share a value. Valid only on integer or string scalars that are columns in a list item record. At most one column per list item may be marked pk. `true` for an unscoped key; `{ scope = <scope> }` for a key unique only within the instance or value the [scope](#scopes) picks (see [Scoped keys](#scoped-keys)).
 
 ###### `fk`
 
-`string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). See "Primary/foreign keys".
+`string | {path, scope} | {scope, key} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = <scope> }` (see [Scoped keys](#scoped-keys)), or a table `{ scope = <scope>, key = "<name>" }` naming a key set of the instance the scope picks (see [Key sets](#key-sets)). See "Primary/foreign keys".
 
 ###### `allow_zero` (integer)
 
@@ -565,7 +587,7 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 ###### `fk`
 
-`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar, but never scoped, since an array has no sibling columns of its own. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key, each a reference to a row (by `pk`) in another list. On a grid array that's a per-grid-cell reference, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). On an array column in a list item record, each row references several rows (e.g. SFR's `ic`, the reaches connected to a reach). On a `"string"` array, each entry is a key: a row's `pk` value, or, as for a string scalar, an entry of a string array the path names. Only valid when `dtype` is `"integer"` or `"string"`. A hierarchical path (`"[component.]block.field"`), as for a scalar, but never scoped or a key set, since an array has no sibling columns of its own, and never context names. An array has no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
 
 ###### `model`, `allow_zero`
 
@@ -860,7 +882,7 @@ A cross-component `fk` resolves in the current context: against the singleton co
 
 #### Scoped keys
 
-MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it. The scope belongs to the key, so it's written inside `pk` or `fk`:
+MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, which qualifies it: another column in the same record, or a name from the instance's context (see [Scopes](#scopes)). The scope belongs to the key, so it's written inside `pk` or `fk`:
 
 ```toml
 pk = { scope = "mname" }
@@ -869,11 +891,11 @@ fk = { path = "packages.pname", scope = "mname1" }
 
 - A `pk` with scope `s` is unique within `s`: rows are unique by (`s`, the key).
 - An `fk` with scope `s` takes the target key's qualifier from `s`.
-  - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. If both scope columns have an `fk`, it must be the same.
-  - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)).
+  - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. Both scopes must be a single sibling column. If both scope columns have an `fk`, it must be the same.
+  - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must name that instance: it must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)), either directly or through other `fk`s and [context columns](#references-to-context-columns). For example, `gwf-mvr`'s `pname1` names a `packages` row, whose `pname` names a row of a model name file's `packages`.
 - An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
 - A scope column's own key may be scoped, forming a chain, but not a cycle.
-- If a column's `pk` and `fk` are both scoped, the scope is the same column.
+- If a column's `pk` and `fk` are both scoped, the scope is the same.
 
 For example, MODFLOW 6 rejects a mover whose `packages` block lists the same model and package twice, and looks each period row's provider and receiver up among those rows:
 
@@ -886,7 +908,144 @@ fk = { path = "gwf-nam.packages.pname", scope = "mname" }
 fk = { path = "packages.pname", scope = "mname1" }
 ```
 
-Some references can't be written as a static path, because which block they target depends on the type of a component resolved at runtime (e.g. `gwf-mvr`'s `id1`, which names a row of whatever package `pname1` names). Those fields have no `fk`, and the codec resolves them.
+A scoped key is a composite key whose columns form a hierarchy. In database terms:
+
+| DFN | SQL |
+|---|---|
+| `pname.pk = {scope = "mname"}` | `PRIMARY KEY (mname, pname)` |
+| `pname1.fk = {path = "packages.pname", scope = "mname1"}` | `FOREIGN KEY (mname1, pname1) REFERENCES packages (mname, pname)` |
+| "if both scope columns have an `fk`, it must be the same" | a composite foreign key's column correspondence |
+| an absent scope value means the current one | no equivalent: with SQL's default `MATCH SIMPLE`, a NULL skips the check |
+| `fk = ["^exgmnamea", "^exgmnameb"]` | a composite foreign key `(exchange, mname)`, the exchange column taken from the context |
+
+Every composite key in MODFLOW 6 is hierarchical, so there is no separate tuple form.
+
+#### Context names
+
+A component instance has a **context**: the **binding rows** from it up to the simulation, plus the names an exchange [provides](#names-an-exchange-provides) to one of its ancestors. A binding row is the record, in a parent component's input, with an input `file` whose [`component`](#component) admits the child: a model name file's `packages` row, `sim-nam`'s `models` and `exchanges` rows, an exchange's `MVR6 FILEIN` option, or a `gwt-ssm` `fileinput` row naming an SPC file.
+
+`^name` resolves to the value of `name` in the nearest context that has it, starting at the instance's own binding row, like a variable lookup in nested scopes. For example:
+
+- In an exchange's mover, the mover's own binding row (the exchange's `MVR6 FILEIN` option) has no `exgmnamea`, so `^exgmnamea` resolves at the exchange's row in `sim-nam`'s `exchanges`.
+- A model's row in `sim-nam`'s `models` has `mname`, so below a model, `^mname` is that model.
+- An SPC file's binding row is the SSM `fileinput` row naming it, so in `utl-spc`, `^pname` is that row's `pname`, the flow package.
+
+In SQL terms, `^name` is like a correlated subquery's reference to a column of the outer (enclosing) row.
+
+A DFN must give names that can resolve: `name` must be a column of a binding row that can bind the component or one of its possible ancestors, by their [`parent`](#parent)s and the binding `file`'s `component`, or a name some exchange provides. A validator checks this.
+
+When a name doesn't resolve for an instance, the reference **can't be checked**, and a consumer skips the check. It doesn't mean "the current one". For example, SSM's `^flow_model` doesn't resolve when flows are read from a budget file, since no exchange names the flow model. A reference that should fall back to the current instance says so, with a [scope](#scopes) list ending in a name that always resolves (e.g. `^mname`).
+
+#### Scopes
+
+A key's `scope` picks the instance or value that qualifies it. It is one of:
+
+- a sibling column's name: `"mname1"`;
+- a context name: `"^pname"`;
+- a list of these, where the first that resolves is used, like SQL's `COALESCE`: `["^exgmnamea", "^mname"]`. A one-entry list is the same as its entry.
+
+`pk.scope` and `fk.scope` take this form. A scoped `fk` within a component takes a single sibling column, matching its target `pk`'s.
+
+```toml
+# gwt-ssm: a package of the flow model the GWF-GWT exchange names
+fk = { path = "gwf-nam.packages.pname", scope = "^flow_model" }
+```
+
+#### References to context columns
+
+An `fk` on a string may name context columns instead of a path: its valid values are the values those columns have in the instance's context, just as a string array's entries are a key set.
+
+```toml
+# gwf-mvr packages.mname, period mname1/mname2
+fk = ["^exgmnamea", "^exgmnameb"]
+```
+
+- A list is a set of context columns, written `^name`; a string is a path. `fk = "^name"` is the same as `fk = ["^name"]`.
+- Only a string scalar may reference context columns, and such an `fk` has no scope. A [dynamic keyword](#dynamic)'s `fk` and an array's are always paths.
+- The valid values are those of the columns that resolve. If none resolves, the key can't be checked. In a model's own mover, nothing in the context has `exgmnamea`, so `mname` isn't checked; MODFLOW 6 rejects `MODELNAMES` there anyway, so `mname` is absent.
+- The columns usually have keys of their own: `exgmnamea` and `exgmnameb` are `fk`s to `sim-nam`'s `models.mname`, so their values are valid models, and the reference only narrows them to the exchange's two. MODFLOW 6 requires this (`GwfExchangeMover.f90:87-93`).
+
+#### Key sets
+
+A normal `fk` is written as a path because the referrer knows the target's type: `gwf-mvr`'s `pname1` always names a row of its own `packages`. When the referenced instance is picked at runtime and may be one of several component types, the referrer can't write a path. Instead, it names a **role**, and each component type that can play it says what it means, like an interface or protocol. A component declares its roles in [`keys`](#keys):
+
+```toml
+# gwf-lak
+[keys.mover_provider]
+path = "outlets.outletno"
+when = "mover"
+
+[keys.mover_receiver]
+path = "packagedata.ifno"
+when = "mover"
+
+# gwf-wel, and other standard boundary packages with a MOVER option
+[keys.mover_provider]
+path = "<=maxbound"
+when = "mover"
+```
+
+An `fk` names a role with `key`, and picks the instance with a [scope](#scopes), as for a scoped key across components:
+
+```toml
+# gwf-mvr period id1 / id2
+fk = { scope = "pname1", key = "mover_provider" }
+fk = { scope = "pname2", key = "mover_receiver" }
+```
+
+A key set's `path` is either:
+
+- `"block.field"`: a list's unscoped `pk`, or a string array, as for an `fk`'s path within a component;
+- a bound `"<=dim"`, using the [Bounds](#bounds) syntax: any 1-based index from 1 to `dim`, a dimension the component can see. MODFLOW 6 checks a mover's ids against the package's size, not its rows (`Mover.f90:152-158`, `174-180`). A period block's list may differ by period, and its largest size is `maxbound`.
+
+A key set's `when` names a keyword option of the component that must be set for the key set to exist. MODFLOW 6 rejects a mover row naming a package without `MOVER` (`gwf-mvr.f90:942-971`). A consumer may check the option on the named instance.
+
+A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
+
+- each `key` an `fk` uses is declared by at least one component its scope can name;
+- each declared `path` is valid in its component, and each `when` names a keyword option;
+- a `<=dim` path is referenced only by an integer column with `index: true`, and a `"block.field"` path by a column of the same type.
+
+The roles in MODFLOW 6:
+
+| role | declared by | referenced by |
+|---|---|---|
+| `mover_provider` | packages with a MOVER option: `<=maxbound` for standard boundary packages (`BoundaryPackage.f90:282-285`); `packagedata.ifno` for SFR, MAW and UZF; `outlets.outletno` for LAK | `gwf-mvr`'s `id1` |
+| `mover_receiver` | `packagedata.ifno` for SFR, MAW, UZF and LAK (its lakes) | `gwf-mvr`'s `id2` |
+| `bound` | `<=maxbound` for every non-utility package with a `maxbound` dimension | `utl-spc`'s `bndno` |
+
+These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbound, 0)` for a standard boundary package, `(maxbound, maxbound)` for SFR (`gwf-sfr.f90:1775`, `maxbound` being NREACHES) and UZF (`gwf-uzf.f90:260`, NUZFCELLS), `(nmawwells, nmawwells)` for MAW (`gwf-maw.f90:2100`), and `(noutlets, nlakes)` for LAK (`gwf-lak.f90:3276`).
+
+```toml
+# utl-spc period bndno: a bound of the flow package its SSM row names
+pk = true
+fk = { scope = "^pname", key = "bound" }
+```
+
+MODFLOW 6 checks `bndno` only against SPC's own `maxbound`, which must be at least the flow package's bound count (`TspSpc.f90:326-349`).
+
+[Observations](#observations) use the same idea, keyed by observation type: each component says what an observation's ID names, on the target side.
+
+#### Names an exchange provides
+
+Some relations between models aren't in a component's chain of binding rows. A transport model's flow model is a sibling, named by the `sim-nam` `exchanges` row that connects them. MODFLOW 6 sets the link up in the exchange (`exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`), so the exchange declares it with [`provides`](#provides):
+
+```toml
+# exg-gwfgwt (likewise exg-gwfgwe)
+[provides.flow_model]
+to = "exgmnameb"     # the model that receives the name
+value = "exgmnamea"  # what the name resolves to
+```
+
+`to` and `value` are string columns of the exchange's binding row. Below the model that the row's `to` column names, `^flow_model` resolves to the row's `value` column, as a binding row's column would:
+
+```toml
+# gwt-ssm / gwe-ssm sources.pname and fileinput.pname
+pk = true
+fk = { path = "gwf-nam.packages.pname", scope = "^flow_model" }
+```
+
+MODFLOW 6 looks each SSM `pname` up among the flow model's packages (`tsp-ssm.f90:800-811`, `898-909`) and rejects one given twice (`814-821`, `912-919`), across both lists. With flows from a budget file there's no exchange, `^flow_model` doesn't resolve, and the key isn't checked. In SQL terms, `^flow_model` in a GWT model `m` is `SELECT exgmnamea FROM exchanges WHERE exgtype = 'GWF6-GWT6' AND exgmnameb = m`.
 
 ## Memory catalog
 
