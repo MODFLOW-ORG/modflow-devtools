@@ -437,7 +437,8 @@
                 "description": "integer value that defines the lake number that outlet discharge from lake outlet OUTLETNO is routed to. LAKEOUT must be greater than or equal to zero and less than or equal to NLAKES. If LAKEOUT is zero, outlet discharge from lake outlet OUTLETNO is discharged to an external boundary.",
                 "tagged": false,
                 "index": true,
-                "fk": "packagedata.ifno"
+                "fk": "packagedata.ifno",
+                "allow_zero": true
               },
               "couttype": {
                 "type": "string",

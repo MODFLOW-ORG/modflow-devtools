@@ -58,6 +58,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`index`](#index)
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
+        - [`allow_zero`](#allow_zero-integer)
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
         - [`time_series`](#time_series-2)
@@ -468,6 +469,10 @@ Type `integer`.
 
 `string | {path, scope} | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. A hierarchical path, `"block.field"` or `"component.block.field"`, naming the target `pk` column, or, for a scoped reference, a table `{ path = "<path>", scope = "<column>" }` (see [Scoped keys](#scoped-keys)). See "Primary/foreign keys".
 
+###### `allow_zero` (integer)
+
+`boolean (default: false)`. Whether the `fk` may give 0 to reference no row. Requires an `fk` and `index: true`: no 1-based index is 0, so 0 can't name a row. MF6 allows it on `gwf-lak`'s `outlets.lakeout`, for an outlet discharging out of the model, and `gwf-uzf`'s `packagedata.ivertcon`, for a cell with no UZF cell below it. As for a [cellid](#allow_zero), this is not [`optional`](#optional): the 0 is still written. In memory, where indices are 0-based, a consumer must keep "no row" distinct from the first row.
+
 #### Double
 
 Type `double`.
@@ -846,6 +851,8 @@ Sometimes a column in one list identifies a row in another list. This can be con
 A `pk` column may be optional when MODFLOW assigns a default key to a row that omits it, e.g. a model name file's `packages.pname`, where an unnamed stress package is named `<TYPE>-<N>`. The keys are then unique only after defaults are assigned, so a consumer resolving references must assign them the same way.
 
 A `pk` means unique: a file in which two rows of a list share a key is invalid, and a reader or writer that validates input should reject it.
+
+An `fk` names an existing row: a file in which one names no row is invalid. An integer `fk` may give 0 for no row only if it says so with [`allow_zero`](#allow_zero-integer).
 
 An `fk` is a hierarchical path of the form `"[component.]block.field"`, naming the `pk` field it references. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
 

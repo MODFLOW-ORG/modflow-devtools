@@ -969,6 +969,31 @@ _FK_BACKFILL: dict[str, list[tuple[str, str, dict[str, str]]]] = {
 }
 
 
+# Integer fks that may give 0 for no row. MF6 range-checks them from 0
+# rather than 1, and treats 0 as none: a LAK outlet discharging out of the
+# model (`gwf-lak.f90`, "lakeout ... MUST BE >= 0"), a UZF cell with no cell
+# below it (`gwf-uzf.f90`, `ivertcon(n) < 0`). Entries are (block, fields).
+_FK_ALLOW_ZERO: dict[str, tuple[str, set[str]]] = {
+    "gwf-lak": ("outlets", {"lakeout"}),
+    "gwf-uzf": ("packagedata", {"ivertcon"}),
+}
+
+
+def _fix_fk_allow_zero(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Mark this component's integer fks that may give 0 for no row. See
+    `_FK_ALLOW_ZERO`. After the fk backfill, which gives `ivertcon` its fk."""
+    if (entry := _FK_ALLOW_ZERO.get(name)) is None:
+        return blocks
+    block_name, names = entry
+
+    def _replace(field: Any, _in_union: bool) -> Any:
+        if not isinstance(field, v2.Integer) or field.fk is None:
+            raise ValueError(f"{name}: {field.name!r} is not an integer fk")
+        return field.model_copy(update={"allow_zero": True})
+
+    return _replace_named(name, blocks, block_name, _replace, names)
+
+
 def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Set `fk` on this component's known-good backfill targets.
 
@@ -2603,6 +2628,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_cellid_allow_zero(name, blocks)
     blocks = _fix_option_columns(name, blocks)
     blocks = _apply_fk_backfill(name, blocks)
+    blocks = _fix_fk_allow_zero(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
     blocks = _link_namefile_fields(name, blocks)
     blocks = _fix_model_nam_package_keys(name, blocks)

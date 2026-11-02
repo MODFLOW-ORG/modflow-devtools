@@ -460,6 +460,7 @@ blocks:
               tagged: false
               index: true
               fk: packagedata.ifno
+              allow_zero: true
             couttype:
               type: string
               longname: outlet type

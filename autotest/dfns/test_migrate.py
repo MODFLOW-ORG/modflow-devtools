@@ -500,6 +500,35 @@ def test_migrate_cellid_allow_zero_fails_when_stale(dfn_dir, monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "name, block, field",
+    [("gwf-lak", "outlets", "lakeout"), ("gwf-uzf", "packagedata", "ivertcon")],
+)
+def test_migrate_fk_allow_zero(dfn_dir, name, block, field):
+    # MF6 takes 0 for no lake / no cell below (gwf-lak.f90, gwf-uzf.f90).
+    component = _migrate_dev3(dfn_dir, name)
+    col = component.blocks[block].fields[block].item.fields[field]
+    assert isinstance(col, v2.Integer)
+    assert (col.fk.path, col.index, col.allow_zero) == ("packagedata.ifno", True, True)
+
+
+def test_migrate_fk_allow_zero_only_where_mf6_allows(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-lak")
+    lakein = component.blocks["outlets"].fields["outlets"].item.fields["lakein"]
+    assert lakein.fk is not None and not lakein.allow_zero
+
+
+def test_migrate_fk_allow_zero_fails_when_stale(dfn_dir, monkeypatch):
+    from modflow_devtools.dfns import migrate_to_v2_0_0_dev2 as dev2
+
+    monkeypatch.setitem(dev2._FK_ALLOW_ZERO, "gwf-lak", ("outlets", {"nope"}))
+    with pytest.raises(ValueError, match="nope"):
+        _migrate_dev3(dfn_dir, "gwf-lak")
+    monkeypatch.setitem(dev2._FK_ALLOW_ZERO, "gwf-lak", ("outlets", {"couttype"}))
+    with pytest.raises(ValueError, match="'couttype' is not an integer fk"):
+        _migrate_dev3(dfn_dir, "gwf-lak")
+
+
+@pytest.mark.parametrize(
     "name", ["exg-chfgwf", "exg-gwegwe", "exg-gwfgwf", "exg-gwtgwt", "exg-olfgwf"]
 )
 def test_migrate_exchange_cellids(dfn_dir, name):
