@@ -900,7 +900,7 @@ For example, MODFLOW 6 rejects a mover whose `packages` block lists the same mod
 pk = { scope = "mname" }
 fk = { path = "gwf-nam.packages.pname", scope = "mname" }
 
-[blocks.period.fields.perioddata.item.fields.pname1]
+[blocks.period.fields.period_data.item.fields.pname1]
 fk = { path = "packages.pname", scope = "mname1" }
 ```
 

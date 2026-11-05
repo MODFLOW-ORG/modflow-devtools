@@ -314,8 +314,8 @@ Optional fields are wrapped in `[...]`. Array shapes use the abstract dimension 
 
 The two `Union`-in-`List` cases correspond to different MF6 idioms:
 
-- **Union of Records** (e.g. `gwf-oc` period block): the `output` list accepts either a `SAVE` row or a `PRINT` row — each arm is shown as a distinct optional row with no ellipsis.
-- **Union of scalars** (e.g. `prt-prp` period block): the `perioddata` list accepts one of several keywords (`ALL`, `FIRST`, `LAST`, `FREQUENCY`, `STEPS`, `FRACTION`) — the alternatives are collapsed to `<releasesetting>` to avoid noise.
+- **Union of Records** (e.g. `gwf-oc` period block): the `period_data` list accepts either a `SAVE` row or a `PRINT` row — each arm is shown as a distinct optional row with no ellipsis.
+- **Union of scalars** (e.g. `prt-prp` period block): the `period_data` list accepts one of several keywords (`ALL`, `FIRST`, `LAST`, `FREQUENCY`, `STEPS`, `FRACTION`) — the alternatives are collapsed to `<releasesetting>` to avoid noise.
 
 ### Managing DFNs
 

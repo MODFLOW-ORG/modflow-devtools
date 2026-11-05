@@ -662,7 +662,7 @@ class List(_DerivedTagged):
 
     @property
     def children(self) -> "dict[str, InputField]":
-        # item.name duplicates the List's own name, so it's not a useful key here.
+        # The item isn't a level of its own, so its name isn't a key here.
         return self.item.children
 
 
