@@ -25,7 +25,7 @@ blocks:
           flow barriers.
   period:
     fields:
-      stress_period_data:
+      period_data:
         type: list
         item:
           name: stress_period_data

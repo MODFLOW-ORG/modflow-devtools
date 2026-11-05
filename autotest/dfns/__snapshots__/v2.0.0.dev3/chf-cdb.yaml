@@ -84,7 +84,7 @@ blocks:
           will be specified for use during any stress period.
   period:
     fields:
-      stress_period_data:
+      period_data:
         type: list
         item:
           name: stress_period_data

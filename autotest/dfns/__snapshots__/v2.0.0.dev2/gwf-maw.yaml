@@ -400,7 +400,7 @@ blocks:
           - ngwfnodes
   period:
     fields:
-      stress_period_data:
+      period_data:
         type: list
         item:
           name: perioddata

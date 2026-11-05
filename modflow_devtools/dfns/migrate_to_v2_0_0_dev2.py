@@ -940,6 +940,9 @@ def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 # derived. Each entry: component -> [(block name, list field name, {column:
 # fk target}), ...]. Unlike `_NODE_REF_FIELDS`, block name and list field name
 # aren't assumed equal (MF6's period/perioddata idiom applies to two of these).
+# The list field name is the v1 name, which `_apply_fk_backfill` needs because
+# it runs before `_name_period_lists`. `_retarget_fk_backfill` runs after, so it
+# looks a period list up by its final name.
 # A column may be an integer scalar or an integer array (each element a key).
 #
 # - UZF's `ivertcon` is a self-referential fk (a UZF cell may point to another
@@ -1145,6 +1148,9 @@ def _retarget_fk_backfill(components: Mapping[str, v2.Component]) -> dict[str, v
         for block_name, list_field_name, field_targets in entries:
             if (block := blocks.get(block_name)) is None:
                 continue
+            # `_FK_BACKFILL` has the v1 name; `_name_period_lists` has run since
+            if block.header is not None and block.header.fill_forward:
+                list_field_name = _PERIOD_LIST_NAME
             list_field = block.fields.get(list_field_name)
             if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
                 continue
@@ -1450,8 +1456,8 @@ def _collapse_sto_keywords(
     """
     STO packages define their period block with two mutually exclusive optional
     Keywords (steady-state, transient). Replace them with a single optional
-    String field with constrained valid values, named 'stress_period_data' like
-    every other package's period data.
+    String field with constrained valid values, named 'period_data' like every
+    other package's period data.
     """
     _STO_KEYWORDS = frozenset({"steady-state", "transient"})
     result = {}
@@ -1470,7 +1476,7 @@ def _collapse_sto_keywords(
             continue
         non_sto = {name: f for name, f in fields.items() if name not in _STO_KEYWORDS}
         storage = v2.String(
-            name="stress_period_data",
+            name=_PERIOD_LIST_NAME,
             longname="storage state",
             description=fields["steady-state"].description,
             optional=True,
@@ -1480,9 +1486,7 @@ def _collapse_sto_keywords(
             tagged=False,
             valid=["steady-state", "transient"],
         )
-        result[bname] = block.model_copy(
-            update={"fields": {**non_sto, "stress_period_data": storage}}
-        )
+        result[bname] = block.model_copy(update={"fields": {**non_sto, _PERIOD_LIST_NAME: storage}})
     return result
 
 
@@ -2146,12 +2150,12 @@ def _fix_ts_sfac(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, "attributes": block.model_copy(update={"fields": fields})}
 
 
-_PERIOD_LIST_NAME = "stress_period_data"
+_PERIOD_LIST_NAME = "period_data"
 
 
 def _name_period_lists(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Name a fill-forward block's single list `stress_period_data`. v1 names it
+    Name a fill-forward block's single list `period_data`. v1 names it
     per package (`perioddata`, `lakeperioddata`, `reachperioddata`, ...), and
     `_wrap_oc_period_records` synthesizes OC's as `output`. The name never
     appears in an input file, so this is purely a naming convention.
@@ -2161,7 +2165,8 @@ def _name_period_lists(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     (TDIS's and ATS's `perioddata`), which aren't stress periods.
 
     Must run after every pass that looks a period list up by its v1 name
-    (`_mark_lonely_pk`, `_fix_lak_relations`, `_fix_mvr_relations`).
+    (`_mark_lonely_pk`, `_fix_lak_relations`, `_fix_mvr_relations`,
+    `_apply_fk_backfill`).
     """
     result = {}
     for bname, block in blocks.items():

@@ -393,7 +393,7 @@ def test_sto_period_field_is_untagged(dev3_spec, name):
     """STO's PERIOD block writes a bare STEADY-STATE/TRANSIENT line, no STORAGE prefix."""
     fields = dev3_spec.components[name].blocks["period"].fields
     assert "storage" not in fields
-    storage = fields["stress_period_data"]
+    storage = fields["period_data"]
     assert storage.tagged is False
     assert storage.valid == ["steady-state", "transient"]
 
@@ -896,7 +896,7 @@ def test_file_filerecord_multiword_tag_not_collapsed(dev3_spec):
     """A multi-word v1 tag (e.g. `CROSS_SECTION TAB6`) becomes two sibling
     Keyword fields, not a single synthetic File.tag string."""
     period = dev3_spec.components["gwf-sfr"].blocks["period"]
-    item = period.fields["stress_period_data"].item
+    item = period.fields["period_data"].item
     union = item.children["sfrsetting"]
     xsrecord = union.arms["cross_sectionrecord"]
     assert isinstance(xsrecord, Record)
@@ -1084,8 +1084,8 @@ def test_render_list_inline_raises():
     """List has no inline form — it can never appear nested in a Record/Union,
     so `inline=True` is a caller misuse, not a reachable internal state."""
     field = List(
-        name="stress_period_data",
-        item=Record(name="stress_period_data", fields={"cellid": Keyword(name="cellid")}),
+        name="period_data",
+        item=Record(name="period_data", fields={"cellid": Keyword(name="cellid")}),
     )
     with pytest.raises(ValueError):
         field.render(inline=True)

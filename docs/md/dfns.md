@@ -179,7 +179,7 @@ assert period.repeats is True
 assert period.header.field.name == "iper"
 assert period.header.fill_forward is True
 
-spd = period.fields["stress_period_data"]
+spd = period.fields["period_data"]
 assert isinstance(spd, List)
 assert isinstance(spd.item, Record)
 

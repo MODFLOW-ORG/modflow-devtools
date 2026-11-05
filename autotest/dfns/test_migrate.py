@@ -335,7 +335,7 @@ def test_migrate_period_union_element(dfn_dir, name, setting):
     """A period list of only a union is a list of the union: PRP's, and LAK's
     once its lake or outlet number moves into the arms."""
     component = _migrate_dev3(dfn_dir, name)
-    item = component.blocks["period"].fields["stress_period_data"].item
+    item = component.blocks["period"].fields["period_data"].item
     assert isinstance(item, v2.Union) and item.name == setting
     if name == "gwf-lak":
         assert item.arms["stage"].fields["lakeno"].fk.path == "packagedata.ifno"
@@ -380,7 +380,7 @@ def test_migrate_mvr_keys(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-mvr")
     blocks = component.blocks
     packages = blocks["packages"].fields["packages"].item.fields
-    period = blocks["period"].fields["stress_period_data"].item.fields
+    period = blocks["period"].fields["period_data"].item.fields
     # a model, and one of the exchange's two (MF6's xmvr_check_packages)
     model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
     assert packages["mname"].fk == model
@@ -478,7 +478,7 @@ def test_migrate_scoped_index_keys(dfn_dir):
     assert maw.dims["ngwfnodes"].value == "sum(packagedata.ngwfnodes)"
     sfr = _migrate_dev3(dfn_dir, "gwf-sfr")
     assert item(sfr, "diversions")["idv"].pk == _SCOPED
-    period = sfr.blocks["period"].fields["stress_period_data"].item
+    period = sfr.blocks["period"].fields["period_data"].item
     idv = period.fields["sfrsetting"].arms["diversionrecord"].fields["idv"]
     assert (idv.pk, idv.fk) == (None, v2.ForeignKey(path="diversions.idv", scope="ifno"))
     assert _fix_scoped_index_keys("gwf-sfr", sfr.blocks) == sfr.blocks
@@ -512,7 +512,7 @@ def test_migrate_spc_bndno(dfn_dir):
     """SPC's bndno is one row per bound, and names a bound of the flow
     package its SSM row names."""
     blocks = _migrate_dev3(dfn_dir, "utl-spc").blocks
-    bndno = blocks["period"].fields["stress_period_data"].item.fields["bndno"]
+    bndno = blocks["period"].fields["period_data"].item.fields["bndno"]
     assert bndno.pk == v2.PrimaryKey()
     assert bndno.fk == v2.ForeignKey(key="bound", rule="ssm_package")
     assert _fix_spc_relations("utl-spc", blocks) == blocks
@@ -522,7 +522,7 @@ def test_migrate_mvr_model_names_when_option(dfn_dir):
     """MVR's model names are read iff MODELNAMES, and then required."""
     blocks = _migrate_dev3(dfn_dir, "gwf-mvr").blocks
     packages = blocks["packages"].fields["packages"].item.fields
-    period = blocks["period"].fields["stress_period_data"].item.fields
+    period = blocks["period"].fields["period_data"].item.fields
     for field in (packages["mname"], period["mname1"], period["mname2"]):
         assert (field.when, field.optional) == ("modelnames", False)
 
@@ -572,7 +572,7 @@ def test_migrate_cross_section_keys(dfn_dir, tmp_path, pk):
         (tmp_path / path.name).write_text(text)
     components = v2.Dfns.load(tmp_path).components
     for name in ("chf-cdb", "chf-zdg", "olf-zdg"):
-        item = components[name].blocks["period"].fields["stress_period_data"].item
+        item = components[name].blocks["period"].fields["period_data"].item
         assert item.fields["idcxs"].fk.path == f"chf-cxs.packagedata.{pk}"
     for name in ("chf-dfw", "olf-dfw"):
         idcxs = components[name].blocks["griddata"].fields["idcxs"]
@@ -672,7 +672,7 @@ def test_migrate_exchange_cellids(dfn_dir, name):
 def test_migrate_evt_petm0_when_option(dfn_dir):
     # Read only, and then always, with SURF_RATE_SPECIFIED.
     component = _migrate_dev3(dfn_dir, "gwf-evt")
-    item = component.blocks["period"].fields["stress_period_data"].item
+    item = component.blocks["period"].fields["period_data"].item
     petm0 = item.fields["petm0"]
     assert (petm0.when, petm0.optional) == ("surf_rate_specified", False)
     assert petm0.render(inline=True) == "[<@petm0@>]"
@@ -683,7 +683,7 @@ def test_migrate_evt_petm0_when_option(dfn_dir):
 @pytest.mark.parametrize(
     "name,block,field",
     [
-        ("gwf-chd", "period", "stress_period_data"),
+        ("gwf-chd", "period", "period_data"),
         ("gwf-maw", "packagedata", "packagedata"),
         ("gwf-sfr", "packagedata", "packagedata"),
     ],
@@ -732,7 +732,7 @@ def test_migrate_lak_bedleak_number_or_none(dfn_dir):
 
 def test_migrate_maw_head_limit_number_or_off(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-maw")
-    item = component.blocks["period"].fields["stress_period_data"].item
+    item = component.blocks["period"].fields["period_data"].item
     arms = item.fields["mawsetting"].arms
     assert "head_limit" not in arms
     record = arms["head_limitrecord"]
@@ -747,7 +747,7 @@ def test_migrate_maw_head_limit_number_or_off(dfn_dir):
 
 def test_migrate_uzf_time_series_are_doubles(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-uzf")
-    item = component.blocks["period"].fields["stress_period_data"].item
+    item = component.blocks["period"].fields["period_data"].item
     for name in ("finf", "pet", "extdp", "extwc", "ha", "hroot", "rootact"):
         field = item.fields[name]
         assert isinstance(field, v2.Double), name
@@ -770,7 +770,7 @@ def test_migrate_number_or_word_round_trip(dev3):
     components = v2.Dfns.load(out).components
     lak = components["gwf-lak"].blocks["connectiondata"].fields["connectiondata"].item
     _number_or_word(lak.fields["bedleak"], "none")
-    maw = components["gwf-maw"].blocks["period"].fields["stress_period_data"].item
+    maw = components["gwf-maw"].blocks["period"].fields["period_data"].item
     arm = maw.fields["mawsetting"].arms["head_limitrecord"]
     _number_or_word(arm.fields["head_limit_value"], "off")
 
@@ -1221,8 +1221,8 @@ def test_migrate_ftypes_unique_among_name_file_children(linked_spec):
             assert all(n in (base, f"{base}a", f"{base}g") for n in children), (name, children)
 
 
-def test_migrate_period_lists_named_stress_period_data(dev3):
-    """A fill-forward block's single list is named `stress_period_data`,
+def test_migrate_period_lists_named_period_data(dev3):
+    """A fill-forward block's single list is named `period_data`,
     whatever v1 called it (`perioddata`, `lakeperioddata`, OC's synthesized
     `output`, ...). Named arrays in the grid packages' period blocks, and
     lists in blocks that don't fill forward, keep their names."""
@@ -1235,8 +1235,8 @@ def test_migrate_period_lists_named_stress_period_data(dev3):
                 continue
             fields = block.fields
             if len(fields) == 1 and isinstance(next(iter(fields.values())), v2.List):
-                assert list(fields) == ["stress_period_data"], (name, bname)
-                assert fields["stress_period_data"].name == "stress_period_data"
+                assert list(fields) == ["period_data"], (name, bname)
+                assert fields["period_data"].name == "period_data"
                 renamed.add(name)
             for fname in fields:
                 assert not fname.endswith("perioddata"), (name, bname, fname)

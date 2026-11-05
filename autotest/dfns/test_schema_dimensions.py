@@ -402,23 +402,23 @@ def test_validate_shape_element_bound_repeated_operator():
 
 @pytest.mark.parametrize("element", ["maxbound", "<maxbound", "<=maxbound", ">=maxbound"])
 def test_validate_list_shape_element_bound(element):
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    lst = List(name="period_data", item=Record(name="item", fields={}))
     _validate_list_shape_element(element, lst, {"maxbound"})
 
 
 def test_validate_list_shape_element_bound_arithmetic():
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    lst = List(name="period_data", item=Record(name="item", fields={}))
     _validate_list_shape_element(">=maxbound - 1", lst, {"maxbound"})
 
 
 def test_validate_list_shape_element_bound_unknown_dim():
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    lst = List(name="period_data", item=Record(name="item", fields={}))
     with pytest.raises(ValueError, match="does not resolve"):
         _validate_list_shape_element("<=nope", lst, {"maxbound"})
 
 
 def test_validate_list_shape_element_bound_repeated_operator():
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    lst = List(name="period_data", item=Record(name="item", fields={}))
     with pytest.raises(ValueError, match="at most one bound operator"):
         _validate_list_shape_element("<<=maxbound", lst, {"maxbound"})
 
@@ -642,7 +642,7 @@ def test_validate_shape_element_cross_component_lookup_unknown_component():
 
 
 def test_validate_list_shape_element_lookup():
-    lst = List(name="stress_period_data", item=Record(name="item", fields={}))
+    lst = List(name="period_data", item=Record(name="item", fields={}))
     with pytest.raises(ValueError, match="not inside a record"):
         _validate_list_shape_element("packagedata.ncon(ifno)", lst, {"maxbound"})
 

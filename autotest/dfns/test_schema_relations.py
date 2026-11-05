@@ -1145,7 +1145,7 @@ def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, pname_fk=_PNAME_FK, *
             index=True,
             fk=id2_fk or {"scope": "pname2", "key": "mover_receiver"},
         ),
-        list_name="stress_period_data",
+        list_name="period_data",
     )
     mvr = Package(
         name="gwf-mvr",
@@ -1158,7 +1158,7 @@ def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, pname_fk=_PNAME_FK, *
 
 def test_dfns_validate_mover_keys():
     spec = Dfns(components=_ctx_mvr())
-    period = spec.components["gwf-mvr"].blocks["period"].fields["stress_period_data"]
+    period = spec.components["gwf-mvr"].blocks["period"].fields["period_data"]
     assert period.item.fields["id1"].fk == ForeignKey(scope="pname1", key="mover_provider")
     assert period.item.fields["mname1"].fk.rule == "exchange_models"
     assert spec.components["gwf-wel"].keys["mover_provider"].bound == "maxbound"
@@ -1200,7 +1200,7 @@ def test_dfns_validate_key_scope_names_no_package():
 
 def test_dfns_validate_key_bound_needs_index():
     ctx = _ctx_mvr()
-    period = ctx["gwf-mvr"].blocks["period"].fields["stress_period_data"]
+    period = ctx["gwf-mvr"].blocks["period"].fields["period_data"]
     id1 = period.item.fields["id1"].model_copy(update={"index": False})
     item = period.item.model_copy(update={"fields": {**period.item.fields, "id1": id1}})
     lst = period.model_copy(update={"item": item})
@@ -1295,7 +1295,7 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
                     fk={"key": spc_key, "rule": "ssm_package"},
                 ),
                 Double(name="concentration", tagged=False),
-                list_name="stress_period_data",
+                list_name="period_data",
             )
         },
     )
@@ -1311,7 +1311,7 @@ def test_dfns_validate_ssm_and_spc_rules():
     spec = Dfns(components=_ctx_transport())
     item = spec.components["gwt-ssm"].blocks["fileinput"].fields["fileinput"].item
     assert item.fields["pname"].fk.rule == "flow_model"
-    period = spec.components["utl-spc"].blocks["period"].fields["stress_period_data"]
+    period = spec.components["utl-spc"].blocks["period"].fields["period_data"]
     assert period.item.fields["bndno"].fk == ForeignKey(key="bound", rule="ssm_package")
 
 

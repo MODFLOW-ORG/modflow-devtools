@@ -106,30 +106,30 @@ type = "integer"
 longname = "maximum number of sources"
 description = "integer value specifying the maximum number of sources cells that will be specified for use during any stress period."
 
-[blocks.period.fields.stress_period_data]
+[blocks.period.fields.period_data]
 type = "list"
 shape = [
     "<=maxbound",
 ]
 
-[blocks.period.fields.stress_period_data.item]
+[blocks.period.fields.period_data.item]
 name = "stress_period_data"
 type = "record"
 
-[blocks.period.fields.stress_period_data.item.fields.cellid]
+[blocks.period.fields.period_data.item.fields.cellid]
 type = "cellid"
 longname = "cell identifier"
 description = "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell."
 tagged = false
 
-[blocks.period.fields.stress_period_data.item.fields.smassrate]
+[blocks.period.fields.period_data.item.fields.smassrate]
 type = "double"
 longname = "mass source loading rate"
 description = "is the mass source loading rate. A positive value indicates addition of solute mass and a negative value indicates removal of solute mass. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
 
-[blocks.period.fields.stress_period_data.item.fields.aux]
+[blocks.period.fields.period_data.item.fields.aux]
 type = "array"
 longname = "auxiliary variables"
 description = "represents the values of the auxiliary variables for each mass source. The values of auxiliary variables must be present for each mass source. The values must be specified in the order of the auxiliary variables specified in the OPTIONS block.  If the package supports time series and the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
@@ -141,7 +141,7 @@ shape = [
     "auxiliary",
 ]
 
-[blocks.period.fields.stress_period_data.item.fields.boundname]
+[blocks.period.fields.period_data.item.fields.boundname]
 type = "string"
 longname = "well name"
 description = "name of the mass source cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
