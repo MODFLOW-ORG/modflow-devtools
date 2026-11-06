@@ -183,6 +183,7 @@
       },
       "header": {
         "fill_forward": true,
+        "period_update": "replace",
         "field": {
           "name": "iper",
           "type": "integer",

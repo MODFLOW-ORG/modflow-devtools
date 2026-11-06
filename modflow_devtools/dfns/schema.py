@@ -1282,10 +1282,15 @@ class BlockHeader(BaseModel):
     `iper` and `solutiongroup`'s `group_num` are documented as monotonically
     increasing across occurrences, whether or not they fill forward. It's
     only what a *gap* in that sequence means that varies.
+
+    `period_update` says what a *present* occurrence means: `"replace"` if it's
+    the complete new state, `"merge"` if it updates only what it names and
+    everything else keeps its last value. `None` means not stated.
     """
 
     field: InputField
     fill_forward: bool = False
+    period_update: Literal["replace", "merge"] | None = None
 
     @model_validator(mode="after")
     def _check_fill_forward_requires_integer(self) -> "BlockHeader":
@@ -1295,6 +1300,26 @@ class BlockHeader(BaseModel):
                 f"got {type(self.field).__name__}"
             )
         return self
+
+    @model_validator(mode="after")
+    def _check_period_update_requires_fill_forward(self) -> "BlockHeader":
+        if self.period_update is not None and not self.fill_forward:
+            raise ValueError(
+                "BlockHeader: period_update requires fill_forward; without "
+                "carried-forward state there's nothing to replace or merge into"
+            )
+        return self
+
+
+def _leads_with_address(item: "InputField") -> bool:
+    """Whether a list item's rows say what they update: the leading column is
+    an `index` integer or a `cellid`. A union item does if every arm does."""
+    if isinstance(item, Union):
+        return all(_leads_with_address(arm) for arm in item.arms.values())
+    if not isinstance(item, Record):
+        return False
+    leading = next(iter(item.fields.values()), None)
+    return isinstance(leading, CellID) or (isinstance(leading, Integer) and bool(leading.index))
 
 
 class Block(BaseModel):
@@ -1314,6 +1339,22 @@ class Block(BaseModel):
     # from an explicit `write_if_empty true` tag on the block's own field(s)
     # -- never inferred.
     write_if_empty: bool = False
+
+    @model_validator(mode="after")
+    def _check_merge_has_address(self) -> "Block":
+        # A merge updates only what the block names, so the block must be able
+        # to name something: a field, for an array, or a row's address, for a list.
+        if self.header is None or self.header.period_update != "merge":
+            return self
+        fields = self.fields.values()
+        if any(isinstance(f, Array) for f in fields):
+            return self
+        if any(isinstance(f, List) and _leads_with_address(f.item) for f in fields):
+            return self
+        raise ValueError(
+            f"Block {self.name!r}: period_update 'merge' requires an array field, "
+            "or a list whose rows lead with an index integer or a cellid"
+        )
 
     @model_validator(mode="after")
     def _check_field_order(self) -> "Block":

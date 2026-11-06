@@ -275,7 +275,7 @@
       "type": "object"
     },
     "BlockHeader": {
-      "description": "A repeating block's header field, plus whether a missing occurrence means\n\"reuse the prior occurrence's values\" (`period`, e.g.). Nested here rather\nthan a sibling flag on `Block` so it can't be set without a header.\n\nAn `Integer` header is inherently a sequential key -- both `period`'s\n`iper` and `solutiongroup`'s `group_num` are documented as monotonically\nincreasing across occurrences, whether or not they fill forward. It's\nonly what a *gap* in that sequence means that varies.",
+      "description": "A repeating block's header field, plus whether a missing occurrence means\n\"reuse the prior occurrence's values\" (`period`, e.g.). Nested here rather\nthan a sibling flag on `Block` so it can't be set without a header.\n\nAn `Integer` header is inherently a sequential key -- both `period`'s\n`iper` and `solutiongroup`'s `group_num` are documented as monotonically\nincreasing across occurrences, whether or not they fill forward. It's\nonly what a *gap* in that sequence means that varies.\n\n`period_update` says what a *present* occurrence means: `\"replace\"` if it's\nthe complete new state, `\"merge\"` if it updates only what it names and\neverything else keeps its last value. `None` means not stated.",
       "properties": {
         "field": {
           "discriminator": {
@@ -331,6 +331,22 @@
           "default": false,
           "title": "Fill Forward",
           "type": "boolean"
+        },
+        "period_update": {
+          "anyOf": [
+            {
+              "enum": [
+                "replace",
+                "merge"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Period Update"
         }
       },
       "required": [
@@ -739,11 +755,19 @@
     },
     "ForeignKey": {
       "additionalProperties": false,
-      "description": "A reference to a `pk` column (or a string array's entries), by its\npath, `[component.]block.field`. With a `scope`, the name of a sibling\ncolumn, that column qualifies the reference: within a component, it\nmatches the target pk's own scope; across components, it picks the\ntarget component's instance. Written `fk = \"<path>\"` when unscoped.",
+      "description": "A reference to a `pk` column (or a string array's entries), one of:\n\n- `path`, `[component.]block.field`. With a `scope`, the name of a\n  sibling column, that column qualifies the reference: within a\n  component, it matches the target pk's own scope; across components, it\n  picks the target component's instance. Written `fk = \"<path>\"` when\n  unscoped.\n- `key`, with a `scope` or `rule`: a key set (see `KeySet`) that the\n  component of the picked instance declares, by name, in its `keys`. For\n  an instance whose type is known only at runtime (MVR's `id1`).\n\nA `rule` (see `RULES`) names a subset of the target the value must fall\nin. It may stand in for a `scope` (MVR's `mname1`: `exchange_models`) or\nrestrict a scoped target further (MVR's `packages.pname`:\n`mover_enabled`).",
       "properties": {
         "path": {
-          "title": "Path",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
         },
         "scope": {
           "anyOf": [
@@ -756,11 +780,32 @@
           ],
           "default": null,
           "title": "Scope"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "rule": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule"
         }
       },
-      "required": [
-        "path"
-      ],
       "title": "ForeignKey",
       "type": "object"
     },
@@ -950,12 +995,54 @@
             }
           ],
           "default": null
+        },
+        "allow_zero": {
+          "default": false,
+          "title": "Allow Zero",
+          "type": "boolean"
         }
       },
       "required": [
         "name"
       ],
       "title": "Integer",
+      "type": "object"
+    },
+    "KeySet": {
+      "additionalProperties": false,
+      "description": "A named key set a component declares in `keys`, which an fk elsewhere\nnames by `key` (see `ForeignKey`) without knowing the component's type,\nlike an interface: MVR's `id1` names a feature of whatever package\n`pname1` names, and each mover-capable package says which. Relationally,\na supertype table each declaring component adds its rows to.\n\n`path` is `block.field`, a list's (unscoped) pk or a string array, or a\nbound `<=dim`, any index in `1..dim`. Written as the path alone.\n\nIt may instead be several `block.field` paths, columns of one type: the\nset is their union, and as a supertype table's key, a value is unique\nacross them. SSM's `source`: a flow package is named in `sources` or\n`fileinput`, not both (MF6's `isrctype`).\n\n`when`, as on a field, names a keyword in the component's options block\nthat switches the key set on: without it, the component plays no part\nin the role. A package plays the mover roles only with MOVER set.\nWritten `{path, when}`.",
+      "properties": {
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Path"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "KeySet",
       "type": "object"
     },
     "Keyword": {
@@ -1636,6 +1723,34 @@
           "default": null,
           "title": "Observations"
         },
+        "keys": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/KeySet"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keys"
+        },
         "type": {
           "const": "model",
           "default": "model",
@@ -1852,6 +1967,34 @@
           ],
           "default": null,
           "title": "Observations"
+        },
+        "keys": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/KeySet"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keys"
         },
         "type": {
           "const": "package",
@@ -2270,6 +2413,34 @@
           ],
           "default": null,
           "title": "Observations"
+        },
+        "keys": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "$ref": "#/$defs/KeySet"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keys"
         },
         "type": {
           "const": "simulation",

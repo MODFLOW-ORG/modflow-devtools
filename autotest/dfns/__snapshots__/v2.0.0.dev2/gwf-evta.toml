@@ -176,6 +176,7 @@ shape = [
 
 [blocks.period.header]
 fill_forward = true
+period_update = "merge"
 
 [blocks.period.header.field]
 name = "iper"

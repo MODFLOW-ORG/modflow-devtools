@@ -2199,6 +2199,51 @@ def _name_period_lists(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return result
 
 
+def _merges_by_address(item: Any) -> bool:
+    """Whether a period list's rows update features or nodes by address, rather
+    than making up the block's new state. Leading with an `index` integer means
+    that (SFR's `ifno`, SPC's `bndno`). Leading with a `cellid` means that only
+    with a keystring (TVK, TVS): a plain one is a stress package's boundary."""
+    if isinstance(item, v2.Union):
+        return all(_merges_by_address(arm) for arm in item.arms.values())
+    if not isinstance(item, v2.Record):
+        return False
+    columns = list(item.fields.values())
+    if not columns:
+        return False
+    leading = columns[0]
+    if isinstance(leading, v2.Integer):
+        return bool(leading.index)
+    return isinstance(leading, v2.CellID) and any(isinstance(c, v2.Union) for c in columns)
+
+
+def _set_period_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Say what a present fill-forward block means. v1 has no tag for it, but the
+    block's structure decides it, the same way MF6's loaders do (`LoadContext.f90`
+    sorts period blocks by their leading column). Arrays and addressed rows merge;
+    anything else replaces, which is checked against MF6 per package (HFB, CSUB,
+    MVR, OC, PRP, STO, and stress lists).
+
+    Must run after every pass that settles a period list's item: `_fix_lak_relations`,
+    `_mark_cellids`, `_wrap_oc_period_records`.
+    """
+    result = {}
+    for bname, block in blocks.items():
+        header = block.header
+        if header is None or not header.fill_forward:
+            result[bname] = block
+            continue
+        merges = any(
+            isinstance(f, v2.Array) or (isinstance(f, v2.List) and _merges_by_address(f.item))
+            for f in block.fields.values()
+        )
+        update = "merge" if merges else "replace"
+        result[bname] = block.model_copy(
+            update={"header": header.model_copy(update={"period_update": update})}
+        )
+    return result
+
+
 def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Block]:
     """
     Make an array-based package's period ``aux`` field a list of
@@ -2864,6 +2909,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_spc_relations(name, blocks)
     blocks = _fix_scoped_index_keys(name, blocks)
     blocks = _name_period_lists(blocks)
+    blocks = _set_period_update(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

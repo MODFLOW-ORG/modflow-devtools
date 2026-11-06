@@ -294,6 +294,7 @@ blocks:
                       time_series: true
     header:
       fill_forward: true
+      period_update: merge
       field:
         name: iper
         type: integer
