@@ -1343,16 +1343,15 @@ class Block(BaseModel):
     @model_validator(mode="after")
     def _check_merge_has_address(self) -> "Block":
         # A merge updates only what the block names, so the block must be able
-        # to name something: a field, for an array, or a row's address, for a list.
+        # to name something: a field names itself, a list's rows need an address.
         if self.header is None or self.header.period_update != "merge":
             return self
-        fields = self.fields.values()
-        if any(isinstance(f, Array) for f in fields):
-            return self
-        if any(isinstance(f, List) and _leads_with_address(f.item) for f in fields):
+        if any(
+            not isinstance(f, List) or _leads_with_address(f.item) for f in self.fields.values()
+        ):
             return self
         raise ValueError(
-            f"Block {self.name!r}: period_update 'merge' requires an array field, "
+            f"Block {self.name!r}: period_update 'merge' requires a non-list field, "
             "or a list whose rows lead with an index integer or a cellid"
         )
 

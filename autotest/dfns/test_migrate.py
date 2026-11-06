@@ -1337,6 +1337,10 @@ _PERIOD_MERGE = {
     "gwf-ghbg",
     "gwf-rivg",
     "gwf-welg",
+    # a scalar
+    "chf-sto",
+    "gwf-sto",
+    "olf-sto",
 }
 
 
@@ -1375,8 +1379,6 @@ def test_period_update(dev3):
         "gwf-oc",
         "prt-oc",
         "prt-prp",
-        "gwf-sto",
-        "olf-sto",
     } <= replace
 
 

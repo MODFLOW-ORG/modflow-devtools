@@ -804,6 +804,7 @@ def _row_list(leading) -> List:
             {"recharge": Array(name="recharge", dtype="double", shape=["ncpl"])},
             id="array",
         ),
+        pytest.param({"s": String(name="s")}, id="scalar"),
         pytest.param(
             {
                 "rows": List(
@@ -842,7 +843,6 @@ def test_merge_block_with_address(fields):
     [
         pytest.param({"rows": _row_list(Integer(name="n"))}, id="leading-plain-integer"),
         pytest.param({"rows": _row_list(String(name="s"))}, id="leading-string"),
-        pytest.param({"s": String(name="s")}, id="scalar"),
         pytest.param({}, id="empty"),
     ],
 )
@@ -853,7 +853,7 @@ def test_merge_block_without_address(fields):
 
 def test_replace_block_needs_no_address():
     header = BlockHeader(field=Integer(name="iper"), fill_forward=True, period_update="replace")
-    assert Block(name="period", fields={"s": String(name="s")}, header=header)
+    assert Block(name="period", fields={"rows": _row_list(String(name="s"))}, header=header)
 
 
 def test_get_fields_and_get_block_include_header(dev3_spec):

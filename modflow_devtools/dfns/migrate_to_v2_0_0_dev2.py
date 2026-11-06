@@ -2220,9 +2220,9 @@ def _merges_by_address(item: Any) -> bool:
 def _set_period_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Say what a present fill-forward block means. v1 has no tag for it, but the
     block's structure decides it, the same way MF6's loaders do (`LoadContext.f90`
-    sorts period blocks by their leading column). Arrays and addressed rows merge;
-    anything else replaces, which is checked against MF6 per package (HFB, CSUB,
-    MVR, OC, PRP, STO, and stress lists).
+    sorts period blocks by their leading column). Named fields (arrays, STO's
+    scalar) and addressed rows merge; any other list replaces, which is checked
+    against MF6 per package (HFB, CSUB, MVR, OC, PRP, and stress lists).
 
     Must run after every pass that settles a period list's item: `_fix_lak_relations`,
     `_mark_cellids`, `_wrap_oc_period_records`.
@@ -2234,8 +2234,7 @@ def _set_period_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
             result[bname] = block
             continue
         merges = any(
-            isinstance(f, v2.Array) or (isinstance(f, v2.List) and _merges_by_address(f.item))
-            for f in block.fields.values()
+            not isinstance(f, v2.List) or _merges_by_address(f.item) for f in block.fields.values()
         )
         update = "merge" if merges else "replace"
         result[bname] = block.model_copy(

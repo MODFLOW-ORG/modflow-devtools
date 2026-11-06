@@ -284,14 +284,15 @@ Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, 
 
 `header.period_update` (`"replace" | "merge" | null`, default `null`) says what a *present* occurrence means. It requires `fill_forward`, and `null` means not stated. It doesn't follow from a package's `subtype`: `utl-spc` is a utility package that merges, and `gwf-rcha` is a stress package that merges.
 
-- `"replace"`: the block is the complete new state. Anything it doesn't list is gone, and an empty block clears everything. Stress packages' lists do this, as do `gwf-hfb`, `gwf-csub`, `gwf-mvr`, `prt-prp` and output control. `gwf-sto` is the exception for the empty case: its block holds a single value, and an empty block leaves it as it was.
-- `"merge"`: the block updates only what it names, and everything else keeps its last value. What it names depends on the block's form, so a merge block must have an array field, or a list whose rows lead with an address: an [`index`](#index) integer or a `cellid`. A union item has an address if every arm does.
+- `"replace"`: the block is the complete new state. Anything it doesn't list is gone, and an empty block clears everything. Stress packages' lists do this, as do `gwf-hfb`, `gwf-csub`, `gwf-mvr`, `prt-prp` and output control.
+- `"merge"`: the block updates only what it names, and everything else keeps its last value. What it names depends on the block's form, so a merge block must have a non-list field, or a list whose rows lead with an address: an [`index`](#index) integer or a `cellid`. A union item has an address if every arm does.
 
 | Merge block | Named by | Components |
 |---|---|---|
 | keystring list | (address, setting): `STATUS` for an SFR reach doesn't reset its `INFLOW` | every advanced package except `gwf-uzf`; `utl-spc`, `utl-tvk`, `utl-tvs` |
 | plain list | the row, by address | `gwf-uzf` |
 | arrays | the field | `readasarrays` and `readarraygrid` packages |
+| scalar | the field; an empty block leaves it as it was | `gwf-sto`, `chf-sto`, `olf-sto`, `swf-sto` |
 
 **Grid arrays are an exception.** In a `readarraygrid` package (`gwf-welg`, e.g.), the first array in a block sets the active cells, by its non-`DNODATA` values. A field the block omits keeps its values *by position* among the active cells, not by cell, so omitting one is only meaningful if the active cells don't change: an AUX-only block that moves a well's cell moves its `q` too. An empty block clears everything (`Mf6FileGridArray.f90:168-178`, `252-268`). In a `readasarrays` package, an omitted field simply keeps its values, and an empty block changes nothing.
 

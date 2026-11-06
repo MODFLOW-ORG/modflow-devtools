@@ -37,7 +37,7 @@
       },
       "header": {
         "fill_forward": true,
-        "period_update": "replace",
+        "period_update": "merge",
         "field": {
           "name": "iper",
           "type": "integer",
