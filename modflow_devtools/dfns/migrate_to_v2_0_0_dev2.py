@@ -786,6 +786,27 @@ def _fix_option_columns(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.
     return blocks
 
 
+# Optional blocks MF6 rejects unless an option is set, though the option doesn't
+# need them: `gwf-maw.f90` stops on ANGLEDATA without NON_VERTICAL_WELLS, and runs
+# NON_VERTICAL_WELLS without ANGLEDATA. v1 says so only in a description. Entries
+# are (block, option). A missing block is skipped (`angledata` is newer than 6.7).
+_OPTION_BLOCKS: dict[str, list[tuple[str, str]]] = {
+    "gwf-maw": [("angledata", "non_vertical_wells")],
+}
+
+
+def _fix_option_blocks(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Say which option switches on each of `_OPTION_BLOCKS`, leaving its
+    fields as optional as they were."""
+    new_blocks = dict(blocks)
+    for block_name, option in _OPTION_BLOCKS.get(name, []):
+        if (block := blocks.get(block_name)) is None:
+            continue
+        fields = {k: f.model_copy(update={"when": option}) for k, f in block.fields.items()}
+        new_blocks[block_name] = block.model_copy(update={"fields": fields})
+    return new_blocks
+
+
 # v1 fields typed `string` that MF6 reads as a number, or as the given word
 # (`gwf-lak.f90`'s `case ('NONE')`, `gwf-maw.f90`'s `trim(str) == 'OFF'`). v1
 # can't say "a number or this word", so the word is only in the description.
@@ -2834,6 +2855,7 @@ def to_v2_0_0_dev2(
     blocks = _mark_cellids(blocks)
     blocks = _fix_cellid_allow_zero(name, blocks)
     blocks = _fix_option_columns(name, blocks)
+    blocks = _fix_option_blocks(name, blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _fix_fk_allow_zero(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)

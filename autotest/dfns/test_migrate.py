@@ -508,6 +508,88 @@ def test_migrate_scoped_index_keys_angledata():
     assert got.fields["icon"].fk == v2.ForeignKey(path="connectiondata.icon", scope="ifno")
 
 
+def _dfn_field(block: str, name: str, type_: str, **attrs: str) -> str:
+    lines = {"block": block, "name": name, "type": type_, "reader": "urword", **attrs}
+    return "\n".join(f"{k} {v}" for k, v in lines.items()) + "\n\n"
+
+
+def _column(block: str, name: str, type_: str = "integer", **attrs: str) -> str:
+    return _dfn_field(block, name, type_, shape="", tagged="false", in_record="true", **attrs)
+
+
+# What MAW's ANGLEDATA is migrated with, without the rest of the package.
+_MAW_DFN = "".join(
+    [
+        _dfn_field("options", "non_vertical_wells", "keyword", optional="true"),
+        _dfn_field("dimensions", "nmawwells", "integer"),
+        _dfn_field("packagedata", "packagedata", "recarray ifno ngwfnodes", shape="(nmawwells)"),
+        _column("packagedata", "ifno", numeric_index="true"),
+        _column("packagedata", "ngwfnodes"),
+        _dfn_field("connectiondata", "connectiondata", "recarray ifno icon", shape="(ngwfnodes)"),
+        _column("connectiondata", "ifno", numeric_index="true"),
+        _column("connectiondata", "icon", numeric_index="true"),
+        _dfn_field("period", "iper", "integer", block_variable="true", tagged="false", shape=""),
+        _dfn_field("period", "perioddata", "recarray ifno mawsetting", shape="(nmawwells)"),
+        _column("period", "ifno", numeric_index="true"),
+        _dfn_field(
+            "period",
+            "mawsetting",
+            "keystring head_limit",
+            shape="",
+            tagged="false",
+            in_record="true",
+        ),
+        _dfn_field("period", "head_limit", "string", shape="", in_record="true"),
+    ]
+)
+_ANGLEDATA_DFN = "".join(
+    [
+        _dfn_field(
+            "angledata", "angledata", "recarray ifno icon angle conn_length", optional="true"
+        ),
+        _column("angledata", "ifno", numeric_index="true"),
+        _column("angledata", "icon", numeric_index="true"),
+        _column("angledata", "angle", "double precision"),
+        _column("angledata", "conn_length", "double precision", optional="true"),
+    ]
+)
+
+
+def _migrate_maw(path: Path, text: str):
+    pytest.importorskip("boltons")
+    (path / "common.dfn").write_text("")
+    (path / "gwf-maw.dfn").write_text(text)
+    return _migrate_dev3(path, "gwf-maw")
+
+
+def test_migrate_maw_angledata(tmp_path):
+    """ANGLEDATA is switched on by NON_VERTICAL_WELLS, which doesn't need it
+    (MF6 stops on the block without the option, and runs the option without
+    the block), and names a connection of its well, once."""
+    maw = _migrate_maw(tmp_path, _MAW_DFN + _ANGLEDATA_DFN)
+    assert isinstance(maw.blocks["options"].fields["non_vertical_wells"], v2.Keyword)
+    angledata = maw.blocks["angledata"].fields["angledata"]
+    assert (angledata.when, angledata.optional) == ("non_vertical_wells", True)
+    assert angledata.item.when is None
+    assert angledata.item.fields["conn_length"].when is None
+    icon = angledata.item.fields["icon"]
+    assert icon.pk == _SCOPED
+    assert icon.fk == v2.ForeignKey(path="connectiondata.icon", scope="ifno")
+    v2._validate_when_fields(maw)
+
+
+def test_migrate_maw_without_angledata(tmp_path):
+    """A MAW without ANGLEDATA, like 6.7.0's, migrates with nothing gated."""
+    maw = _migrate_maw(tmp_path, _MAW_DFN)
+    assert "angledata" not in maw.blocks
+    assert all(
+        f.when is None
+        for b in maw.blocks.values()
+        for field in b.fields.values()
+        for f in v2._iter_subfields(field)
+    )
+
+
 def test_migrate_spc_bndno(dfn_dir):
     """SPC's bndno is one row per bound, and names a bound of the flow
     package its SSM row names."""
