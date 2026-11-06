@@ -176,7 +176,7 @@ blocks:
           - <=maxbound
     header:
       fill_forward: true
-      period_update: replace
+      update: replace
       field:
         name: iper
         type: integer

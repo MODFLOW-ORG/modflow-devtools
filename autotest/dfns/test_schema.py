@@ -770,18 +770,18 @@ def test_block_header_fill_forward_requires_integer_field():
         BlockHeader(field=Double(name="t"), fill_forward=True)
 
 
-def test_block_header_period_update_requires_fill_forward():
-    with pytest.raises(ValueError, match="period_update requires fill_forward"):
-        BlockHeader(field=Integer(name="iper"), period_update="replace")
+def test_block_header_update_requires_fill_forward():
+    with pytest.raises(ValueError, match="update requires fill_forward"):
+        BlockHeader(field=Integer(name="iper"), update="replace")
 
 
-def test_block_header_period_update_rejects_unknown_value():
+def test_block_header_update_rejects_unknown_value():
     with pytest.raises(ValueError):
-        BlockHeader(field=Integer(name="iper"), fill_forward=True, period_update="merge_fields")
+        BlockHeader(field=Integer(name="iper"), fill_forward=True, update="merge_fields")
 
 
 def _merge_block(fields: dict) -> Block:
-    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, period_update="merge")
+    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, update="merge")
     return Block(name="period", fields=fields, header=header)
 
 
@@ -835,7 +835,7 @@ def _row_list(leading) -> List:
     ],
 )
 def test_merge_block_with_address(fields):
-    assert _merge_block(fields).header.period_update == "merge"
+    assert _merge_block(fields).header.update == "merge"
 
 
 @pytest.mark.parametrize(
@@ -847,12 +847,12 @@ def test_merge_block_with_address(fields):
     ],
 )
 def test_merge_block_without_address(fields):
-    with pytest.raises(ValueError, match="period_update 'merge' requires"):
+    with pytest.raises(ValueError, match="update 'merge' requires"):
         _merge_block(fields)
 
 
 def test_replace_block_needs_no_address():
-    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, period_update="replace")
+    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, update="replace")
     assert Block(name="period", fields={"rows": _row_list(String(name="s"))}, header=header)
 
 

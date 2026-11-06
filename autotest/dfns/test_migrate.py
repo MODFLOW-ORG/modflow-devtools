@@ -1344,7 +1344,7 @@ _PERIOD_MERGE = {
 }
 
 
-def test_period_update(dev3):
+def test_header_update(dev3):
     """Every fill-forward block says what a present block means, and the
     structural rule gives the values MF6 has."""
     out, _ = dev3
@@ -1357,11 +1357,11 @@ def test_period_update(dev3):
             if header is None:
                 continue
             if not header.fill_forward:
-                assert header.period_update is None, name
-            elif header.period_update == "merge":
+                assert header.update is None, name
+            elif header.update == "merge":
                 merge.add(name)
             else:
-                assert header.period_update == "replace", name
+                assert header.update == "replace", name
                 replace.add(name)
     assert merge == _PERIOD_MERGE
     assert {

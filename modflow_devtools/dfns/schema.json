@@ -275,7 +275,7 @@
       "type": "object"
     },
     "BlockHeader": {
-      "description": "A repeating block's header field, plus whether a missing occurrence means\n\"reuse the prior occurrence's values\" (`period`, e.g.). Nested here rather\nthan a sibling flag on `Block` so it can't be set without a header.\n\nAn `Integer` header is inherently a sequential key -- both `period`'s\n`iper` and `solutiongroup`'s `group_num` are documented as monotonically\nincreasing across occurrences, whether or not they fill forward. It's\nonly what a *gap* in that sequence means that varies.\n\n`period_update` says what a *present* occurrence means: `\"replace\"` if it's\nthe complete new state, `\"merge\"` if it updates only what it names and\neverything else keeps its last value. `None` means not stated.",
+      "description": "A repeating block's header field, plus whether a missing occurrence means\n\"reuse the prior occurrence's values\" (`period`, e.g.). Nested here rather\nthan a sibling flag on `Block` so it can't be set without a header.\n\nAn `Integer` header is inherently a sequential key -- both `period`'s\n`iper` and `solutiongroup`'s `group_num` are documented as monotonically\nincreasing across occurrences, whether or not they fill forward. It's\nonly what a *gap* in that sequence means that varies.\n\n`update` says what a *present* occurrence means: `\"replace\"` if it's\nthe complete new state, `\"merge\"` if it updates only what it names and\neverything else keeps its last value. `None` means not stated.",
       "properties": {
         "field": {
           "discriminator": {
@@ -332,7 +332,7 @@
           "title": "Fill Forward",
           "type": "boolean"
         },
-        "period_update": {
+        "update": {
           "anyOf": [
             {
               "enum": [
@@ -346,7 +346,7 @@
             }
           ],
           "default": null,
-          "title": "Period Update"
+          "title": "Update"
         }
       },
       "required": [

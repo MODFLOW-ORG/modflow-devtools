@@ -2217,7 +2217,7 @@ def _merges_by_address(item: Any) -> bool:
     return isinstance(leading, v2.CellID) and any(isinstance(c, v2.Union) for c in columns)
 
 
-def _set_period_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+def _set_header_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Say what a present fill-forward block means. v1 has no tag for it, but the
     block's structure decides it, the same way MF6's loaders do (`LoadContext.f90`
     sorts period blocks by their leading column). Named fields (arrays, STO's
@@ -2238,7 +2238,7 @@ def _set_period_update(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         )
         update = "merge" if merges else "replace"
         result[bname] = block.model_copy(
-            update={"header": header.model_copy(update={"period_update": update})}
+            update={"header": header.model_copy(update={"update": update})}
         )
     return result
 
@@ -2908,7 +2908,7 @@ def to_v2_0_0_dev2(
     blocks = _fix_spc_relations(name, blocks)
     blocks = _fix_scoped_index_keys(name, blocks)
     blocks = _name_period_lists(blocks)
-    blocks = _set_period_update(blocks)
+    blocks = _set_header_update(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

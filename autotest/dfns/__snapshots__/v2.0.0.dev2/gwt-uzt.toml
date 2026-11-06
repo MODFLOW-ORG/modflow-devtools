@@ -254,7 +254,7 @@ time_series = true
 
 [blocks.period.header]
 fill_forward = true
-period_update = "merge"
+update = "merge"
 
 [blocks.period.header.field]
 name = "iper"

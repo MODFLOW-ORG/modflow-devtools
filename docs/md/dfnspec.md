@@ -241,7 +241,7 @@ Optional discriminator indicating the package's functional role. Several package
 
 - `"solution"`: provides solving capability for models. Compatibility with a model is determined by the model's `solution` attribute.
 - `"exchange"`: connects two models, enabling them to share boundary conditions or state at their interface. Parent is the simulation.
-- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period (see [`period_update`](#header) for what a new period block does). Stress packages always declare a `maxbound` integer dimension (the maximum number of boundary entries per stress period) and their period block list carries `shape: ["<=maxbound"]`, an upper bound (see [Bounds](#bounds)).
+- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period (see [`header.update`](#header) for what a new period block does). Stress packages always declare a `maxbound` integer dimension (the maximum number of boundary entries per stress period) and their period block list carries `shape: ["<=maxbound"]`, an upper bound (see [Bounds](#bounds)).
 - `"advanced"`: an advanced stress package. Differs from `"stress"` in two key ways:
   1. Solves a continuity equation. Each feature (well, reach, lake cell, UZF cell) internally balances inflows, outflows, and change in storage. Traditional stress packages impose static conditions and do not have an internal water budget. **Note:** advanced packages can act as receivers in the Water Mover (MVR/MVE) package because they have an internal continuity equation to receive diverted water into. Traditional stress packages cannot.
   2. Has dynamic state variables. Advanced packages compute a dependent variable (e.g., lake stage, well head, reach stage) that is part of the solution. Traditional stress packages use fixed/user-specified values.
@@ -282,7 +282,7 @@ Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, 
 
 `header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block. It's a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — `solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`, but only the latter fill-forwards.
 
-`header.period_update` (`"replace" | "merge" | null`, default `null`) says what a *present* occurrence means. It requires `fill_forward`, and `null` means not stated. It doesn't follow from a package's `subtype`: `utl-spc` is a utility package that merges, and `gwf-rcha` is a stress package that merges.
+`header.update` (`"replace" | "merge" | null`, default `null`) says what a *present* occurrence means. It requires `fill_forward`, and `null` means not stated. It doesn't follow from a package's `subtype`: `utl-spc` is a utility package that merges, and `gwf-rcha` is a stress package that merges.
 
 - `"replace"`: the block is the complete new state. Anything it doesn't list is gone, and an empty block clears everything. Stress packages' lists do this, as do `gwf-hfb`, `gwf-csub`, `gwf-mvr`, `prt-prp` and output control.
 - `"merge"`: the block updates only what it names, and everything else keeps its last value. What it names depends on the block's form, so a merge block must have a non-list field, or a list whose rows lead with an address: an [`index`](#index) integer or a `cellid`. A union item has an address if every arm does.

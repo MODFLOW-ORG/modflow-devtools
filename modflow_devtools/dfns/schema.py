@@ -1283,14 +1283,14 @@ class BlockHeader(BaseModel):
     increasing across occurrences, whether or not they fill forward. It's
     only what a *gap* in that sequence means that varies.
 
-    `period_update` says what a *present* occurrence means: `"replace"` if it's
+    `update` says what a *present* occurrence means: `"replace"` if it's
     the complete new state, `"merge"` if it updates only what it names and
     everything else keeps its last value. `None` means not stated.
     """
 
     field: InputField
     fill_forward: bool = False
-    period_update: Literal["replace", "merge"] | None = None
+    update: Literal["replace", "merge"] | None = None
 
     @model_validator(mode="after")
     def _check_fill_forward_requires_integer(self) -> "BlockHeader":
@@ -1302,10 +1302,10 @@ class BlockHeader(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def _check_period_update_requires_fill_forward(self) -> "BlockHeader":
-        if self.period_update is not None and not self.fill_forward:
+    def _check_update_requires_fill_forward(self) -> "BlockHeader":
+        if self.update is not None and not self.fill_forward:
             raise ValueError(
-                "BlockHeader: period_update requires fill_forward; without "
+                "BlockHeader: update requires fill_forward; without "
                 "carried-forward state there's nothing to replace or merge into"
             )
         return self
@@ -1344,14 +1344,14 @@ class Block(BaseModel):
     def _check_merge_has_address(self) -> "Block":
         # A merge updates only what the block names, so the block must be able
         # to name something: a field names itself, a list's rows need an address.
-        if self.header is None or self.header.period_update != "merge":
+        if self.header is None or self.header.update != "merge":
             return self
         if any(
             not isinstance(f, List) or _leads_with_address(f.item) for f in self.fields.values()
         ):
             return self
         raise ValueError(
-            f"Block {self.name!r}: period_update 'merge' requires a non-list field, "
+            f"Block {self.name!r}: update 'merge' requires a non-list field, "
             "or a list whose rows lead with an index integer or a cellid"
         )
 
