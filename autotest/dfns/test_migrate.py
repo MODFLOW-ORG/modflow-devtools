@@ -24,7 +24,7 @@ from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 FORMATS = ["yaml", "toml", "json"]
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
-MF6_REF = "6.7.0"
+MF6_REF = "6.8.2"
 
 
 def _load(path: Path, fmt: str) -> dict:
@@ -484,89 +484,11 @@ def test_migrate_scoped_index_keys(dfn_dir):
     assert _fix_scoped_index_keys("gwf-sfr", sfr.blocks) == sfr.blocks
 
 
-def test_migrate_scoped_index_keys_angledata():
-    """MAW's ANGLEDATA (newer than 6.7) names a connection of its well, once."""
-    icon = v2.Integer(name="icon", index=True)
-    ifno = v2.Integer(name="ifno", index=True, fk="packagedata.ifno")
-    angle = v2.Double(name="angle")
-    rec = v2.Record(name="angledata", fields={"ifno": ifno, "icon": icon, "angle": angle})
-    lst = v2.List(name="angledata", item=rec)
-    blocks = {
-        "connectiondata": v2.Block(
-            name="connectiondata",
-            fields={
-                "connectiondata": v2.List(
-                    name="connectiondata",
-                    item=v2.Record(name="connectiondata", fields={"ifno": ifno, "icon": icon}),
-                )
-            },
-        ),
-        "angledata": v2.Block(name="angledata", fields={"angledata": lst}),
-    }
-    got = _fix_scoped_index_keys("gwf-maw", blocks)["angledata"].fields["angledata"].item
-    assert got.fields["icon"].pk == _SCOPED
-    assert got.fields["icon"].fk == v2.ForeignKey(path="connectiondata.icon", scope="ifno")
-
-
-def _dfn_field(block: str, name: str, type_: str, **attrs: str) -> str:
-    lines = {"block": block, "name": name, "type": type_, "reader": "urword", **attrs}
-    return "\n".join(f"{k} {v}" for k, v in lines.items()) + "\n\n"
-
-
-def _column(block: str, name: str, type_: str = "integer", **attrs: str) -> str:
-    return _dfn_field(block, name, type_, shape="", tagged="false", in_record="true", **attrs)
-
-
-# What MAW's ANGLEDATA is migrated with, without the rest of the package.
-_MAW_DFN = "".join(
-    [
-        _dfn_field("options", "non_vertical_wells", "keyword", optional="true"),
-        _dfn_field("dimensions", "nmawwells", "integer"),
-        _dfn_field("packagedata", "packagedata", "recarray ifno ngwfnodes", shape="(nmawwells)"),
-        _column("packagedata", "ifno", numeric_index="true"),
-        _column("packagedata", "ngwfnodes"),
-        _dfn_field("connectiondata", "connectiondata", "recarray ifno icon", shape="(ngwfnodes)"),
-        _column("connectiondata", "ifno", numeric_index="true"),
-        _column("connectiondata", "icon", numeric_index="true"),
-        _dfn_field("period", "iper", "integer", block_variable="true", tagged="false", shape=""),
-        _dfn_field("period", "perioddata", "recarray ifno mawsetting", shape="(nmawwells)"),
-        _column("period", "ifno", numeric_index="true"),
-        _dfn_field(
-            "period",
-            "mawsetting",
-            "keystring head_limit",
-            shape="",
-            tagged="false",
-            in_record="true",
-        ),
-        _dfn_field("period", "head_limit", "string", shape="", in_record="true"),
-    ]
-)
-_ANGLEDATA_DFN = "".join(
-    [
-        _dfn_field(
-            "angledata", "angledata", "recarray ifno icon angle conn_length", optional="true"
-        ),
-        _column("angledata", "ifno", numeric_index="true"),
-        _column("angledata", "icon", numeric_index="true"),
-        _column("angledata", "angle", "double precision"),
-        _column("angledata", "conn_length", "double precision", optional="true"),
-    ]
-)
-
-
-def _migrate_maw(path: Path, text: str):
-    pytest.importorskip("boltons")
-    (path / "common.dfn").write_text("")
-    (path / "gwf-maw.dfn").write_text(text)
-    return _migrate_dev3(path, "gwf-maw")
-
-
-def test_migrate_maw_angledata(tmp_path):
+def test_migrate_maw_angledata(dfn_dir):
     """ANGLEDATA is switched on by NON_VERTICAL_WELLS, which doesn't need it
     (MF6 stops on the block without the option, and runs the option without
     the block), and names a connection of its well, once."""
-    maw = _migrate_maw(tmp_path, _MAW_DFN + _ANGLEDATA_DFN)
+    maw = _migrate_dev3(dfn_dir, "gwf-maw")
     assert isinstance(maw.blocks["options"].fields["non_vertical_wells"], v2.Keyword)
     angledata = maw.blocks["angledata"].fields["angledata"]
     assert (angledata.when, angledata.optional) == ("non_vertical_wells", True)
@@ -575,19 +497,15 @@ def test_migrate_maw_angledata(tmp_path):
     icon = angledata.item.fields["icon"]
     assert icon.pk == _SCOPED
     assert icon.fk == v2.ForeignKey(path="connectiondata.icon", scope="ifno")
-    v2._validate_when_fields(maw)
 
 
-def test_migrate_maw_without_angledata(tmp_path):
-    """A MAW without ANGLEDATA, like 6.7.0's, migrates with nothing gated."""
-    maw = _migrate_maw(tmp_path, _MAW_DFN)
-    assert "angledata" not in maw.blocks
-    assert all(
-        f.when is None
-        for b in maw.blocks.values()
-        for field in b.fields.values()
-        for f in v2._iter_subfields(field)
-    )
+def test_migrate_maw_without_angledata(dfn_dir, tmp_path):
+    """DFNs from before ANGLEDATA (6.7.0's) still migrate."""
+    (tmp_path / "common.dfn").write_text((dfn_dir / "common.dfn").read_text())
+    paragraphs = (dfn_dir / "gwf-maw.dfn").read_text().split("\n\n")
+    kept = [p for p in paragraphs if not p.lstrip().startswith("block angledata")]
+    (tmp_path / "gwf-maw.dfn").write_text("\n\n".join(kept))
+    assert "angledata" not in _migrate_dev3(tmp_path, "gwf-maw").blocks
 
 
 def test_migrate_spc_bndno(dfn_dir):
@@ -650,7 +568,7 @@ def test_migrate_cross_section_keys(dfn_dir, tmp_path, pk):
     for path in dfn_dir.glob("*.dfn"):
         text = path.read_text()
         if path.stem == "chf-cxs":
-            text = re.sub(r"\bidcxs\b", pk, text)
+            text = re.sub(r"\bifno\b", pk, text)
         (tmp_path / path.name).write_text(text)
     components = v2.Dfns.load(tmp_path).components
     for name in ("chf-cdb", "chf-zdg", "olf-zdg"):

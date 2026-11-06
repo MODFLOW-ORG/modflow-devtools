@@ -106,7 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: MODFLOW-ORG/modflow6
-          ref: "6.7.0"
+          ref: "6.8.2"
           path: modflow6
 
       - name: Setup uv
