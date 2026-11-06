@@ -241,11 +241,10 @@ Optional discriminator indicating the package's functional role. Several package
 
 - `"solution"`: provides solving capability for models. Compatibility with a model is determined by the model's `solution` attribute.
 - `"exchange"`: connects two models, enabling them to share boundary conditions or state at their interface. Parent is the simulation.
-- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period; each period block replaces the full set of stresses for that period. Stress packages always declare a `maxbound` integer dimension (the maximum number of boundary entries per stress period) and their period block list carries `shape: ["<=maxbound"]`, an upper bound (see [Bounds](#bounds)).
-- `"advanced"`: an advanced stress package. Differs from `"stress"` in three key ways:
+- `"stress"`: imposes boundary conditions on a model. Period data is provided per stress period (see [`header.update`](#header) for what a new period block does). Stress packages always declare a `maxbound` integer dimension (the maximum number of boundary entries per stress period) and their period block list carries `shape: ["<=maxbound"]`, an upper bound (see [Bounds](#bounds)).
+- `"advanced"`: an advanced stress package. Differs from `"stress"` in two key ways:
   1. Solves a continuity equation. Each feature (well, reach, lake cell, UZF cell) internally balances inflows, outflows, and change in storage. Traditional stress packages impose static conditions and do not have an internal water budget. **Note:** advanced packages can act as receivers in the Water Mover (MVR/MVE) package because they have an internal continuity equation to receive diverted water into. Traditional stress packages cannot.
   2. Has dynamic state variables. Advanced packages compute a dependent variable (e.g., lake stage, well head, reach stage) that is part of the solution. Traditional stress packages use fixed/user-specified values.
-  3. Stress periods have feature replacement rather than block replacement semantics: when a new period block configuration is provided, traditional stress packages replace the entire previous configuration; advanced packages perform partial updates, modifying only features explicitly appearing in the new period block. **Note:** both simple and advanced packages fill-forward across omitted stress periods; the distinction is only in what happens when a new period block configuration is specified.
 
   Advanced packages do **not** declare a `maxbound` dimension. Like any other list, a list whose row count is given by a declared or derived dimension carries it as its shape, and one whose length isn't declared in the DFN carries `shape: []`.
 - `"utility"`: an auxiliary package that may be attached to models or packages, such as time series, time-array series, or observations. Utility packages (`utl-*`) are distinguished from primary model input packages by providing configurational or cross-cutting concerns rather than representing a first-class hydrologic process. They may support `multi`.
@@ -282,6 +281,20 @@ Blocks are treated differently depending on the structural composition of their 
 Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header.field` holds a single `InputField` directly since there is at most one per block.
 
 `header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block. It's a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — `solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`, but only the latter fill-forwards.
+
+`header.update` (`"replace" | "merge" | null`, default `null`) says what a *present* occurrence means. It requires `fill_forward`, and `null` means not stated. It doesn't follow from a package's `subtype`: `utl-spc` is a utility package that merges, and `gwf-rcha` is a stress package that merges.
+
+- `"replace"`: the block is the complete new state. Anything it doesn't list is gone, and an empty block clears everything. Stress packages' lists do this, as do `gwf-hfb`, `gwf-csub`, `gwf-mvr`, `prt-prp` and output control.
+- `"merge"`: the block updates only what it names, and everything else keeps its last value. What it names depends on the block's form, so a merge block must have a non-list field, or a list whose rows lead with an address: an [`index`](#index) integer or a `cellid`. A union item has an address if every arm does.
+
+| Merge block | Named by | Components |
+|---|---|---|
+| keystring list | (address, setting): `STATUS` for an SFR reach doesn't reset its `INFLOW` | every advanced package except `gwf-uzf`; `utl-spc`, `utl-tvk`, `utl-tvs` |
+| plain list | the row, by address | `gwf-uzf` |
+| arrays | the field | `readasarrays` and `readarraygrid` packages |
+| scalar | the field; an empty block leaves it as it was | `gwf-sto`, `chf-sto`, `olf-sto`, `swf-sto` |
+
+**Grid arrays are an exception.** In a `readarraygrid` package (`gwf-welg`, e.g.), the first array in a block sets the active cells, by its non-`DNODATA` values. A field the block omits keeps its values *by position* among the active cells, not by cell, so omitting one is only meaningful if the active cells don't change: an AUX-only block that moves a well's cell moves its `q` too. An empty block clears everything (`Mf6FileGridArray.f90:168-178`, `252-268`). In a `readasarrays` package, an omitted field simply keeps its values, and an empty block changes nothing.
 
 A header field may set [`index`](#index) like any integer field. The period block's `iper` does, so a consumer reads `BEGIN PERIOD 1` as period 0. `solutiongroup`'s `group_num` doesn't: it's a label, not a position.
 
@@ -674,7 +687,7 @@ An **empty `shape`** means the list length is unconstrained at schema-definition
 
 A **non-empty `shape`** (exactly one element) relates the list's row count to a declared dimension. A bare expression means *exactly* that many rows (`["n"]`). An expression prefixed with an inequality operator is a bound (`["<=n"]`: at most `n` rows); see [Bounds](#bounds). Whether a length is exact or a bound must be declared; it can't be inferred from the dimension's name.
 
-**Note:** Some non-period lists in stress-type packages (e.g. `utl-spc`) also reference `maxbound`; these follow the same rule — `maxbound` must be an explicitly declared dimension for the shape to be meaningful.
+**Note:** `utl-spc`'s period list also carries `shape: ["<=maxbound"]`, but not because `maxbound` counts rows, as a stress package's does. SPC's `maxbound` is the largest `bndno` it may give, and its period blocks [merge](#header). The bound follows from `bndno` being a `pk`: a period has at most one row per `bndno`.
 
 ### Dimensions
 

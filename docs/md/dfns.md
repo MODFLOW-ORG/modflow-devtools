@@ -272,7 +272,7 @@ print(wel.blocks["period"].render())
 # END PERIOD
 ```
 
-A block whose `header` is set (see [`header`](dfnspec.md#header)) has that field's token attached to the `BEGIN` line rather than rendered as a body row — `<iper>` above comes from `wel.blocks["period"].header.field`, not `.fields`. `header.fill_forward` says whether a missing occurrence of the block means "reuse the prior occurrence's values" — `True` for `period`, since MF6 reuses the prior stress period's data across gaps.
+A block whose `header` is set (see [`header`](dfnspec.md#header)) has that field's token attached to the `BEGIN` line rather than rendered as a body row — `<iper>` above comes from `wel.blocks["period"].header.field`, not `.fields`. `header.fill_forward` says whether a missing occurrence of the block means "reuse the prior occurrence's values" — `True` for `period`, since MF6 reuses the prior stress period's data across gaps. `header.update` says what a block that's present means: `"replace"` for WEL, whose block is the complete new state, and `"merge"` for SFR, whose block updates only what it names.
 
 `ComponentBase.render()` renders all blocks joined by blank lines:
 

@@ -181,6 +181,7 @@
       },
       "header": {
         "fill_forward": true,
+        "update": "merge",
         "field": {
           "name": "iper",
           "type": "integer",

@@ -293,6 +293,7 @@ shape = [
 
 [blocks.period.header]
 fill_forward = true
+update = "replace"
 
 [blocks.period.header.field]
 name = "iper"

@@ -9,6 +9,7 @@ from modflow_devtools.dfns.schema import (
     Array,
     Block,
     BlockHeader,
+    CellID,
     Double,
     File,
     Integer,
@@ -767,6 +768,92 @@ def test_block_header_solutiongroup_does_not_fill_forward(dev3_spec):
 def test_block_header_fill_forward_requires_integer_field():
     with pytest.raises(ValueError, match="fill_forward requires an Integer field"):
         BlockHeader(field=Double(name="t"), fill_forward=True)
+
+
+def test_block_header_update_requires_fill_forward():
+    with pytest.raises(ValueError, match="update requires fill_forward"):
+        BlockHeader(field=Integer(name="iper"), update="replace")
+
+
+def test_block_header_update_rejects_unknown_value():
+    with pytest.raises(ValueError):
+        BlockHeader(field=Integer(name="iper"), fill_forward=True, update="merge_fields")
+
+
+def _merge_block(fields: dict) -> Block:
+    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, update="merge")
+    return Block(name="period", fields=fields, header=header)
+
+
+def _row_list(leading) -> List:
+    return List(
+        name="rows",
+        item=Record(name="rows", fields={leading.name: leading, "v": Double(name="v")}),
+    )
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        pytest.param(
+            {"rows": _row_list(Integer(name="ifno", index=True))},
+            id="leading-index",
+        ),
+        pytest.param({"rows": _row_list(CellID(name="cellid"))}, id="leading-cellid"),
+        pytest.param(
+            {"recharge": Array(name="recharge", dtype="double", shape=["ncpl"])},
+            id="array",
+        ),
+        pytest.param({"s": String(name="s")}, id="scalar"),
+        pytest.param(
+            {
+                "rows": List(
+                    name="rows",
+                    item=Union(
+                        name="setting",
+                        arms={
+                            "a": Record(
+                                name="a",
+                                fields={
+                                    "ifno": Integer(name="ifno", index=True),
+                                    "v": Double(name="v"),
+                                },
+                            ),
+                            "b": Record(
+                                name="b",
+                                fields={
+                                    "outletno": Integer(name="outletno", index=True),
+                                    "v": Double(name="v"),
+                                },
+                            ),
+                        },
+                    ),
+                )
+            },
+            id="union-arms-lead-with-index",
+        ),
+    ],
+)
+def test_merge_block_with_address(fields):
+    assert _merge_block(fields).header.update == "merge"
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        pytest.param({"rows": _row_list(Integer(name="n"))}, id="leading-plain-integer"),
+        pytest.param({"rows": _row_list(String(name="s"))}, id="leading-string"),
+        pytest.param({}, id="empty"),
+    ],
+)
+def test_merge_block_without_address(fields):
+    with pytest.raises(ValueError, match="update 'merge' requires"):
+        _merge_block(fields)
+
+
+def test_replace_block_needs_no_address():
+    header = BlockHeader(field=Integer(name="iper"), fill_forward=True, update="replace")
+    assert Block(name="period", fields={"rows": _row_list(String(name="s"))}, header=header)
 
 
 def test_get_fields_and_get_block_include_header(dev3_spec):

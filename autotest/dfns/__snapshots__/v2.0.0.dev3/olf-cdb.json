@@ -145,6 +145,7 @@
       },
       "header": {
         "fill_forward": true,
+        "update": "replace",
         "field": {
           "name": "iper",
           "type": "integer",

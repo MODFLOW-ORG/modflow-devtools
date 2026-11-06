@@ -1307,6 +1307,81 @@ def test_migrate_period_lists_named_stress_period_data(dev3):
     assert {"recharge", "irch"} <= set(components["gwf-rcha"].blocks["period"].fields)
 
 
+# Checked against MF6 source and, for the array packages, by running them.
+_PERIOD_MERGE = {
+    # keystring lists, addressed by feature
+    "gwf-sfr",
+    "gwf-lak",
+    "gwf-maw",
+    "gwt-sft",
+    "gwt-lkt",
+    "gwt-mwt",
+    "gwt-uzt",
+    "gwe-sfe",
+    "gwe-lke",
+    "gwe-mwe",
+    "gwe-uze",
+    "utl-spc",
+    # keystring lists, addressed by node
+    "utl-tvk",
+    "utl-tvs",
+    # a plain list, addressed by feature
+    "gwf-uzf",
+    # layer arrays
+    "gwf-rcha",
+    "gwf-evta",
+    "utl-spca",
+    # grid arrays
+    "gwf-chdg",
+    "gwf-drng",
+    "gwf-ghbg",
+    "gwf-rivg",
+    "gwf-welg",
+    # a scalar
+    "chf-sto",
+    "gwf-sto",
+    "olf-sto",
+}
+
+
+def test_header_update(dev3):
+    """Every fill-forward block says what a present block means, and the
+    structural rule gives the values MF6 has."""
+    out, _ = dev3
+    components = v2.Dfns.load(out).components
+    merge = set()
+    replace = set()
+    for name, component in components.items():
+        for block in (component.blocks or {}).values():
+            header = block.header
+            if header is None:
+                continue
+            if not header.fill_forward:
+                assert header.update is None, name
+            elif header.update == "merge":
+                merge.add(name)
+            else:
+                assert header.update == "replace", name
+                replace.add(name)
+    assert merge == _PERIOD_MERGE
+    assert {
+        "gwf-wel",
+        "gwf-chd",
+        "gwf-evt",
+        "gwt-cnc",
+        "gwe-ctp",
+        "chf-cdb",
+        "olf-zdg",
+        "olf-flw",
+        "gwf-hfb",
+        "gwf-csub",
+        "gwf-mvr",
+        "gwf-oc",
+        "prt-oc",
+        "prt-prp",
+    } <= replace
+
+
 @pytest.mark.parametrize("name", ["gwt-ssm", "gwe-ssm"])
 def test_migrate_ssm_pname(dfn_dir, name):
     """SSM names each flow package once per list, in the flow model a
