@@ -23,7 +23,8 @@ attributes:
         type: keyword
         reader: urword
         optional: false
-        description: xxx
+        description: keyword to specify the names of the time series. The 'NAME' keyword can be used as
+          a substitute for 'NAMES'.
         other_names: name
         in_record: true
       time_series_names:
@@ -68,20 +69,23 @@ attributes:
     optional: true
     description: xxx
     tagged: false
-  method:
-    block: attributes
-    type: keyword
-    reader: urword
-    optional: false
-    description: ' xxx'
-  interpolation_method_single:
-    block: attributes
-    type: string
-    reader: urword
-    optional: false
-    description: Interpolation method, which is either STEPWISE or LINEAR.
-    valid: stepwise linear linearend
-    tagged: false
+    fields:
+      method:
+        block: attributes
+        type: keyword
+        reader: urword
+        optional: false
+        description: ' xxx'
+        in_record: true
+      interpolation_method_single:
+        block: attributes
+        type: string
+        reader: urword
+        optional: false
+        description: Interpolation method, which is either STEPWISE or LINEAR.
+        valid: stepwise linear linearend
+        tagged: false
+        in_record: true
   sfacrecord:
     block: attributes
     type: record
@@ -125,13 +129,13 @@ attributes:
           attribute; if omitted, SFAC = 1.0.
         tagged: false
         in_record: true
-  sfac:
-    block: attributes
-    type: keyword
-    reader: urword
-    optional: false
-    description: ' xxx'
-    tagged: false
+      sfac:
+        block: attributes
+        type: keyword
+        reader: urword
+        optional: false
+        description: ' xxx'
+        in_record: true
 timeseries:
   timeseries:
     block: timeseries

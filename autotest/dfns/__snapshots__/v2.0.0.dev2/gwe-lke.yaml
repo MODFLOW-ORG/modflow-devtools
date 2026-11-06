@@ -152,6 +152,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature temperature with a general mixing equation and adds
+          the result to the right-hand side of the GWE equations, instead of adding a row to the solution
+          matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -248,7 +256,7 @@ blocks:
                     a lake is constant, then the temperature for the lake will be fixed at the user specified
                     value.
                 temperature:
-                  type: string
+                  type: double
                   longname: lake temperature
                   description: real or character value that defines the temperature for the lake. The
                     specified TEMPERATURE is only applied if the lake is a constant temperature lake.
@@ -257,7 +265,7 @@ blocks:
                     in place of a numeric value.
                   time_series: true
                 rainfall:
-                  type: string
+                  type: double
                   longname: rainfall temperature
                   description: real or character value that defines the rainfall temperature for the lake.
                     If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input'
@@ -265,7 +273,7 @@ blocks:
                     in place of a numeric value.
                   time_series: true
                 evaporation:
-                  type: string
+                  type: double
                   longname: evaporation temperature
                   description: use of the EVAPORATION keyword is allowed in the LKE package; however,
                     the specified value is not currently used in LKE calculations.  Instead, the latent
@@ -273,7 +281,7 @@ blocks:
                     the thermal energy lost from a stream reach.
                   time_series: true
                 runoff:
-                  type: string
+                  type: double
                   longname: runoff temperature
                   description: real or character value that defines the temperature of runoff for the
                     lake. Users are free to use whatever temperature scale they want, which might include
@@ -282,7 +290,7 @@ blocks:
                     the time-series name in place of a numeric value.
                   time_series: true
                 ext-inflow:
-                  type: string
+                  type: double
                   longname: ext-inflow temperature
                   description: real or character value that defines the temperature of external inflow
                     for the lake.  Users are free to use whatever temperature scale they want, which might

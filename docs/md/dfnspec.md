@@ -361,7 +361,7 @@ Required. One of:
 `string | null (default: null)`. The name of a keyword in the component's `options` block that switches the field on. The field is absent from the input unless that keyword is set. With `optional`:
 
 - `optional = false`: the field is present if and only if the option is set. `gwf-evt`'s `petm0` column is read only, and then always, when `SURF_RATE_SPECIFIED` is set.
-- `optional = true`: the field is absent unless the option is set, and may still be omitted when it is. A `boundname` column is switched on by `BOUNDNAMES`, but a row may leave it out.
+- `optional = true`: the field is absent unless the option is set, and may still be omitted when it is. A `boundname` column is switched on by `BOUNDNAMES`, but a row may leave it out. `gwf-maw`'s `angledata` list is the same for a whole block: it needs `NON_VERTICAL_WELLS`, which doesn't need it.
 
 ```toml
 [petm0]

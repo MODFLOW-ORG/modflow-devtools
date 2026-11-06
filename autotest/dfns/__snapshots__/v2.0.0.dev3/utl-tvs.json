@@ -93,5 +93,12 @@
         }
       }
     }
+  },
+  "memory": {
+    "disable_sc_int": {
+      "set_in": "ar",
+      "source": "disable_storage_change_integration",
+      "type": "logical"
+    }
   }
 }

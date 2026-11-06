@@ -61,7 +61,7 @@ blocks:
       reader: urword
       optional: true
       mf6internal: ipakcb
-      longname: save well flows to budget file
+      longname: save SRC flows to budget file
       type: keyword
     ts_filerecord:
       block: options
@@ -181,5 +181,5 @@ blocks:
         within single quotes.
       reader: urword
       optional: true
-      longname: well name
+      longname: source name
       type: string

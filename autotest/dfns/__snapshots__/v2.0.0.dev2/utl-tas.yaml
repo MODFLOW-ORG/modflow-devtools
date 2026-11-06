@@ -42,7 +42,6 @@ blocks:
             valid:
               - stepwise
               - linear
-              - linearend
       sfacrecord:
         type: record
         description: xxx

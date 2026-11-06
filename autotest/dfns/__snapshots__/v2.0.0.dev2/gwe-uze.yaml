@@ -153,6 +153,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature temperature with a general mixing equation and adds
+          the result to the right-hand side of the GWE equations, instead of adding a row to the solution
+          matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -235,7 +243,7 @@ blocks:
                     temperature.  If a UZF cell is constant, then the temperature for the UZF cell will
                     be fixed at the user specified value.
                 temperature:
-                  type: string
+                  type: double
                   longname: unsaturated zone flow cell temperature
                   description: real or character value that defines the temperature for the unsaturated
                     zone flow cell. The specified TEMPERATURE is only applied if the unsaturated zone
@@ -244,7 +252,7 @@ blocks:
                     series by entering the time-series name in place of a numeric value.
                   time_series: true
                 infiltration:
-                  type: string
+                  type: double
                   longname: infiltration temperature
                   description: real or character value that defines the temperature of the infiltration
                     $(e.g.,:^{circ}C:or:^{circ}F)$ for the UZF cell. If the Options block includes a TIMESERIESFILE
@@ -252,7 +260,7 @@ blocks:
                     series by entering the time-series name in place of a numeric value.
                   time_series: true
                 uzet:
-                  type: string
+                  type: double
                   longname: unsaturated zone et temperature
                   description: real or character value that states what fraction of the simulated unsaturated
                     zone evapotranspiration is associated with evaporation.  The evaporative losses from

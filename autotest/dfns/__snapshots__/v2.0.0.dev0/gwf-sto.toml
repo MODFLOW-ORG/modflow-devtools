@@ -2,6 +2,9 @@ name = "gwf-sto"
 advanced = false
 multi = false
 schema_version = "2.0.0.dev0"
+subcomponents = [
+    "utl-tvs",
+]
 
 [fkeys.tvs_filerecord]
 parent = "parent_package"

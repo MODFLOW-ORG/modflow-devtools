@@ -109,7 +109,6 @@ blocks:
         in space.
       reader: urword
       optional: true
-      developmode: true
       longname: CRS user input string
       type: string
     ncf_filerecord:

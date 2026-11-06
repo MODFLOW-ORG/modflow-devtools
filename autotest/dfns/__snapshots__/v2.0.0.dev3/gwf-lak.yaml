@@ -115,7 +115,9 @@ blocks:
             type: keyword
             longname: package_convergence keyword
             description: keyword to specify that record corresponds to the package convergence comma spaced
-              values file.
+              values file. A warning message will be issued if package convergence data is requested but
+              the IMPLICIT option is specified. In that case the lake stage is included in the Iterative
+              Model Solution (IMS) convergence check and the package convergence file is not written.
           package_convergence_filename:
             type: file
             longname: file keyword
@@ -165,6 +167,38 @@ blocks:
           Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within
           the package to store the available, provided, and received water.
         optional: true
+      dev_force_legacy:
+        type: keyword
+        longname: force the legacy solution for every lake
+        description: keyword that solves every active lake with the default (legacy) substitution solver
+          under the implicit formulation, instead of only those lakes that are too poorly conditioned
+          to solve as a matrix unknown.  Cannot be specified with DEV_FORCE_LEGACY_LAKE.  This development
+          option exists to test that path and is not supported.
+        optional: true
+        developmode: true
+      dev_force_legacy_lake:
+        type: integer
+        longname: force the legacy solution for one lake
+        description: integer lake number that is solved with the default (legacy) substitution solver
+          under the implicit formulation, while the other lakes are solved as matrix unknowns.  Cannot
+          be specified with DEV_FORCE_LEGACY.  This development option exists to test that path and is
+          not supported.
+        optional: true
+        developmode: true
+      dev_groundwater_head_conductance:
+        type: keyword
+        longname: use the groundwater head to calculate horizontal conductance
+        description: keyword that calculates the conductance for horizontal connections using the groundwater
+          head instead of the lake stage.  This development option is not supported.
+        optional: true
+        developmode: true
+      dev_maximum_outlet_depth:
+        type: double
+        longname: maximum outlet depth
+        description: real number value that defines the maximum depth used to calculate outlet flow.  This
+          development option is not supported.
+        optional: true
+        developmode: true
       surfdep:
         type: double
         longname: surface depression depth
@@ -172,13 +206,37 @@ blocks:
           If specified, SURFDEP must be greater than or equal to zero. If SURFDEP is not specified, a
           default value of zero is used for all vertical lake-GWF connections.
         optional: true
+      implicit:
+        type: keyword
+        longname: solve lake stage in the groundwater flow matrix
+        description: keyword that activates the implicit formulation. With this option each lake stage
+          is solved as an additional unknown in the groundwater flow matrix, instead of by the default
+          substitution-iteration solver. The implicit formulation typically converges in far fewer outer
+          iterations for steady-state and strongly coupled lakes and can solve problems for which the
+          default formulation fails to converge. Converged results are equivalent to the default formulation.
+          The implicit formulation makes the coefficient matrix asymmetric and therefore requires the
+          BICGSTAB linear acceleration in the Iterative Model Solution (IMS). Each lake must have at least
+          one groundwater connection when the IMPLICIT option is active because the implicit formulation
+          solves the lake stage through its lakebed seepage; the program will terminate with an error
+          if a lake with no groundwater connections is specified with the IMPLICIT option. The implicit
+          formulation does not yet include the density terms of the Buoyancy (BUY) Package, and the program
+          will terminate with an error if the IMPLICIT option is specified and the BUY Package is active.
+          If a lake stage becomes too poorly conditioned to solve as a matrix unknown, which can happen
+          for a weakly connected or disconnected lake, that lake is solved automatically by the default
+          substitution solver instead, so the implicit formulation remains as robust as the default formulation.
+          The Newton formulation is recommended for lakes that may become perched (disconnected from the
+          aquifer), because results obtained with the standard rewetting (REWET) capability can otherwise
+          differ between the two approaches.
+        optional: true
       maximum_iterations:
         type: integer
         longname: LAK Newton-Raphson iterations
         description: integer value that defines the maximum number of Newton-Raphson iterations allowed
           for a lake. By default, MAXIMUM_ITERATIONS is equal to 100. MAXIMUM_ITERATIONS would only need
           to be increased from the default value if one or more lakes in a simulation has a large water
-          budget error.
+          budget error. This option applies only to the default substitution-iteration solver; when the
+          IMPLICIT option is active the lake stage is solved within the groundwater flow matrix and its
+          convergence is controlled by the Iterative Model Solution (IMS) settings instead.
         optional: true
       maximum_stage_change:
         type: double
@@ -186,7 +244,9 @@ blocks:
         description: real value that defines the lake stage closure tolerance. By default, MAXIMUM_STAGE_CHANGE
           is equal to $1 times 10^{-5}$. The MAXIMUM_STAGE_CHANGE would only need to be increased or decreased
           from the default value if the water budget error for one or more lakes is too small or too large,
-          respectively.
+          respectively. This option applies only to the default substitution-iteration solver; when the
+          IMPLICIT option is active the lake stage is solved within the groundwater flow matrix and its
+          convergence is controlled by the Iterative Model Solution (IMS) settings instead.
         optional: true
       time_conversion:
         type: double
@@ -207,6 +267,13 @@ blocks:
           of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION does not
           need to be specified if no lake outlets are specified or LENGTH_UNITS are meters.
         optional: true
+      dev_no_final_check:
+        type: keyword
+        longname: disable final convergence check for lake stages
+        description: flag disabling the final convergence check of the change in lake stages. By default
+          this check is enabled.
+        optional: true
+        developmode: true
   dimensions:
     fields:
       nlakes:
@@ -392,6 +459,7 @@ blocks:
     fields:
       tables:
         type: list
+        optional: true
         item:
           name: tables
           type: record
@@ -555,7 +623,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 stage:
-                  type: string
+                  type: double
                   longname: lake stage
                   description: real or character value that defines the stage for the lake. The specified
                     STAGE is only applied if the lake is a constant stage lake. If the Options block includes
@@ -576,7 +644,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 rainfall:
-                  type: string
+                  type: double
                   longname: rainfall rate
                   description: real or character value that defines the rainfall rate $(LT^{-1})$ for
                     the lake. Value must be greater than or equal to zero. If the Options block includes
@@ -597,7 +665,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 evaporation:
-                  type: string
+                  type: double
                   longname: evaporation rate
                   description: real or character value that defines the maximum evaporation rate $(LT^{-1})$
                     for the lake. Value must be greater than or equal to zero. If the Options block includes
@@ -618,7 +686,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 runoff:
-                  type: string
+                  type: double
                   longname: runoff rate
                   description: real or character value that defines the runoff rate $(L^3 T^{-1})$ for
                     the lake. Value must be greater than or equal to zero. If the Options block includes
@@ -639,7 +707,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 inflow:
-                  type: string
+                  type: double
                   longname: inflow rate
                   description: real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$
                     for the lake. Value must be greater than or equal to zero. If the Options block includes
@@ -661,7 +729,7 @@ blocks:
                   index: true
                   fk: packagedata.ifno
                 withdrawal:
-                  type: string
+                  type: double
                   longname: maximum withdrawal rate
                   description: real or character value that defines the maximum withdrawal rate $(L^3
                     T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options
@@ -683,7 +751,7 @@ blocks:
                   index: true
                   fk: outlets.outletno
                 rate:
-                  type: string
+                  type: double
                   longname: extraction rate
                   description: real or character value that defines the extraction rate for the lake outflow.
                     A positive value indicates inflow and a negative value indicates outflow from the
@@ -707,7 +775,7 @@ blocks:
                   index: true
                   fk: outlets.outletno
                 invert:
-                  type: string
+                  type: double
                   longname: invert elevation
                   description: real or character value that defines the invert elevation for the lake
                     outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake
@@ -729,7 +797,7 @@ blocks:
                   index: true
                   fk: outlets.outletno
                 width:
-                  type: string
+                  type: double
                   longname: outlet width
                   description: real or character value that defines the width of the lake outlet. A specified
                     WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is
@@ -751,7 +819,7 @@ blocks:
                   index: true
                   fk: outlets.outletno
                 slope:
-                  type: string
+                  type: double
                   longname: bed slope
                   description: real or character value that defines the bed slope for the lake outlet.
                     A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet
@@ -773,7 +841,7 @@ blocks:
                   index: true
                   fk: outlets.outletno
                 rough:
-                  type: string
+                  type: double
                   longname: roughness coefficient
                   description: real value that defines the roughness coefficient for the lake outlet.
                     Any value can be specified if COUTTYPE is not MANNING. If the Options block includes
@@ -826,6 +894,114 @@ blocks:
         tagged: false
         index: true
 memory:
+  iprpak:
+    set_in: ar
+    source: print_input
+    type: integer
+  iprflow:
+    set_in: ar
+    source: print_flows
+    type: integer
+  ipakcb:
+    set_in: ar
+    source: save_flows
+    type: integer
+  options_stage:
+    set_in: ar
+    source: stage
+    type: logical
+  pkgconv:
+    set_in: ar
+    source: package_convergence
+    type: logical
+  pkgconvfname:
+    set_in: ar
+    source: package_convergence_filename
+    type: string
+  options_filein:
+    set_in: ar
+    type: logical
+  iforceleg:
+    set_in: ar
+    source: dev_force_legacy
+    type: integer
+  iforceleglak:
+    set_in: ar
+    source: dev_force_legacy_lake
+    type: integer
+  igwhcopt:
+    set_in: ar
+    source: dev_groundwater_head_conductance
+    type: integer
+  outdmax:
+    set_in: ar
+    source: dev_maximum_outlet_depth
+    type: double
+  surfdep:
+    set_in: ar
+    source: surfdep
+    type: double
+  iimplicit:
+    set_in: ar
+    source: implicit
+    type: integer
+  maxlakit:
+    set_in: ar
+    source: maximum_iterations
+    type: integer
+  dmaxchg:
+    set_in: ar
+    source: maximum_stage_change
+    type: double
+  convtime:
+    set_in: ar
+    source: time_conversion
+    type: double
+  convlength:
+    set_in: ar
+    source: length_conversion
+    type: double
+  iconvchk:
+    set_in: ar
+    source: dev_no_final_check
+    type: integer
+  packagedata_ifno:
+    set_in: ar
+    source: ifno
+    type: integer
+  conndata_ifno:
+    source: ifno
+    type: integer
+  tables_ifno:
+    source: ifno
+    type: integer
+  tables_filein:
+    type: logical
+  laktab6_filename:
+    source: tab6_filename
+    type: string
+  outlets_outletno:
+    source: outletno
+    type: integer
+  outlets_invert:
+    source: invert
+    type: double
+  outlets_width:
+    source: width
+    type: double
+  outlets_rough:
+    source: rough
+    type: double
+  outlets_slope:
+    source: slope
+    type: double
+  ifno:
+    set_in: rp
+    type: integer
+  period_auxiliary:
+    set_in: rp
+    source: auxiliary
+    type: logical
   nlakes:
     set_in: ar
     source: nlakes

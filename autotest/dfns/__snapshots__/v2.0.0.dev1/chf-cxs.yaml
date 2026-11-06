@@ -44,16 +44,17 @@ blocks:
           reader: urword
           type: record
           children:
-            idcxs:
+            ifno:
               block: packagedata
-              description: integer value that defines the cross section number associated with the specified
-                PACKAGEDATA data on the line. IDCXS must be greater than zero and less than or equal to
-                NSECTIONS. Information must be specified for every section or the program will terminate
-                with an error.  The program will also terminate with an error if information for a section
-                is specified more than once.
+              description: integer value that defines the feature (cross section) number associated with
+                the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than
+                or equal to NSECTIONS. Information must be specified for every section or the program
+                will terminate with an error.  The program will also terminate with an error if information
+                for a section is specified more than once.
               reader: urword
-              longname: reach number for this entry
+              longname: cross section number for this entry
               numeric_index: true
+              mf6internal: ifno_pkgdata
               type: integer
             nxspoints:
               block: packagedata
@@ -78,6 +79,18 @@ blocks:
           reader: urword
           type: record
           children:
+            ifno:
+              block: packagedata
+              description: integer value that defines the feature (cross section) number associated with
+                the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than
+                or equal to NSECTIONS. Information must be specified for every section or the program
+                will terminate with an error.  The program will also terminate with an error if information
+                for a section is specified more than once.
+              reader: urword
+              longname: cross section number for this entry
+              numeric_index: true
+              mf6internal: ifno_pkgdata
+              type: integer
             xfraction:
               block: crosssectiondata
               description: real value that defines the station (x) data for the cross-section as a fraction

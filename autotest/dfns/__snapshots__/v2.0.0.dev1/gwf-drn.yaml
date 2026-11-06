@@ -74,7 +74,7 @@ blocks:
         'BUDGET FILEOUT' in Output Control.
       reader: urword
       optional: true
-      longname: save CHD flows to budget file
+      longname: save DRN flows to budget file
       mf6internal: ipakcb
       type: keyword
     ts_filerecord:

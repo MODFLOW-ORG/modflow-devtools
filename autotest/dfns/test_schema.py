@@ -388,7 +388,7 @@ def test_memory_output_attributes_rcha(dev3_spec):
     assert simvals.output is True
 
 
-@pytest.mark.parametrize("name", ["chf-sto", "gwf-sto", "olf-sto", "swf-sto"])
+@pytest.mark.parametrize("name", ["chf-sto", "gwf-sto", "olf-sto"])
 def test_sto_period_field_is_untagged(dev3_spec, name):
     """STO's PERIOD block writes a bare STEADY-STATE/TRANSIENT line, no STORAGE prefix."""
     fields = dev3_spec.components[name].blocks["period"].fields
@@ -1138,10 +1138,9 @@ def test_render_excludes_developmode_fields_by_default(dev3_spec):
     """render() hides developmode fields (including v1's `dev_`-prefix convention,
     folded into `developmode` by the migration) by default, but can include them
     via `developmode=True`."""
-    render = dev3_spec.components["gwf-dis"].blocks["options"].render()
-    assert "CRS" not in render
-    render_dev = dev3_spec.components["gwf-dis"].blocks["options"].render(developmode=True)
-    assert "CRS <crs>" in render_dev
+    options = dev3_spec.components["gwf-chd"].blocks["options"]
+    assert "DEV_NO_NEWTON" not in options.render()
+    assert "[DEV_NO_NEWTON]" in options.render(developmode=True)
 
 
 @pytest.mark.parametrize("index", [False, True, "signed"])

@@ -59,7 +59,7 @@ blocks:
         'BUDGET FILEOUT' in Output Control.
       reader: urword
       optional: true
-      longname: save CHD flows to budget file
+      longname: save RIV flows to budget file
       mf6internal: ipakcb
       type: keyword
     ts_filerecord:
@@ -189,5 +189,5 @@ blocks:
         within single quotes.
       reader: urword
       optional: true
-      longname: drain name
+      longname: river name
       type: string

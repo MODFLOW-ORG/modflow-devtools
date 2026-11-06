@@ -24,7 +24,7 @@ block = "attributes"
 type = "keyword"
 reader = "urword"
 optional = false
-description = "xxx"
+description = "keyword to specify the names of the time series. The 'NAME' keyword can be used as a substitute for 'NAMES'."
 other_names = "name"
 in_record = true
 
@@ -73,14 +73,15 @@ optional = true
 description = "xxx"
 tagged = false
 
-[attributes.method]
+[attributes.interpolation_methodrecord_single.fields.method]
 block = "attributes"
 type = "keyword"
 reader = "urword"
 optional = false
 description = " xxx"
+in_record = true
 
-[attributes.interpolation_method_single]
+[attributes.interpolation_methodrecord_single.fields.interpolation_method_single]
 block = "attributes"
 type = "string"
 reader = "urword"
@@ -88,6 +89,7 @@ optional = false
 description = "Interpolation method, which is either STEPWISE or LINEAR."
 valid = "stepwise linear linearend"
 tagged = false
+in_record = true
 
 [attributes.sfacrecord]
 block = "attributes"
@@ -133,13 +135,13 @@ description = "Scale factor, which will multiply all array values in time series
 tagged = false
 in_record = true
 
-[attributes.sfac]
+[attributes.sfacrecord_single.fields.sfac]
 block = "attributes"
 type = "keyword"
 reader = "urword"
 optional = false
 description = " xxx"
-tagged = false
+in_record = true
 
 [timeseries.timeseries]
 block = "timeseries"

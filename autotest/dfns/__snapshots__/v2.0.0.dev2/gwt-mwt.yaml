@@ -152,6 +152,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature concentration with a general mixing equation and
+          adds the result to the right-hand side of the GWT equations, instead of adding a row to the
+          solution matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -236,7 +244,7 @@ blocks:
                     concentration.  If a well is constant, then the concentration for the well will be
                     fixed at the user specified value.
                 concentration:
-                  type: string
+                  type: double
                   longname: well concentration
                   description: real or character value that defines the concentration for the well. The
                     specified CONCENTRATION is only applied if the well is a constant concentration well.
@@ -245,7 +253,7 @@ blocks:
                     in place of a numeric value.
                   time_series: true
                 rate:
-                  type: string
+                  type: double
                   longname: well injection concentration
                   description: real or character value that defines the injection solute concentration
                     $(ML^{-3})$ for the well. If the Options block includes a TIMESERIESFILE entry (see

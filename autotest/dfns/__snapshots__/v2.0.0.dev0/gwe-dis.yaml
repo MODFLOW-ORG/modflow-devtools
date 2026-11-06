@@ -125,7 +125,6 @@ options:
       simulation, but it is written to the binary grid file so that postprocessors can locate the grid
       in space.
     preserve_case: true
-    developmode: true
   packagedata:
     block: options
     type: record ncf6 filein ncf6_filename

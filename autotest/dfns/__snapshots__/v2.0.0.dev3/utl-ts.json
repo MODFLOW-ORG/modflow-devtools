@@ -20,7 +20,7 @@
           "fields": {
             "names": {
               "type": "keyword",
-              "description": "xxx",
+              "description": "keyword to specify the names of the time series. The 'NAME' keyword can be used as a substitute for 'NAMES'.",
               "aliases": [
                 "name"
               ]
@@ -56,21 +56,23 @@
         "interpolation_methodrecord_single": {
           "type": "record",
           "description": "xxx",
-          "optional": true
-        },
-        "method": {
-          "type": "keyword",
-          "description": " xxx"
-        },
-        "interpolation_method_single": {
-          "type": "string",
-          "description": "Interpolation method, which is either STEPWISE or LINEAR.",
-          "tagged": false,
-          "valid": [
-            "stepwise",
-            "linear",
-            "linearend"
-          ]
+          "optional": true,
+          "fields": {
+            "method": {
+              "type": "keyword",
+              "description": " xxx"
+            },
+            "interpolation_method_single": {
+              "type": "string",
+              "description": "Interpolation method, which is either STEPWISE or LINEAR.",
+              "tagged": false,
+              "valid": [
+                "stepwise",
+                "linear",
+                "linearend"
+              ]
+            }
+          }
         },
         "sfacrecord": {
           "type": "record",
@@ -97,16 +99,16 @@
           "description": "xxx",
           "optional": true,
           "fields": {
+            "sfac": {
+              "type": "keyword",
+              "description": " xxx"
+            },
             "sfacval": {
               "type": "double",
               "description": "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0.",
               "tagged": false
             }
           }
-        },
-        "sfac": {
-          "type": "keyword",
-          "description": " xxx"
         }
       }
     },

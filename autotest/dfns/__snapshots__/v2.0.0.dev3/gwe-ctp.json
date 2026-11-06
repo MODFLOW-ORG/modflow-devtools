@@ -179,20 +179,20 @@
     }
   },
   "memory": {
-    "iprflow": {
+    "iprpak": {
       "set_in": "ar",
       "source": "print_input",
+      "type": "integer"
+    },
+    "iprflow": {
+      "set_in": "ar",
+      "source": "print_flows",
       "type": "integer"
     },
     "ipakcb": {
       "set_in": "ar",
       "source": "save_flows",
       "description": "Flag controlling whether boundary flows are written to the budget file.",
-      "type": "integer"
-    },
-    "iprpak": {
-      "set_in": "ar",
-      "source": "save_flows",
       "type": "integer"
     },
     "tspvar": {

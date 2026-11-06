@@ -12,6 +12,7 @@ blocks:
         formulation.  In the absence of this keyword (the default), the groundwater storage formulation
         will be modified to correctly adjust heads based on transient variations in stored water volumes
         arising from changes to SS and SY properties.
+      mf6internal: disable_sc_int
       reader: urword
       optional: true
       longname: deactivate storage change integration

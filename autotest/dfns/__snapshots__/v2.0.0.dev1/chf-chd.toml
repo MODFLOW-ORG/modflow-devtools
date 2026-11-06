@@ -34,6 +34,7 @@ description = "keyword to indicate that the list of constant-head information wi
 reader = "urword"
 optional = true
 longname = "print input to listing file"
+mf6internal = "iprpak"
 type = "keyword"
 
 [blocks.options.print_flows]
@@ -42,6 +43,7 @@ description = "keyword to indicate that the list of constant-head flow rates wil
 reader = "urword"
 optional = true
 longname = "print CHD flows to listing file"
+mf6internal = "iprflow"
 type = "keyword"
 
 [blocks.options.save_flows]
@@ -50,6 +52,7 @@ description = "keyword to indicate that constant-head flow terms will be written
 reader = "urword"
 optional = true
 longname = "save CHD flows to budget file"
+mf6internal = "ipakcb"
 type = "keyword"
 
 [blocks.options.ts_filerecord]
@@ -137,6 +140,7 @@ reader = "urword"
 optional = true
 time_series = true
 longname = "auxiliary variables"
+mf6internal = "auxvar"
 type = "double"
 
 [blocks.period.boundname]

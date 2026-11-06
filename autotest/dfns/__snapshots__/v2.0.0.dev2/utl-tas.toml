@@ -43,7 +43,6 @@ tagged = false
 valid = [
     "stepwise",
     "linear",
-    "linearend",
 ]
 
 [blocks.attributes.fields.sfacrecord]

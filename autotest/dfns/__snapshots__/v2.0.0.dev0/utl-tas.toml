@@ -58,7 +58,7 @@ type = "string"
 reader = "urword"
 optional = false
 description = "Interpolation method, which is either STEPWISE or LINEAR."
-valid = "stepwise linear linearend"
+valid = "stepwise linear"
 tagged = false
 in_record = true
 

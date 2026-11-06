@@ -179,16 +179,40 @@
     }
   },
   "memory": {
-    "maxbound": {
-      "readonly": true,
+    "iprpak": {
       "set_in": "ar",
-      "description": "Maximum number of boundary entries per stress period.",
+      "source": "print_input",
+      "type": "integer"
+    },
+    "iprflow": {
+      "set_in": "ar",
+      "source": "print_flows",
       "type": "integer"
     },
     "ipakcb": {
       "set_in": "ar",
       "source": "save_flows",
       "description": "Flag controlling whether boundary flows are written to the budget file.",
+      "type": "integer"
+    },
+    "auxvar": {
+      "type": "array",
+      "source": "aux",
+      "description": "Auxiliary variable values for each boundary.",
+      "dtype": "double",
+      "set_in": [
+        "rp",
+        "ad"
+      ],
+      "shape": [
+        "naux",
+        "nbound"
+      ]
+    },
+    "maxbound": {
+      "readonly": true,
+      "set_in": "ar",
+      "description": "Maximum number of boundary entries per stress period.",
       "type": "integer"
     },
     "nbound": {
@@ -281,20 +305,6 @@
       "dtype": "string",
       "shape": [
         "naux"
-      ]
-    },
-    "auxvar": {
-      "type": "array",
-      "source": "aux",
-      "description": "Auxiliary variable values for each boundary.",
-      "dtype": "double",
-      "set_in": [
-        "rp",
-        "ad"
-      ],
-      "shape": [
-        "naux",
-        "nbound"
       ]
     }
   },

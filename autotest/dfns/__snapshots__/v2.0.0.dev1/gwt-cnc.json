@@ -36,7 +36,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print input to listing file",
-        "mf6internal": "iprflow",
+        "mf6internal": "iprpak",
         "type": "keyword"
       },
       "print_flows": {
@@ -45,7 +45,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print calculated flows to listing file",
-        "mf6internal": "ipakcb",
+        "mf6internal": "iprflow",
         "type": "keyword"
       },
       "save_flows": {
@@ -54,7 +54,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "save constant concentration flows to budget file",
-        "mf6internal": "iprpak",
+        "mf6internal": "ipakcb",
         "type": "keyword"
       },
       "ts_filerecord": {

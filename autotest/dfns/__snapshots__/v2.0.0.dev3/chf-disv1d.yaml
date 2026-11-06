@@ -86,7 +86,6 @@ blocks:
           affect the model simulation, but it is written to the binary grid file so that postprocessors
           can locate the grid in space.
         optional: true
-        developmode: true
         case_sensitive: true
   dimensions:
     fields:
@@ -96,7 +95,7 @@ blocks:
         description: is the number of linear cells.
       nvert:
         type: integer
-        longname: number of columns
+        longname: number of vertices
         description: is the total number of (x, y, z) vertex pairs used to characterize the model grid.
         optional: true
   griddata:

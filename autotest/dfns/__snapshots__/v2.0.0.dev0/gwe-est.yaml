@@ -83,6 +83,7 @@ griddata:
       volume.  The GWE model does not support the concept of an immobile domain in the context of heat
       transport.
     layered: true
+    netcdf: true
   decay_water:
     block: griddata
     type: double precision
@@ -96,6 +97,7 @@ griddata:
       will have no effect on simulation results unless ZERO_ORDER_DECAY_WATER is specified in the options
       block.
     layered: true
+    netcdf: true
   decay_solid:
     block: griddata
     type: double precision
@@ -108,6 +110,7 @@ griddata:
       of solid per time. Zero-order decay in the solid phase will have no effect on simulation results
       unless ZERO_ORDER_DECAY_SOLID is specified in the options block.
     layered: true
+    netcdf: true
   heat_capacity_solid:
     block: griddata
     type: double precision
@@ -117,6 +120,7 @@ griddata:
     description: is the mass-based heat capacity of dry solids (aquifer material). For example, units
       of J/kg/C may be used (or equivalent).
     layered: true
+    netcdf: true
     mf6internal: cps
   density_solid:
     block: griddata
@@ -128,4 +132,5 @@ griddata:
       Value will remain fixed for the entire simulation.  For example, if working in SI units, values
       may be entered as kilograms per cubic meter.
     layered: true
+    netcdf: true
     mf6internal: rhos

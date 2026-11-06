@@ -51,7 +51,8 @@
       "reader": "urword",
       "optional": true,
       "longname": "print input to listing file",
-      "description": "keyword to indicate that the list of UZF information will be written to the listing file immediately after it is read."
+      "description": "keyword to indicate that the list of UZF information will be written to the listing file immediately after it is read.",
+      "mf6internal": "iprpak"
     },
     "print_flows": {
       "block": "options",
@@ -67,7 +68,8 @@
       "reader": "urword",
       "optional": true,
       "longname": "save well flows to budget file",
-      "description": "keyword to indicate that UZF flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+      "description": "keyword to indicate that UZF flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
+      "mf6internal": "ipakcb"
     },
     "wc_filerecord": {
       "block": "options",
@@ -115,6 +117,7 @@
       "reader": "urword",
       "optional": true,
       "tagged": true,
+      "mf6internal": "budfilerec",
       "fields": {
         "budget": {
           "block": "options",
@@ -155,6 +158,7 @@
       "reader": "urword",
       "optional": true,
       "tagged": true,
+      "mf6internal": "budcsvfilerec",
       "fields": {
         "fileout": {
           "block": "options",
@@ -195,6 +199,7 @@
       "reader": "urword",
       "optional": true,
       "tagged": true,
+      "mf6internal": "pkgconvfilerec",
       "fields": {
         "fileout": {
           "block": "options",
@@ -214,7 +219,8 @@
           "longname": "package_convergence keyword",
           "description": "keyword to specify that record corresponds to the package convergence comma spaced values file.",
           "in_record": true,
-          "tagged": true
+          "tagged": true,
+          "mf6internal": "pkgconv"
         },
         "package_convergence_filename": {
           "block": "options",
@@ -224,7 +230,8 @@
           "longname": "file keyword",
           "description": "name of the comma spaced values output file to write package convergence information.",
           "in_record": true,
-          "tagged": false
+          "tagged": false,
+          "mf6internal": "pkgconvfname"
         }
       }
     },
@@ -266,6 +273,15 @@
       "optional": true,
       "description": "keyword to indicate that this instance of the UZF Package can be used with the Water Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within the package to store the available, provided, and received water.",
       "tagged": true
+    },
+    "dev_no_final_check": {
+      "block": "options",
+      "type": "keyword",
+      "reader": "urword",
+      "optional": true,
+      "longname": "do not check final convergence",
+      "description": "keyword that deactivates the final convergence check of the change in UZF recharge.  This development option is not supported.",
+      "mf6internal": "iconvchk"
     },
     "simulate_et": {
       "block": "options",
@@ -329,7 +345,8 @@
       "reader": "urword",
       "optional": false,
       "longname": "number of UZF cells",
-      "description": "is the number of UZF cells.  More than one UZF cell can be assigned to a GWF cell; however, only one GWF cell can be assigned to a single UZF cell. If more than one UZF cell is assigned to a GWF cell, then an auxiliary variable should be used to reduce the surface area of the UZF cell with the AUXMULTNAME option."
+      "description": "is the number of UZF cells.  More than one UZF cell can be assigned to a GWF cell; however, only one GWF cell can be assigned to a single UZF cell. If more than one UZF cell is assigned to a GWF cell, then an auxiliary variable should be used to reduce the surface area of the UZF cell with the AUXMULTNAME option.",
+      "mf6internal": "maxbound"
     },
     "ntrailwaves": {
       "block": "dimensions",
@@ -491,7 +508,7 @@
           },
           "finf": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "infiltration rate",
             "description": "real or character value that defines the applied infiltration rate of the UZF cell ($LT^{-1}$). If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -501,7 +518,7 @@
           },
           "pet": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "potential ET rate",
             "description": "real or character value that defines the potential evapotranspiration rate of the UZF cell and specified GWF cell. Evapotranspiration is first removed from the unsaturated zone and any remaining potential evapotranspiration is applied to the saturated zone. If IVERTCON is greater than zero then residual potential evapotranspiration not satisfied in the UZF cell is applied to the underlying UZF and GWF cells. PET is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -511,7 +528,7 @@
           },
           "extdp": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "extinction depth",
             "description": "real or character value that defines the evapotranspiration extinction depth of the UZF cell. If IVERTCON is greater than zero and EXTDP extends below the GWF cell bottom then remaining potential evapotranspiration is applied to the underlying UZF and GWF cells. EXTDP is always specified, but is only used if SIMULATE_ET is specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -521,7 +538,7 @@
           },
           "extwc": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "extinction water content",
             "description": "real or character value that defines the evapotranspiration extinction water content of the UZF cell. EXTWC is always specified, but is only used if SIMULATE_ET and UNSAT_ETWC are specified in the OPTIONS block. The evapotranspiration rate from the unsaturated zone will be set to zero when the calculated water content is at or less than this value.  The value for EXTWC cannot be less than the residual water content, and if it is specified as being less than the residual water content it is set to the residual water content. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -531,7 +548,7 @@
           },
           "ha": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "air entry potential",
             "description": "real or character value that defines the air entry potential (head) of the UZF cell. HA is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -541,7 +558,7 @@
           },
           "hroot": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "root potential",
             "description": "real or character value that defines the root potential (head) of the UZF cell. HROOT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
@@ -551,7 +568,7 @@
           },
           "rootact": {
             "block": "period",
-            "type": "string",
+            "type": "double precision",
             "reader": "urword",
             "longname": "root activity function",
             "description": "real or character value that defines the root activity function of the UZF cell. ROOTACT is the length of roots in a given volume of soil divided by that volume. Values range from 0 to about 3 $cm^{-2}$, depending on the plant community and its stage of development. ROOTACT is always specified, but is only used if SIMULATE_ET and UNSAT_ETAE are specified in the OPTIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",

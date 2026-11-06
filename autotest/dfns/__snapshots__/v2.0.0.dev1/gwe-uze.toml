@@ -1,6 +1,6 @@
 name = "gwe-uze"
 schema_version = "2.0.0.dev1"
-advanced = false
+advanced = true
 multi = true
 ftype = "UZE"
 
@@ -9,6 +9,7 @@ block = "options"
 description = "keyword to specify the name of the corresponding flow package.  If not specified, then the corresponding flow package must have the same name as this advanced transport package (the name associated with this package in the GWE name file)."
 reader = "urword"
 optional = true
+mf6internal = "flow_pkg_name"
 longname = "keyword to specify name of corresponding flow package"
 type = "string"
 
@@ -26,6 +27,7 @@ block = "options"
 description = "keyword to specify the name of an auxiliary variable in the corresponding flow package.  If specified, then the simulated temperatures from this advanced transport package will be copied into the auxiliary variable specified with this name.  Note that the flow package must have an auxiliary variable with this name or the program will terminate with an error.  If the flows for this advanced transport package are read from a file, then this option will have no effect."
 reader = "urword"
 optional = true
+mf6internal = "fp_aux_name"
 longname = "keyword to specify name of concentration auxiliary variable in flow package"
 type = "string"
 
@@ -41,6 +43,7 @@ block = "options"
 description = "keyword to indicate that the list of unsaturated zone flow information will be written to the listing file immediately after it is read."
 reader = "urword"
 optional = true
+mf6internal = "iprpak"
 longname = "print input to listing file"
 type = "keyword"
 
@@ -49,6 +52,7 @@ block = "options"
 description = "keyword to indicate that the list of UZF cell {#2} will be printed to the listing file for every stress period in which 'TEMPERATURE PRINT' is specified in Output Control.  If there is no Output Control option and PRINT_{#3} is specified, then {#2} are printed for the last time step of each stress period."
 reader = "urword"
 optional = true
+mf6internal = "iprconc"
 longname = "print calculated temperatures to listing file"
 type = "keyword"
 
@@ -57,6 +61,7 @@ block = "options"
 description = "keyword to indicate that the list of unsaturated zone flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period."
 reader = "urword"
 optional = true
+mf6internal = "iprflow"
 longname = "print calculated flows to listing file"
 type = "keyword"
 
@@ -65,6 +70,7 @@ block = "options"
 description = "keyword to indicate that unsaturated zone flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 reader = "urword"
 optional = true
+mf6internal = "ipakcb"
 longname = "save UZE cell flows to budget file"
 type = "keyword"
 
@@ -72,6 +78,7 @@ type = "keyword"
 block = "options"
 reader = "urword"
 optional = true
+mf6internal = "temp_filerec"
 type = "record"
 
 [blocks.options.temperature_filerecord.children.temperature]
@@ -102,6 +109,7 @@ type = "string"
 block = "options"
 reader = "urword"
 optional = true
+mf6internal = "budfilerec"
 type = "record"
 
 [blocks.options.budget_filerecord.children.budget]
@@ -132,6 +140,7 @@ type = "string"
 block = "options"
 reader = "urword"
 optional = true
+mf6internal = "budcsvfilerec"
 type = "record"
 
 [blocks.options.budgetcsv_filerecord.children.budgetcsv]
@@ -218,14 +227,23 @@ optional = false
 longname = "obs6 input filename"
 type = "string"
 
+[blocks.options.dev_nonexpanding_matrix]
+block = "options"
+description = "keyword that solves the feature temperature with a general mixing equation and adds the result to the right-hand side of the GWE equations, instead of adding a row to the solution matrix for each feature.  This development option is not supported."
+reader = "urword"
+optional = true
+mf6internal = "dev_nonexpanding"
+longname = "do not add rows to the solution matrix"
+type = "keyword"
+
 [blocks.packagedata.packagedata]
-shape = "(maxbound)"
+shape = "(nuzfcells)"
 block = "packagedata"
 reader = "urword"
 type = "list"
 
 [blocks.packagedata.packagedata.children.packagedata]
-shape = "(maxbound)"
+shape = "(nuzfcells)"
 block = "packagedata"
 reader = "urword"
 type = "record"
@@ -236,6 +254,7 @@ description = "integer value that defines the UZF cell number associated with th
 reader = "urword"
 longname = "UZF cell number for this entry"
 numeric_index = true
+mf6internal = "packagedata_ifno"
 type = "integer"
 
 [blocks.packagedata.packagedata.children.packagedata.children.strt]
@@ -267,6 +286,7 @@ type = "string"
 shape = "(nper)"
 block = "period"
 description = "integer value that defines the UZF cell number associated with the specified PERIOD data on the line. UZFNO must be greater than zero and less than or equal to NUZFCELLS."
+mf6internal = "ifno"
 reader = "urword"
 longname = "unsaturated zone flow cell number for this entry"
 numeric_index = true
@@ -285,7 +305,7 @@ description = "real or character value that defines the temperature for the unsa
 time_series = true
 reader = "urword"
 longname = "unsaturated zone flow cell temperature"
-type = "string"
+type = "double"
 
 [blocks.period.uzesetting.children.status]
 block = "period"
@@ -300,7 +320,7 @@ description = "real or character value that defines the temperature of the infil
 reader = "urword"
 time_series = true
 longname = "infiltration temperature"
-type = "string"
+type = "double"
 
 [blocks.period.uzesetting.children.uzet]
 block = "period"
@@ -308,7 +328,7 @@ description = "real or character value that states what fraction of the simulate
 reader = "urword"
 time_series = true
 longname = "unsaturated zone et temperature"
-type = "string"
+type = "double"
 
 [blocks.period.uzesetting.children.auxiliaryrecord]
 block = "period"
@@ -319,6 +339,7 @@ type = "record"
 block = "period"
 description = "keyword for specifying auxiliary variable."
 reader = "urword"
+mf6internal = "period_auxiliary"
 type = "keyword"
 
 [blocks.period.uzesetting.children.auxiliaryrecord.children.auxname]

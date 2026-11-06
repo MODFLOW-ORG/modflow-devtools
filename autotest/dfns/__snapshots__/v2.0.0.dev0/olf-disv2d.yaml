@@ -104,7 +104,6 @@ options:
       simulation, but it is written to the binary grid file so that postprocessors can locate the grid
       in space.
     preserve_case: true
-    developmode: true
 dimensions:
   nodes:
     block: dimensions
@@ -119,7 +118,7 @@ dimensions:
     type: integer
     reader: urword
     optional: false
-    longname: number of columns
+    longname: number of vertices
     description: is the total number of (x, y) vertex pairs used to characterize the horizontal configuration
       of the model grid.
 griddata:

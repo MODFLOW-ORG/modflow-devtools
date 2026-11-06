@@ -22,6 +22,18 @@ blocks:
         description: keyword that activates storage contributions to the stream-flow routing package continuity
           equation.
         optional: true
+      ats_courant:
+        type: double
+        longname: target Courant number for adaptive time stepping
+        description: real number value that defines the target Courant number submitted by the SFR Package
+          to the adaptive time stepping (ATS) package.  If ATS_COURANT is specified and the ATS Package
+          is active, the SFR Package will compute the time step that achieves the target Courant number
+          for the most constraining reach (the reach with the highest wave celerity-to-length ratio) and
+          submit that time step to the ATS Package.  The STORAGE option must be active when ATS_COURANT
+          is specified.  ATS_COURANT must be greater than zero.  A recommended baseline value is 1.0,
+          which targets unit Courant number; values between 0.5 and 2.0 are generally acceptable for kinematic
+          wave routing.
+        optional: true
       auxiliary:
         type: array
         longname: keyword to specify aux variables
@@ -225,8 +237,22 @@ blocks:
         type: double
         longname: reach storage time weighting
         description: real number value that defines the time weighting factor used to calculate the change
-          in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT
-          value is 1.
+          in channel storage. DEV_STORAGE_WEIGHT must have a value between 0.5 and 1. The default DEV_STORAGE_WEIGHT
+          value is 1, which is fully implicit and is recommended for all practical applications.
+        optional: true
+        developmode: true
+      dev_no_check:
+        type: keyword
+        longname: do not check reach geometry and parameters
+        description: keyword that deactivates the checks of reach geometry relative to the model grid
+          and of reach parameters for reasonable values.  This development option is not supported.
+        optional: true
+        developmode: true
+      dev_no_final_check:
+        type: keyword
+        longname: do not perform final convergence check
+        description: keyword that deactivates the final convergence check of the change in stream flow
+          routing stages and flows.  This development option is not supported.
         optional: true
         developmode: true
   dimensions:
@@ -309,7 +335,7 @@ blocks:
               tagged: false
               time_series: true
             man:
-              type: string
+              type: double
               longname: Manning's roughness coefficient
               description: real or character value that defines the Manning's roughness coefficient for
                 the reach. MAN must be greater than zero.  If the Options block includes a TIMESERIESFILE
@@ -436,6 +462,8 @@ blocks:
               fk: packagedata.ifno
               shape:
                 - packagedata.ncon(ifno)
+        shape:
+          - nreaches
   diversions:
     fields:
       diversions:
@@ -527,6 +555,8 @@ blocks:
                 block and the first stress period is transient or for reaches defined to use the SIMPLE
                 STATUS in the Period block.
               tagged: false
+        shape:
+          - nreaches
   period:
     fields:
       stress_period_data:
@@ -564,7 +594,7 @@ blocks:
                     1.0 and 0.0, respectively, to ensure that the active reach receives all of the downstream
                     outflow from the upstream reach. By default, STATUS is ACTIVE.
                 bedk:
-                  type: string
+                  type: double
                   longname: reach bed hydraulic conductivity
                   description: real or character value that defines the hydraulic conductivity of the
                     reach streambed. BEDK can be any positive value if the reach is not connected to an
@@ -574,7 +604,7 @@ blocks:
                     value.
                   time_series: true
                 manning:
-                  type: string
+                  type: double
                   longname: reach Manning's roughness coefficient
                   description: real or character value that defines the Manning's roughness coefficient
                     for the reach. MANNING must be greater than zero.  If the Options block includes a
@@ -582,7 +612,7 @@ blocks:
                     from a time series by entering the time-series name in place of a numeric value.
                   time_series: true
                 stage:
-                  type: string
+                  type: double
                   longname: reach stage
                   description: real or character value that defines the stage for the reach. The specified
                     STAGE is only applied if the reach uses the simple routing option. If STAGE is not
@@ -592,7 +622,7 @@ blocks:
                     the time-series name in place of a numeric value.
                   time_series: true
                 inflow:
-                  type: string
+                  type: double
                   longname: inflow rate
                   description: real or character value that defines the volumetric inflow rate for the
                     streamflow routing reach. If the Options block includes a TIMESERIESFILE entry (see
@@ -601,7 +631,7 @@ blocks:
                     for each reach.
                   time_series: true
                 rainfall:
-                  type: string
+                  type: double
                   longname: rainfall rate
                   description: real or character value that defines the  volumetric rate per unit area
                     of water added by precipitation directly on the streamflow routing reach. If the Options
@@ -610,7 +640,7 @@ blocks:
                     numeric value. By default, rainfall  rates are zero for each reach.
                   time_series: true
                 evaporation:
-                  type: string
+                  type: double
                   longname: evaporation rate
                   description: real or character value that defines the volumetric rate per unit area
                     of water subtracted by evaporation from the streamflow routing reach. A positive evaporation
@@ -623,7 +653,7 @@ blocks:
                     rates are zero for each reach.
                   time_series: true
                 runoff:
-                  type: string
+                  type: double
                   longname: runoff rate
                   description: real or character value that defines the volumetric rate of diffuse overland
                     runoff that enters the streamflow routing reach. If the Options block includes a TIMESERIESFILE
@@ -666,6 +696,7 @@ blocks:
                   description: real value that defines the fraction of upstream flow (USTRF) from each
                     upstream reach that is applied as upstream inflow to the reach. The sum of all USTRF
                     values for all reaches connected to the same upstream reach must be equal to one.
+                  time_series: true
                 cross_sectionrecord:
                   type: record
                   fields:
@@ -725,10 +756,100 @@ blocks:
         tagged: false
         index: true
 memory:
-  nreaches:
+  iprpak:
+    set_in: ar
+    source: print_input
+    type: integer
+  iprflow:
+    set_in: ar
+    source: print_flows
+    type: integer
+  ipakcb:
+    set_in: ar
+    source: save_flows
+    type: integer
+  options_stage:
+    set_in: ar
+    source: stage
+    type: logical
+  pkgconv:
+    set_in: ar
+    source: package_convergence
+    type: logical
+  pkgconvfname:
+    set_in: ar
+    source: package_convergence_filename
+    type: string
+  options_filein:
+    set_in: ar
+    type: logical
+  maxsfrpicard:
+    set_in: ar
+    source: maximum_picard_iterations
+    type: integer
+  maxsfrit:
+    set_in: ar
+    source: maximum_iterations
+    type: integer
+  dmaxchg:
+    set_in: ar
+    source: maximum_depth_change
+    type: double
+  lengthconv:
+    set_in: ar
+    source: length_conversion
+    type: double
+  storage_weight:
+    set_in: ar
+    source: dev_storage_weight
+    type: double
+  icheck:
+    set_in: ar
+    source: dev_no_check
+    type: integer
+  iconvchk:
+    set_in: ar
+    source: dev_no_final_check
+    type: integer
+  maxbound:
     set_in: ar
     source: nreaches
     type: integer
+  packagedata_ifno:
+    set_in: ar
+    source: ifno
+    type: integer
+  crosssect_ifno:
+    source: ifno
+    type: integer
+  xs_tab6:
+    source: tab6
+    type: logical
+  xs_filein:
+    type: logical
+  sfrtab6_filename:
+    source: tab6_filename
+    type: string
+  conndata_ifno:
+    source: ifno
+    type: integer
+  diversions_ifno:
+    source: ifno
+    type: integer
+  diversions_idv:
+    source: idv
+    type: integer
+  initstage_ifno:
+    source: ifno
+    type: integer
+  upstream_frac:
+    set_in: ad
+    source: upstream_fraction
+    type: double
+  period_auxiliary:
+    set_in: rp
+    source: auxiliary
+    type: logical
   length:
     type: array
     set_in: ar

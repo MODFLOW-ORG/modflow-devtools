@@ -3,6 +3,9 @@ schema_version = "2.0.0.dev1"
 advanced = true
 multi = true
 ftype = "SFR"
+subcomponents = [
+    "utl-sfrtab",
+]
 
 [blocks.options.storage]
 block = "options"
@@ -11,6 +14,14 @@ reader = "urword"
 optional = true
 longname = "activate reach storage"
 type = "keyword"
+
+[blocks.options.ats_courant]
+block = "options"
+description = "real number value that defines the target Courant number submitted by the SFR Package to the adaptive time stepping (ATS) package.  If ATS_COURANT is specified and the ATS Package is active, the SFR Package will compute the time step that achieves the target Courant number for the most constraining reach (the reach with the highest wave celerity-to-length ratio) and submit that time step to the ATS Package.  The STORAGE option must be active when ATS_COURANT is specified.  ATS_COURANT must be greater than zero.  A recommended baseline value is 1.0, which targets unit Courant number; values between 0.5 and 2.0 are generally acceptable for kinematic wave routing."
+reader = "urword"
+optional = true
+longname = "target Courant number for adaptive time stepping"
+type = "double"
 
 [blocks.options.auxiliary]
 shape = "(naux)"
@@ -34,6 +45,7 @@ description = "keyword to indicate that the list of stream reach information wil
 reader = "urword"
 optional = true
 longname = "print input to listing file"
+mf6internal = "iprpak"
 type = "keyword"
 
 [blocks.options.print_stage]
@@ -50,6 +62,7 @@ description = "keyword to indicate that the list of stream reach flow rates will
 reader = "urword"
 optional = true
 longname = "print calculated flows to listing file"
+mf6internal = "iprflow"
 type = "keyword"
 
 [blocks.options.save_flows]
@@ -58,6 +71,7 @@ description = "keyword to indicate that stream reach flow terms will be written 
 reader = "urword"
 optional = true
 longname = "save stream reach flows to budget file"
+mf6internal = "ipakcb"
 type = "keyword"
 
 [blocks.options.stage_filerecord]
@@ -69,6 +83,7 @@ type = "record"
 [blocks.options.stage_filerecord.children.stage]
 block = "options"
 description = "keyword to specify that record corresponds to stage."
+mf6internal = "options_stage"
 reader = "urword"
 optional = false
 longname = "stage keyword"
@@ -92,6 +107,7 @@ type = "string"
 
 [blocks.options.budget_filerecord]
 block = "options"
+mf6internal = "budfilerec"
 reader = "urword"
 optional = true
 type = "record"
@@ -122,6 +138,7 @@ type = "string"
 
 [blocks.options.budgetcsv_filerecord]
 block = "options"
+mf6internal = "budcsvfilerec"
 reader = "urword"
 optional = true
 type = "record"
@@ -152,6 +169,7 @@ type = "string"
 
 [blocks.options.package_convergence_filerecord]
 block = "options"
+mf6internal = "pkgconvfilerec"
 reader = "urword"
 optional = true
 type = "record"
@@ -159,6 +177,7 @@ type = "record"
 [blocks.options.package_convergence_filerecord.children.package_convergence]
 block = "options"
 description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
+mf6internal = "pkgconv"
 reader = "urword"
 optional = false
 longname = "package_convergence keyword"
@@ -175,6 +194,7 @@ type = "keyword"
 [blocks.options.package_convergence_filerecord.children.package_convergence_filename]
 block = "options"
 description = "name of the comma spaced values output file to write package convergence information."
+mf6internal = "pkgconvfname"
 reader = "urword"
 optional = false
 longname = "file keyword"
@@ -197,6 +217,7 @@ type = "keyword"
 [blocks.options.ts_filerecord.children.filein]
 block = "options"
 description = "keyword to specify that an input filename is expected next."
+mf6internal = "options_filein"
 reader = "urword"
 optional = false
 longname = "file keyword"
@@ -227,6 +248,7 @@ type = "keyword"
 [blocks.options.obs_filerecord.children.filein]
 block = "options"
 description = "keyword to specify that an input filename is expected next."
+mf6internal = "options_filein"
 reader = "urword"
 optional = false
 longname = "file keyword"
@@ -250,6 +272,7 @@ type = "keyword"
 [blocks.options.maximum_picard_iterations]
 block = "options"
 description = "integer value that defines the maximum number of Streamflow Routing picard iterations allowed when solving for reach stages and flows as part of the GWF formulate step. Picard iterations are used to minimize differences in SFR package results between subsequent GWF picard (non-linear) iterations as a result of non-optimal reach numbering. If reaches are numbered in order, from upstream to downstream, MAXIMUM_PICARD_ITERATIONS can be set to 1 to reduce model run time. By default, MAXIMUM_PICARD_ITERATIONS is equal to 100."
+mf6internal = "maxsfrpicard"
 reader = "urword"
 optional = true
 longname = "SFR picard iterations"
@@ -258,6 +281,7 @@ type = "integer"
 [blocks.options.maximum_iterations]
 block = "options"
 description = "integer value that defines the maximum number of Streamflow Routing Newton-Raphson iterations allowed for a reach. By default, MAXIMUM_ITERATIONS is equal to 100. MAXIMUM_ITERATIONS would only need to be increased from the default value if one or more reach in a simulation has a large water budget error."
+mf6internal = "maxsfrit"
 reader = "urword"
 optional = true
 longname = "SFR Newton-Raphson iterations"
@@ -266,6 +290,7 @@ type = "integer"
 [blocks.options.maximum_depth_change]
 block = "options"
 description = "real value that defines the depth closure tolerance. By default, MAXIMUM_DEPTH_CHANGE is equal to $1 times 10^{-5}$. The MAXIMUM_STAGE_CHANGE would only need to be increased or decreased from the default value if the water budget error for one or more reach is too small or too large, respectively."
+mf6internal = "dmaxchg"
 reader = "urword"
 optional = true
 longname = "depth closure tolerance"
@@ -283,6 +308,7 @@ type = "double"
 [blocks.options.length_conversion]
 block = "options"
 description = "real value that is used to convert user-specified Manning's roughness coefficients from meters to model length units. LENGTH_CONVERSION should be set to 3.28081, 1.0, and 100.0 when using length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION does not need to be specified if LENGTH_UNITS are meters."
+mf6internal = "lengthconv"
 reader = "urword"
 optional = true
 longname = "length conversion factor"
@@ -298,28 +324,48 @@ type = "double"
 
 [blocks.options.dev_storage_weight]
 block = "options"
-description = "real number value that defines the time weighting factor used to calculate the change in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT value is 1."
+description = "real number value that defines the time weighting factor used to calculate the change in channel storage. DEV_STORAGE_WEIGHT must have a value between 0.5 and 1. The default DEV_STORAGE_WEIGHT value is 1, which is fully implicit and is recommended for all practical applications."
+mf6internal = "storage_weight"
 reader = "urword"
 optional = true
 longname = "reach storage time weighting"
 type = "double"
 
+[blocks.options.dev_no_check]
+block = "options"
+description = "keyword that deactivates the checks of reach geometry relative to the model grid and of reach parameters for reasonable values.  This development option is not supported."
+mf6internal = "icheck"
+reader = "urword"
+optional = true
+longname = "do not check reach geometry and parameters"
+type = "keyword"
+
+[blocks.options.dev_no_final_check]
+block = "options"
+description = "keyword that deactivates the final convergence check of the change in stream flow routing stages and flows.  This development option is not supported."
+mf6internal = "iconvchk"
+reader = "urword"
+optional = true
+longname = "do not perform final convergence check"
+type = "keyword"
+
 [blocks.dimensions.nreaches]
 block = "dimensions"
 description = "integer value specifying the number of stream reaches.  There must be NREACHES entries in the PACKAGEDATA block."
+mf6internal = "maxbound"
 reader = "urword"
 optional = false
 longname = "maximum number reaches"
 type = "integer"
 
 [blocks.packagedata.packagedata]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "packagedata"
 reader = "urword"
 type = "list"
 
 [blocks.packagedata.packagedata.children.packagedata]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "packagedata"
 reader = "urword"
 type = "record"
@@ -327,6 +373,7 @@ type = "record"
 [blocks.packagedata.packagedata.children.packagedata.children.ifno]
 block = "packagedata"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+mf6internal = "packagedata_ifno"
 reader = "urword"
 longname = "reach number for this entry"
 numeric_index = true
@@ -389,7 +436,7 @@ description = "real or character value that defines the Manning's roughness coef
 reader = "urword"
 time_series = true
 longname = "Manning's roughness coefficient"
-type = "string"
+type = "double"
 
 [blocks.packagedata.packagedata.children.packagedata.children.ncon]
 block = "packagedata"
@@ -433,19 +480,20 @@ type = "string"
 
 [blocks.crosssections.crosssections]
 block = "crosssections"
-optional = false
+optional = true
 reader = "urword"
 type = "list"
 
 [blocks.crosssections.crosssections.children.crosssections]
 block = "crosssections"
-optional = false
+optional = true
 reader = "urword"
 type = "record"
 
 [blocks.crosssections.crosssections.children.crosssections.children.ifno]
 block = "packagedata"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+mf6internal = "packagedata_ifno"
 reader = "urword"
 longname = "reach number for this entry"
 numeric_index = true
@@ -454,6 +502,7 @@ type = "integer"
 [blocks.crosssections.crosssections.children.crosssections.children.tab6]
 block = "crosssections"
 description = "keyword to specify that record corresponds to a cross-section table file."
+mf6internal = "xs_tab6"
 reader = "urword"
 optional = false
 longname = "head keyword"
@@ -462,6 +511,7 @@ type = "keyword"
 [blocks.crosssections.crosssections.children.crosssections.children.filein]
 block = "options"
 description = "keyword to specify that an input filename is expected next."
+mf6internal = "options_filein"
 reader = "urword"
 optional = false
 longname = "file keyword"
@@ -470,19 +520,20 @@ type = "keyword"
 [blocks.crosssections.crosssections.children.crosssections.children.tab6_filename]
 block = "crosssections"
 description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
+mf6internal = "sfrtab6_filename"
 reader = "urword"
 optional = false
 longname = "table file name"
 type = "string"
 
 [blocks.connectiondata.connectiondata]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "connectiondata"
 reader = "urword"
 type = "list"
 
 [blocks.connectiondata.connectiondata.children.connectiondata]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "connectiondata"
 reader = "urword"
 type = "record"
@@ -490,6 +541,7 @@ type = "record"
 [blocks.connectiondata.connectiondata.children.connectiondata.children.ifno]
 block = "packagedata"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+mf6internal = "packagedata_ifno"
 reader = "urword"
 longname = "reach number for this entry"
 numeric_index = true
@@ -507,20 +559,21 @@ support_negative_index = true
 type = "integer"
 
 [blocks.diversions.diversions]
-shape = "(maxbound)"
 block = "diversions"
+optional = true
 reader = "urword"
 type = "list"
 
 [blocks.diversions.diversions.children.diversions]
-shape = "(maxbound)"
 block = "diversions"
+optional = true
 reader = "urword"
 type = "record"
 
 [blocks.diversions.diversions.children.diversions.children.ifno]
 block = "packagedata"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+mf6internal = "packagedata_ifno"
 reader = "urword"
 longname = "reach number for this entry"
 numeric_index = true
@@ -529,6 +582,7 @@ type = "integer"
 [blocks.diversions.diversions.children.diversions.children.idv]
 block = "diversions"
 description = "integer value that defines the downstream diversion number for the diversion for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach IFNO."
+mf6internal = "diversions_idv"
 reader = "urword"
 longname = "downstream diversion number"
 numeric_index = true
@@ -550,22 +604,23 @@ longname = "iprior code"
 type = "string"
 
 [blocks.initialstages.initialstages]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "initialstages"
-optional = false
+optional = true
 reader = "urword"
 type = "list"
 
 [blocks.initialstages.initialstages.children.initialstages]
-shape = "(maxbound)"
+shape = "(nreaches)"
 block = "initialstages"
-optional = false
+optional = true
 reader = "urword"
 type = "record"
 
 [blocks.initialstages.initialstages.children.initialstages.children.ifno]
 block = "packagedata"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
+mf6internal = "packagedata_ifno"
 reader = "urword"
 longname = "reach number for this entry"
 numeric_index = true
@@ -601,7 +656,7 @@ description = "real or character value that defines the stage for the reach. The
 reader = "urword"
 time_series = true
 longname = "reach stage"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.status]
 block = "period"
@@ -616,7 +671,7 @@ description = "real or character value that defines the hydraulic conductivity o
 reader = "urword"
 time_series = true
 longname = "reach bed hydraulic conductivity"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.manning]
 block = "period"
@@ -624,7 +679,7 @@ description = "real or character value that defines the Manning's roughness coef
 reader = "urword"
 time_series = true
 longname = "reach Manning's roughness coefficient"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.inflow]
 block = "period"
@@ -632,7 +687,7 @@ description = "real or character value that defines the volumetric inflow rate f
 reader = "urword"
 time_series = true
 longname = "inflow rate"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.rainfall]
 block = "period"
@@ -640,7 +695,7 @@ description = "real or character value that defines the  volumetric rate per uni
 reader = "urword"
 time_series = true
 longname = "rainfall rate"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.evaporation]
 block = "period"
@@ -648,7 +703,7 @@ description = "real or character value that defines the volumetric rate per unit
 reader = "urword"
 time_series = true
 longname = "evaporation rate"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.runoff]
 block = "period"
@@ -656,7 +711,7 @@ description = "real or character value that defines the volumetric rate of diffu
 reader = "urword"
 time_series = true
 longname = "runoff rate"
-type = "string"
+type = "double"
 
 [blocks.period.sfrsetting.children.diversionrecord]
 block = "period"
@@ -673,6 +728,7 @@ type = "keyword"
 [blocks.period.sfrsetting.children.diversionrecord.children.idv]
 block = "diversions"
 description = "integer value that defines the downstream diversion number for the diversion for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach IFNO."
+mf6internal = "diversions_idv"
 reader = "urword"
 longname = "downstream diversion number"
 numeric_index = true
@@ -689,12 +745,15 @@ type = "double"
 [blocks.period.sfrsetting.children.upstream_fraction]
 block = "period"
 description = "real value that defines the fraction of upstream flow (USTRF) from each upstream reach that is applied as upstream inflow to the reach. The sum of all USTRF values for all reaches connected to the same upstream reach must be equal to one."
+mf6internal = "upstream_frac"
 reader = "urword"
+time_series = true
 longname = "fraction of upstream flow"
 type = "double"
 
 [blocks.period.sfrsetting.children.cross_sectionrecord]
 block = "period"
+mf6internal = "xsectionrecord"
 reader = "urword"
 type = "record"
 
@@ -709,6 +768,7 @@ type = "keyword"
 [blocks.period.sfrsetting.children.cross_sectionrecord.children.tab6]
 block = "crosssections"
 description = "keyword to specify that record corresponds to a cross-section table file."
+mf6internal = "xs_tab6"
 reader = "urword"
 optional = false
 longname = "head keyword"
@@ -717,6 +777,7 @@ type = "keyword"
 [blocks.period.sfrsetting.children.cross_sectionrecord.children.filein]
 block = "options"
 description = "keyword to specify that an input filename is expected next."
+mf6internal = "options_filein"
 reader = "urword"
 optional = false
 longname = "file keyword"
@@ -725,6 +786,7 @@ type = "keyword"
 [blocks.period.sfrsetting.children.cross_sectionrecord.children.tab6_filename]
 block = "crosssections"
 description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
+mf6internal = "sfrtab6_filename"
 reader = "urword"
 optional = false
 longname = "table file name"
@@ -738,6 +800,7 @@ type = "record"
 [blocks.period.sfrsetting.children.auxiliaryrecord.children.auxiliary]
 block = "period"
 description = "keyword for specifying auxiliary variable."
+mf6internal = "period_auxiliary"
 reader = "urword"
 type = "keyword"
 

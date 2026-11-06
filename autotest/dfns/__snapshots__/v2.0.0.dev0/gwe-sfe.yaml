@@ -1,5 +1,5 @@
 name: gwe-sfe
-advanced: false
+advanced: true
 multi: true
 schema_version: 2.0.0.dev0
 fkeys:
@@ -26,6 +26,7 @@ options:
     description: keyword to specify the name of the corresponding flow package.  If not specified, then
       the corresponding flow package must have the same name as this advanced transport package (the name
       associated with this package in the GWE name file).
+    mf6internal: flow_pkg_name
   auxiliary:
     block: options
     type: string
@@ -53,6 +54,7 @@ options:
       that the flow package must have an auxiliary variable with this name or the program will terminate
       with an error.  If the flows for this advanced energy transport package are read from a file, then
       this option will have no effect.
+    mf6internal: fp_aux_name
   boundnames:
     block: options
     type: keyword
@@ -67,6 +69,7 @@ options:
     longname: print input to listing file
     description: keyword to indicate that the list of reach information will be written to the listing
       file immediately after it is read.
+    mf6internal: iprpak
   print_temperature:
     block: options
     type: keyword
@@ -77,6 +80,7 @@ options:
       every stress period in which 'TEMPERATURE PRINT' is specified in Output Control.  If there is no
       Output Control option and PRINT_{#3} is specified, then {#2} are printed for the last time step
       of each stress period.
+    mf6internal: iprconc
   print_flows:
     block: options
     type: keyword
@@ -87,6 +91,7 @@ options:
       file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If
       there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for
       the last time step of each stress period.
+    mf6internal: iprflow
   save_flows:
     block: options
     type: keyword
@@ -95,16 +100,18 @@ options:
     longname: save reach flows to budget file
     description: keyword to indicate that reach flow terms will be written to the file specified with
       'BUDGET FILEOUT' in Output Control.
+    mf6internal: ipakcb
   temperature_filerecord:
     block: options
     type: record
     reader: urword
     optional: true
     tagged: true
+    mf6internal: temp_filerec
     fields:
       temperature:
         block: period
-        type: string
+        type: double precision
         reader: urword
         longname: reach temperature
         description: real or character value that defines the temperature for the reach. The specified
@@ -139,6 +146,7 @@ options:
     reader: urword
     optional: true
     tagged: true
+    mf6internal: budfilerec
     fields:
       budget:
         block: options
@@ -174,6 +182,7 @@ options:
     reader: urword
     optional: true
     tagged: true
+    mf6internal: budcsvfilerec
     fields:
       fileout:
         block: options
@@ -235,11 +244,21 @@ options:
       val: observations
       abbr: obs
       param: continuous
+  dev_nonexpanding_matrix:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: do not add rows to the solution matrix
+    description: keyword that solves the feature temperature with a general mixing equation and adds the
+      result to the right-hand side of the GWE equations, instead of adding a row to the solution matrix
+      for each feature.  This development option is not supported.
+    mf6internal: dev_nonexpanding
 packagedata:
   packagedata:
     block: packagedata
     type: recarray
-    shape: (maxbound)
+    shape: (nreaches)
     reader: urword
     item:
       type: record
@@ -253,6 +272,7 @@ packagedata:
           longname: reach number for this entry
           description: integer value that defines the reach number associated with the specified PERIOD
             data on the line. RNO must be greater than zero and less than or equal to NREACHES.
+          mf6internal: ifno
           tagged: false
           in_record: true
           numeric_index: true
@@ -327,6 +347,7 @@ period:
           longname: reach number for this entry
           description: integer value that defines the reach number associated with the specified PERIOD
             data on the line. RNO must be greater than zero and less than or equal to NREACHES.
+          mf6internal: ifno
           tagged: false
           in_record: true
           numeric_index: true
@@ -345,7 +366,7 @@ period:
           choices:
             temperature:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: reach temperature
               description: real or character value that defines the temperature for the reach. The specified
@@ -370,7 +391,7 @@ period:
               in_record: true
             rainfall:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: rainfall temperature
               description: real or character value that defines the rainfall temperature $(e.g.,:^{circ}C:or:^{circ}F)$
@@ -382,7 +403,7 @@ period:
               time_series: true
             evaporation:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: evaporation temperature
               description: use of the EVAPORATION keyword is allowed in the SFE package; however, the
@@ -394,7 +415,7 @@ period:
               time_series: true
             runoff:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: runoff temperature
               description: real or character value that defines the temperature of runoff $(e.g.,:^{circ}C:or:^{circ}F)$
@@ -407,7 +428,7 @@ period:
               time_series: true
             inflow:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: inflow temperature
               description: real or character value that defines the temperature of inflow $(e.g.,:^{circ}C:or:^{circ}F)$
@@ -430,6 +451,7 @@ period:
                   reader: urword
                   description: keyword for specifying auxiliary variable.
                   in_record: true
+                  mf6internal: period_auxiliary
                 auxname:
                   block: period
                   type: string

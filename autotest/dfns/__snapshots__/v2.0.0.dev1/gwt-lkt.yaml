@@ -1,6 +1,6 @@
 name: gwt-lkt
 schema_version: 2.0.0.dev1
-advanced: false
+advanced: true
 multi: true
 ftype: LKT
 blocks:
@@ -13,6 +13,7 @@ blocks:
       reader: urword
       optional: true
       longname: keyword to specify name of corresponding flow package
+      mf6internal: flow_pkg_name
       type: string
     auxiliary:
       shape: (naux)
@@ -39,6 +40,7 @@ blocks:
       reader: urword
       optional: true
       longname: keyword to specify name of concentration auxiliary variable in flow package
+      mf6internal: fp_aux_name
       type: string
     boundnames:
       block: options
@@ -52,6 +54,7 @@ blocks:
         file immediately after it is read.
       reader: urword
       optional: true
+      mf6internal: iprpak
       longname: print input to listing file
       type: keyword
     print_concentration:
@@ -63,6 +66,7 @@ blocks:
       reader: urword
       optional: true
       longname: print calculated stages to listing file
+      mf6internal: iprconc
       type: keyword
     print_flows:
       block: options
@@ -72,6 +76,7 @@ blocks:
         for the last time step of each stress period.
       reader: urword
       optional: true
+      mf6internal: iprflow
       longname: print calculated flows to listing file
       type: keyword
     save_flows:
@@ -80,12 +85,14 @@ blocks:
         'BUDGET FILEOUT' in Output Control.
       reader: urword
       optional: true
+      mf6internal: ipakcb
       longname: save lake flows to budget file
       type: keyword
     concentration_filerecord:
       block: options
       reader: urword
       optional: true
+      mf6internal: conc_filerec
       type: record
       children:
         concentration:
@@ -113,6 +120,7 @@ blocks:
       block: options
       reader: urword
       optional: true
+      mf6internal: budfilerec
       type: record
       children:
         budget:
@@ -140,6 +148,7 @@ blocks:
       block: options
       reader: urword
       optional: true
+      mf6internal: budcsvfilerec
       type: record
       children:
         budgetcsv:
@@ -221,15 +230,25 @@ blocks:
           optional: false
           longname: obs6 input filename
           type: string
+    dev_nonexpanding_matrix:
+      block: options
+      description: keyword that solves the feature concentration with a general mixing equation and adds
+        the result to the right-hand side of the GWT equations, instead of adding a row to the solution
+        matrix for each feature.  This development option is not supported.
+      reader: urword
+      optional: true
+      mf6internal: dev_nonexpanding
+      longname: do not add rows to the solution matrix
+      type: keyword
   packagedata:
     packagedata:
-      shape: (maxbound)
+      shape: (nlakes)
       block: packagedata
       reader: urword
       type: list
       children:
         packagedata:
-          shape: (maxbound)
+          shape: (nlakes)
           block: packagedata
           reader: urword
           type: record
@@ -244,6 +263,7 @@ blocks:
               reader: urword
               longname: lake number for this entry
               numeric_index: true
+              mf6internal: packagedata_ifno
               type: integer
             strt:
               block: packagedata
@@ -305,7 +325,7 @@ blocks:
           time_series: true
           reader: urword
           longname: lake concentration
-          type: string
+          type: double
         status:
           block: period
           description: keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT.
@@ -325,7 +345,7 @@ blocks:
           reader: urword
           time_series: true
           longname: rainfall concentration
-          type: string
+          type: double
         evaporation:
           block: period
           description: real or character value that defines the concentration of evaporated water $(ML^{-3})$
@@ -337,7 +357,7 @@ blocks:
           reader: urword
           time_series: true
           longname: evaporation concentration
-          type: string
+          type: double
         runoff:
           block: period
           description: real or character value that defines the concentration of runoff $(ML^{-3})$ for
@@ -347,7 +367,7 @@ blocks:
           reader: urword
           time_series: true
           longname: runoff concentration
-          type: string
+          type: double
         ext-inflow:
           block: period
           description: real or character value that defines the concentration of external inflow $(ML^{-3})$
@@ -357,7 +377,7 @@ blocks:
           reader: urword
           time_series: true
           longname: ext-inflow concentration
-          type: string
+          type: double
         auxiliaryrecord:
           block: period
           reader: urword
@@ -367,6 +387,7 @@ blocks:
               block: period
               description: keyword for specifying auxiliary variable.
               reader: urword
+              mf6internal: period_auxiliary
               type: keyword
             auxname:
               block: period

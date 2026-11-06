@@ -38,13 +38,14 @@ blocks:
         be assigned the simple complexity values.
       reader: urword
       optional: true
-      longname: print option
+      longname: solver complexity
       type: string
     csv_output_filerecord:
       block: options
       reader: urword
       optional: true
       deprecated: 6.1.1
+      removed: 6.8.0
       type: record
       children:
         csv_output:
@@ -56,6 +57,7 @@ blocks:
           reader: urword
           optional: false
           deprecated: 6.1.1
+          removed: 6.8.0
           longname: budget keyword
           type: keyword
         fileout:
@@ -76,6 +78,7 @@ blocks:
           reader: urword
           optional: false
           deprecated: 6.1.1
+          removed: 6.8.0
           longname: file keyword
           type: string
     csv_outer_output_filerecord:
@@ -189,6 +192,71 @@ blocks:
       optional: true
       longname: fraction of outer maximum used with ats
       type: double
+    dev_ptc:
+      block: options
+      description: keyword that activates pseudo-transient continuation (PTC).  PTC is active by default,
+        so this keyword has an effect only when it follows NO_PTC in the OPTIONS block.  This development
+        option is not supported.
+      reader: urword
+      optional: true
+      longname: activate pseudo-transient continuation
+      type: keyword
+    dev_ptc_output_filerecord:
+      block: options
+      reader: urword
+      optional: true
+      type: record
+      children:
+        dev_ptc_output:
+          block: options
+          description: keyword to specify that the record corresponds to the pseudo-transient continuation
+            output file.  Specifying the record also activates pseudo-transient continuation.  This development
+            option is not supported.
+          reader: urword
+          optional: false
+          longname: pseudo-transient continuation output keyword
+          type: keyword
+        fileout:
+          block: options
+          description: keyword to specify that an output filename is expected next.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: keyword
+        dev_ptcfile:
+          block: options
+          description: name of the ascii output file to write pseudo-transient continuation information.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: string
+    dev_ptc_option:
+      block: options
+      description: keyword that uses the norm of the right-hand side and the L2 norm of the residual to
+        set the initial pseudo-transient continuation value, instead of the default approach.  Specifying
+        the keyword also activates pseudo-transient continuation.  This development option is not supported.
+      reader: urword
+      optional: true
+      longname: use the norms to set the initial pseudo-transient continuation value
+      type: keyword
+    dev_ptc_exponent:
+      block: options
+      description: real number value that defines the exponent used to reduce the pseudo-transient continuation
+        value between outer iterations.  The value must be greater than zero and is 1 by default.  Specifying
+        the value also activates pseudo-transient continuation.  This development option is not supported.
+      reader: urword
+      optional: true
+      longname: pseudo-transient continuation exponent
+      type: double
+    dev_ptc_del0:
+      block: options
+      description: real number value that defines the initial pseudo-transient continuation value, which
+        is equivalent to an initial time step length.  The value must be greater than zero.  Specifying
+        the value also activates pseudo-transient continuation.  This development option is not supported.
+      reader: urword
+      optional: true
+      longname: initial pseudo-transient continuation value
+      type: double
   nonlinear:
     outer_hclose:
       block: nonlinear
@@ -200,6 +268,7 @@ blocks:
       reader: urword
       optional: true
       deprecated: 6.1.1
+      removed: 6.8.0
       longname: head change criterion
       type: double
     outer_dvclose:
@@ -228,6 +297,7 @@ blocks:
       reader: urword
       optional: true
       deprecated: 6.1.1
+      removed: 6.8.0
       longname: boundary package flow residual tolerance
       type: double
     outer_maximum:
@@ -378,6 +448,7 @@ blocks:
       reader: urword
       optional: true
       deprecated: 6.1.1
+      removed: 6.8.0
       longname: head change tolerance
       type: double
     inner_dvclose:
@@ -488,7 +559,7 @@ blocks:
         is zero.
       reader: urword
       optional: true
-      longname: drop tolerance used to drop preconditioner terms
+      longname: number of orthogonalizations
       type: integer
     scaling_method:
       block: linear

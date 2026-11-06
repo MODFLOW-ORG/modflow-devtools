@@ -28,6 +28,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print input to listing file",
+        "mf6internal": "iprpak",
         "type": "keyword"
       },
       "print_head": {
@@ -44,6 +45,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print calculated flows to listing file",
+        "mf6internal": "iprflow",
         "type": "keyword"
       },
       "save_flows": {
@@ -52,6 +54,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "save well flows to budget file",
+        "mf6internal": "ipakcb",
         "type": "keyword"
       },
       "head_filerecord": {
@@ -88,6 +91,7 @@
       },
       "budget_filerecord": {
         "block": "options",
+        "mf6internal": "budfilerec",
         "reader": "urword",
         "optional": true,
         "type": "record",
@@ -120,6 +124,7 @@
       },
       "budgetcsv_filerecord": {
         "block": "options",
+        "mf6internal": "budcsvfilerec",
         "reader": "urword",
         "optional": true,
         "type": "record",
@@ -166,6 +171,15 @@
         "longname": "activate flow correction",
         "type": "keyword"
       },
+      "non_vertical_wells": {
+        "block": "options",
+        "description": "keyword that activates support for non-vertical (slanted) multi-aquifer well connections.  When this option is specified, an ANGLEDATA block can be used to assign a tilt angle (deviation from vertical) to individual multi-aquifer well connections.  The saturated conductance for a connection listed in the ANGLEDATA block is scaled by the in-cell screen length, which is calculated from the screen top, screen bottom, and tilt angle (or specified directly), instead of the vertical screen thickness.  By default, all multi-aquifer well connections are assumed to be vertical.  The tilt angle and connection length scale the conductance for a single connection only and do not route flow through intervening cells; a well that passes through more than one cell (a slanted well or a horizontal lateral) must have a separate connection to each cell that it penetrates.  For a connection that uses the SPECIFIED conductance equation, the saturated conductance is used unchanged (the length correction is not applied because the conductance is provided by the user), but the screen top and bottom are honored so that the connection saturation is calculated over the correct interval rather than over the full cell.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "inonvert",
+        "longname": "activate non-vertical well connections",
+        "type": "keyword"
+      },
       "flowing_wells": {
         "block": "options",
         "description": "keyword that activates the flowing wells option for the multi-aquifer well package.",
@@ -192,6 +206,7 @@
       },
       "mfrcsv_filerecord": {
         "block": "options",
+        "mf6internal": "mfrcsvfilerec",
         "reader": "urword",
         "optional": true,
         "type": "record",
@@ -199,6 +214,7 @@
           "maw_flow_reduce_csv": {
             "block": "options",
             "description": "keyword to specify that record corresponds to the output option in which a new record is written for each multi-aquifer well and for each time step in which the user-requested extraction or injection rate is reduced by the program.",
+            "mf6internal": "maw_flw_red_csv",
             "reader": "urword",
             "optional": false,
             "longname": "budget keyword",
@@ -292,12 +308,22 @@
         "reader": "urword",
         "optional": true,
         "type": "keyword"
+      },
+      "dev_peaceman_effective_radius": {
+        "block": "options",
+        "description": "keyword that calculates the effective radius for structured grids using the approach of Peaceman (1983) instead of the default approach.  This development option is not supported.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "use the Peaceman effective radius",
+        "mf6internal": "ieffradopt",
+        "type": "keyword"
       }
     },
     "dimensions": {
       "nmawwells": {
         "block": "dimensions",
         "description": "integer value specifying the number of multi-aquifer wells that will be simulated for all stress periods.",
+        "mf6internal": "maxbound",
         "reader": "urword",
         "optional": false,
         "longname": "number of MAW wells",
@@ -323,6 +349,7 @@
                 "reader": "urword",
                 "longname": "well number for this entry",
                 "numeric_index": true,
+                "mf6internal": "packagedata_ifno",
                 "type": "integer"
               },
               "radius": {
@@ -342,6 +369,7 @@
               "strt": {
                 "block": "packagedata",
                 "description": "starting head for the multi-aquifer well. The program will terminate with an error if the starting head is less than the specified well bottom.",
+                "time_series": true,
                 "reader": "urword",
                 "longname": "starting head",
                 "type": "double"
@@ -400,6 +428,7 @@
                 "reader": "urword",
                 "longname": "well number for this entry",
                 "numeric_index": true,
+                "mf6internal": "packagedata_ifno",
                 "type": "integer"
               },
               "icon": {
@@ -451,6 +480,58 @@
         }
       }
     },
+    "angledata": {
+      "angledata": {
+        "block": "angledata",
+        "reader": "urword",
+        "optional": true,
+        "type": "list",
+        "children": {
+          "angledata": {
+            "block": "angledata",
+            "reader": "urword",
+            "optional": true,
+            "type": "record",
+            "children": {
+              "ifno": {
+                "block": "packagedata",
+                "description": "integer value that defines the feature (well) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS. Multi-aquifer well information must be specified for every multi-aquifer well or the program will terminate with an error.  The program will also terminate with an error if information for a multi-aquifer well is specified more than once.",
+                "reader": "urword",
+                "longname": "well number for this entry",
+                "numeric_index": true,
+                "mf6internal": "packagedata_ifno",
+                "type": "integer"
+              },
+              "icon": {
+                "block": "connectiondata",
+                "description": "integer value that defines the GWF connection number for this multi-aquifer well connection entry. ICONN must be greater than zero and less than or equal to NGWFNODES for multi-aquifer well IFNO.",
+                "reader": "urword",
+                "longname": "connection number",
+                "numeric_index": true,
+                "type": "integer"
+              },
+              "angle": {
+                "block": "angledata",
+                "description": "value that defines the tilt angle of the multi-aquifer well connection, in degrees measured as a deviation from vertical.  ANGLE must be greater than or equal to 0.0 (a vertical connection) and less than or equal to 90.0 (a horizontal connection) degrees.  The in-cell screen length used to calculate the saturated conductance is computed from the screen top, screen bottom, well radius, and ANGLE, unless CONN_LENGTH is specified.  The horizontal distance spanned by a connection grows rapidly as ANGLE approaches 90.0 degrees, and a warning is issued if it is greater than the maximum horizontal extent of the connected cell.  A connection that is intended to pass through more than one cell should be specified as a separate connection to each cell that it passes through.  If a connection passes through more than one cell unintentionally, ANGLE or CONN_LENGTH should be reduced.",
+                "reader": "urword",
+                "longname": "tilt angle from vertical",
+                "numeric_index": false,
+                "type": "double"
+              },
+              "conn_length": {
+                "block": "angledata",
+                "description": "optional value that defines the length of the multi-aquifer well screen within the connected GWF cell.  If CONN_LENGTH is specified (and greater than zero), it is used directly as the in-cell screen length; otherwise, the in-cell screen length is calculated from the screen top, screen bottom, well radius, and ANGLE.  CONN_LENGTH must be specified for horizontal connections (ANGLE equal to 90.0 degrees) because the in-cell screen length cannot be derived from the screen elevations for a horizontal connection.  A warning is issued if the horizontal distance spanned by the connection is greater than the maximum horizontal extent of the connected cell.  The MEAN conductance equation is recommended for horizontal connections.  For a horizontal connection using the MEAN conductance equation, SCRN_TOP and SCRN_BOT do not affect the magnitude of the saturated conductance but do determine the elevation range over which the connection saturates and dewaters; SCRN_TOP and SCRN_BOT should be set to the top and bottom of the horizontal borehole so that the vertical screen extent (SCRN_TOP $-$ SCRN_BOT) equals the well diameter (2 times RADIUS).  The program snaps SCRN_TOP to SCRN_BOT plus the well diameter when the specified extent is essentially equal to the well diameter, and otherwise issues a warning.",
+                "reader": "urword",
+                "optional": true,
+                "mf6internal": "connlen",
+                "longname": "in-cell screen length",
+                "type": "double"
+              }
+            }
+          }
+        }
+      }
+    },
     "period": {
       "ifno": {
         "shape": "(nper)",
@@ -477,6 +558,7 @@
           },
           "flowing_wellrecord": {
             "block": "period",
+            "mf6internal": "flwwellrecord",
             "reader": "urword",
             "type": "record",
             "children": {
@@ -563,6 +645,7 @@
           },
           "rate_scalingrecord": {
             "block": "period",
+            "mf6internal": "ratescalingrec",
             "reader": "urword",
             "type": "record",
             "children": {
@@ -597,6 +680,7 @@
                 "block": "period",
                 "description": "keyword for specifying auxiliary variable.",
                 "reader": "urword",
+                "mf6internal": "period_auxiliary",
                 "type": "keyword"
               },
               "auxname": {

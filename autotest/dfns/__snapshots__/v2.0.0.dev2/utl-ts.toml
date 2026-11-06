@@ -15,7 +15,7 @@ description = "xxx"
 
 [blocks.attributes.fields.time_series_namerecord.fields.names]
 type = "keyword"
-description = "xxx"
+description = "keyword to specify the names of the time series. The 'NAME' keyword can be used as a substitute for 'NAMES'."
 aliases = [
     "name",
 ]
@@ -49,11 +49,11 @@ type = "record"
 description = "xxx"
 optional = true
 
-[blocks.attributes.fields.method]
+[blocks.attributes.fields.interpolation_methodrecord_single.fields.method]
 type = "keyword"
 description = " xxx"
 
-[blocks.attributes.fields.interpolation_method_single]
+[blocks.attributes.fields.interpolation_methodrecord_single.fields.interpolation_method_single]
 type = "string"
 description = "Interpolation method, which is either STEPWISE or LINEAR."
 tagged = false
@@ -86,14 +86,14 @@ type = "record"
 description = "xxx"
 optional = true
 
+[blocks.attributes.fields.sfacrecord_single.fields.sfac]
+type = "keyword"
+description = " xxx"
+
 [blocks.attributes.fields.sfacrecord_single.fields.sfacval]
 type = "double"
 description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
 tagged = false
-
-[blocks.attributes.fields.sfac]
-type = "keyword"
-description = " xxx"
 
 [blocks.timeseries.fields.timeseries]
 type = "list"

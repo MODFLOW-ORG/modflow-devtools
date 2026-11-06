@@ -1,7 +1,7 @@
 {
   "name": "gwt-lkt",
   "schema_version": "2.0.0.dev1",
-  "advanced": false,
+  "advanced": true,
   "multi": true,
   "ftype": "LKT",
   "blocks": {
@@ -12,6 +12,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "keyword to specify name of corresponding flow package",
+        "mf6internal": "flow_pkg_name",
         "type": "string"
       },
       "auxiliary": {
@@ -29,6 +30,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "keyword to specify name of concentration auxiliary variable in flow package",
+        "mf6internal": "fp_aux_name",
         "type": "string"
       },
       "boundnames": {
@@ -43,6 +45,7 @@
         "description": "keyword to indicate that the list of lake information will be written to the listing file immediately after it is read.",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "iprpak",
         "longname": "print input to listing file",
         "type": "keyword"
       },
@@ -52,6 +55,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print calculated stages to listing file",
+        "mf6internal": "iprconc",
         "type": "keyword"
       },
       "print_flows": {
@@ -59,6 +63,7 @@
         "description": "keyword to indicate that the list of lake flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period.",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "iprflow",
         "longname": "print calculated flows to listing file",
         "type": "keyword"
       },
@@ -67,6 +72,7 @@
         "description": "keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "ipakcb",
         "longname": "save lake flows to budget file",
         "type": "keyword"
       },
@@ -74,6 +80,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "conc_filerec",
         "type": "record",
         "children": {
           "concentration": {
@@ -106,6 +113,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "budfilerec",
         "type": "record",
         "children": {
           "budget": {
@@ -138,6 +146,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "budcsvfilerec",
         "type": "record",
         "children": {
           "budgetcsv": {
@@ -229,17 +238,26 @@
             "type": "string"
           }
         }
+      },
+      "dev_nonexpanding_matrix": {
+        "block": "options",
+        "description": "keyword that solves the feature concentration with a general mixing equation and adds the result to the right-hand side of the GWT equations, instead of adding a row to the solution matrix for each feature.  This development option is not supported.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "dev_nonexpanding",
+        "longname": "do not add rows to the solution matrix",
+        "type": "keyword"
       }
     },
     "packagedata": {
       "packagedata": {
-        "shape": "(maxbound)",
+        "shape": "(nlakes)",
         "block": "packagedata",
         "reader": "urword",
         "type": "list",
         "children": {
           "packagedata": {
-            "shape": "(maxbound)",
+            "shape": "(nlakes)",
             "block": "packagedata",
             "reader": "urword",
             "type": "record",
@@ -250,6 +268,7 @@
                 "reader": "urword",
                 "longname": "lake number for this entry",
                 "numeric_index": true,
+                "mf6internal": "packagedata_ifno",
                 "type": "integer"
               },
               "strt": {
@@ -305,7 +324,7 @@
             "time_series": true,
             "reader": "urword",
             "longname": "lake concentration",
-            "type": "string"
+            "type": "double"
           },
           "status": {
             "block": "period",
@@ -320,7 +339,7 @@
             "reader": "urword",
             "time_series": true,
             "longname": "rainfall concentration",
-            "type": "string"
+            "type": "double"
           },
           "evaporation": {
             "block": "period",
@@ -328,7 +347,7 @@
             "reader": "urword",
             "time_series": true,
             "longname": "evaporation concentration",
-            "type": "string"
+            "type": "double"
           },
           "runoff": {
             "block": "period",
@@ -336,7 +355,7 @@
             "reader": "urword",
             "time_series": true,
             "longname": "runoff concentration",
-            "type": "string"
+            "type": "double"
           },
           "ext-inflow": {
             "block": "period",
@@ -344,7 +363,7 @@
             "reader": "urword",
             "time_series": true,
             "longname": "ext-inflow concentration",
-            "type": "string"
+            "type": "double"
           },
           "auxiliaryrecord": {
             "block": "period",
@@ -355,6 +374,7 @@
                 "block": "period",
                 "description": "keyword for specifying auxiliary variable.",
                 "reader": "urword",
+                "mf6internal": "period_auxiliary",
                 "type": "keyword"
               },
               "auxname": {

@@ -143,6 +143,13 @@ tagged = false
 direction = "in"
 component = "utl-obs"
 
+[blocks.options.fields.dev_nonexpanding_matrix]
+type = "keyword"
+longname = "do not add rows to the solution matrix"
+description = "keyword that solves the feature temperature with a general mixing equation and adds the result to the right-hand side of the GWE equations, instead of adding a row to the solution matrix for each feature.  This development option is not supported."
+optional = true
+developmode = true
+
 [blocks.packagedata.fields.packagedata]
 type = "list"
 
@@ -221,13 +228,13 @@ longname = "well temperature status"
 description = "keyword option to define well status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that temperature will be calculated for the well.  If a well is inactive, then there will be no solute mass fluxes into or out of the well and the inactive value will be written for the well temperature.  If a well is constant, then the temperature for the well will be fixed at the user specified value."
 
 [blocks.period.fields.stress_period_data.item.fields.mwesetting.arms.temperature]
-type = "string"
+type = "double"
 longname = "well temperature"
 description = "real or character value that defines the temperature for the well. The specified TEMPERATURE is only applied if the well is a constant temperature well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.mwesetting.arms.rate]
-type = "string"
+type = "double"
 longname = "well injection temperature"
 description = "real or character value that defines the injection temperature $(e.g.,:^{circ}C:or:^{circ}F)$ for the well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true

@@ -8,7 +8,7 @@
     "options": {
       "scheme": {
         "block": "options",
-        "description": "scheme used to solve the advection term.  Can be upstream, central, or TVD.  If not specified, upstream weighting is the default weighting scheme.",
+        "description": "scheme used to solve the advection term.  Can be upstream, central, TVD, or UTVD.  If not specified, upstream weighting is the default weighting scheme.",
         "valid": "central upstream tvd",
         "reader": "urword",
         "optional": true,

@@ -30,7 +30,7 @@ blocks:
         'BUDGET FILEOUT' in Output Control.
       reader: urword
       optional: true
-      longname: save lake flows to budget file
+      longname: save MVE flows to budget file
       type: keyword
     budget_filerecord:
       block: options

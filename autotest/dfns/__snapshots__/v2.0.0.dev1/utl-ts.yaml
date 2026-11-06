@@ -15,7 +15,8 @@ blocks:
       children:
         names:
           block: attributes
-          description: xxx
+          description: keyword to specify the names of the time series. The 'NAME' keyword can be used
+            as a substitute for 'NAMES'.
           other_names: name
           reader: urword
           optional: false
@@ -55,19 +56,20 @@ blocks:
       reader: urword
       optional: true
       type: record
-    method:
-      block: attributes
-      description: ' xxx'
-      reader: urword
-      optional: false
-      type: keyword
-    interpolation_method_single:
-      block: attributes
-      description: Interpolation method, which is either STEPWISE or LINEAR.
-      valid: stepwise linear linearend
-      reader: urword
-      optional: false
-      type: string
+      children:
+        method:
+          block: attributes
+          description: ' xxx'
+          reader: urword
+          optional: false
+          type: keyword
+        interpolation_method_single:
+          block: attributes
+          description: Interpolation method, which is either STEPWISE or LINEAR.
+          valid: stepwise linear linearend
+          reader: urword
+          optional: false
+          type: string
     sfacrecord:
       block: attributes
       description: xxx
@@ -96,6 +98,12 @@ blocks:
       optional: true
       type: record
       children:
+        sfac:
+          block: attributes
+          description: ' xxx'
+          reader: urword
+          optional: false
+          type: keyword
         sfacval:
           shape: (<time_series_name)
           block: attributes
@@ -104,12 +112,6 @@ blocks:
           reader: urword
           optional: false
           type: double
-    sfac:
-      block: attributes
-      description: ' xxx'
-      reader: urword
-      optional: false
-      type: keyword
   timeseries:
     timeseries:
       block: timeseries

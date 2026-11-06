@@ -157,6 +157,13 @@
               "component": "utl-obs"
             }
           }
+        },
+        "dev_nonexpanding_matrix": {
+          "type": "keyword",
+          "longname": "do not add rows to the solution matrix",
+          "description": "keyword that solves the feature concentration with a general mixing equation and adds the result to the right-hand side of the GWT equations, instead of adding a row to the solution matrix for each feature.  This development option is not supported.",
+          "optional": true,
+          "developmode": true
         }
       }
     },
@@ -233,31 +240,31 @@
                     "description": "keyword option to define lake status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT. By default, STATUS is ACTIVE, which means that concentration will be calculated for the lake.  If a lake is inactive, then there will be no solute mass fluxes into or out of the lake and the inactive value will be written for the lake concentration.  If a lake is constant, then the concentration for the lake will be fixed at the user specified value."
                   },
                   "concentration": {
-                    "type": "string",
+                    "type": "double",
                     "longname": "lake concentration",
                     "description": "real or character value that defines the concentration for the lake. The specified CONCENTRATION is only applied if the lake is a constant concentration lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                     "time_series": true
                   },
                   "rainfall": {
-                    "type": "string",
+                    "type": "double",
                     "longname": "rainfall concentration",
                     "description": "real or character value that defines the rainfall solute concentration $(ML^{-3})$ for the lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                     "time_series": true
                   },
                   "evaporation": {
-                    "type": "string",
+                    "type": "double",
                     "longname": "evaporation concentration",
                     "description": "real or character value that defines the concentration of evaporated water $(ML^{-3})$ for the lake. If this concentration value is larger than the simulated concentration in the lake, then the evaporated water will be removed at the same concentration as the lake.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                     "time_series": true
                   },
                   "runoff": {
-                    "type": "string",
+                    "type": "double",
                     "longname": "runoff concentration",
                     "description": "real or character value that defines the concentration of runoff $(ML^{-3})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                     "time_series": true
                   },
                   "ext-inflow": {
-                    "type": "string",
+                    "type": "double",
                     "longname": "ext-inflow concentration",
                     "description": "real or character value that defines the concentration of external inflow $(ML^{-3})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
                     "time_series": true

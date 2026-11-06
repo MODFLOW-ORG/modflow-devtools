@@ -111,7 +111,6 @@ blocks:
         in space.
       reader: urword
       optional: true
-      developmode: true
       longname: CRS user input string
       type: string
     ncf_filerecord:
@@ -165,7 +164,7 @@ blocks:
         of the model grid.
       reader: urword
       optional: false
-      longname: number of columns
+      longname: number of vertices
       type: integer
   griddata:
     top:

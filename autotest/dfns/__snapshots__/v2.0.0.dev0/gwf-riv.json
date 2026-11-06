@@ -68,7 +68,7 @@
       "type": "keyword",
       "reader": "urword",
       "optional": true,
-      "longname": "save CHD flows to budget file",
+      "longname": "save RIV flows to budget file",
       "description": "keyword to indicate that river flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
       "mf6internal": "ipakcb"
     },
@@ -194,7 +194,7 @@
             "type": "string",
             "reader": "urword",
             "optional": true,
-            "longname": "drain name",
+            "longname": "river name",
             "description": "name of the river cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes.",
             "tagged": false,
             "in_record": true
