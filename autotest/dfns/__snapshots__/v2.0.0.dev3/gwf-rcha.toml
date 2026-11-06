@@ -303,12 +303,5 @@ shape = [
 ]
 
 [observations.rch]
-type = "union"
-
-[observations.rch.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.rch.arms.boundname]
-type = "string"
 tagged = false

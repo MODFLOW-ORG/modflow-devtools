@@ -338,4 +338,5 @@ index = true
 
 [observations.flow-ja-face.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

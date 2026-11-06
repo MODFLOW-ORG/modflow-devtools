@@ -382,6 +382,7 @@ fk = "packagedata.ifno"
 
 [observations.concentration.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -395,6 +396,7 @@ fk = "packagedata.ifno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -408,6 +410,7 @@ fk = "packagedata.ifno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -421,6 +424,7 @@ fk = "packagedata.ifno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rainfall]
@@ -434,6 +438,7 @@ fk = "packagedata.ifno"
 
 [observations.rainfall.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.evaporation]
@@ -447,6 +452,7 @@ fk = "packagedata.ifno"
 
 [observations.evaporation.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.runoff]
@@ -460,6 +466,7 @@ fk = "packagedata.ifno"
 
 [observations.runoff.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-inflow]
@@ -473,6 +480,7 @@ fk = "packagedata.ifno"
 
 [observations.ext-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.withdrawal]
@@ -486,6 +494,7 @@ fk = "packagedata.ifno"
 
 [observations.withdrawal.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-outflow]
@@ -499,6 +508,7 @@ fk = "packagedata.ifno"
 
 [observations.ext-outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.flow-ja-face]
@@ -521,6 +531,7 @@ fk = "packagedata.ifno"
 
 [observations.flow-ja-face.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -533,6 +544,7 @@ index = true
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.lkt]
@@ -554,4 +566,5 @@ index = true
 
 [observations.lkt.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

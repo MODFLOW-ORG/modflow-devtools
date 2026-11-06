@@ -286,14 +286,7 @@ shape = [
 ]
 
 [observations.chd]
-type = "union"
-
-[observations.chd.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.chd.arms.boundname]
-type = "string"
 tagged = false
 
 [keys]

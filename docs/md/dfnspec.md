@@ -380,6 +380,8 @@ A field with a `when` renders in brackets, like an optional one, e.g. `[<petm0>]
 
 A [key set](#key-sets) may have a `when` too, which switches the component's part in a role on or off in the same way.
 
+On an [observation](#observations) field, `when` names an option of the component declaring the observation, which is the observation's target, not of `utl-obs`. An observation can name a boundary only if its target sets `BOUNDNAMES`, so a `boundname` form has `when = "boundnames"`, and a component with no such option, like `gwf-chdg`, doesn't offer one.
+
 This is about whether a field is present at all, not how many values it holds. A column sized by another field, like `aux` (one value per auxiliary variable), uses `shape` instead, and a size of 0 means it's absent.
 
 #### `default`

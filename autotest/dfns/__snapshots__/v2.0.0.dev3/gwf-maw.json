@@ -543,6 +543,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -558,6 +559,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -573,6 +575,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -588,6 +591,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -603,6 +607,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -618,6 +623,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -633,6 +639,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -648,6 +655,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -663,6 +671,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -701,12 +710,14 @@
             },
             "boundname": {
               "type": "string",
+              "when": "boundnames",
               "tagged": false
             }
           }
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }
@@ -745,12 +756,14 @@
             },
             "boundname": {
               "type": "string",
+              "when": "boundnames",
               "tagged": false
             }
           }
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }

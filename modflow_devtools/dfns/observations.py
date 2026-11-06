@@ -36,10 +36,16 @@ def _record(
     return v2.Record(name=name, fields={f.name: f for f in fields})
 
 
+def _boundname() -> v2.String:
+    """A boundary name, which can only match with BOUNDNAMES set on the component
+    declaring it. The search runs off the end of an empty array without it
+    (`BoundaryPackage.f90:1611`, and so on for each package)."""
+    return v2.String(name="boundname", tagged=False, when="boundnames")
+
+
 def _or_boundname(form: "v2.Integer | v2.CellID | v2.Array | v2.Record") -> v2.Union:
     """``form``, or a boundname instead, after which MF6 reads no ID2."""
-    boundname = v2.String(name="boundname", tagged=False)
-    return v2.Union(name=form.name, arms={form.name: form, "boundname": boundname})
+    return v2.Union(name=form.name, arms={form.name: form, "boundname": _boundname()})
 
 
 def _all(field: _Field, *obstypes: str) -> dict[str, _Field]:
@@ -49,6 +55,14 @@ def _all(field: _Field, *obstypes: str) -> dict[str, _Field]:
 
 _CELL = _cellid()
 _CELL_OR_NAME = _or_boundname(_cellid())
+
+
+def _cells_only(table: dict[str, _Field]) -> dict[str, _Field]:
+    """``table`` for a grid package, which has no BOUNDNAMES option to name
+    a boundary with."""
+    return _all(_CELL, *table)
+
+
 # DFW reads a single node number, whatever the grid's cellid width.
 _NODE = _index("node")
 
@@ -69,7 +83,7 @@ def _connection_or_name(pk: str, iconn: str = "iconn") -> v2.Union:
     The connection is one of the feature's (`connectiondata`, scoped by it)."""
     feature = _index(pk, fk=f"packagedata.{pk}")
     connection = _index(iconn, fk=f"connectiondata.{iconn}", scope=pk)
-    boundname = v2.String(name="boundname", tagged=False)
+    boundname = _boundname()
     arms = (_record(feature, connection), _record(feature, boundname), boundname)
     return v2.Union(name=pk, arms={arm.name: arm for arm in arms})
 
@@ -316,25 +330,25 @@ _TABLES: dict[str, dict[str, _Field]] = {
     "gwe-sfe": _SFE,
     "gwe-uze": _UZE,
     "gwf-api": _API,
-    "gwf-chdg": _CHD,
+    "gwf-chdg": _cells_only(_CHD),
     "gwf-csub": _CSUB,
     "gwf-drn": _DRN,
-    "gwf-drng": _DRN,
+    "gwf-drng": _cells_only(_DRN),
     "gwf-evt": _EVT,
-    "gwf-evta": _EVT,
+    "gwf-evta": _cells_only(_EVT),
     "gwf-ghb": _GHB,
-    "gwf-ghbg": _GHB,
+    "gwf-ghbg": _cells_only(_GHB),
     "gwf-lak": _LAK,
     "gwf-maw": _MAW,
     "gwf-nam": _GWF_MODEL,
     "gwf-rch": _RCH,
-    "gwf-rcha": _RCH,
+    "gwf-rcha": _cells_only(_RCH),
     "gwf-riv": _RIV,
-    "gwf-rivg": _RIV,
+    "gwf-rivg": _cells_only(_RIV),
     "gwf-sfr": _SFR,
     "gwf-uzf": _UZF,
     "gwf-wel": _WEL,
-    "gwf-welg": _WEL,
+    "gwf-welg": _cells_only(_WEL),
     "gwt-api": _API,
     "gwt-cnc": _CNC,
     "gwt-lkt": _LKT,

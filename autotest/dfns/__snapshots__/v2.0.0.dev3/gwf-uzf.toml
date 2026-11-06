@@ -410,6 +410,7 @@ fk = "packagedata.ifno"
 
 [observations.uzf-gwrch.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uzf-gwd]
@@ -423,6 +424,7 @@ fk = "packagedata.ifno"
 
 [observations.uzf-gwd.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uzf-gwd-to-mvr]
@@ -436,6 +438,7 @@ fk = "packagedata.ifno"
 
 [observations.uzf-gwd-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uzf-gwet]
@@ -449,6 +452,7 @@ fk = "packagedata.ifno"
 
 [observations.uzf-gwet.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.infiltration]
@@ -462,6 +466,7 @@ fk = "packagedata.ifno"
 
 [observations.infiltration.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -475,6 +480,7 @@ fk = "packagedata.ifno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rej-inf]
@@ -488,6 +494,7 @@ fk = "packagedata.ifno"
 
 [observations.rej-inf.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rej-inf-to-mvr]
@@ -501,6 +508,7 @@ fk = "packagedata.ifno"
 
 [observations.rej-inf-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uzet]
@@ -514,6 +522,7 @@ fk = "packagedata.ifno"
 
 [observations.uzet.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -527,6 +536,7 @@ fk = "packagedata.ifno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.net-infiltration]
@@ -540,6 +550,7 @@ fk = "packagedata.ifno"
 
 [observations.net-infiltration.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.water-content]
@@ -556,6 +567,7 @@ fk = "packagedata.ifno"
 
 [observations.water-content.fields.ifno.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.water-content.fields.depth]

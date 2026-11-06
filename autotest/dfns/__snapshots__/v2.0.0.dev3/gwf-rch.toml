@@ -295,6 +295,7 @@ tagged = false
 
 [observations.rch.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

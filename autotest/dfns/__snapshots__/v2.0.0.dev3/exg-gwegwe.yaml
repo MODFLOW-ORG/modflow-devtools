@@ -316,4 +316,5 @@ observations:
         index: true
       boundname:
         type: string
+        when: boundnames
         tagged: false

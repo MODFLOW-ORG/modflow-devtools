@@ -414,6 +414,7 @@ fk = "packagedata.lakeno"
 
 [observations.temperature.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -427,6 +428,7 @@ fk = "packagedata.lakeno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -440,6 +442,7 @@ fk = "packagedata.lakeno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -453,6 +456,7 @@ fk = "packagedata.lakeno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.lke]
@@ -466,6 +470,7 @@ fk = "packagedata.lakeno"
 
 [observations.lke.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rainfall]
@@ -479,6 +484,7 @@ fk = "packagedata.lakeno"
 
 [observations.rainfall.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.evaporation]
@@ -492,6 +498,7 @@ fk = "packagedata.lakeno"
 
 [observations.evaporation.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.runoff]
@@ -505,6 +512,7 @@ fk = "packagedata.lakeno"
 
 [observations.runoff.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-inflow]
@@ -518,6 +526,7 @@ fk = "packagedata.lakeno"
 
 [observations.ext-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.withdrawal]
@@ -531,6 +540,7 @@ fk = "packagedata.lakeno"
 
 [observations.withdrawal.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-outflow]
@@ -544,6 +554,7 @@ fk = "packagedata.lakeno"
 
 [observations.ext-outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.flow-ja-face]
@@ -566,6 +577,7 @@ fk = "packagedata.lakeno"
 
 [observations.flow-ja-face.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -578,4 +590,5 @@ index = true
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

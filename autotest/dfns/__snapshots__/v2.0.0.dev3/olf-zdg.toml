@@ -307,6 +307,7 @@ tagged = false
 
 [observations.zdg.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -318,6 +319,7 @@ tagged = false
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

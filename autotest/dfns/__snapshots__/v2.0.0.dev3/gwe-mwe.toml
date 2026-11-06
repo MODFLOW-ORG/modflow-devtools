@@ -369,6 +369,7 @@ fk = "packagedata.mawno"
 
 [observations.temperature.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -382,6 +383,7 @@ fk = "packagedata.mawno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -395,6 +397,7 @@ fk = "packagedata.mawno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -408,6 +411,7 @@ fk = "packagedata.mawno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rate]
@@ -421,6 +425,7 @@ fk = "packagedata.mawno"
 
 [observations.rate.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.fw-rate]
@@ -434,6 +439,7 @@ fk = "packagedata.mawno"
 
 [observations.fw-rate.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rate-to-mvr]
@@ -447,6 +453,7 @@ fk = "packagedata.mawno"
 
 [observations.rate-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.fw-rate-to-mvr]
@@ -460,6 +467,7 @@ fk = "packagedata.mawno"
 
 [observations.fw-rate-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.mwe]
@@ -481,4 +489,5 @@ index = true
 
 [observations.mwe.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

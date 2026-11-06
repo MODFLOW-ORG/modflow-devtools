@@ -434,6 +434,7 @@ fk = "packagedata.rno"
 
 [observations.temperature.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -447,6 +448,7 @@ fk = "packagedata.rno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -460,6 +462,7 @@ fk = "packagedata.rno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -473,6 +476,7 @@ fk = "packagedata.rno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.sfe]
@@ -486,6 +490,7 @@ fk = "packagedata.rno"
 
 [observations.sfe.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.strmbd-cond]
@@ -499,6 +504,7 @@ fk = "packagedata.rno"
 
 [observations.strmbd-cond.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -512,6 +518,7 @@ fk = "packagedata.rno"
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rainfall]
@@ -525,6 +532,7 @@ fk = "packagedata.rno"
 
 [observations.rainfall.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.evaporation]
@@ -538,6 +546,7 @@ fk = "packagedata.rno"
 
 [observations.evaporation.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.runoff]
@@ -551,6 +560,7 @@ fk = "packagedata.rno"
 
 [observations.runoff.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-inflow]
@@ -564,6 +574,7 @@ fk = "packagedata.rno"
 
 [observations.ext-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-outflow]
@@ -577,6 +588,7 @@ fk = "packagedata.rno"
 
 [observations.ext-outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.flow-ja-face]
@@ -599,4 +611,5 @@ fk = "packagedata.rno"
 
 [observations.flow-ja-face.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

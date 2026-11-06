@@ -392,6 +392,7 @@
         },
         "boundname": {
           "type": "string",
+          "when": "boundnames",
           "tagged": false
         }
       }

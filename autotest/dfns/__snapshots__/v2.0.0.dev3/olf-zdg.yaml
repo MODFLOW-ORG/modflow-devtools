@@ -313,6 +313,7 @@ observations:
         tagged: false
       boundname:
         type: string
+        when: boundnames
         tagged: false
   to-mvr:
     type: union
@@ -322,6 +323,7 @@ observations:
         tagged: false
       boundname:
         type: string
+        when: boundnames
         tagged: false
 keys:
   bound: <=maxbound

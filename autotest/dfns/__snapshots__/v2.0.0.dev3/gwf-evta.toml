@@ -325,12 +325,5 @@ shape = [
 ]
 
 [observations.evt]
-type = "union"
-
-[observations.evt.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.evt.arms.boundname]
-type = "string"
 tagged = false

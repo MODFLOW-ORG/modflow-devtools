@@ -711,6 +711,7 @@ fk = "packagedata.ifno"
 
 [observations.stage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-inflow]
@@ -724,6 +725,7 @@ fk = "packagedata.ifno"
 
 [observations.ext-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.outlet-inflow]
@@ -737,6 +739,7 @@ fk = "packagedata.ifno"
 
 [observations.outlet-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.inflow]
@@ -750,6 +753,7 @@ fk = "packagedata.ifno"
 
 [observations.inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -763,6 +767,7 @@ fk = "packagedata.ifno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rainfall]
@@ -776,6 +781,7 @@ fk = "packagedata.ifno"
 
 [observations.rainfall.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.runoff]
@@ -789,6 +795,7 @@ fk = "packagedata.ifno"
 
 [observations.runoff.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.withdrawal]
@@ -802,6 +809,7 @@ fk = "packagedata.ifno"
 
 [observations.withdrawal.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.evaporation]
@@ -815,6 +823,7 @@ fk = "packagedata.ifno"
 
 [observations.evaporation.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -828,6 +837,7 @@ fk = "packagedata.ifno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -841,6 +851,7 @@ fk = "packagedata.ifno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.volume]
@@ -854,6 +865,7 @@ fk = "packagedata.ifno"
 
 [observations.volume.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.surface-area]
@@ -867,6 +879,7 @@ fk = "packagedata.ifno"
 
 [observations.surface-area.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.lak]
@@ -901,10 +914,12 @@ fk = "packagedata.ifno"
 
 [observations.lak.arms.ifno_boundname.fields.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.lak.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.wetted-area]
@@ -939,10 +954,12 @@ fk = "packagedata.ifno"
 
 [observations.wetted-area.arms.ifno_boundname.fields.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.wetted-area.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.conductance]
@@ -977,10 +994,12 @@ fk = "packagedata.ifno"
 
 [observations.conductance.arms.ifno_boundname.fields.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.conductance.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-outflow]
@@ -994,6 +1013,7 @@ fk = "outlets.outletno"
 
 [observations.ext-outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -1007,6 +1027,7 @@ fk = "outlets.outletno"
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.outlet]
@@ -1020,6 +1041,7 @@ fk = "outlets.outletno"
 
 [observations.outlet.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

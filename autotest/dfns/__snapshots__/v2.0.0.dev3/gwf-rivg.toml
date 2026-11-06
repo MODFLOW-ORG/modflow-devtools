@@ -305,25 +305,11 @@ shape = [
 ]
 
 [observations.riv]
-type = "union"
-
-[observations.riv.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.riv.arms.boundname]
-type = "string"
 tagged = false
 
 [observations.to-mvr]
-type = "union"
-
-[observations.to-mvr.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.to-mvr.arms.boundname]
-type = "string"
 tagged = false
 
 [keys]
