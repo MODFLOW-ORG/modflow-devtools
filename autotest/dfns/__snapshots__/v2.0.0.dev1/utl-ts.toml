@@ -14,7 +14,7 @@ type = "record"
 
 [blocks.attributes.time_series_namerecord.children.names]
 block = "attributes"
-description = "xxx"
+description = "keyword to specify the names of the time series. The 'NAME' keyword can be used as a substitute for 'NAMES'."
 other_names = "name"
 reader = "urword"
 optional = false
@@ -58,14 +58,14 @@ reader = "urword"
 optional = true
 type = "record"
 
-[blocks.attributes.method]
+[blocks.attributes.interpolation_methodrecord_single.children.method]
 block = "attributes"
 description = " xxx"
 reader = "urword"
 optional = false
 type = "keyword"
 
-[blocks.attributes.interpolation_method_single]
+[blocks.attributes.interpolation_methodrecord_single.children.interpolation_method_single]
 block = "attributes"
 description = "Interpolation method, which is either STEPWISE or LINEAR."
 valid = "stepwise linear linearend"
@@ -102,6 +102,13 @@ reader = "urword"
 optional = true
 type = "record"
 
+[blocks.attributes.sfacrecord_single.children.sfac]
+block = "attributes"
+description = " xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
 [blocks.attributes.sfacrecord_single.children.sfacval]
 shape = "(<time_series_name)"
 block = "attributes"
@@ -109,13 +116,6 @@ description = "Scale factor, which will multiply all array values in time series
 reader = "urword"
 optional = false
 type = "double"
-
-[blocks.attributes.sfac]
-block = "attributes"
-description = " xxx"
-reader = "urword"
-optional = false
-type = "keyword"
 
 [blocks.timeseries.timeseries]
 block = "timeseries"

@@ -84,6 +84,7 @@ blocks:
         of heat transport.
       reader: readarray
       layered: true
+      netcdf: true
       longname: porosity
       type: double
     decay_water:
@@ -96,6 +97,7 @@ blocks:
         in the options block.
       reader: readarray
       layered: true
+      netcdf: true
       optional: true
       longname: aqueous phase decay rate coefficient
       type: double
@@ -108,6 +110,7 @@ blocks:
         simulation results unless ZERO_ORDER_DECAY_SOLID is specified in the options block.
       reader: readarray
       layered: true
+      netcdf: true
       optional: true
       longname: solid phase decay rate coefficient
       type: double
@@ -118,6 +121,7 @@ blocks:
         of J/kg/C may be used (or equivalent).
       reader: readarray
       layered: true
+      netcdf: true
       longname: heat capacity of the aquifer material
       mf6internal: cps
       type: double
@@ -129,6 +133,7 @@ blocks:
         may be entered as kilograms per cubic meter.
       reader: readarray
       layered: true
+      netcdf: true
       longname: density of aquifer material
       mf6internal: rhos
       type: double

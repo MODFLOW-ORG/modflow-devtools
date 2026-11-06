@@ -1,6 +1,6 @@
 name: gwe-mwe
 schema_version: 2.0.0.dev1
-advanced: false
+advanced: true
 multi: true
 ftype: MWE
 blocks:
@@ -12,6 +12,7 @@ blocks:
         name associated with this package in the GWE name file).
       reader: urword
       optional: true
+      mf6internal: flow_pkg_name
       longname: keyword to specify name of corresponding flow package
       type: string
     auxiliary:
@@ -38,6 +39,7 @@ blocks:
         this advanced transport package are read from a file, then this option will have no effect.
       reader: urword
       optional: true
+      mf6internal: fp_aux_name
       longname: keyword to specify name of temperature auxiliary variable in flow package
       type: string
     boundnames:
@@ -52,6 +54,7 @@ blocks:
         file immediately after it is read.
       reader: urword
       optional: true
+      mf6internal: iprpak
       longname: print input to listing file
       type: keyword
     print_temperature:
@@ -62,6 +65,7 @@ blocks:
         step of each stress period.
       reader: urword
       optional: true
+      mf6internal: iprconc
       longname: print calculated temperatures to listing file
       type: keyword
     print_flows:
@@ -72,6 +76,7 @@ blocks:
         for the last time step of each stress period.
       reader: urword
       optional: true
+      mf6internal: iprflow
       longname: print calculated flows to listing file
       type: keyword
     save_flows:
@@ -80,12 +85,14 @@ blocks:
         'BUDGET FILEOUT' in Output Control.
       reader: urword
       optional: true
+      mf6internal: ipakcb
       longname: save well flows to budget file
       type: keyword
     temperature_filerecord:
       block: options
       reader: urword
       optional: true
+      mf6internal: temp_filerec
       type: record
       children:
         temperature:
@@ -113,6 +120,7 @@ blocks:
       block: options
       reader: urword
       optional: true
+      mf6internal: budfilerec
       type: record
       children:
         budget:
@@ -140,6 +148,7 @@ blocks:
       block: options
       reader: urword
       optional: true
+      mf6internal: budcsvfilerec
       type: record
       children:
         budgetcsv:
@@ -221,15 +230,25 @@ blocks:
           optional: false
           longname: obs6 input filename
           type: string
+    dev_nonexpanding_matrix:
+      block: options
+      description: keyword that solves the feature temperature with a general mixing equation and adds
+        the result to the right-hand side of the GWE equations, instead of adding a row to the solution
+        matrix for each feature.  This development option is not supported.
+      reader: urword
+      optional: true
+      mf6internal: dev_nonexpanding
+      longname: do not add rows to the solution matrix
+      type: keyword
   packagedata:
     packagedata:
-      shape: (maxbound)
+      shape: (nmawwells)
       block: packagedata
       reader: urword
       type: list
       children:
         packagedata:
-          shape: (maxbound)
+          shape: (nmawwells)
           block: packagedata
           reader: urword
           type: record
@@ -244,6 +263,7 @@ blocks:
               reader: urword
               longname: well number for this entry
               numeric_index: true
+              mf6internal: packagedata_ifno
               type: integer
             strt:
               block: packagedata
@@ -294,6 +314,7 @@ blocks:
       block: period
       description: integer value that defines the well number associated with the specified PERIOD data
         on the line. MAWNO must be greater than zero and less than or equal to NMAWWELLS.
+      mf6internal: ifno
       reader: urword
       longname: well number for this entry
       numeric_index: true
@@ -319,7 +340,7 @@ blocks:
           time_series: true
           reader: urword
           longname: well temperature
-          type: string
+          type: double
         status:
           block: period
           description: keyword option to define well status.  STATUS can be ACTIVE, INACTIVE, or CONSTANT.
@@ -339,7 +360,7 @@ blocks:
           reader: urword
           time_series: true
           longname: well injection temperature
-          type: string
+          type: double
         auxiliaryrecord:
           block: period
           reader: urword
@@ -349,6 +370,7 @@ blocks:
               block: period
               description: keyword for specifying auxiliary variable.
               reader: urword
+              mf6internal: period_auxiliary
               type: keyword
             auxname:
               block: period

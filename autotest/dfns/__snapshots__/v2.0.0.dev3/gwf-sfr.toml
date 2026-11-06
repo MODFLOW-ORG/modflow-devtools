@@ -21,6 +21,12 @@ longname = "activate reach storage"
 description = "keyword that activates storage contributions to the stream-flow routing package continuity equation."
 optional = true
 
+[blocks.options.fields.ats_courant]
+type = "double"
+longname = "target Courant number for adaptive time stepping"
+description = "real number value that defines the target Courant number submitted by the SFR Package to the adaptive time stepping (ATS) package.  If ATS_COURANT is specified and the ATS Package is active, the SFR Package will compute the time step that achieves the target Courant number for the most constraining reach (the reach with the highest wave celerity-to-length ratio) and submit that time step to the ATS Package.  The STORAGE option must be active when ATS_COURANT is specified.  ATS_COURANT must be greater than zero.  A recommended baseline value is 1.0, which targets unit Courant number; values between 0.5 and 2.0 are generally acceptable for kinematic wave routing."
+optional = true
+
 [blocks.options.fields.auxiliary]
 type = "array"
 longname = "keyword to specify aux variables"
@@ -204,7 +210,21 @@ optional = true
 [blocks.options.fields.dev_storage_weight]
 type = "double"
 longname = "reach storage time weighting"
-description = "real number value that defines the time weighting factor used to calculate the change in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT value is 1."
+description = "real number value that defines the time weighting factor used to calculate the change in channel storage. DEV_STORAGE_WEIGHT must have a value between 0.5 and 1. The default DEV_STORAGE_WEIGHT value is 1, which is fully implicit and is recommended for all practical applications."
+optional = true
+developmode = true
+
+[blocks.options.fields.dev_no_check]
+type = "keyword"
+longname = "do not check reach geometry and parameters"
+description = "keyword that deactivates the checks of reach geometry relative to the model grid and of reach parameters for reasonable values.  This development option is not supported."
+optional = true
+developmode = true
+
+[blocks.options.fields.dev_no_final_check]
+type = "keyword"
+longname = "do not perform final convergence check"
+description = "keyword that deactivates the final convergence check of the change in stream flow routing stages and flows.  This development option is not supported."
 optional = true
 developmode = true
 
@@ -276,7 +296,7 @@ tagged = false
 time_series = true
 
 [blocks.packagedata.fields.packagedata.item.fields.man]
-type = "string"
+type = "double"
 longname = "Manning's roughness coefficient"
 description = "real or character value that defines the Manning's roughness coefficient for the reach. MAN must be greater than zero.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
@@ -352,6 +372,9 @@ component = "utl-sfrtab"
 
 [blocks.connectiondata.fields.connectiondata]
 type = "list"
+shape = [
+    "nreaches",
+]
 
 [blocks.connectiondata.fields.connectiondata.item]
 name = "connectiondata"
@@ -421,6 +444,9 @@ tagged = false
 [blocks.initialstages.fields.initialstages]
 type = "list"
 optional = true
+shape = [
+    "nreaches",
+]
 
 [blocks.initialstages.fields.initialstages.item]
 name = "initialstages"
@@ -465,43 +491,43 @@ longname = "reach status"
 description = "keyword option to define stream reach status.  STATUS can be ACTIVE, INACTIVE, or SIMPLE. The SIMPLE STATUS option simulates streamflow using a user-specified stage for a reach or a stage set to the top of the reach (depth = 0). In cases where the simulated leakage calculated using the specified stage exceeds the sum of inflows to the reach, the stage is set to the top of the reach and leakage is set equal to the sum of inflows. Upstream fractions should be changed using the UPSTREAM_FRACTION SFRSETTING if the status for one or more reaches is changed to ACTIVE or INACTIVE. For example, if one of two downstream connections for a reach is inactivated, the upstream fraction for the active and inactive downstream reach should be changed to 1.0 and 0.0, respectively, to ensure that the active reach receives all of the downstream outflow from the upstream reach. By default, STATUS is ACTIVE."
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.bedk]
-type = "string"
+type = "double"
 longname = "reach bed hydraulic conductivity"
 description = "real or character value that defines the hydraulic conductivity of the reach streambed. BEDK can be any positive value if the reach is not connected to an underlying GWF cell. Otherwise, BEDK must be greater than zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.manning]
-type = "string"
+type = "double"
 longname = "reach Manning's roughness coefficient"
 description = "real or character value that defines the Manning's roughness coefficient for the reach. MANNING must be greater than zero.  If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.stage]
-type = "string"
+type = "double"
 longname = "reach stage"
 description = "real or character value that defines the stage for the reach. The specified STAGE is only applied if the reach uses the simple routing option. If STAGE is not specified for reaches that use the simple routing option, the specified stage is set to the top of the reach. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.inflow]
-type = "string"
+type = "double"
 longname = "inflow rate"
 description = "real or character value that defines the volumetric inflow rate for the streamflow routing reach. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each reach."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.rainfall]
-type = "string"
+type = "double"
 longname = "rainfall rate"
 description = "real or character value that defines the  volumetric rate per unit area of water added by precipitation directly on the streamflow routing reach. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, rainfall  rates are zero for each reach."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.evaporation]
-type = "string"
+type = "double"
 longname = "evaporation rate"
 description = "real or character value that defines the volumetric rate per unit area of water subtracted by evaporation from the streamflow routing reach. A positive evaporation rate should be provided. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. If the volumetric evaporation rate for a reach exceeds the sources of water to the reach (upstream and specified inflows, rainfall, and runoff but excluding groundwater leakage into the reach) the volumetric evaporation rate is limited to the sources of water to the reach. By default, evaporation rates are zero for each reach."
 time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.runoff]
-type = "string"
+type = "double"
 longname = "runoff rate"
 description = "real or character value that defines the volumetric rate of diffuse overland runoff that enters the streamflow routing reach. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. If the volumetric runoff rate for a reach is negative and exceeds inflows to the reach (upstream and specified inflows, and rainfall but excluding groundwater leakage into the reach) the volumetric runoff rate is limited to inflows to the reach and the volumetric evaporation rate for the reach is set to zero. By default, runoff rates are zero for each reach."
 time_series = true
@@ -536,6 +562,7 @@ time_series = true
 type = "double"
 longname = "fraction of upstream flow"
 description = "real value that defines the fraction of upstream flow (USTRF) from each upstream reach that is applied as upstream inflow to the reach. The sum of all USTRF values for all reaches connected to the same upstream reach must be equal to one."
+time_series = true
 
 [blocks.period.fields.stress_period_data.item.fields.sfrsetting.arms.cross_sectionrecord]
 type = "record"
@@ -588,10 +615,125 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[memory.nreaches]
+[memory.iprpak]
+set_in = "ar"
+source = "print_input"
+type = "integer"
+
+[memory.iprflow]
+set_in = "ar"
+source = "print_flows"
+type = "integer"
+
+[memory.ipakcb]
+set_in = "ar"
+source = "save_flows"
+type = "integer"
+
+[memory.options_stage]
+set_in = "ar"
+source = "stage"
+type = "logical"
+
+[memory.pkgconv]
+set_in = "ar"
+source = "package_convergence"
+type = "logical"
+
+[memory.pkgconvfname]
+set_in = "ar"
+source = "package_convergence_filename"
+type = "string"
+
+[memory.options_filein]
+set_in = "ar"
+type = "logical"
+
+[memory.maxsfrpicard]
+set_in = "ar"
+source = "maximum_picard_iterations"
+type = "integer"
+
+[memory.maxsfrit]
+set_in = "ar"
+source = "maximum_iterations"
+type = "integer"
+
+[memory.dmaxchg]
+set_in = "ar"
+source = "maximum_depth_change"
+type = "double"
+
+[memory.lengthconv]
+set_in = "ar"
+source = "length_conversion"
+type = "double"
+
+[memory.storage_weight]
+set_in = "ar"
+source = "dev_storage_weight"
+type = "double"
+
+[memory.icheck]
+set_in = "ar"
+source = "dev_no_check"
+type = "integer"
+
+[memory.iconvchk]
+set_in = "ar"
+source = "dev_no_final_check"
+type = "integer"
+
+[memory.maxbound]
 set_in = "ar"
 source = "nreaches"
 type = "integer"
+
+[memory.packagedata_ifno]
+set_in = "ar"
+source = "ifno"
+type = "integer"
+
+[memory.crosssect_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.xs_tab6]
+source = "tab6"
+type = "logical"
+
+[memory.xs_filein]
+type = "logical"
+
+[memory.sfrtab6_filename]
+source = "tab6_filename"
+type = "string"
+
+[memory.conndata_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.diversions_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.diversions_idv]
+source = "idv"
+type = "integer"
+
+[memory.initstage_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.upstream_frac]
+set_in = "ad"
+source = "upstream_fraction"
+type = "double"
+
+[memory.period_auxiliary]
+set_in = "rp"
+source = "auxiliary"
+type = "logical"
 
 [memory.length]
 type = "array"

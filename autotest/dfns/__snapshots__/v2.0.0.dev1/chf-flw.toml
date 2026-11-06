@@ -34,6 +34,7 @@ description = "keyword to indicate that the list of inflow information will be w
 reader = "urword"
 optional = true
 longname = "print input to listing file"
+mf6internal = "iprpak"
 type = "keyword"
 
 [blocks.options.print_flows]
@@ -42,6 +43,7 @@ description = "keyword to indicate that the list of inflow flow rates will be pr
 reader = "urword"
 optional = true
 longname = "print calculated flows to listing file"
+mf6internal = "iprflow"
 type = "keyword"
 
 [blocks.options.save_flows]
@@ -50,6 +52,7 @@ description = "keyword to indicate that inflow flow terms will be written to the
 reader = "urword"
 optional = true
 longname = "save well flows to budget file"
+mf6internal = "ipakcb"
 type = "keyword"
 
 [blocks.options.ts_filerecord]
@@ -137,6 +140,7 @@ reader = "urword"
 optional = true
 time_series = true
 longname = "auxiliary variables"
+mf6internal = "auxvar"
 type = "double"
 
 [blocks.period.boundname]

@@ -47,6 +47,19 @@ description = "compressibility of water. Typical values of BETA are 4.6512e-10 1
 optional = true
 default = 4.6512e-10
 
+[blocks.options.fields.elastic_inelastic_smoothing]
+type = "keyword"
+longname = "elastic to inelastic smoothing"
+description = "keyword to activate smoothing of the delay interbed skeletal specific storage as the effective stress exceeds the preconsolidation stress. When active, the skeletal specific storage is smoothly transitioned from the elastic value to the inelastic value over a small window (0.001 of the preconsolidation stress) instead of switching discontinuously at the preconsolidation stress. Activating this option can improve convergence of models with delay interbeds. By default, the elastic to inelastic transition is discontinuous."
+optional = true
+
+[blocks.options.fields.strict_effective_stress]
+type = "keyword"
+longname = "terminate on negative effective stress"
+description = "keyword to terminate the simulation when the calculated effective stress is small or negative, instead of regularizing it. By default the effective stress used to calculate the skeletal specific storage is not allowed to fall below a small fraction (0.001) of the geostatic stress, which keeps the specific storage bounded and allows the simulation to continue; a warning reports the number of time steps in which a negative effective stress was regularized. Negative effective stress typically occurs in uppermost cells where simulated water levels rise above land surface. This keyword is deprecated and will be removed in a future release."
+optional = true
+deprecated = "6.8.0"
+
 [blocks.options.fields.head_based]
 type = "keyword"
 longname = "keyword to indicate the head-based formulation will be used"
@@ -382,7 +395,7 @@ tagged = false
 [blocks.packagedata.fields.packagedata.item.fields.pcs0]
 type = "double"
 longname = "initial stress"
-description = "is the initial offset from the calculated initial effective stress or initial preconsolidation stress in the interbed, in units of height of a column of water. PCS0 is the initial preconsolidation stress if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_PRECONSOLIDATION_STRESS are specified in the OPTIONS block. If HEAD_BASED is specified in the OPTIONS block, PCS0 is the initial offset from the calculated initial head or initial preconsolidation head in the CSUB interbed and the initial preconsolidation stress is calculated from the calculated initial effective stress or calculated initial geostatic stress, respectively."
+description = "is the initial offset from the calculated initial effective stress or initial preconsolidation stress in the interbed, in units of height of a column of water. PCS0 is the initial preconsolidation stress if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_PRECONSOLIDATION_STRESS are specified in the OPTIONS block. If HEAD_BASED is specified in the OPTIONS block, PCS0 is the initial offset from the calculated initial head or initial preconsolidation head in the CSUB interbed and the initial preconsolidation stress is calculated from the calculated initial effective stress or calculated initial geostatic stress, respectively. When PCS0 is a relative offset, the sign depends on the formulation. For the default effective-stress formulation, specify a positive PCS0 for an overconsolidated interbed since the preconsolidation stress is greater than the initial effective stress. If HEAD_BASED is specified, specify a negative PCS0 for an overconsolidated interbed since the preconsolidation head is less than the initial head. A PCS0 of zero is normally consolidated in both formulations."
 tagged = false
 
 [blocks.packagedata.fields.packagedata.item.fields.thick_frac]
@@ -430,7 +443,7 @@ tagged = false
 
 [blocks.packagedata.fields.packagedata.item.fields.boundname]
 type = "string"
-longname = "well name"
+longname = "interbed name"
 description = "name of the CSUB cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 optional = true
 when = "boundnames"
@@ -454,7 +467,7 @@ tagged = false
 
 [blocks.period.fields.stress_period_data.item.fields.sig0]
 type = "double"
-longname = "well stress offset"
+longname = "geostatic stress offset"
 description = "is the stress offset for the cell. SIG0 is added to the calculated geostatic stress for the cell. SIG0 is specified only if MAXSIG0 is specified to be greater than 0 in the DIMENSIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
 tagged = false
 time_series = true
@@ -469,6 +482,16 @@ longname = "stress period number"
 description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
 tagged = false
 index = true
+
+[memory.ei_smoothing]
+set_in = "ar"
+source = "elastic_inelastic_smoothing"
+type = "logical"
+
+[memory.strict_stress]
+set_in = "ar"
+source = "strict_effective_stress"
+type = "logical"
 
 [memory.precon_head]
 set_in = "ar"

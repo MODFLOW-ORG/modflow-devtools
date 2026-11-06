@@ -154,16 +154,40 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[memory.maxbound]
-readonly = true
+[memory.iprpak]
 set_in = "ar"
-description = "Maximum number of boundary entries per stress period."
+source = "print_input"
+type = "integer"
+
+[memory.iprflow]
+set_in = "ar"
+source = "print_flows"
 type = "integer"
 
 [memory.ipakcb]
 set_in = "ar"
 source = "save_flows"
 description = "Flag controlling whether boundary flows are written to the budget file."
+type = "integer"
+
+[memory.auxvar]
+type = "array"
+source = "aux"
+description = "Auxiliary variable values for each boundary."
+dtype = "double"
+set_in = [
+    "rp",
+    "ad",
+]
+shape = [
+    "naux",
+    "nbound",
+]
+
+[memory.maxbound]
+readonly = true
+set_in = "ar"
+description = "Maximum number of boundary entries per stress period."
 type = "integer"
 
 [memory.nbound]
@@ -256,20 +280,6 @@ description = "Names of auxiliary variables."
 dtype = "string"
 shape = [
     "naux",
-]
-
-[memory.auxvar]
-type = "array"
-source = "aux"
-description = "Auxiliary variable values for each boundary."
-dtype = "double"
-set_in = [
-    "rp",
-    "ad",
-]
-shape = [
-    "naux",
-    "nbound",
 ]
 
 [observations.flw]

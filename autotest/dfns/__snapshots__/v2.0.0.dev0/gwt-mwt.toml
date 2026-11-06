@@ -1,5 +1,5 @@
 name = "gwt-mwt"
-advanced = false
+advanced = true
 multi = true
 schema_version = "2.0.0.dev0"
 
@@ -25,6 +25,7 @@ reader = "urword"
 optional = true
 longname = "keyword to specify name of corresponding flow package"
 description = "keyword to specify the name of the corresponding flow package.  If not specified, then the corresponding flow package must have the same name as this advanced transport package (the name associated with this package in the GWT name file)."
+mf6internal = "flow_pkg_name"
 
 [options.auxiliary]
 block = "options"
@@ -42,6 +43,7 @@ reader = "urword"
 optional = true
 longname = "keyword to specify name of concentration auxiliary variable in flow package"
 description = "keyword to specify the name of an auxiliary variable in the corresponding flow package.  If specified, then the simulated concentrations from this advanced transport package will be copied into the auxiliary variable specified with this name.  Note that the flow package must have an auxiliary variable with this name or the program will terminate with an error.  If the flows for this advanced transport package are read from a file, then this option will have no effect."
+mf6internal = "fp_aux_name"
 
 [options.boundnames]
 block = "options"
@@ -57,6 +59,7 @@ reader = "urword"
 optional = true
 longname = "print input to listing file"
 description = "keyword to indicate that the list of well information will be written to the listing file immediately after it is read."
+mf6internal = "iprpak"
 
 [options.print_concentration]
 block = "options"
@@ -65,6 +68,7 @@ reader = "urword"
 optional = true
 longname = "print calculated concentrations to listing file"
 description = "keyword to indicate that the list of well {#2} will be printed to the listing file for every stress period in which 'CONCENTRATION PRINT' is specified in Output Control.  If there is no Output Control option and PRINT_{#3} is specified, then {#2} are printed for the last time step of each stress period."
+mf6internal = "iprconc"
 
 [options.print_flows]
 block = "options"
@@ -73,6 +77,7 @@ reader = "urword"
 optional = true
 longname = "print calculated flows to listing file"
 description = "keyword to indicate that the list of well flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period."
+mf6internal = "iprflow"
 
 [options.save_flows]
 block = "options"
@@ -81,6 +86,7 @@ reader = "urword"
 optional = true
 longname = "save well flows to budget file"
 description = "keyword to indicate that well flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+mf6internal = "ipakcb"
 
 [options.concentration_filerecord]
 block = "options"
@@ -88,10 +94,11 @@ type = "record"
 reader = "urword"
 optional = true
 tagged = true
+mf6internal = "conc_filerec"
 
 [options.concentration_filerecord.fields.concentration]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "well concentration"
 description = "real or character value that defines the concentration for the well. The specified CONCENTRATION is only applied if the well is a constant concentration well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
@@ -126,6 +133,7 @@ type = "record"
 reader = "urword"
 optional = true
 tagged = true
+mf6internal = "budfilerec"
 
 [options.budget_filerecord.fields.budget]
 block = "options"
@@ -164,6 +172,7 @@ type = "record"
 reader = "urword"
 optional = true
 tagged = true
+mf6internal = "budcsvfilerec"
 
 [options.budgetcsv_filerecord.fields.fileout]
 block = "options"
@@ -227,10 +236,19 @@ val = "observations"
 abbr = "obs"
 param = "continuous"
 
+[options.dev_nonexpanding_matrix]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "do not add rows to the solution matrix"
+description = "keyword that solves the feature concentration with a general mixing equation and adds the result to the right-hand side of the GWT equations, instead of adding a row to the solution matrix for each feature.  This development option is not supported."
+mf6internal = "dev_nonexpanding"
+
 [packagedata.packagedata]
 block = "packagedata"
 type = "recarray"
-shape = "(maxbound)"
+shape = "(nmawwells)"
 reader = "urword"
 
 [packagedata.packagedata.item]
@@ -312,7 +330,7 @@ in_record = true
 
 [period.mwtperioddata.item.fields.mwtsetting.choices.concentration]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "well concentration"
 description = "real or character value that defines the concentration for the well. The specified CONCENTRATION is only applied if the well is a constant concentration well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
@@ -331,7 +349,7 @@ in_record = true
 
 [period.mwtperioddata.item.fields.mwtsetting.choices.rate]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "well injection concentration"
 description = "real or character value that defines the injection solute concentration $(ML^{-3})$ for the well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
@@ -351,6 +369,7 @@ type = "keyword"
 reader = "urword"
 description = "keyword for specifying auxiliary variable."
 in_record = true
+mf6internal = "period_auxiliary"
 
 [period.mwtperioddata.item.fields.mwtsetting.choices.auxiliaryrecord.fields.auxname]
 block = "period"

@@ -36,10 +36,10 @@ shape = [
 name = "packagedata"
 type = "record"
 
-[blocks.packagedata.fields.packagedata.item.fields.idcxs]
+[blocks.packagedata.fields.packagedata.item.fields.ifno]
 type = "integer"
-longname = "reach number for this entry"
-description = "integer value that defines the cross section number associated with the specified PACKAGEDATA data on the line. IDCXS must be greater than zero and less than or equal to NSECTIONS. Information must be specified for every section or the program will terminate with an error.  The program will also terminate with an error if information for a section is specified more than once."
+longname = "cross section number for this entry"
+description = "integer value that defines the feature (cross section) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NSECTIONS. Information must be specified for every section or the program will terminate with an error.  The program will also terminate with an error if information for a section is specified more than once."
 tagged = false
 index = true
 pk = true
@@ -59,6 +59,14 @@ shape = [
 [blocks.crosssectiondata.fields.crosssectiondata.item]
 name = "crosssectiondata"
 type = "record"
+
+[blocks.crosssectiondata.fields.crosssectiondata.item.fields.ifno]
+type = "integer"
+longname = "cross section number for this entry"
+description = "integer value that defines the feature (cross section) number associated with the specified CROSSSECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NSECTIONS. IFNO must be the same for consecutive entries corresponding to the same cross section, and there must be NXSPOINTS consecutive entries, as specified in PACKAGEDATA, for each cross section."
+tagged = false
+index = true
+fk = "packagedata.ifno"
 
 [blocks.crosssectiondata.fields.crosssectiondata.item.fields.xfraction]
 type = "double"

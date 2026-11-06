@@ -152,6 +152,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature concentration with a general mixing equation and
+          adds the result to the right-hand side of the GWT equations, instead of adding a row to the
+          solution matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -235,7 +243,7 @@ blocks:
                     concentration.  If a reach is constant, then the concentration for the reach will
                     be fixed at the user specified value.
                 concentration:
-                  type: string
+                  type: double
                   longname: reach concentration
                   description: real or character value that defines the concentration for the reach. The
                     specified CONCENTRATION is only applied if the reach is a constant concentration reach.
@@ -244,7 +252,7 @@ blocks:
                     in place of a numeric value.
                   time_series: true
                 rainfall:
-                  type: string
+                  type: double
                   longname: rainfall concentration
                   description: real or character value that defines the rainfall solute concentration
                     $(ML^{-3})$ for the reach. If the Options block includes a TIMESERIESFILE entry (see
@@ -252,7 +260,7 @@ blocks:
                     the time-series name in place of a numeric value.
                   time_series: true
                 evaporation:
-                  type: string
+                  type: double
                   longname: evaporation concentration
                   description: real or character value that defines the concentration of evaporated water
                     $(ML^{-3})$ for the reach. If this concentration value is larger than the simulated
@@ -262,7 +270,7 @@ blocks:
                     by entering the time-series name in place of a numeric value.
                   time_series: true
                 runoff:
-                  type: string
+                  type: double
                   longname: runoff concentration
                   description: real or character value that defines the concentration of runoff $(ML^{-3})$
                     for the reach. Value must be greater than or equal to zero. If the Options block includes
@@ -270,7 +278,7 @@ blocks:
                     from a time series by entering the time-series name in place of a numeric value.
                   time_series: true
                 inflow:
-                  type: string
+                  type: double
                   longname: inflow concentration
                   description: real or character value that defines the concentration of inflow $(ML^{-3})$
                     for the reach. Value must be greater than or equal to zero. If the Options block includes

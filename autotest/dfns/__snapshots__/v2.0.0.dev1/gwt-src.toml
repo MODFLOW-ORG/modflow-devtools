@@ -52,7 +52,7 @@ description = "keyword to indicate that mass source flow terms will be written t
 reader = "urword"
 optional = true
 mf6internal = "ipakcb"
-longname = "save well flows to budget file"
+longname = "save SRC flows to budget file"
 type = "keyword"
 
 [blocks.options.ts_filerecord]
@@ -158,5 +158,5 @@ block = "period"
 description = "name of the mass source cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes."
 reader = "urword"
 optional = true
-longname = "well name"
+longname = "source name"
 type = "string"

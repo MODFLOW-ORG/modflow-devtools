@@ -85,7 +85,6 @@ blocks:
           affect the model simulation, but it is written to the binary grid file so that postprocessors
           can locate the grid in space.
         optional: true
-        developmode: true
         case_sensitive: true
   dimensions:
     fields:

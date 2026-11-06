@@ -67,6 +67,7 @@ blocks:
         description: is the mobile domain porosity, defined as the mobile domain pore volume per mobile
           domain volume.  The GWE model does not support the concept of an immobile domain in the context
           of heat transport.
+        netcdf: true
         dtype: double
         layered: true
         shape:
@@ -80,6 +81,7 @@ blocks:
           decay in the aqueous phase will have no effect on simulation results unless ZERO_ORDER_DECAY_WATER
           is specified in the options block.
         optional: true
+        netcdf: true
         dtype: double
         layered: true
         shape:
@@ -92,6 +94,7 @@ blocks:
           energy per mass of solid per time. Zero-order decay in the solid phase will have no effect on
           simulation results unless ZERO_ORDER_DECAY_SOLID is specified in the options block.
         optional: true
+        netcdf: true
         dtype: double
         layered: true
         shape:
@@ -101,6 +104,7 @@ blocks:
         longname: heat capacity of the aquifer material
         description: is the mass-based heat capacity of dry solids (aquifer material). For example, units
           of J/kg/C may be used (or equivalent).
+        netcdf: true
         dtype: double
         layered: true
         shape:
@@ -111,6 +115,7 @@ blocks:
         description: is a user-specified value of the density of aquifer material not considering the
           voids. Value will remain fixed for the entire simulation.  For example, if working in SI units,
           values may be entered as kilograms per cubic meter.
+        netcdf: true
         dtype: double
         layered: true
         shape:

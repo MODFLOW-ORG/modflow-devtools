@@ -48,7 +48,7 @@
           "interpolation_method": {
             "block": "attributes",
             "description": "Interpolation method, which is either STEPWISE or LINEAR.",
-            "valid": "stepwise linear linearend",
+            "valid": "stepwise linear",
             "reader": "urword",
             "optional": false,
             "type": "string"

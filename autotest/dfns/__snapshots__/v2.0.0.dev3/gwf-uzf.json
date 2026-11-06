@@ -178,6 +178,13 @@
           "description": "keyword to indicate that this instance of the UZF Package can be used with the Water Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within the package to store the available, provided, and received water.",
           "optional": true
         },
+        "dev_no_final_check": {
+          "type": "keyword",
+          "longname": "do not check final convergence",
+          "description": "keyword that deactivates the final convergence check of the change in UZF recharge.  This development option is not supported.",
+          "optional": true,
+          "developmode": true
+        },
         "simulate_et": {
           "type": "keyword",
           "description": "keyword specifying that ET in the unsaturated (UZF) and saturated zones (GWF) will be simulated. ET can be simulated in the UZF cell and not the GWF cell by omitting keywords LINEAR_GWET and SQUARE_GWET.",
@@ -421,9 +428,39 @@
     }
   },
   "memory": {
-    "nuzfcells": {
+    "iprpak": {
+      "set_in": "ar",
+      "source": "print_input",
+      "type": "integer"
+    },
+    "ipakcb": {
+      "set_in": "ar",
+      "source": "save_flows",
+      "type": "integer"
+    },
+    "pkgconv": {
+      "set_in": "ar",
+      "source": "package_convergence",
+      "type": "logical"
+    },
+    "pkgconvfname": {
+      "set_in": "ar",
+      "source": "package_convergence_filename",
+      "type": "string"
+    },
+    "iconvchk": {
+      "set_in": "ar",
+      "source": "dev_no_final_check",
+      "type": "integer"
+    },
+    "maxbound": {
       "set_in": "ar",
       "source": "nuzfcells",
+      "type": "integer"
+    },
+    "packagedata_ifno": {
+      "set_in": "ar",
+      "source": "ifno",
       "type": "integer"
     },
     "ntrailwaves": {

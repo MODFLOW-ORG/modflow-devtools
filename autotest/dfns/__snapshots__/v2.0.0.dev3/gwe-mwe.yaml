@@ -155,6 +155,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature temperature with a general mixing equation and adds
+          the result to the right-hand side of the GWE equations, instead of adding a row to the solution
+          matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -251,7 +259,7 @@ blocks:
                     a well is constant, then the temperature for the well will be fixed at the user specified
                     value.
                 temperature:
-                  type: string
+                  type: double
                   longname: well temperature
                   description: real or character value that defines the temperature for the well. The
                     specified TEMPERATURE is only applied if the well is a constant temperature well.
@@ -260,7 +268,7 @@ blocks:
                     in place of a numeric value.
                   time_series: true
                 rate:
-                  type: string
+                  type: double
                   longname: well injection temperature
                   description: real or character value that defines the injection temperature $(e.g.,:^{circ}C:or:^{circ}F)$
                     for the well. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable
@@ -303,6 +311,46 @@ blocks:
         tagged: false
         index: true
 memory:
+  flow_pkg_name:
+    set_in: ar
+    source: flow_package_name
+    type: string
+  fp_aux_name:
+    set_in: ar
+    source: flow_package_auxiliary_name
+    type: string
+  iprpak:
+    set_in: ar
+    source: print_input
+    type: integer
+  iprconc:
+    set_in: ar
+    source: print_temperature
+    type: integer
+  iprflow:
+    set_in: ar
+    source: print_flows
+    type: integer
+  ipakcb:
+    set_in: ar
+    source: save_flows
+    type: integer
+  dev_nonexpanding:
+    set_in: ar
+    source: dev_nonexpanding_matrix
+    type: logical
+  packagedata_ifno:
+    set_in: ar
+    source: mawno
+    type: integer
+  ifno:
+    set_in: rp
+    source: mawno
+    type: integer
+  period_auxiliary:
+    set_in: rp
+    source: auxiliary
+    type: logical
   ncv:
     readonly: true
     set_in: ar

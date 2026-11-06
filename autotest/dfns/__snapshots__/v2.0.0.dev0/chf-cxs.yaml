@@ -40,16 +40,16 @@ packagedata:
       block: packagedata
       reader: urword
       fields:
-        idcxs:
-          block: packagedata
+        ifno:
+          block: crosssectiondata
           type: integer
           reader: urword
-          longname: reach number for this entry
-          description: integer value that defines the cross section number associated with the specified
-            PACKAGEDATA data on the line. IDCXS must be greater than zero and less than or equal to NSECTIONS.
-            Information must be specified for every section or the program will terminate with an error.  The
-            program will also terminate with an error if information for a section is specified more than
-            once.
+          longname: cross section number for this entry
+          description: integer value that defines the feature (cross section) number associated with the
+            specified CROSSSECTIONDATA data on the line. IFNO must be greater than zero and less than
+            or equal to NSECTIONS. IFNO must be the same for consecutive entries corresponding to the
+            same cross section, and there must be NXSPOINTS consecutive entries, as specified in PACKAGEDATA,
+            for each cross section.
           tagged: false
           in_record: true
           numeric_index: true
@@ -75,6 +75,19 @@ crosssectiondata:
       block: crosssectiondata
       reader: urword
       fields:
+        ifno:
+          block: crosssectiondata
+          type: integer
+          reader: urword
+          longname: cross section number for this entry
+          description: integer value that defines the feature (cross section) number associated with the
+            specified CROSSSECTIONDATA data on the line. IFNO must be greater than zero and less than
+            or equal to NSECTIONS. IFNO must be the same for consecutive entries corresponding to the
+            same cross section, and there must be NXSPOINTS consecutive entries, as specified in PACKAGEDATA,
+            for each cross section.
+          tagged: false
+          in_record: true
+          numeric_index: true
         xfraction:
           block: crosssectiondata
           type: double precision

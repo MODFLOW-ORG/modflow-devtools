@@ -16,6 +16,8 @@ fkeys:
     val: observations
     abbr: obs
     param: continuous
+subcomponents:
+  - utl-sfrtab
 options:
   storage:
     block: options
@@ -25,6 +27,19 @@ options:
     longname: activate reach storage
     description: keyword that activates storage contributions to the stream-flow routing package continuity
       equation.
+  ats_courant:
+    block: options
+    type: double precision
+    reader: urword
+    optional: true
+    longname: target Courant number for adaptive time stepping
+    description: real number value that defines the target Courant number submitted by the SFR Package
+      to the adaptive time stepping (ATS) package.  If ATS_COURANT is specified and the ATS Package is
+      active, the SFR Package will compute the time step that achieves the target Courant number for the
+      most constraining reach (the reach with the highest wave celerity-to-length ratio) and submit that
+      time step to the ATS Package.  The STORAGE option must be active when ATS_COURANT is specified.  ATS_COURANT
+      must be greater than zero.  A recommended baseline value is 1.0, which targets unit Courant number;
+      values between 0.5 and 2.0 are generally acceptable for kinematic wave routing.
   auxiliary:
     block: options
     type: string
@@ -55,6 +70,7 @@ options:
     longname: print input to listing file
     description: keyword to indicate that the list of stream reach information will be written to the
       listing file immediately after it is read.
+    mf6internal: iprpak
   print_stage:
     block: options
     type: keyword
@@ -75,6 +91,7 @@ options:
       file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If
       there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for
       the last time step of each stress period.
+    mf6internal: iprflow
   save_flows:
     block: options
     type: keyword
@@ -83,6 +100,7 @@ options:
     longname: save stream reach flows to budget file
     description: keyword to indicate that stream reach flow terms will be written to the file specified
       with 'BUDGET FILEOUT' in Output Control.
+    mf6internal: ipakcb
   stage_filerecord:
     block: options
     type: record
@@ -92,7 +110,7 @@ options:
     fields:
       stage:
         block: period
-        type: string
+        type: double precision
         reader: urword
         longname: reach stage
         description: real or character value that defines the stage for the reach. The specified STAGE
@@ -127,6 +145,7 @@ options:
     type: record
     reader: urword
     optional: true
+    mf6internal: budfilerec
     tagged: true
     fields:
       budget:
@@ -162,6 +181,7 @@ options:
     type: record
     reader: urword
     optional: true
+    mf6internal: budcsvfilerec
     tagged: true
     fields:
       fileout:
@@ -198,6 +218,7 @@ options:
     type: record
     reader: urword
     optional: true
+    mf6internal: pkgconvfilerec
     tagged: true
     fields:
       fileout:
@@ -217,6 +238,7 @@ options:
         longname: package_convergence keyword
         description: keyword to specify that record corresponds to the package convergence comma spaced
           values file.
+        mf6internal: pkgconv
         in_record: true
         tagged: true
       package_convergence_filename:
@@ -226,6 +248,7 @@ options:
         optional: false
         longname: file keyword
         description: name of the comma spaced values output file to write package convergence information.
+        mf6internal: pkgconvfname
         in_record: true
         tagged: false
   timeseries:
@@ -280,6 +303,7 @@ options:
       iterations as a result of non-optimal reach numbering. If reaches are numbered in order, from upstream
       to downstream, MAXIMUM_PICARD_ITERATIONS can be set to 1 to reduce model run time. By default, MAXIMUM_PICARD_ITERATIONS
       is equal to 100.
+    mf6internal: maxsfrpicard
   maximum_iterations:
     block: options
     type: integer
@@ -290,6 +314,7 @@ options:
       allowed for a reach. By default, MAXIMUM_ITERATIONS is equal to 100. MAXIMUM_ITERATIONS would only
       need to be increased from the default value if one or more reach in a simulation has a large water
       budget error.
+    mf6internal: maxsfrit
   maximum_depth_change:
     block: options
     type: double precision
@@ -300,6 +325,7 @@ options:
       is equal to $1 times 10^{-5}$. The MAXIMUM_STAGE_CHANGE would only need to be increased or decreased
       from the default value if the water budget error for one or more reach is too small or too large,
       respectively.
+    mf6internal: dmaxchg
   unit_conversion:
     block: options
     type: double precision
@@ -321,6 +347,7 @@ options:
       meters to model length units. LENGTH_CONVERSION should be set to 3.28081, 1.0, and 100.0 when using
       length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION
       does not need to be specified if LENGTH_UNITS are meters.
+    mf6internal: lengthconv
   time_conversion:
     block: options
     type: double precision
@@ -338,8 +365,27 @@ options:
     optional: true
     longname: reach storage time weighting
     description: real number value that defines the time weighting factor used to calculate the change
-      in channel storage. STORAGE_WEIGHT must have a value between 0.5 and 1. Default STORAGE_WEIGHT value
-      is 1.
+      in channel storage. DEV_STORAGE_WEIGHT must have a value between 0.5 and 1. The default DEV_STORAGE_WEIGHT
+      value is 1, which is fully implicit and is recommended for all practical applications.
+    mf6internal: storage_weight
+  dev_no_check:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: do not check reach geometry and parameters
+    description: keyword that deactivates the checks of reach geometry relative to the model grid and
+      of reach parameters for reasonable values.  This development option is not supported.
+    mf6internal: icheck
+  dev_no_final_check:
+    block: options
+    type: keyword
+    reader: urword
+    optional: true
+    longname: do not perform final convergence check
+    description: keyword that deactivates the final convergence check of the change in stream flow routing
+      stages and flows.  This development option is not supported.
+    mf6internal: iconvchk
 dimensions:
   nreaches:
     block: dimensions
@@ -349,11 +395,12 @@ dimensions:
     longname: maximum number reaches
     description: integer value specifying the number of stream reaches.  There must be NREACHES entries
       in the PACKAGEDATA block.
+    mf6internal: maxbound
 packagedata:
   packagedata:
     block: packagedata
     type: recarray
-    shape: (maxbound)
+    shape: (nreaches)
     reader: urword
     item:
       type: record
@@ -446,7 +493,7 @@ packagedata:
           time_series: true
         man:
           block: packagedata
-          type: string
+          type: double precision
           reader: urword
           longname: Manning's roughness coefficient
           description: real or character value that defines the Manning's roughness coefficient for the
@@ -520,12 +567,12 @@ crosssections:
     block: crosssections
     type: recarray
     reader: urword
-    optional: false
+    optional: true
     item:
       type: record
       block: crosssections
       reader: urword
-      optional: false
+      optional: true
       fields:
         filein:
           block: period
@@ -573,7 +620,7 @@ connectiondata:
   connectiondata:
     block: connectiondata
     type: recarray
-    shape: (maxbound)
+    shape: (nreaches)
     reader: urword
     item:
       type: record
@@ -611,12 +658,13 @@ diversions:
   diversions:
     block: diversions
     type: recarray
-    shape: (maxbound)
     reader: urword
+    optional: true
     item:
       type: record
       block: diversions
       reader: urword
+      optional: true
       fields:
         ifno:
           block: period
@@ -678,14 +726,14 @@ initialstages:
   initialstages:
     block: initialstages
     type: recarray
-    shape: (maxbound)
+    shape: (nreaches)
     reader: urword
-    optional: false
+    optional: true
     item:
       type: record
       block: initialstages
       reader: urword
-      optional: false
+      optional: true
       fields:
         ifno:
           block: period
@@ -743,7 +791,7 @@ period:
           choices:
             stage:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: reach stage
               description: real or character value that defines the stage for the reach. The specified
@@ -775,7 +823,7 @@ period:
               in_record: true
             bedk:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: reach bed hydraulic conductivity
               description: real or character value that defines the hydraulic conductivity of the reach
@@ -788,7 +836,7 @@ period:
               time_series: true
             manning:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: reach Manning's roughness coefficient
               description: real or character value that defines the Manning's roughness coefficient for
@@ -800,7 +848,7 @@ period:
               time_series: true
             inflow:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: inflow rate
               description: real or character value that defines the volumetric inflow rate for the streamflow
@@ -812,7 +860,7 @@ period:
               time_series: true
             rainfall:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: rainfall rate
               description: real or character value that defines the  volumetric rate per unit area of
@@ -825,7 +873,7 @@ period:
               time_series: true
             evaporation:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: evaporation rate
               description: real or character value that defines the volumetric rate per unit area of water
@@ -842,7 +890,7 @@ period:
               time_series: true
             runoff:
               block: period
-              type: string
+              type: double precision
               reader: urword
               longname: runoff rate
               description: real or character value that defines the volumetric rate of diffuse overland
@@ -899,12 +947,15 @@ period:
               description: real value that defines the fraction of upstream flow (USTRF) from each upstream
                 reach that is applied as upstream inflow to the reach. The sum of all USTRF values for
                 all reaches connected to the same upstream reach must be equal to one.
+              mf6internal: upstream_frac
               tagged: true
               in_record: true
+              time_series: true
             cross_sectionrecord:
               block: period
               type: record
               reader: urword
+              mf6internal: xsectionrecord
               in_record: true
               fields:
                 filein:
@@ -959,6 +1010,7 @@ period:
                   type: keyword
                   reader: urword
                   description: keyword for specifying auxiliary variable.
+                  mf6internal: period_auxiliary
                   in_record: true
                 auxname:
                   block: period

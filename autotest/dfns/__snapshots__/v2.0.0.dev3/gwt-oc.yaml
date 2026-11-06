@@ -17,7 +17,10 @@ blocks:
           budgetfile:
             type: file
             longname: file keyword
-            description: name of the output file to write budget information.
+            description: name of the output file to write budget information. Data are written to this
+              file only for time steps in which SAVE BUDGET is specified in a PERIOD block. If SAVE BUDGET
+              is specified in a PERIOD block and this file is not specified, MODFLOW 6 will terminate
+              with an error.
             tagged: false
             direction: out
       budgetcsv_filerecord:
@@ -31,8 +34,9 @@ blocks:
           budgetcsvfile:
             type: file
             longname: file keyword
-            description: name of the comma-separated value (CSV) output file to write budget summary information.  A
-              budget summary record will be written to this file for each time step of the simulation.
+            description: name of the comma-separated value (CSV) output file to write budget summary information.
+              If specified, a budget summary record will be written to this file for every time step of
+              the simulation.
             tagged: false
             direction: out
       concentration_filerecord:

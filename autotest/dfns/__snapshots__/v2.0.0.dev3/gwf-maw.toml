@@ -111,6 +111,12 @@ longname = "activate flow correction"
 description = "keyword that activates flow corrections in cases where the head in a multi-aquifer well is below the bottom of the screen for a connection or the head in a convertible cell connected to a multi-aquifer well is below the cell bottom. When flow corrections are activated, unit head gradients are used to calculate the flow between a multi-aquifer well and a connected GWF cell. By default, flow corrections are not made."
 optional = true
 
+[blocks.options.fields.non_vertical_wells]
+type = "keyword"
+longname = "activate non-vertical well connections"
+description = "keyword that activates support for non-vertical (slanted) multi-aquifer well connections.  When this option is specified, an ANGLEDATA block can be used to assign a tilt angle (deviation from vertical) to individual multi-aquifer well connections.  The saturated conductance for a connection listed in the ANGLEDATA block is scaled by the in-cell screen length, which is calculated from the screen top, screen bottom, and tilt angle (or specified directly), instead of the vertical screen thickness.  By default, all multi-aquifer well connections are assumed to be vertical.  The tilt angle and connection length scale the conductance for a single connection only and do not route flow through intervening cells; a well that passes through more than one cell (a slanted well or a horizontal lateral) must have a separate connection to each cell that it penetrates.  For a connection that uses the SPECIFIED conductance equation, the saturated conductance is used unchanged (the length correction is not applied because the conductance is provided by the user), but the screen top and bottom are honored so that the connection saturation is calculated over the correct interval rather than over the full cell."
+optional = true
+
 [blocks.options.fields.flowing_wells]
 type = "keyword"
 longname = "activate flowing wells"
@@ -188,6 +194,13 @@ type = "keyword"
 description = "keyword to indicate that this instance of the MAW Package can be used with the Water Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within the package to store the available, provided, and received water."
 optional = true
 
+[blocks.options.fields.dev_peaceman_effective_radius]
+type = "keyword"
+longname = "use the Peaceman effective radius"
+description = "keyword that calculates the effective radius for structured grids using the approach of Peaceman (1983) instead of the default approach.  This development option is not supported."
+optional = true
+developmode = true
+
 [blocks.dimensions.fields.nmawwells]
 type = "integer"
 longname = "number of MAW wells"
@@ -228,6 +241,7 @@ type = "double"
 longname = "starting head"
 description = "starting head for the multi-aquifer well. The program will terminate with an error if the starting head is less than the specified well bottom."
 tagged = false
+time_series = true
 
 [blocks.packagedata.fields.packagedata.item.fields.condeqn]
 type = "string"
@@ -317,6 +331,50 @@ tagged = false
 type = "double"
 longname = "skin radius"
 description = "real value that defines the skin radius (filter pack radius) for the multi-aquifer well. RADIUS_SKIN can be any value if CONDEQN is SPECIFIED or THIEM. If CONDEQN is SKIN, CUMULATIVE, or MEAN, the program will terminate with an error if  RADIUS_SKIN is less than or equal to the RADIUS for the multi-aquifer well."
+tagged = false
+
+[blocks.angledata.fields.angledata]
+type = "list"
+optional = true
+when = "non_vertical_wells"
+
+[blocks.angledata.fields.angledata.item]
+name = "angledata"
+type = "record"
+
+[blocks.angledata.fields.angledata.item.fields.ifno]
+type = "integer"
+longname = "well number for this entry"
+description = "integer value that defines the feature (well) number associated with the specified ANGLEDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS.  This block can only be specified if the NON_VERTICAL_WELLS option is specified in the OPTIONS block. Multi-aquifer well connections that are not listed in the ANGLEDATA block are assumed to be vertical.  The program will terminate with an error if connection information for a multi-aquifer well connection is specified more than once."
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[blocks.angledata.fields.angledata.item.fields.icon]
+type = "integer"
+longname = "connection number"
+description = "integer value that defines the GWF connection number for this multi-aquifer well connection entry. ICON must be greater than zero and less than or equal to NGWFNODES for multi-aquifer well IFNO."
+tagged = false
+index = true
+
+[blocks.angledata.fields.angledata.item.fields.icon.pk]
+scope = "ifno"
+
+[blocks.angledata.fields.angledata.item.fields.icon.fk]
+path = "connectiondata.icon"
+scope = "ifno"
+
+[blocks.angledata.fields.angledata.item.fields.angle]
+type = "double"
+longname = "tilt angle from vertical"
+description = "value that defines the tilt angle of the multi-aquifer well connection, in degrees measured as a deviation from vertical.  ANGLE must be greater than or equal to 0.0 (a vertical connection) and less than or equal to 90.0 (a horizontal connection) degrees.  The in-cell screen length used to calculate the saturated conductance is computed from the screen top, screen bottom, well radius, and ANGLE, unless CONN_LENGTH is specified.  The horizontal distance spanned by a connection grows rapidly as ANGLE approaches 90.0 degrees, and a warning is issued if it is greater than the maximum horizontal extent of the connected cell.  A connection that is intended to pass through more than one cell should be specified as a separate connection to each cell that it passes through.  If a connection passes through more than one cell unintentionally, ANGLE or CONN_LENGTH should be reduced."
+tagged = false
+
+[blocks.angledata.fields.angledata.item.fields.conn_length]
+type = "double"
+longname = "in-cell screen length"
+description = "optional value that defines the length of the multi-aquifer well screen within the connected GWF cell.  If CONN_LENGTH is specified (and greater than zero), it is used directly as the in-cell screen length; otherwise, the in-cell screen length is calculated from the screen top, screen bottom, well radius, and ANGLE.  CONN_LENGTH must be specified for horizontal connections (ANGLE equal to 90.0 degrees) because the in-cell screen length cannot be derived from the screen elevations for a horizontal connection.  A warning is issued if the horizontal distance spanned by the connection is greater than the maximum horizontal extent of the connected cell.  The MEAN conductance equation is recommended for horizontal connections.  For a horizontal connection using the MEAN conductance equation, SCRN_TOP and SCRN_BOT do not affect the magnitude of the saturated conductance but do determine the elevation range over which the connection saturates and dewaters; SCRN_TOP and SCRN_BOT should be set to the top and bottom of the horizontal borehole so that the vertical screen extent (SCRN_TOP $-$ SCRN_BOT) equals the well diameter (2 times RADIUS).  The program snaps SCRN_TOP to SCRN_BOT plus the well diameter when the specified extent is essentially equal to the well diameter, and otherwise issues a warning."
+optional = true
 tagged = false
 
 [blocks.period.fields.stress_period_data]
@@ -468,10 +526,66 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[memory.nmawwells]
+[memory.iprpak]
+set_in = "ar"
+source = "print_input"
+type = "integer"
+
+[memory.iprflow]
+set_in = "ar"
+source = "print_flows"
+type = "integer"
+
+[memory.ipakcb]
+set_in = "ar"
+source = "save_flows"
+type = "integer"
+
+[memory.inonvert]
+set_in = "ar"
+source = "non_vertical_wells"
+type = "integer"
+
+[memory.maw_flw_red_csv]
+set_in = "ar"
+source = "maw_flow_reduce_csv"
+type = "logical"
+
+[memory.ieffradopt]
+set_in = "ar"
+source = "dev_peaceman_effective_radius"
+type = "integer"
+
+[memory.maxbound]
 set_in = "ar"
 source = "nmawwells"
 type = "integer"
+
+[memory.packagedata_ifno]
+set_in = "ar"
+source = "ifno"
+type = "integer"
+
+[memory.conndata_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.angledata_ifno]
+source = "ifno"
+type = "integer"
+
+[memory.angledata_icon]
+source = "icon"
+type = "integer"
+
+[memory.connlen]
+source = "conn_length"
+type = "double"
+
+[memory.period_auxiliary]
+set_in = "rp"
+source = "auxiliary"
+type = "logical"
 
 [observations.head]
 type = "union"

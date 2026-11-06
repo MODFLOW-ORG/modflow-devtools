@@ -97,7 +97,6 @@ blocks:
         in space.
       reader: urword
       optional: true
-      developmode: true
       longname: CRS user input string
       type: string
   dimensions:
@@ -113,7 +112,7 @@ blocks:
       description: is the total number of (x, y, z) vertex pairs used to characterize the model grid.
       reader: urword
       optional: true
-      longname: number of columns
+      longname: number of vertices
       type: integer
   griddata:
     length:

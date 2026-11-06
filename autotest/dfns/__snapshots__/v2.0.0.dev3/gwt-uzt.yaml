@@ -156,6 +156,14 @@ blocks:
             tagged: false
             direction: in
             component: utl-obs
+      dev_nonexpanding_matrix:
+        type: keyword
+        longname: do not add rows to the solution matrix
+        description: keyword that solves the feature concentration with a general mixing equation and
+          adds the result to the right-hand side of the GWT equations, instead of adding a row to the
+          solution matrix for each feature.  This development option is not supported.
+        optional: true
+        developmode: true
   packagedata:
     fields:
       packagedata:
@@ -239,7 +247,7 @@ blocks:
                     the UZF cell concentration.  If a UZF cell is constant, then the concentration for
                     the UZF cell will be fixed at the user specified value.
                 concentration:
-                  type: string
+                  type: double
                   longname: unsaturated zone flow cell concentration
                   description: real or character value that defines the concentration for the unsaturated
                     zone flow cell. The specified CONCENTRATION is only applied if the unsaturated zone
@@ -248,7 +256,7 @@ blocks:
                     series by entering the time-series name in place of a numeric value.
                   time_series: true
                 infiltration:
-                  type: string
+                  type: double
                   longname: infiltration concentration
                   description: real or character value that defines the infiltration solute concentration
                     $(ML^{-3})$ for the UZF cell. If the Options block includes a TIMESERIESFILE entry
@@ -256,7 +264,7 @@ blocks:
                     by entering the time-series name in place of a numeric value.
                   time_series: true
                 uzet:
-                  type: string
+                  type: double
                   longname: unsaturated zone et concentration
                   description: real or character value that defines the concentration of unsaturated zone
                     evapotranspiration water $(ML^{-3})$ for the UZF cell. If this concentration value
@@ -302,6 +310,42 @@ blocks:
         tagged: false
         index: true
 memory:
+  flow_pkg_name:
+    set_in: ar
+    source: flow_package_name
+    type: string
+  fp_aux_name:
+    set_in: ar
+    source: flow_package_auxiliary_name
+    type: string
+  iprpak:
+    set_in: ar
+    source: print_input
+    type: integer
+  iprconc:
+    set_in: ar
+    source: print_concentration
+    type: integer
+  iprflow:
+    set_in: ar
+    source: print_flows
+    type: integer
+  ipakcb:
+    set_in: ar
+    source: save_flows
+    type: integer
+  dev_nonexpanding:
+    set_in: ar
+    source: dev_nonexpanding_matrix
+    type: logical
+  packagedata_ifno:
+    set_in: ar
+    source: ifno
+    type: integer
+  period_auxiliary:
+    set_in: rp
+    source: auxiliary
+    type: logical
   ncv:
     readonly: true
     set_in: ar

@@ -4,6 +4,9 @@
   "advanced": false,
   "multi": false,
   "ftype": "SSM",
+  "subcomponents": [
+    "utl-spc"
+  ],
   "blocks": {
     "options": {
       "print_flows": {

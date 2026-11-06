@@ -21,7 +21,7 @@ optional = true
 
 [blocks.options.fields.save_flows]
 type = "keyword"
-longname = "save lake flows to budget file"
+longname = "save MVE flows to budget file"
 description = "keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 optional = true
 

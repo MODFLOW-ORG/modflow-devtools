@@ -28,7 +28,7 @@
         "description": "keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
         "reader": "urword",
         "optional": true,
-        "longname": "save lake flows to budget file",
+        "longname": "save MVT flows to budget file",
         "type": "keyword"
       },
       "budget_filerecord": {

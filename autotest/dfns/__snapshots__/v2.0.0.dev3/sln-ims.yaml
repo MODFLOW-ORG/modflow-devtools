@@ -18,7 +18,7 @@ blocks:
         optional: true
       complexity:
         type: string
-        longname: print option
+        longname: solver complexity
         description: is an optional keyword that defines default non-linear and linear solver parameters.  SIMPLE
           - indicates that default solver input values will be defined that work well for nearly linear
           models. This would be used for models that do not include nonlinear stress packages and models
@@ -38,6 +38,7 @@ blocks:
       csv_output_filerecord:
         type: record
         optional: true
+        removed: 6.8.0
         deprecated: 6.1.1
         fields:
           csv_output:
@@ -47,6 +48,7 @@ blocks:
               solver convergence output.  The CSV_OUTPUT option has been deprecated and split into the
               CSV_OUTER_OUTPUT and CSV_INNER_OUTPUT options.  Starting with MODFLOW 6 version 6.1.1 if
               the CSV_OUTPUT option is specified, then it is treated as the CSV_OUTER_OUTPUT option.
+            removed: 6.8.0
             deprecated: 6.1.1
           csvfile:
             type: file
@@ -58,6 +60,7 @@ blocks:
               and maximum residual convergence information for the solution and each model (if the solution
               includes more than one model) and linear acceleration information for each inner iteration.
             tagged: false
+            removed: 6.8.0
             deprecated: 6.1.1
             direction: out
       csv_outer_output_filerecord:
@@ -139,6 +142,57 @@ blocks:
           allowable outer iterations, then the ATS (if active) will decrease the time step length by a
           factor of 1 / DTADJ.
         optional: true
+      dev_ptc:
+        type: keyword
+        longname: activate pseudo-transient continuation
+        description: keyword that activates pseudo-transient continuation (PTC).  PTC is active by default,
+          so this keyword has an effect only when it follows NO_PTC in the OPTIONS block.  This development
+          option is not supported.
+        optional: true
+        developmode: true
+      dev_ptc_output_filerecord:
+        type: record
+        optional: true
+        developmode: true
+        fields:
+          dev_ptc_output:
+            type: keyword
+            longname: pseudo-transient continuation output keyword
+            description: keyword to specify that the record corresponds to the pseudo-transient continuation
+              output file.  Specifying the record also activates pseudo-transient continuation.  This
+              development option is not supported.
+            developmode: true
+          dev_ptcfile:
+            type: file
+            longname: file keyword
+            description: name of the ascii output file to write pseudo-transient continuation information.
+            developmode: true
+            tagged: false
+            direction: out
+      dev_ptc_option:
+        type: keyword
+        longname: use the norms to set the initial pseudo-transient continuation value
+        description: keyword that uses the norm of the right-hand side and the L2 norm of the residual
+          to set the initial pseudo-transient continuation value, instead of the default approach.  Specifying
+          the keyword also activates pseudo-transient continuation.  This development option is not supported.
+        optional: true
+        developmode: true
+      dev_ptc_exponent:
+        type: double
+        longname: pseudo-transient continuation exponent
+        description: real number value that defines the exponent used to reduce the pseudo-transient continuation
+          value between outer iterations.  The value must be greater than zero and is 1 by default.  Specifying
+          the value also activates pseudo-transient continuation.  This development option is not supported.
+        optional: true
+        developmode: true
+      dev_ptc_del0:
+        type: double
+        longname: initial pseudo-transient continuation value
+        description: real number value that defines the initial pseudo-transient continuation value, which
+          is equivalent to an initial time step length.  The value must be greater than zero.  Specifying
+          the value also activates pseudo-transient continuation.  This development option is not supported.
+        optional: true
+        developmode: true
   nonlinear:
     fields:
       outer_hclose:
@@ -151,6 +205,7 @@ blocks:
           (for dependent variable), however either one can be specified in order to maintain backward
           compatibility.
         optional: true
+        removed: 6.8.0
         deprecated: 6.1.1
       outer_dvclose:
         type: double
@@ -175,6 +230,7 @@ blocks:
           can be still be specified for backward compatibility with previous versions of MODFLOW 6 but
           eventually specification of OUTER_RCLOSEBND will cause MODFLOW 6 to terminate with an error.
         optional: true
+        removed: 6.8.0
         deprecated: 6.1.1
       outer_maximum:
         type: integer
@@ -303,6 +359,7 @@ blocks:
           the more general INNER_DVCLOSE (for dependent variable), however either one can be specified
           in order to maintain backward compatibility.
         optional: true
+        removed: 6.8.0
         deprecated: 6.1.1
       inner_dvclose:
         type: double
@@ -390,7 +447,7 @@ blocks:
         optional: true
       number_orthogonalizations:
         type: integer
-        longname: drop tolerance used to drop preconditioner terms
+        longname: number of orthogonalizations
         description: optional integer value defining the interval used to explicitly recalculate the residual
           of the flow equation using the solver coefficient matrix, the latest dependent-variable (for
           example, head) estimates, and the right hand side. For problems that benefit from explicit recalculation

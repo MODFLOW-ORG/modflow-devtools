@@ -52,7 +52,7 @@
       "optional": true,
       "longname": "print input to listing file",
       "description": "keyword to indicate that the list of constant temperature information will be written to the listing file immediately after it is read.",
-      "mf6internal": "iprflow"
+      "mf6internal": "iprpak"
     },
     "print_flows": {
       "block": "options",
@@ -61,7 +61,7 @@
       "optional": true,
       "longname": "print calculated flows to listing file",
       "description": "keyword to indicate that the list of constant temperature flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period.",
-      "mf6internal": "ipakcb"
+      "mf6internal": "iprflow"
     },
     "save_flows": {
       "block": "options",
@@ -70,7 +70,7 @@
       "optional": true,
       "longname": "save constant temperature flows to budget file",
       "description": "keyword to indicate that constant temperature flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
-      "mf6internal": "iprpak"
+      "mf6internal": "ipakcb"
     },
     "timeseries": {
       "block": "options",

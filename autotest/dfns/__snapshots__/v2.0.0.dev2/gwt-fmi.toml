@@ -28,7 +28,7 @@ type = "record"
 [blocks.packagedata.fields.packagedata.item.fields.flowtype]
 type = "string"
 longname = "flow type"
-description = "is the word GWFBUDGET, GWFHEAD, GWFMOVER or the name of an advanced GWF stress package.  If GWFBUDGET is specified, then the corresponding file must be a budget file. If GWFHEAD is specified, the file must be a head file.  If GWFGRID is specified, the file must be a binary grid file.  If an advanced GWF stress package name appears then the corresponding file must be the budget file saved by a LAK, SFR, MAW or UZF Package."
+description = "is the word GWFBUDGET, GWFHEAD, GWFGRID, GWFMOVER or the name of an advanced GWF stress package.  If GWFBUDGET is specified, then the corresponding file must be a budget file. If GWFHEAD is specified, the file must be a head file.  If GWFGRID is specified, the file must be a binary grid file.  If an advanced GWF stress package name appears then the corresponding file must be the budget file saved by a LAK, SFR, MAW or UZF Package."
 tagged = false
 
 [blocks.packagedata.fields.packagedata.item.fields.fname]

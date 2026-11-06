@@ -54,7 +54,7 @@
         "reader": "urword",
         "optional": true,
         "mf6internal": "ipakcb",
-        "longname": "save well flows to budget file",
+        "longname": "save ESL flows to budget file",
         "type": "keyword"
       },
       "ts_filerecord": {
@@ -159,7 +159,7 @@
         "description": "name of the energy source cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes.",
         "reader": "urword",
         "optional": true,
-        "longname": "well name",
+        "longname": "energy source loading name",
         "type": "string"
       }
     }

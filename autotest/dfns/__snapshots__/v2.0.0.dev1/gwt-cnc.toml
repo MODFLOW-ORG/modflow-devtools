@@ -34,7 +34,7 @@ description = "keyword to indicate that the list of constant concentration infor
 reader = "urword"
 optional = true
 longname = "print input to listing file"
-mf6internal = "iprflow"
+mf6internal = "iprpak"
 type = "keyword"
 
 [blocks.options.print_flows]
@@ -43,7 +43,7 @@ description = "keyword to indicate that the list of constant concentration flow 
 reader = "urword"
 optional = true
 longname = "print calculated flows to listing file"
-mf6internal = "ipakcb"
+mf6internal = "iprflow"
 type = "keyword"
 
 [blocks.options.save_flows]
@@ -52,7 +52,7 @@ description = "keyword to indicate that constant concentration flow terms will b
 reader = "urword"
 optional = true
 longname = "save constant concentration flows to budget file"
-mf6internal = "iprpak"
+mf6internal = "ipakcb"
 type = "keyword"
 
 [blocks.options.ts_filerecord]

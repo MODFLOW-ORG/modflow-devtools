@@ -31,7 +31,7 @@
           },
           "budgetfile": {
             "block": "options",
-            "description": "name of the output file to write budget information.",
+            "description": "name of the output file to write budget information. Data are written to this file only for time steps in which SAVE BUDGET is specified in a PERIOD block. If SAVE BUDGET is specified in a PERIOD block and this file is not specified, MODFLOW 6 will terminate with an error.",
             "reader": "urword",
             "optional": false,
             "longname": "file keyword",
@@ -64,7 +64,7 @@
           },
           "budgetcsvfile": {
             "block": "options",
-            "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+            "description": "name of the comma-separated value (CSV) output file to write budget summary information. If specified, a budget summary record will be written to this file for every time step of the simulation.",
             "reader": "urword",
             "optional": false,
             "longname": "file keyword",
@@ -263,6 +263,14 @@
         "optional": true,
         "mf6internal": "dev_dump_evtrace",
         "longname": "print particle tracking events",
+        "type": "keyword"
+      },
+      "scratch_buffer": {
+        "block": "options",
+        "description": "keyword to stage track events in a temporary (scratch) file instead of an in-memory buffer. Particle tracking results calculated during a time step are buffered, and output is deferred, until successful completion of the time step. By default, results are buffered in memory. However, for simulations in which a very large number of track events is generated during a time step, memory limits can be exceeded. In such cases, the SCRATCH_BUFFER option can be invoked to buffer results in a scratch file until successful completion of the time step. Buffering in a scratch file is typically slower than buffering in memory.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "buffer track events in scratch file instead of memory",
         "type": "keyword"
       }
     },

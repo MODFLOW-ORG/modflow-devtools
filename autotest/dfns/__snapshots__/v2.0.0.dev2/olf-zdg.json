@@ -120,7 +120,7 @@
                 "description": "is the identifier for the cross section specified in the CXS Package.  A value of zero indicates the zero-depth-gradient calculation will use parameters for a hydraulically wide channel.",
                 "tagged": false,
                 "index": true,
-                "fk": "chf-cxs.packagedata.idcxs"
+                "fk": "chf-cxs.packagedata.ifno"
               },
               "width": {
                 "type": "double",

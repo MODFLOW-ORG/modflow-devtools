@@ -51,7 +51,7 @@ block = "options"
 description = "keyword to indicate that general-head boundary flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
 reader = "urword"
 optional = true
-longname = "save CHD flows to budget file"
+longname = "save GHB flows to budget file"
 mf6internal = "ipakcb"
 type = "keyword"
 

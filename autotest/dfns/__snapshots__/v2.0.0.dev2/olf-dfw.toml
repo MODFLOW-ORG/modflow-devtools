@@ -87,7 +87,7 @@ description = "integer value indication the cross section identifier in the Cros
 optional = true
 dtype = "integer"
 index = true
-fk = "chf-cxs.packagedata.idcxs"
+fk = "chf-cxs.packagedata.ifno"
 shape = [
     "nodes",
 ]

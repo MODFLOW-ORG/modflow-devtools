@@ -49,8 +49,7 @@
               "tagged": false,
               "valid": [
                 "stepwise",
-                "linear",
-                "linearend"
+                "linear"
               ]
             }
           }

@@ -107,7 +107,7 @@ blocks:
         optional: true
         dtype: integer
         index: true
-        fk: chf-cxs.packagedata.idcxs
+        fk: chf-cxs.packagedata.ifno
         shape:
           - nodes
 memory:

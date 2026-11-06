@@ -36,6 +36,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print input to listing file",
+        "mf6internal": "iprpak",
         "type": "keyword"
       },
       "print_flows": {
@@ -44,6 +45,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print calculated flows to listing file",
+        "mf6internal": "iprflow",
         "type": "keyword"
       },
       "save_flows": {
@@ -52,6 +54,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "save well flows to budget file",
+        "mf6internal": "ipakcb",
         "type": "keyword"
       },
       "ts_filerecord": {
@@ -147,6 +150,7 @@
         "optional": true,
         "time_series": true,
         "longname": "auxiliary variables",
+        "mf6internal": "auxvar",
         "type": "double"
       },
       "boundname": {

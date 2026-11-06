@@ -94,7 +94,6 @@ blocks:
           affect the model simulation, but it is written to the binary grid file so that postprocessors
           can locate the grid in space.
         optional: true
-        developmode: true
         case_sensitive: true
       ncf_filerecord:
         type: record
@@ -124,7 +123,7 @@ blocks:
           to all layers.
       nvert:
         type: integer
-        longname: number of columns
+        longname: number of vertices
         description: is the total number of (x, y) vertex pairs used to characterize the horizontal configuration
           of the model grid.
   griddata:

@@ -36,6 +36,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "print input to listing file",
+        "mf6internal": "iprpak",
         "type": "keyword"
       },
       "print_flows": {
@@ -52,6 +53,7 @@
         "reader": "urword",
         "optional": true,
         "longname": "save well flows to budget file",
+        "mf6internal": "ipakcb",
         "type": "keyword"
       },
       "wc_filerecord": {
@@ -90,6 +92,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "budfilerec",
         "type": "record",
         "children": {
           "budget": {
@@ -122,6 +125,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "budcsvfilerec",
         "type": "record",
         "children": {
           "budgetcsv": {
@@ -154,6 +158,7 @@
         "block": "options",
         "reader": "urword",
         "optional": true,
+        "mf6internal": "pkgconvfilerec",
         "type": "record",
         "children": {
           "package_convergence": {
@@ -162,6 +167,7 @@
             "reader": "urword",
             "optional": false,
             "longname": "package_convergence keyword",
+            "mf6internal": "pkgconv",
             "type": "keyword"
           },
           "fileout": {
@@ -178,6 +184,7 @@
             "reader": "urword",
             "optional": false,
             "longname": "file keyword",
+            "mf6internal": "pkgconvfname",
             "type": "string"
           }
         }
@@ -253,6 +260,15 @@
         "optional": true,
         "type": "keyword"
       },
+      "dev_no_final_check": {
+        "block": "options",
+        "description": "keyword that deactivates the final convergence check of the change in UZF recharge.  This development option is not supported.",
+        "mf6internal": "iconvchk",
+        "reader": "urword",
+        "optional": true,
+        "longname": "do not check final convergence",
+        "type": "keyword"
+      },
       "simulate_et": {
         "block": "options",
         "description": "keyword specifying that ET in the unsaturated (UZF) and saturated zones (GWF) will be simulated. ET can be simulated in the UZF cell and not the GWF cell by omitting keywords LINEAR_GWET and SQUARE_GWET.",
@@ -308,6 +324,7 @@
         "description": "is the number of UZF cells.  More than one UZF cell can be assigned to a GWF cell; however, only one GWF cell can be assigned to a single UZF cell. If more than one UZF cell is assigned to a GWF cell, then an auxiliary variable should be used to reduce the surface area of the UZF cell with the AUXMULTNAME option.",
         "reader": "urword",
         "optional": false,
+        "mf6internal": "maxbound",
         "longname": "number of UZF cells",
         "type": "integer"
       },
@@ -346,6 +363,7 @@
               "ifno": {
                 "block": "packagedata",
                 "description": "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once.",
+                "mf6internal": "packagedata_ifno",
                 "reader": "urword",
                 "longname": "uzf id number for this entry",
                 "numeric_index": true,
@@ -434,6 +452,7 @@
         "shape": "(nper)",
         "block": "packagedata",
         "description": "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS.  UZF information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once.",
+        "mf6internal": "packagedata_ifno",
         "reader": "urword",
         "longname": "uzf id number for this entry",
         "numeric_index": true,
@@ -446,7 +465,7 @@
         "time_series": true,
         "reader": "urword",
         "longname": "infiltration rate",
-        "type": "string"
+        "type": "double"
       },
       "pet": {
         "shape": "(nper)",
@@ -455,7 +474,7 @@
         "reader": "urword",
         "time_series": true,
         "longname": "potential ET rate",
-        "type": "string"
+        "type": "double"
       },
       "extdp": {
         "shape": "(nper)",
@@ -464,7 +483,7 @@
         "reader": "urword",
         "time_series": true,
         "longname": "extinction depth",
-        "type": "string"
+        "type": "double"
       },
       "extwc": {
         "shape": "(nper)",
@@ -473,7 +492,7 @@
         "reader": "urword",
         "time_series": true,
         "longname": "extinction water content",
-        "type": "string"
+        "type": "double"
       },
       "ha": {
         "shape": "(nper)",
@@ -482,7 +501,7 @@
         "time_series": true,
         "reader": "urword",
         "longname": "air entry potential",
-        "type": "string"
+        "type": "double"
       },
       "hroot": {
         "shape": "(nper)",
@@ -491,7 +510,7 @@
         "reader": "urword",
         "time_series": true,
         "longname": "root potential",
-        "type": "string"
+        "type": "double"
       },
       "rootact": {
         "shape": "(nper)",
@@ -500,7 +519,7 @@
         "reader": "urword",
         "time_series": true,
         "longname": "root activity function",
-        "type": "string"
+        "type": "double"
       },
       "aux": {
         "shape": "(nper, naux)",

@@ -52,7 +52,7 @@ blocks:
         optional: true
       save_flows:
         type: keyword
-        longname: save well flows to budget file
+        longname: save SRC flows to budget file
         description: keyword to indicate that mass source flow terms will be written to the file specified
           with 'BUDGET FILEOUT' in Output Control.
         optional: true
@@ -158,7 +158,7 @@ blocks:
                 - auxiliary
             boundname:
               type: string
-              longname: well name
+              longname: source name
               description: name of the mass source cell.  BOUNDNAME is an ASCII character variable that
                 can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire
                 name must be enclosed within single quotes.

@@ -154,20 +154,20 @@ description = "integer value specifying the starting stress period number for wh
 tagged = false
 index = true
 
-[memory.iprflow]
+[memory.iprpak]
 set_in = "ar"
 source = "print_input"
+type = "integer"
+
+[memory.iprflow]
+set_in = "ar"
+source = "print_flows"
 type = "integer"
 
 [memory.ipakcb]
 set_in = "ar"
 source = "save_flows"
 description = "Flag controlling whether boundary flows are written to the budget file."
-type = "integer"
-
-[memory.iprpak]
-set_in = "ar"
-source = "save_flows"
 type = "integer"
 
 [memory.tspvar]

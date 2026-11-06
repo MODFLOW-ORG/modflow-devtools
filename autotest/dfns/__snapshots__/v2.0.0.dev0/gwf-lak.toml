@@ -2,6 +2,9 @@ name = "gwf-lak"
 advanced = true
 multi = true
 schema_version = "2.0.0.dev0"
+subcomponents = [
+    "utl-laktab",
+]
 
 [fkeys.ts_filerecord]
 parent = "parent_package"
@@ -41,6 +44,7 @@ reader = "urword"
 optional = true
 longname = "print input to listing file"
 description = "keyword to indicate that the list of lake information will be written to the listing file immediately after it is read."
+mf6internal = "iprpak"
 
 [options.print_stage]
 block = "options"
@@ -57,6 +61,7 @@ reader = "urword"
 optional = true
 longname = "print calculated flows to listing file"
 description = "keyword to indicate that the list of lake flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period."
+mf6internal = "iprflow"
 
 [options.save_flows]
 block = "options"
@@ -65,6 +70,7 @@ reader = "urword"
 optional = true
 longname = "save lake flows to budget file"
 description = "keyword to indicate that lake flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control."
+mf6internal = "ipakcb"
 
 [options.stage_filerecord]
 block = "options"
@@ -75,10 +81,11 @@ tagged = true
 
 [options.stage_filerecord.fields.stage]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "lake stage"
 description = "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
@@ -109,6 +116,7 @@ block = "options"
 type = "record"
 reader = "urword"
 optional = true
+mf6internal = "budfilerec"
 tagged = true
 
 [options.budget_filerecord.fields.budget]
@@ -147,6 +155,7 @@ block = "options"
 type = "record"
 reader = "urword"
 optional = true
+mf6internal = "budcsvfilerec"
 tagged = true
 
 [options.budgetcsv_filerecord.fields.fileout]
@@ -185,6 +194,7 @@ block = "options"
 type = "record"
 reader = "urword"
 optional = true
+mf6internal = "pkgconvfilerec"
 tagged = true
 
 [options.package_convergence_filerecord.fields.fileout]
@@ -203,9 +213,10 @@ type = "keyword"
 reader = "urword"
 optional = false
 longname = "package_convergence keyword"
-description = "keyword to specify that record corresponds to the package convergence comma spaced values file."
+description = "keyword to specify that record corresponds to the package convergence comma spaced values file. A warning message will be issued if package convergence data is requested but the IMPLICIT option is specified. In that case the lake stage is included in the Iterative Model Solution (IMS) convergence check and the package convergence file is not written."
 in_record = true
 tagged = true
+mf6internal = "pkgconv"
 
 [options.package_convergence_filerecord.fields.package_convergence_filename]
 block = "options"
@@ -216,6 +227,7 @@ longname = "file keyword"
 description = "name of the comma spaced values output file to write package convergence information."
 in_record = true
 tagged = false
+mf6internal = "pkgconvfname"
 
 [options.timeseries]
 block = "options"
@@ -256,6 +268,42 @@ optional = true
 description = "keyword to indicate that this instance of the LAK Package can be used with the Water Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within the package to store the available, provided, and received water."
 tagged = true
 
+[options.dev_force_legacy]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "force the legacy solution for every lake"
+description = "keyword that solves every active lake with the default (legacy) substitution solver under the implicit formulation, instead of only those lakes that are too poorly conditioned to solve as a matrix unknown.  Cannot be specified with DEV_FORCE_LEGACY_LAKE.  This development option exists to test that path and is not supported."
+mf6internal = "iforceleg"
+
+[options.dev_force_legacy_lake]
+block = "options"
+type = "integer"
+reader = "urword"
+optional = true
+longname = "force the legacy solution for one lake"
+description = "integer lake number that is solved with the default (legacy) substitution solver under the implicit formulation, while the other lakes are solved as matrix unknowns.  Cannot be specified with DEV_FORCE_LEGACY.  This development option exists to test that path and is not supported."
+mf6internal = "iforceleglak"
+
+[options.dev_groundwater_head_conductance]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "use the groundwater head to calculate horizontal conductance"
+description = "keyword that calculates the conductance for horizontal connections using the groundwater head instead of the lake stage.  This development option is not supported."
+mf6internal = "igwhcopt"
+
+[options.dev_maximum_outlet_depth]
+block = "options"
+type = "double precision"
+reader = "urword"
+optional = true
+longname = "maximum outlet depth"
+description = "real number value that defines the maximum depth used to calculate outlet flow.  This development option is not supported."
+mf6internal = "outdmax"
+
 [options.surfdep]
 block = "options"
 type = "double precision"
@@ -263,6 +311,16 @@ reader = "urword"
 optional = true
 longname = "surface depression depth"
 description = "real value that defines the surface depression depth for VERTICAL lake-GWF connections. If specified, SURFDEP must be greater than or equal to zero. If SURFDEP is not specified, a default value of zero is used for all vertical lake-GWF connections."
+mf6internal = "surfdep"
+
+[options.implicit]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "solve lake stage in the groundwater flow matrix"
+description = "keyword that activates the implicit formulation. With this option each lake stage is solved as an additional unknown in the groundwater flow matrix, instead of by the default substitution-iteration solver. The implicit formulation typically converges in far fewer outer iterations for steady-state and strongly coupled lakes and can solve problems for which the default formulation fails to converge. Converged results are equivalent to the default formulation. The implicit formulation makes the coefficient matrix asymmetric and therefore requires the BICGSTAB linear acceleration in the Iterative Model Solution (IMS). Each lake must have at least one groundwater connection when the IMPLICIT option is active because the implicit formulation solves the lake stage through its lakebed seepage; the program will terminate with an error if a lake with no groundwater connections is specified with the IMPLICIT option. The implicit formulation does not yet include the density terms of the Buoyancy (BUY) Package, and the program will terminate with an error if the IMPLICIT option is specified and the BUY Package is active. If a lake stage becomes too poorly conditioned to solve as a matrix unknown, which can happen for a weakly connected or disconnected lake, that lake is solved automatically by the default substitution solver instead, so the implicit formulation remains as robust as the default formulation. The Newton formulation is recommended for lakes that may become perched (disconnected from the aquifer), because results obtained with the standard rewetting (REWET) capability can otherwise differ between the two approaches."
+mf6internal = "iimplicit"
 
 [options.maximum_iterations]
 block = "options"
@@ -270,7 +328,8 @@ type = "integer"
 reader = "urword"
 optional = true
 longname = "LAK Newton-Raphson iterations"
-description = "integer value that defines the maximum number of Newton-Raphson iterations allowed for a lake. By default, MAXIMUM_ITERATIONS is equal to 100. MAXIMUM_ITERATIONS would only need to be increased from the default value if one or more lakes in a simulation has a large water budget error."
+description = "integer value that defines the maximum number of Newton-Raphson iterations allowed for a lake. By default, MAXIMUM_ITERATIONS is equal to 100. MAXIMUM_ITERATIONS would only need to be increased from the default value if one or more lakes in a simulation has a large water budget error. This option applies only to the default substitution-iteration solver; when the IMPLICIT option is active the lake stage is solved within the groundwater flow matrix and its convergence is controlled by the Iterative Model Solution (IMS) settings instead."
+mf6internal = "maxlakit"
 
 [options.maximum_stage_change]
 block = "options"
@@ -278,7 +337,8 @@ type = "double precision"
 reader = "urword"
 optional = true
 longname = "stage closure tolerance"
-description = "real value that defines the lake stage closure tolerance. By default, MAXIMUM_STAGE_CHANGE is equal to $1 times 10^{-5}$. The MAXIMUM_STAGE_CHANGE would only need to be increased or decreased from the default value if the water budget error for one or more lakes is too small or too large, respectively."
+description = "real value that defines the lake stage closure tolerance. By default, MAXIMUM_STAGE_CHANGE is equal to $1 times 10^{-5}$. The MAXIMUM_STAGE_CHANGE would only need to be increased or decreased from the default value if the water budget error for one or more lakes is too small or too large, respectively. This option applies only to the default substitution-iteration solver; when the IMPLICIT option is active the lake stage is solved within the groundwater flow matrix and its convergence is controlled by the Iterative Model Solution (IMS) settings instead."
+mf6internal = "dmaxchg"
 
 [options.time_conversion]
 block = "options"
@@ -287,6 +347,7 @@ reader = "urword"
 optional = true
 longname = "time conversion factor"
 description = "real value that is used to convert user-specified Manning's roughness coefficients or gravitational acceleration used to calculate outlet flows from seconds to model time units. TIME_CONVERSION should be set to 1.0, 60.0, 3,600.0, 86,400.0, and 31,557,600.0 when using time units (TIME_UNITS) of seconds, minutes, hours, days, or years in the simulation, respectively. TIME_CONVERSION does not need to be specified if no lake outlets are specified or TIME_UNITS are seconds."
+mf6internal = "convtime"
 
 [options.length_conversion]
 block = "options"
@@ -295,6 +356,16 @@ reader = "urword"
 optional = true
 longname = "length conversion factor"
 description = "real value that is used to convert outlet user-specified Manning's roughness coefficients or gravitational acceleration used to calculate outlet flows from meters to model length units. LENGTH_CONVERSION should be set to 3.28081, 1.0, and 100.0 when using length units (LENGTH_UNITS) of feet, meters, or centimeters in the simulation, respectively. LENGTH_CONVERSION does not need to be specified if no lake outlets are specified or LENGTH_UNITS are meters."
+mf6internal = "convlength"
+
+[options.dev_no_final_check]
+block = "options"
+type = "keyword"
+reader = "urword"
+optional = true
+longname = "disable final convergence check for lake stages"
+description = "flag disabling the final convergence check of the change in lake stages. By default this check is enabled."
+mf6internal = "iconvchk"
 
 [dimensions.nlakes]
 block = "dimensions"
@@ -323,7 +394,7 @@ description = "value specifying the number of lakes tables that will be used to 
 [packagedata.packagedata]
 block = "packagedata"
 type = "recarray"
-shape = "(maxbound)"
+shape = "(nlakes)"
 reader = "urword"
 
 [packagedata.packagedata.item]
@@ -340,6 +411,7 @@ description = "integer value that defines the feature (lake) number associated w
 tagged = false
 in_record = true
 numeric_index = true
+mf6internal = "tables_ifno"
 
 [packagedata.packagedata.item.fields.strt]
 block = "packagedata"
@@ -401,6 +473,7 @@ description = "integer value that defines the feature (lake) number associated w
 tagged = false
 in_record = true
 numeric_index = true
+mf6internal = "tables_ifno"
 
 [connectiondata.connectiondata.item.fields.iconn]
 block = "connectiondata"
@@ -481,11 +554,13 @@ block = "tables"
 type = "recarray"
 shape = "(ntables)"
 reader = "urword"
+optional = true
 
 [tables.tables.item]
 type = "record"
 block = "tables"
 reader = "urword"
+optional = true
 
 [tables.tables.item.fields.filein]
 block = "tables"
@@ -494,6 +569,7 @@ reader = "urword"
 optional = false
 longname = "file keyword"
 description = "keyword to specify that an input filename is expected next."
+mf6internal = "tables_filein"
 in_record = true
 tagged = true
 
@@ -506,6 +582,7 @@ description = "integer value that defines the feature (lake) number associated w
 tagged = false
 in_record = true
 numeric_index = true
+mf6internal = "tables_ifno"
 
 [tables.tables.item.fields.tab6]
 block = "tables"
@@ -524,6 +601,7 @@ reader = "urword"
 optional = false
 longname = "table file name"
 description = "character string that defines the path and filename for the file containing lake table data for the lake connection. The TAB6_FILENAME file includes the number of entries in the file and the relation between stage, volume, and surface area for each entry in the file. Lake table files for EMBEDDEDH and EMBEDDEDV lake-GWF connections also include lake-GWF exchange area data for each entry in the file. Instructions for creating the TAB6_FILENAME input file are provided in Lake Table Input File section."
+mf6internal = "laktab6_filename"
 preserve_case = true
 in_record = true
 tagged = false
@@ -533,11 +611,13 @@ block = "outlets"
 type = "recarray"
 shape = "(noutlets)"
 reader = "urword"
+optional = true
 
 [outlets.outlets.item]
 type = "record"
 block = "outlets"
 reader = "urword"
+optional = true
 
 [outlets.outlets.item.fields.outletno]
 block = "outlets"
@@ -548,6 +628,7 @@ description = "integer value that defines the outlet number associated with the 
 tagged = false
 in_record = true
 numeric_index = true
+mf6internal = "outlets_outletno"
 
 [outlets.outlets.item.fields.lakein]
 block = "outlets"
@@ -580,40 +661,44 @@ in_record = true
 
 [outlets.outlets.item.fields.invert]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "invert elevation"
 description = "real or character value that defines the invert elevation for the lake outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [outlets.outlets.item.fields.width]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "outlet width"
 description = "real or character value that defines the width of the lake outlet. A specified WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [outlets.outlets.item.fields.rough]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "roughness coefficient"
 description = "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [outlets.outlets.item.fields.slope]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "bed slope"
 description = "real or character value that defines the bed slope for the lake outlet. A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
@@ -640,6 +725,7 @@ description = "integer value that defines the lake or outlet number associated w
 tagged = false
 in_record = true
 numeric_index = true
+mf6internal = "ifno"
 
 [period.perioddata.item.fields.laksetting]
 block = "period"
@@ -651,50 +737,55 @@ in_record = true
 
 [period.perioddata.item.fields.laksetting.choices.stage]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "lake stage"
 description = "real or character value that defines the stage for the lake. The specified STAGE is only applied if the lake is a constant stage lake. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.invert]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "invert elevation"
 description = "real or character value that defines the invert elevation for the lake outlet. A specified INVERT value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.width]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "outlet width"
 description = "real or character value that defines the width of the lake outlet. A specified WIDTH value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is not SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.rough]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "roughness coefficient"
 description = "real value that defines the roughness coefficient for the lake outlet. Any value can be specified if COUTTYPE is not MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.slope]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "bed slope"
 description = "real or character value that defines the bed slope for the lake outlet. A specified SLOPE value is only used for active lakes if COUTTYPE for lake outlet OUTLETNO is MANNING. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
@@ -710,60 +801,66 @@ in_record = true
 
 [period.perioddata.item.fields.laksetting.choices.rainfall]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "rainfall rate"
 description = "real or character value that defines the rainfall rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.evaporation]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "evaporation rate"
 description = "real or character value that defines the maximum evaporation rate $(LT^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.runoff]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "runoff rate"
 description = "real or character value that defines the runoff rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.inflow]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "inflow rate"
 description = "real or character value that defines the volumetric inflow rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, inflow rates are zero for each lake."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.withdrawal]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "maximum withdrawal rate"
 description = "real or character value that defines the maximum withdrawal rate $(L^3 T^{-1})$ for the lake. Value must be greater than or equal to zero. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value."
+mf6dimension = "(nlakes)"
 tagged = true
 in_record = true
 time_series = true
 
 [period.perioddata.item.fields.laksetting.choices.rate]
 block = "period"
-type = "string"
+type = "double precision"
 reader = "urword"
 longname = "extraction rate"
 description = "real or character value that defines the extraction rate for the lake outflow. A positive value indicates inflow and a negative value indicates outflow from the lake. RATE only applies to outlets associated with active lakes (STATUS is ACTIVE). A specified RATE is only applied if COUTTYPE for the OUTLETNO is SPECIFIED. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value. By default, the RATE for each SPECIFIED lake outlet is zero."
+mf6dimension = "(noutlets)"
 tagged = true
 in_record = true
 time_series = true
@@ -772,6 +869,7 @@ time_series = true
 block = "period"
 type = "record"
 reader = "urword"
+mf6internal = "auxrecord"
 in_record = true
 
 [period.perioddata.item.fields.laksetting.choices.auxiliaryrecord.fields.auxiliary]
@@ -780,6 +878,7 @@ type = "keyword"
 reader = "urword"
 description = "keyword for specifying auxiliary variable."
 in_record = true
+mf6internal = "period_auxiliary"
 
 [period.perioddata.item.fields.laksetting.choices.auxiliaryrecord.fields.auxname]
 block = "period"
