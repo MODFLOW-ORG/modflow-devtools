@@ -609,6 +609,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   from-mvr:
     type: union
@@ -620,6 +621,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rate:
     type: union
@@ -631,6 +633,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rate-to-mvr:
     type: union
@@ -642,6 +645,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   fw-rate:
     type: union
@@ -653,6 +657,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   fw-to-mvr:
     type: union
@@ -664,6 +669,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   storage:
     type: union
@@ -675,6 +681,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   constant:
     type: union
@@ -686,6 +693,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   fw-conductance:
     type: union
@@ -697,6 +705,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   maw:
     type: union
@@ -726,9 +735,11 @@ observations:
             fk: packagedata.ifno
           boundname:
             type: string
+            when: boundnames
             tagged: false
       boundname:
         type: string
+        when: boundnames
         tagged: false
   conductance:
     type: union
@@ -758,9 +769,11 @@ observations:
             fk: packagedata.ifno
           boundname:
             type: string
+            when: boundnames
             tagged: false
       boundname:
         type: string
+        when: boundnames
         tagged: false
 keys:
   bound: <=ngwfnodes

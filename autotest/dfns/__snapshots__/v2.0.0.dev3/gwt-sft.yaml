@@ -425,6 +425,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   storage:
     type: union
@@ -436,6 +437,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   constant:
     type: union
@@ -447,6 +449,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   from-mvr:
     type: union
@@ -458,6 +461,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   sft:
     type: union
@@ -469,6 +473,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   to-mvr:
     type: union
@@ -480,6 +485,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rainfall:
     type: union
@@ -491,6 +497,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   evaporation:
     type: union
@@ -502,6 +509,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   runoff:
     type: union
@@ -513,6 +521,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   ext-inflow:
     type: union
@@ -524,6 +533,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   ext-outflow:
     type: union
@@ -535,6 +545,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   flow-ja-face:
     type: union
@@ -554,4 +565,5 @@ observations:
             fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false

@@ -484,6 +484,7 @@ fk = "packagedata.ifno"
 
 [observations.head.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -497,6 +498,7 @@ fk = "packagedata.ifno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rate]
@@ -510,6 +512,7 @@ fk = "packagedata.ifno"
 
 [observations.rate.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rate-to-mvr]
@@ -523,6 +526,7 @@ fk = "packagedata.ifno"
 
 [observations.rate-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.fw-rate]
@@ -536,6 +540,7 @@ fk = "packagedata.ifno"
 
 [observations.fw-rate.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.fw-to-mvr]
@@ -549,6 +554,7 @@ fk = "packagedata.ifno"
 
 [observations.fw-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -562,6 +568,7 @@ fk = "packagedata.ifno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -575,6 +582,7 @@ fk = "packagedata.ifno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.fw-conductance]
@@ -588,6 +596,7 @@ fk = "packagedata.ifno"
 
 [observations.fw-conductance.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.maw]
@@ -622,10 +631,12 @@ fk = "packagedata.ifno"
 
 [observations.maw.arms.ifno_boundname.fields.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.maw.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.conductance]
@@ -660,10 +671,12 @@ fk = "packagedata.ifno"
 
 [observations.conductance.arms.ifno_boundname.fields.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.conductance.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

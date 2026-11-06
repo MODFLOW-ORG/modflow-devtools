@@ -822,6 +822,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   ext-inflow:
     type: union
@@ -833,6 +834,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   inflow:
     type: union
@@ -844,6 +846,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   from-mvr:
     type: union
@@ -855,6 +858,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rainfall:
     type: union
@@ -866,6 +870,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   runoff:
     type: union
@@ -877,6 +882,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   sfr:
     type: union
@@ -888,6 +894,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   evaporation:
     type: union
@@ -899,6 +906,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   outflow:
     type: union
@@ -910,6 +918,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   ext-outflow:
     type: union
@@ -921,6 +930,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   to-mvr:
     type: union
@@ -932,6 +942,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   upstream-flow:
     type: union
@@ -943,6 +954,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   downstream-flow:
     type: union
@@ -954,6 +966,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   depth:
     type: union
@@ -965,6 +978,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   wet-perimeter:
     type: union
@@ -976,6 +990,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   wet-area:
     type: union
@@ -987,6 +1002,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   wet-width:
     type: union
@@ -998,6 +1014,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
 keys:
   bound: packagedata.ifno

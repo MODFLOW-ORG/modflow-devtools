@@ -352,6 +352,7 @@ fk = "packagedata.uzfno"
 
 [observations.temperature.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.storage]
@@ -365,6 +366,7 @@ fk = "packagedata.uzfno"
 
 [observations.storage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.constant]
@@ -378,6 +380,7 @@ fk = "packagedata.uzfno"
 
 [observations.constant.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -391,6 +394,7 @@ fk = "packagedata.uzfno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uze]
@@ -404,6 +408,7 @@ fk = "packagedata.uzfno"
 
 [observations.uze.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.thermal-equil]
@@ -417,6 +422,7 @@ fk = "packagedata.uzfno"
 
 [observations.thermal-equil.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.infiltration]
@@ -430,6 +436,7 @@ fk = "packagedata.uzfno"
 
 [observations.infiltration.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rej-inf]
@@ -443,6 +450,7 @@ fk = "packagedata.uzfno"
 
 [observations.rej-inf.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.uzet]
@@ -456,6 +464,7 @@ fk = "packagedata.uzfno"
 
 [observations.uzet.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rej-inf-to-mvr]
@@ -469,6 +478,7 @@ fk = "packagedata.uzfno"
 
 [observations.rej-inf-to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.flow-ja-face]
@@ -491,4 +501,5 @@ fk = "packagedata.uzfno"
 
 [observations.flow-ja-face.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false

@@ -293,25 +293,11 @@ shape = [
 ]
 
 [observations.ghb]
-type = "union"
-
-[observations.ghb.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.ghb.arms.boundname]
-type = "string"
 tagged = false
 
 [observations.to-mvr]
-type = "union"
-
-[observations.to-mvr.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.to-mvr.arms.boundname]
-type = "string"
 tagged = false
 
 [keys]

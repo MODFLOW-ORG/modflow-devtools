@@ -297,11 +297,5 @@ memory:
       - naux
 observations:
   rch:
-    type: union
-    arms:
-      cellid:
-        type: cellid
-        tagged: false
-      boundname:
-        type: string
-        tagged: false
+    type: cellid
+    tagged: false

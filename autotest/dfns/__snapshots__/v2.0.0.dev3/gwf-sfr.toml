@@ -706,6 +706,7 @@ fk = "packagedata.ifno"
 
 [observations.stage.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-inflow]
@@ -719,6 +720,7 @@ fk = "packagedata.ifno"
 
 [observations.ext-inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.inflow]
@@ -732,6 +734,7 @@ fk = "packagedata.ifno"
 
 [observations.inflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.from-mvr]
@@ -745,6 +748,7 @@ fk = "packagedata.ifno"
 
 [observations.from-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.rainfall]
@@ -758,6 +762,7 @@ fk = "packagedata.ifno"
 
 [observations.rainfall.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.runoff]
@@ -771,6 +776,7 @@ fk = "packagedata.ifno"
 
 [observations.runoff.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.sfr]
@@ -784,6 +790,7 @@ fk = "packagedata.ifno"
 
 [observations.sfr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.evaporation]
@@ -797,6 +804,7 @@ fk = "packagedata.ifno"
 
 [observations.evaporation.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.outflow]
@@ -810,6 +818,7 @@ fk = "packagedata.ifno"
 
 [observations.outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.ext-outflow]
@@ -823,6 +832,7 @@ fk = "packagedata.ifno"
 
 [observations.ext-outflow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.to-mvr]
@@ -836,6 +846,7 @@ fk = "packagedata.ifno"
 
 [observations.to-mvr.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.upstream-flow]
@@ -849,6 +860,7 @@ fk = "packagedata.ifno"
 
 [observations.upstream-flow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.downstream-flow]
@@ -862,6 +874,7 @@ fk = "packagedata.ifno"
 
 [observations.downstream-flow.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.depth]
@@ -875,6 +888,7 @@ fk = "packagedata.ifno"
 
 [observations.depth.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.wet-perimeter]
@@ -888,6 +902,7 @@ fk = "packagedata.ifno"
 
 [observations.wet-perimeter.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.wet-area]
@@ -901,6 +916,7 @@ fk = "packagedata.ifno"
 
 [observations.wet-area.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.wet-width]
@@ -914,6 +930,7 @@ fk = "packagedata.ifno"
 
 [observations.wet-width.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

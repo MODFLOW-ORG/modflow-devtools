@@ -472,6 +472,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uzf-gwd:
     type: union
@@ -483,6 +484,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uzf-gwd-to-mvr:
     type: union
@@ -494,6 +496,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uzf-gwet:
     type: union
@@ -505,6 +508,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   infiltration:
     type: union
@@ -516,6 +520,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   from-mvr:
     type: union
@@ -527,6 +532,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rej-inf:
     type: union
@@ -538,6 +544,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rej-inf-to-mvr:
     type: union
@@ -549,6 +556,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uzet:
     type: union
@@ -560,6 +568,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   storage:
     type: union
@@ -571,6 +580,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   net-infiltration:
     type: union
@@ -582,6 +592,7 @@ observations:
         fk: packagedata.ifno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   water-content:
     type: record
@@ -596,6 +607,7 @@ observations:
             fk: packagedata.ifno
           boundname:
             type: string
+            when: boundnames
             tagged: false
       depth:
         type: double

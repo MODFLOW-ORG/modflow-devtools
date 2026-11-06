@@ -365,6 +365,7 @@ tagged = false
 
 [observations.evt.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [keys]

@@ -664,6 +664,7 @@ observations:
         fk: packagedata.icsubno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   inelastic-csub:
     type: union
@@ -675,6 +676,7 @@ observations:
         fk: packagedata.icsubno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   elastic-csub:
     type: union
@@ -686,6 +688,7 @@ observations:
         fk: packagedata.icsubno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   delay-flowtop:
     type: union
@@ -697,6 +700,7 @@ observations:
         fk: packagedata.icsubno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   delay-flowbot:
     type: union
@@ -708,6 +712,7 @@ observations:
         fk: packagedata.icsubno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   sk:
     type: integer

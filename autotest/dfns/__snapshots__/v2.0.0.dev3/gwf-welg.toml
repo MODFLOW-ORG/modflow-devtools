@@ -324,36 +324,15 @@ shape = [
 ]
 
 [observations.wel]
-type = "union"
-
-[observations.wel.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.wel.arms.boundname]
-type = "string"
 tagged = false
 
 [observations.to-mvr]
-type = "union"
-
-[observations.to-mvr.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.to-mvr.arms.boundname]
-type = "string"
 tagged = false
 
 [observations.wel-reduction]
-type = "union"
-
-[observations.wel-reduction.arms.cellid]
 type = "cellid"
-tagged = false
-
-[observations.wel-reduction.arms.boundname]
-type = "string"
 tagged = false
 
 [keys]

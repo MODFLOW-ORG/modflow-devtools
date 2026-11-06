@@ -2136,13 +2136,13 @@ def _validate_when_fields(component: "ComponentBase") -> None:
     component's options block."""
     options = (component.blocks or {}).get("options")
     keywords = {n for n, f in (options.fields if options else {}).items() if isinstance(f, Keyword)}
-    for block in (component.blocks or {}).values():
-        for field in block.fields.values():
-            for f in _iter_subfields(field):
-                if f.when is not None and f.when not in keywords:
-                    raise ValueError(
-                        f"{f.name!r}: when={f.when!r} names no keyword option of {component.name}"
-                    )
+    fields = [f for block in (component.blocks or {}).values() for f in block.fields.values()]
+    for field in [*fields, *(component.observations or {}).values()]:
+        for f in _iter_subfields(field):
+            if f.when is not None and f.when not in keywords:
+                raise ValueError(
+                    f"{f.name!r}: when={f.when!r} names no keyword option of {component.name}"
+                )
 
 
 def _obs_columns(field: "InputField") -> list[int]:

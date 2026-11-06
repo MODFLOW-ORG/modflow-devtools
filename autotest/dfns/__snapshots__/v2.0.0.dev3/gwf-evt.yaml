@@ -369,6 +369,7 @@ observations:
         tagged: false
       boundname:
         type: string
+        when: boundnames
         tagged: false
 keys:
   bound: <=maxbound

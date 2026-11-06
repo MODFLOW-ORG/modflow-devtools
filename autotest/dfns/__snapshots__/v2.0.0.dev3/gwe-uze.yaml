@@ -380,6 +380,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   storage:
     type: union
@@ -391,6 +392,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   constant:
     type: union
@@ -402,6 +404,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   from-mvr:
     type: union
@@ -413,6 +416,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uze:
     type: union
@@ -424,6 +428,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   thermal-equil:
     type: union
@@ -435,6 +440,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   infiltration:
     type: union
@@ -446,6 +452,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rej-inf:
     type: union
@@ -457,6 +464,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   uzet:
     type: union
@@ -468,6 +476,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   rej-inf-to-mvr:
     type: union
@@ -479,6 +488,7 @@ observations:
         fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false
   flow-ja-face:
     type: union
@@ -498,4 +508,5 @@ observations:
             fk: packagedata.uzfno
       boundname:
         type: string
+        when: boundnames
         tagged: false

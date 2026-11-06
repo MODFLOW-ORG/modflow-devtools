@@ -651,6 +651,7 @@ fk = "packagedata.icsubno"
 
 [observations.csub.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.inelastic-csub]
@@ -664,6 +665,7 @@ fk = "packagedata.icsubno"
 
 [observations.inelastic-csub.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.elastic-csub]
@@ -677,6 +679,7 @@ fk = "packagedata.icsubno"
 
 [observations.elastic-csub.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.delay-flowtop]
@@ -690,6 +693,7 @@ fk = "packagedata.icsubno"
 
 [observations.delay-flowtop.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.delay-flowbot]
@@ -703,6 +707,7 @@ fk = "packagedata.icsubno"
 
 [observations.delay-flowbot.arms.boundname]
 type = "string"
+when = "boundnames"
 tagged = false
 
 [observations.sk]

@@ -955,6 +955,66 @@ def test_migrate_observations(dfn_dir, name, obstype, forms):
     assert _obs_forms(field) == forms
 
 
+def _obs_boundnames(field) -> list:
+    return [f for f in v2._iter_subfields(field) if f.name == "boundname"]
+
+
+@pytest.mark.parametrize(
+    "name, obstype, count",
+    [
+        ("gwf-wel", "wel", 1),
+        ("gwf-lak", "stage", 1),
+        ("gwf-lak", "outlet", 1),
+        # a name in ID2 after a feature number, or in ID alone
+        ("gwf-lak", "lak", 2),
+        ("gwf-maw", "conductance", 2),
+    ],
+)
+def test_migrate_obs_boundname_needs_boundnames(dfn_dir, name, obstype, count):
+    component = _migrate_dev3(dfn_dir, name)
+    boundnames = _obs_boundnames(component.observations[obstype])
+    assert len(boundnames) == count
+    assert all(f.when == "boundnames" for f in boundnames)
+
+
+def test_migrate_obs_boundnames_all_need_boundnames(dev3):
+    out, _ = dev3
+    for name, component in v2.Dfns.load(out).components.items():
+        for obstype, field in (component.observations or {}).items():
+            whens = {f.when for f in _obs_boundnames(field)}
+            assert whens <= {"boundnames"}, f"{name} {obstype}"
+
+
+@pytest.mark.parametrize(
+    "grid, listed",
+    [
+        ("gwf-chdg", "gwf-chd"),
+        ("gwf-drng", "gwf-drn"),
+        ("gwf-evta", "gwf-evt"),
+        ("gwf-ghbg", "gwf-ghb"),
+        ("gwf-rcha", "gwf-rch"),
+        ("gwf-rivg", "gwf-riv"),
+        ("gwf-welg", "gwf-wel"),
+    ],
+)
+def test_migrate_grid_package_obs_are_cells_only(dfn_dir, grid, listed):
+    # no BOUNDNAMES option to name a boundary with, unlike the list package
+    observations = _migrate_dev3(dfn_dir, grid).observations
+    assert observations.keys() == _migrate_dev3(dfn_dir, listed).observations.keys()
+    for obstype, field in observations.items():
+        assert field.name == obstype
+        assert _obs_forms(field) == [(_CELL,)]
+
+
+def test_dfns_validate_obs_when_names_no_keyword_option():
+    boundname = v2.String(name="boundname", tagged=False, when="boundnames")
+    cellid = v2.CellID(name="cellid", tagged=False)
+    observation = v2.Union(name="wel", arms={"cellid": cellid, "boundname": boundname})
+    package = v2.Package(name="gwf-wel", observations={"wel": observation})
+    with pytest.raises(ValueError, match="when='boundnames' names no keyword option of gwf-wel"):
+        v2.Dfns(components={"gwf-wel": package})
+
+
 def test_migrate_observations_on_obs_parents(dev3):
     """Every component with an OBS file gets observations, except the
     SWF-GWF exchanges, which MF6 registers no observation types for."""
