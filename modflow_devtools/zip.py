@@ -35,7 +35,8 @@ class MFZipFile(ZipFile):
             path = os.getcwd()
 
         ret_val = self._extract_member(member, str(path), pwd)
-        attr = member.external_attr >> 16
+        # permission bits only, no setuid/setgid/sticky
+        attr = (member.external_attr >> 16) & 0o777
         if attr != 0:
             os.chmod(ret_val, attr)
 
