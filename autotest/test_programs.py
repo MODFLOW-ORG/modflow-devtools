@@ -55,10 +55,16 @@ def isolated_cache(tmp_path, monkeypatch):
     return cache
 
 
-def _make_zip(path: Path, files: dict[str, bytes]) -> Path:
+def _make_zip(path: Path, files: dict[str, bytes], modes: dict[str, int] | None = None) -> Path:
+    """Write a zip like the real release archives: built on unix, with each
+    member's permissions recorded (0o755 unless overridden in `modes`)."""
+    modes = modes or {}
     with zipfile.ZipFile(path, "w") as zf:
         for name, content in files.items():
-            zf.writestr(name, content)
+            info = zipfile.ZipInfo(name)
+            info.create_system = 3
+            info.external_attr = (0o100000 | modes.get(name, 0o755)) << 16
+            zf.writestr(info, content)
     return path
 
 
@@ -200,6 +206,110 @@ class TestExtractReleaseArchive:
                 archive, tmp_path / "out", release_tag="1.0", ostag="linux", subset={"nope"}
             )
 
+    def test_non_program_files_skipped(self, tmp_path):
+        """mt3d-usgs archives bundle a LICENSE next to the binaries."""
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {"mt3dusgs": b"bin", "mt3dusgsdbl": b"bin", "LICENSE": b"text", "notes.txt": b"x"},
+            modes={"LICENSE": 0o644, "notes.txt": 0o644},
+        )
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(archive, dest, release_tag="v1.1.1", ostag="linux")
+        assert {p.name for p in extracted} == {"mt3dusgs", "mt3dusgsdbl"}
+        assert not (dest / "LICENSE").exists()
+
+    def test_non_program_files_skipped_without_unix_modes(self, tmp_path):
+        """Archives built on Windows record no unix permissions."""
+        archive = tmp_path / "win64.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            for name in ("LICENSE", "mt3dusgs.exe", "README.md"):
+                info = zipfile.ZipInfo(name)
+                info.create_system = 0
+                zf.writestr(info, b"x")
+        extracted = extract_release_archive(archive, tmp_path / "w", release_tag="1", ostag="win64")
+        assert [p.name for p in extracted] == ["mt3dusgs"]
+
+        archive = tmp_path / "linux.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            for name in ("LICENSE", "mt3dusgs", "README.md"):
+                info = zipfile.ZipInfo(name)
+                info.create_system = 0
+                zf.writestr(info, b"x")
+        extracted = extract_release_archive(archive, tmp_path / "l", release_tag="1", ostag="linux")
+        assert [p.name for p in extracted] == ["mt3dusgs"]
+
+    def test_release_tag_version_normalized(self, tmp_path):
+        archive = _make_zip(tmp_path / "linux.zip", {"mfusg": b"bin"})
+        extracted = extract_release_archive(
+            archive, tmp_path / "out", release_tag="v1.5.1", ostag="linux"
+        )
+        assert extracted[0].version == "1.5.1"
+
+    def test_code_json_dbl_variants_and_undescribed_binaries(self, tmp_path):
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {
+                "code.json": json.dumps(
+                    {
+                        "mf2005": {"version": "1.12.00", "double_switch": True},
+                        "swtv4": {"version": "4.00.05", "double_switch": True},
+                    }
+                ).encode(),
+                "mf2005": b"bin",
+                "mf2005dbl": b"bin",
+                "swtv4": b"bin",  # double_switch, but no swtv4dbl shipped
+                "mf5to6": b"bin",  # not described by code.json
+            },
+            modes={"code.json": 0o644},
+        )
+        dest = tmp_path / "out"
+        extracted = extract_release_archive(archive, dest, release_tag="29.0", ostag="linux")
+        versions = {p.name: p.version for p in extracted}
+        assert versions == {
+            "mf2005": "1.12.00",
+            "mf2005dbl": "1.12.00",
+            "swtv4": "4.00.05",
+            "mf5to6": "29.0",
+        }
+
+        dest2 = tmp_path / "out2"
+        extracted = extract_release_archive(
+            archive, dest2, release_tag="29.0", ostag="linux", subset={"mf2005dbl"}
+        )
+        assert [p.name for p in extracted] == ["mf2005dbl"]
+        assert (dest2 / "mf2005dbl").exists()
+        assert not (dest2 / "mf2005").exists()
+
+    def test_partially_unknown_subset_raises(self, tmp_path):
+        archive = _make_zip(tmp_path / "linux.zip", {"mf6": b"bin", "LICENSE": b"t"})
+        with pytest.raises(ProgramInstallationError, match=r"\['nope'\].*available: mf6$"):
+            extract_release_archive(
+                archive, tmp_path / "out", release_tag="1.0", ostag="linux", subset={"mf6", "nope"}
+            )
+        assert not (tmp_path / "out" / "mf6").exists()
+
+    def test_reextract_overwrites_existing(self, tmp_path):
+        dest = tmp_path / "out"
+        dest.mkdir()
+        (dest / "mf6").write_bytes(b"old")
+        archive = _make_zip(tmp_path / "linux.zip", {"bin/mf6": b"new"})
+        extract_release_archive(archive, dest, release_tag="1.0", ostag="linux")
+        assert (dest / "mf6").read_bytes() == b"new"
+        assert sorted(p.name for p in dest.iterdir()) == ["mf6"]
+
+    def test_failed_write_leaves_no_part_file(self, tmp_path, monkeypatch):
+        archive = _make_zip(tmp_path / "linux.zip", {"mf6": b"bin"})
+        dest = tmp_path / "out"
+
+        def _boom(src, dst):
+            dst.write(b"partial")
+            raise OSError("disk full")
+
+        monkeypatch.setattr("modflow_devtools.programs.shutil.copyfileobj", _boom)
+        with pytest.raises(OSError, match="disk full"):
+            extract_release_archive(archive, dest, release_tag="1.0", ostag="linux")
+        assert list(dest.iterdir()) == []
+
 
 class TestInstallationMetadata:
     def test_add_list_remove_roundtrip(self, isolated_cache):
@@ -278,6 +388,48 @@ class TestRegisterAndQuery:
 
         assert get_executable("mf6", version="6.7.0") == tmp_path / "6.7.0" / "mf6"
         assert get_executable("mf6", version="6.8.0") == tmp_path / "6.8.0" / "mf6"
+
+    def test_versions_compared_without_leading_v(self, isolated_cache, tmp_path):
+        (tmp_path / "mfusg").write_bytes(b"bin")
+        inst = register_installation("mfusg", "v1.5.1", tmp_path, ["mfusg"])
+        assert inst.version == "1.5.1"
+        assert get_executable("mfusg", version="1.5.1") == tmp_path / "mfusg"
+        assert get_executable("mfusg", version="v1.5.1") == tmp_path / "mfusg"
+        assert get_executable("mfusg", version="1.5") is None
+
+    def test_versions_compared_semantically(self, isolated_cache, tmp_path):
+        """pymake's code.json records mfusg's v1.5.00 release as '1.5'."""
+        (tmp_path / "mfusg").write_bytes(b"bin")
+        register_installation("mfusg", "1.5", tmp_path, ["mfusg"])
+        assert get_executable("mfusg", version="v1.5.00") == tmp_path / "mfusg"
+        assert get_executable("mfusg", version="1.5.0") == tmp_path / "mfusg"
+        assert get_executable("mfusg", version="1.5.1") is None
+        register_installation("mfusg", "v1.5.00", tmp_path, ["mfusg"])
+        assert len(list_installed("mfusg")["mfusg"]) == 1
+
+    def test_non_pep440_versions_compared_as_strings(self, isolated_cache, tmp_path):
+        (tmp_path / "x").write_bytes(b"bin")
+        register_installation("x", "nightly-abc", tmp_path, ["x"])
+        assert get_executable("x", version="nightly-abc") == tmp_path / "x"
+        assert get_executable("x", version="nightly-abd") is None
+
+    def test_legacy_v_prefixed_ledger_entries_still_match(self, isolated_cache, tmp_path):
+        """Ledgers written before normalization recorded raw tags like 'v1.5.1'."""
+        (tmp_path / "mfusg").write_bytes(b"bin")
+        meta = InstallationMetadata("mfusg")
+        meta.installations = [
+            ProgramInstallation(
+                "v1.5.1", "linux", tmp_path, datetime.now(UTC), {"origin": "x"}, ["mfusg"]
+            )
+        ]
+        meta.save()
+        assert get_executable("mfusg", version="1.5.1") == tmp_path / "mfusg"
+        # re-installing the same version replaces rather than duplicates
+        register_installation("mfusg", "1.5.1", tmp_path, ["mfusg"])
+        assert len(list_installed("mfusg")["mfusg"]) == 1
+        uninstall_program("mfusg", version="1.5.1")
+        assert not (tmp_path / "mfusg").exists()
+        assert list_installed("mfusg") == {}
 
     def test_uninstall_removes_file_and_forgets(self, isolated_cache, tmp_path):
         exe = tmp_path / "mf6"
@@ -724,4 +876,51 @@ class TestGetReleaseErrorWrapping:
 
         monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
         with pytest.raises(ProgramInstallationError, match=r"1\.0\.0"):
-            get_release(repo="mfnwt", tag="not-a-real-tag")
+            get_release(repo="mfusg", tag="not-a-real-tag")
+
+    @staticmethod
+    def _fake_releases(monkeypatch, releases):
+        class _FakeResponse:
+            def __init__(self, status_code, payload=None):
+                self.status_code = status_code
+                self._payload = payload
+
+            def raise_for_status(self):
+                import requests
+
+                if self.status_code >= 400:
+                    raise requests.exceptions.HTTPError(response=self)
+
+            def json(self):
+                return self._payload
+
+        def _fake_get(url, **kwargs):
+            if "/releases/" in url:  # /releases/latest or /releases/tags/{tag}
+                return _FakeResponse(404)
+            return _FakeResponse(200, releases)
+
+        monkeypatch.setattr("modflow_devtools.programs.requests.get", _fake_get)
+
+    def test_repo_without_releases_says_so(self, monkeypatch):
+        from modflow_devtools.programs import get_release, get_releases
+
+        self._fake_releases(monkeypatch, [])
+        assert get_releases(repo="mfnwt") == []
+        with pytest.raises(ProgramInstallationError, match="has no published releases"):
+            get_release(repo="mfnwt")
+
+    def test_drafts_excluded(self, monkeypatch):
+        from modflow_devtools.programs import get_release, get_releases
+
+        self._fake_releases(monkeypatch, [{"tag_name": "v3.3", "draft": True}])
+        assert get_releases(repo="vs2dt") == []
+        with pytest.raises(ProgramInstallationError, match="has no published releases"):
+            get_release(repo="vs2dt")
+
+    def test_latest_only_offered_with_a_full_release(self, monkeypatch):
+        from modflow_devtools.programs import get_release, get_releases
+
+        self._fake_releases(monkeypatch, [{"tag_name": "2.0rc1", "prerelease": True}])
+        assert get_releases(repo="x") == ["2.0rc1"]
+        with pytest.raises(ProgramInstallationError, match=r"'latest' not found.*: 2\.0rc1$"):
+            get_release(repo="x")

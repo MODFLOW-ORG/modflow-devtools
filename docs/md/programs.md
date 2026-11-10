@@ -59,14 +59,14 @@ mf programs install --repo executables --subset mfnwt,mf2005 --bindir /usr/local
 `repo` is **not** restricted to a fixed list - any repo under `owner` (default `MODFLOW-ORG`) with a GitHub release and a platform-matching asset works, including installing a single program directly from its own repo:
 
 ```python
-install_program(repo="mfnwt", bindir="/usr/local/bin")
+install_program(repo="mfusg", bindir="/usr/local/bin")
 install_program(repo="gridgen", bindir="/usr/local/bin")
 ```
 
 Or via CLI:
 
 ```bash
-mf programs install --repo mfnwt --bindir /usr/local/bin
+mf programs install --repo mfusg --bindir /usr/local/bin
 mf programs install --repo gridgen --bindir /usr/local/bin
 ```
 
@@ -78,7 +78,11 @@ mf programs install --repo gridgen --bindir /usr/local/bin
 | `modflow6` | `mf6`, `zbud6`, `mf5to6`, `libmf6` | All share the release tag as their version |
 | `modflow6-nightly-build` | Same programs as `modflow6`, nightly builds | All share the nightly build tag |
 
-A growing number of individual program repos (`mfnwt`, `mt3d-usgs`, `vs2dt`, `gridgen`, `triangle`, `zonbud`, `zonbudusg`, ...) already publish releases in the same single-program shape as `modflow6` - one archive per platform, no `code.json` needed since there's only one program in it. Anything shaped like that just works by passing its repo name.
+A growing number of individual program repos (`mfusg`, `mt3d-usgs`, `gridgen`, `triangle`, `zonbud`, `zonbudusg`, ...) already publish releases in the same single-program shape as `modflow6` - one archive per platform, no `code.json` needed since there's only one program in it. Anything shaped like that just works by passing its repo name. Others (e.g. `mfnwt`, `vs2dt`) don't publish installable releases yet; install those from `executables`.
+
+Only executables and shared libraries are installed from an archive; other files bundled with them (e.g. a `LICENSE`) are skipped. Double-precision variants (e.g. `mf2005dbl`) are separate programs: name them in `program`/`subset` to install them.
+
+Versions are recorded without a leading `v`, so a program installed from a release tagged `v1.5.1` is found by `get_executable(..., version="1.5.1")` (or `"v1.5.1"`). Versions are compared semantically, so `"1.5"` and `"1.5.00"` are the same version.
 
 `owner` defaults to `MODFLOW-ORG`; override it to test against a fork.
 

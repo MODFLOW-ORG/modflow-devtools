@@ -125,7 +125,7 @@ def main():
         default=DEFAULT_REPO,
         help=f"Source repo under --owner; default is '{DEFAULT_REPO}'. Not restricted to "
         f"{KNOWN_REPOS} - any repo with a GitHub release and a matching platform asset "
-        "works, e.g. 'mfnwt', 'gridgen'.",
+        "works, e.g. 'mfusg', 'gridgen'.",
     )
     install_parser.add_argument(
         "--owner",

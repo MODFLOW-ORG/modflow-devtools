@@ -42,9 +42,11 @@ dynamic = ["version"]
 ecosystem = [
     "boltons",
     "filelock",
+    "packaging",
     "pooch",
     "pyaml",
     "pydantic",
+    "requests",
     "tomli",
     "tomli-w"
 ]

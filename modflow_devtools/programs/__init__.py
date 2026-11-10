@@ -27,6 +27,7 @@ from pathlib import Path
 
 import pooch
 import requests  # type: ignore[import-untyped]
+from packaging.version import InvalidVersion, Version
 
 from modflow_devtools.ostags import get_binary_suffixes, get_modflow_ostag
 
@@ -49,8 +50,8 @@ KNOWN_REPOS = ("executables", "modflow6", "modflow6-nightly-build")
 """The three repos get_modflow.py supports out of the box - not an allowlist.
 Any owner/repo with a GitHub release and an ostag-matching asset works with
 `install_program`/`get_release`; a growing number of individual program repos
-(mfnwt, mt3d-usgs, vs2dt, gridgen, triangle, zonbud, zonbudusg, ...) already
-publish releases in the same shape `executables` and `modflow6` do."""
+(mfusg, mt3d-usgs, gridgen, triangle, zonbud, zonbudusg, ...) already publish
+releases in the same shape `executables` and `modflow6` do."""
 
 GITHUB_API = "https://api.github.com"
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
@@ -90,6 +91,29 @@ def _verify_hash(file_path: Path, expected_hash: str) -> bool:
     return actual_digest.lower() == expected_digest.lower()
 
 
+def _normalize_version(version: str) -> str:
+    """
+    Strip a leading 'v' (or 'v.') from a version string, so a release tag like
+    'v1.5.1' (single-program repos) and a `code.json` version like '1.5.1'
+    (`executables`) are recorded, and compared, the same way.
+    """
+    return re.sub(r"^[vV]\.?(?=\d)", "", version.strip())
+
+
+def _same_version(a: str, b: str) -> bool:
+    """
+    Whether two version strings name the same version. Compared semantically
+    where both parse as PEP 440 versions, so precision differences don't
+    matter (pymake's `code.json` records mfusg's `v1.5.00` release as '1.5');
+    otherwise (e.g. arbitrary tag names) compared as normalized strings.
+    """
+    a, b = _normalize_version(a), _normalize_version(b)
+    try:
+        return Version(a) == Version(b)
+    except InvalidVersion:
+        return a == b
+
+
 def _github_headers() -> dict[str, str]:
     token = os.environ.get("GITHUB_TOKEN")
     return {"Authorization": f"Bearer {token}"} if token else {}
@@ -124,14 +148,22 @@ def get_releases(
     tries: int | None = None,
     delay: float | None = None,
 ) -> list[str]:
-    """List available release tags for owner/repo, plus 'latest'."""
+    """
+    List installable release tags for owner/repo, preceded by 'latest' if the
+    repo has at least one full (non-prerelease) release for it to resolve to.
+    Draft releases are excluded: they're only visible to authenticated users
+    with push access, and can't be fetched by tag. Empty if the repo has no
+    published releases.
+    """
     try:
         data = _request_json(
-            f"{GITHUB_API}/repos/{owner}/{repo}/releases", tries=tries, delay=delay
+            f"{GITHUB_API}/repos/{owner}/{repo}/releases?per_page=100", tries=tries, delay=delay
         )
     except requests.exceptions.HTTPError as err:
         raise ProgramInstallationError(f"repo {owner}/{repo} not found: {err}") from err
-    return ["latest", *(r["tag_name"] for r in data)]
+    published = [r for r in data if not r.get("draft")]
+    has_latest = any(not r.get("prerelease") for r in published)
+    return (["latest"] if has_latest else []) + [r["tag_name"] for r in published]
 
 
 def get_release(
@@ -156,6 +188,10 @@ def get_release(
                 available = get_releases(owner, repo, tries=tries, delay=delay)
             except ProgramInstallationError:
                 raise ProgramInstallationError(f"repo {owner}/{repo} not found") from err
+            if not available:
+                raise ProgramInstallationError(
+                    f"repo {owner}/{repo} has no published releases"
+                ) from err
             raise ProgramInstallationError(
                 f"release {tag!r} not found for {owner}/{repo}; choose from: {', '.join(available)}"
             ) from err
@@ -262,6 +298,34 @@ def _normalize_subset(program: str | None, subset) -> set[str] | None:
     return items or None
 
 
+_NON_PROGRAM_STEMS = frozenset(
+    {"license", "licence", "readme", "copying", "notice", "changelog", "changes", "authors"}
+)
+
+
+def _member_kind(info: zipfile.ZipInfo, exe_suffix: str, lib_suffix: str) -> bool | None:
+    """
+    Classify an archive member: True for a shared library, False for an
+    executable, None for anything else (license, readme, docs, ...).
+
+    Windows executables are recognized by their `.exe` suffix. Unix ones have
+    no suffix, so they're recognized by their executable bit when the archive
+    recorded unix permissions, falling back to "no suffix and not an obvious
+    documentation file" when it didn't.
+    """
+    name = Path(info.filename).name
+    if Path(name).stem.lower() in _NON_PROGRAM_STEMS:
+        return None
+    if lib_suffix and name.endswith(lib_suffix):
+        return True
+    if exe_suffix:
+        return False if name.endswith(exe_suffix) else None
+    mode = info.external_attr >> 16
+    if info.create_system == 3 and mode:
+        return False if mode & 0o111 else None
+    return None if Path(name).suffix else False
+
+
 def extract_release_archive(
     archive: Path,
     dest_dir: Path,
@@ -278,79 +342,89 @@ def extract_release_archive(
     Looks for files nested under a top-level `bin/` directory in the archive,
     falling back to the archive root if none is found (mirrors the actual
     layouts of `executables`, `modflow6`, and `modflow6-nightly-build`
-    releases). If the archive also contains a `code.json` manifest (used by
-    the combined `executables` distribution to bundle many independently
-    versioned programs into one archive), each program's own version comes
-    from there; otherwise every extracted executable is versioned as
-    `release_tag`, since a `modflow6`/`modflow6-nightly-build` release ships
-    every program at the same version.
+    releases). Only executables and shared libraries are installed; other
+    files (e.g. a `LICENSE` bundled alongside the binaries) are skipped.
 
-    Double-precision program variants (`code.json`'s legacy `*dbl` entries,
-    used by a few old MODFLOW-2005-era programs) are not handled - a niche
-    build variant, not central to installing modern ecosystem programs.
+    If the archive contains a `code.json` manifest (used by the combined
+    `executables` distribution to bundle many independently versioned
+    programs into one archive), each program's own version comes from there.
+    Double-precision variants (`<name>dbl`, for entries with `double_switch`)
+    are installable programs in their own right, versioned like their base
+    program. Any other binary the manifest doesn't describe (e.g. `mf5to6`)
+    is versioned as `release_tag`, as is every program in an archive without
+    a manifest, since a single-program or `modflow6` release ships everything
+    at the same version. Versions are normalized (see `_normalize_version`).
+
+    `subset` items may be program names or file names. Raises
+    `ProgramInstallationError` if any is not in the archive.
     """
     dest_dir.mkdir(parents=True, exist_ok=True)
     exe_suffix, lib_suffix = get_binary_suffixes(ostag)
+    tag_version = _normalize_version(release_tag)
 
     with zipfile.ZipFile(archive) as zf:
-        names = zf.namelist()
-        full_path = {Path(n).name: n for n in names if Path(n).parent.name == "bin"}
-        files = set(full_path) if full_path else set(names)
+        infos = [i for i in zf.infolist() if not i.is_dir()]
+        in_bin = [i for i in infos if Path(i.filename).parent.name == "bin"]
+        members = {Path(i.filename).name: i for i in (in_bin or infos)}
 
         code = None
-        if "code.json" in files:
-            code = json.loads(zf.read(full_path.get("code.json", "code.json")))
-            files.discard("code.json")
+        if "code.json" in members:
+            code = json.loads(zf.read(members.pop("code.json")))
 
-        extracted: list[_ExtractedProgram] = []
-        to_extract: set[str] = set()
+        # program name -> (member, version, is_shared_object)
+        available: dict[str, tuple[zipfile.ZipInfo, str, bool]] = {}
+        manifest: dict[str, tuple[str, bool]] = {}
+        for key, meta in (code or {}).items():
+            version = _normalize_version(str(meta["version"]))
+            is_so = bool(meta.get("shared_object"))
+            manifest[f"{key}{lib_suffix if is_so else exe_suffix}"] = (version, is_so)
+            if meta.get("double_switch") and not is_so:
+                manifest[f"{key}dbl{exe_suffix}"] = (version, False)
+        for fname, info in members.items():
+            if fname in manifest:
+                version, is_so = manifest[fname]
+            else:
+                kind = _member_kind(info, exe_suffix, lib_suffix)
+                if kind is None:
+                    continue
+                version, is_so = tag_version, kind
+            name = fname.removesuffix(lib_suffix if is_so else exe_suffix)
+            available[name] = (info, version, is_so)
 
-        if code:
-            for key in sorted(code):
-                meta = code[key]
-                is_so = bool(meta.get("shared_object"))
-                fname = f"{key}{lib_suffix if is_so else exe_suffix}"
-                if fname not in files:
-                    continue
-                if subset and key not in subset and fname not in subset:
-                    continue
-                to_extract.add(full_path.get(fname, fname))
-                extracted.append(_ExtractedProgram(key, meta["version"], dest_dir / fname, is_so))
+        if not available:
+            raise ProgramInstallationError(f"no executables found in archive {archive.name}")
+
+        if subset:
+            by_file = {Path(info.filename).name: name for name, (info, _, _) in available.items()}
+            missing = sorted(s for s in subset if s not in available and s not in by_file)
+            if missing:
+                raise ProgramInstallationError(
+                    f"no matching executables found for {missing}; "
+                    f"available: {', '.join(sorted(available))}"
+                )
+            selected = {by_file.get(s, s) for s in subset}
         else:
-            for fname in sorted(files):
-                stem = Path(fname).stem
-                if subset and fname not in subset and stem not in subset:
-                    continue
-                to_extract.add(full_path.get(fname, fname))
-                is_so = bool(lib_suffix) and fname.endswith(lib_suffix)
-                extracted.append(_ExtractedProgram(stem, release_tag, dest_dir / fname, is_so))
-
-        if not to_extract:
-            raise ProgramInstallationError(
-                "no matching executables found"
-                + (f" for subset {sorted(subset)}" if subset else "")
-                + f"; available: {', '.join(sorted(files))}"
-            )
+            selected = set(available)
 
         if verbose:
-            print(f"extracting {len(to_extract)} file(s) to {dest_dir}")
+            print(f"extracting {len(selected)} file(s) to {dest_dir}")
 
-        zf.extractall(dest_dir, members=to_extract)
-
-    if full_path:
-        rmdirs: set[Path] = set()
-        for member in to_extract:
-            member_path = Path(member)
-            (dest_dir / member_path).replace(dest_dir / member_path.name)
-            rmdirs.add(member_path.parent)
-        for rmdir in sorted(rmdirs, key=lambda p: len(p.parts), reverse=True):
-            for ancestor in (rmdir, *rmdir.parents):
-                if ancestor == Path():
-                    break
-                try:
-                    (dest_dir / ancestor).rmdir()
-                except OSError:
-                    break
+        extracted: list[_ExtractedProgram] = []
+        for name in sorted(selected):
+            info, version, is_so = available[name]
+            target = dest_dir / Path(info.filename).name
+            # write beside the target and swap it in, so an existing (possibly
+            # running, or code-signed and cached by the OS) binary is replaced
+            # rather than modified in place
+            temp = target.with_name(target.name + ".part")
+            try:
+                with zf.open(info) as src, temp.open("wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                temp.replace(target)
+            except BaseException:
+                temp.unlink(missing_ok=True)
+                raise
+            extracted.append(_ExtractedProgram(name, version, target, is_so))
 
     if os.name != "nt":
         for prog in extracted:
@@ -630,7 +704,10 @@ class InstallationMetadata:
         self.installations = [
             inst
             for inst in self.installations
-            if not (inst.version == installation.version and inst.bindir == installation.bindir)
+            if not (
+                _same_version(inst.version, installation.version)
+                and inst.bindir == installation.bindir
+            )
         ]
         self.installations.append(installation)
         self.save()
@@ -641,7 +718,7 @@ class InstallationMetadata:
         self.installations = [
             inst
             for inst in self.installations
-            if not (inst.version == version and inst.bindir == bindir)
+            if not (_same_version(inst.version, version) and inst.bindir == bindir)
         ]
         self.save()
 
@@ -677,11 +754,13 @@ def install_program(
         Any repo under `owner` with a GitHub release and an ostag-matching
         asset - not restricted to `KNOWN_REPOS` (default: "executables", the
         combined legacy distribution). Individual program repos work directly,
-        e.g. repo="mfnwt" or repo="gridgen".
+        e.g. repo="mfusg" or repo="gridgen".
     owner : str
         GitHub repository owner; override to test against a fork.
     version : str
-        Release tag, or "latest".
+        Release tag, or "latest". Installed programs are recorded under a
+        normalized version (no leading 'v'), e.g. tag "v1.5.1" -> "1.5.1".
+        Ledger lookups compare versions semantically, so "1.5" matches "1.5.00".
     bindir : str | Path, optional
         Installation directory. Auto-selected (see `get_bindir_options`) if
         omitted.
@@ -770,7 +849,7 @@ def register_installation(
     hook other installers can call - `install_program` uses it internally too.
     """
     installation = ProgramInstallation(
-        version=version,
+        version=_normalize_version(version),
         platform=platform or get_platform(),
         bindir=Path(bindir),
         installed_at=installed_at or datetime.now(UTC),
@@ -804,7 +883,8 @@ def uninstall_program(
         to_remove = [
             inst
             for inst in metadata.list_installations()
-            if inst.version == version and (bindir is None or inst.bindir == Path(bindir))
+            if _same_version(inst.version, version)
+            and (bindir is None or inst.bindir == Path(bindir))
         ]
 
     if not to_remove:
@@ -838,7 +918,7 @@ def get_executable(
 
     installations = metadata.list_installations()
     if version is not None:
-        installations = [i for i in installations if i.version == version]
+        installations = [i for i in installations if _same_version(i.version, version)]
     if bindir is not None:
         bindir = Path(bindir)
         installations = [i for i in installations if i.bindir == bindir]
