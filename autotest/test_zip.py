@@ -6,7 +6,7 @@ from collections.abc import Generator
 from pathlib import Path
 from pprint import pprint
 from shutil import which
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import pytest
 
@@ -74,3 +74,16 @@ def test_extractall_preserves_execute_permission(function_tmpdir, archive, mf):
     path = function_tmpdir / exe_name
     assert path.is_file()
     assert os.access(path, os.X_OK) == mf
+
+
+@excludes_platform("Windows")
+def test_extract_strips_special_mode_bits(function_tmpdir):
+    zip_path = function_tmpdir / "setuid.zip"
+    info = ZipInfo("prog")
+    info.external_attr = 0o104755 << 16  # regular file, setuid + 0755
+    with ZipFile(zip_path, "w") as zf:
+        zf.writestr(info, b"#!/bin/sh\n")
+
+    out = function_tmpdir / "out"
+    MFZipFile(zip_path).extractall(out)
+    assert (out / "prog").stat().st_mode & 0o7777 == 0o755

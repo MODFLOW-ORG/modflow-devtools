@@ -332,7 +332,8 @@ def download_and_unzip(
             file_path.unlink()
     elif "tar" in file_path.suffix:
         ar = tarfile.open(file_path)
-        ar.extractall(path=str(path))
+        # reject absolute paths, traversal, and links escaping the target dir
+        ar.extractall(path=str(path), filter="data")
         ar.close()
 
         # delete the zipfile
