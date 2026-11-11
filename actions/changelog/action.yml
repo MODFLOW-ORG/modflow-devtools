@@ -1,0 +1,75 @@
+name: Changelog
+description: >
+  Prepend a release's features, fixes and performance changes to
+  CHANGELOG.md with git-cliff (command `update`; needs full git history), or
+  write a release's section of CHANGELOG.md to a notes file (command `notes`).
+inputs:
+  path:
+    description: Directory of the program repo checkout
+    default: .
+  command:
+    description: update or notes
+    required: true
+  version:
+    description: Release version, X.Y.Z
+    required: true
+  long-name:
+    description: Program long name, e.g. MODFLOW-USG; used for the shared template and the notes title
+    required: true
+  git-cliff-version:
+    description: git-cliff version
+    default: 2.14.2
+outputs:
+  notes-file:
+    description: Path of the notes file (command `notes`)
+    value: ${{ steps.notes.outputs.file }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Install git-cliff
+      if: inputs.command == 'update'
+      shell: bash
+      env:
+        GIT_CLIFF_VERSION: ${{ inputs.git-cliff-version }}
+      run: pipx install "git-cliff==$GIT_CLIFF_VERSION"
+
+    - name: Update CHANGELOG.md
+      if: inputs.command == 'update'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/changelog.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        VERSION: ${{ inputs.version }}
+        LONG_NAME: ${{ inputs.long-name }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        "$PYTHON" "$SCRIPT" update --version "$VERSION" \
+          --repository "$REPOSITORY" --long-name "$LONG_NAME"
+
+    - name: Write release notes
+      id: notes
+      if: inputs.command == 'notes'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/changelog.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        VERSION: ${{ inputs.version }}
+        LONG_NAME: ${{ inputs.long-name }}
+      run: |
+        file="$RUNNER_TEMP/notes.md"
+        {
+          echo "$LONG_NAME version $VERSION"
+          echo
+          "$PYTHON" "$SCRIPT" notes --version "$VERSION"
+        } > "$file"
+        cat "$file"
+        echo "file=$file" >> "$GITHUB_OUTPUT"

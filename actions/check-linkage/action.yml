@@ -1,0 +1,62 @@
+name: Check linkage
+description: >
+  List the shared libraries every executable in a directory links, and fail
+  if any links a compiler runtime that users would not have: the Intel
+  runtime on Linux, or the gcc/gfortran runtime on macOS. On macOS, also
+  require the expected architecture. Lists dependencies on Windows when
+  objdump is available, without failing.
+inputs:
+  path:
+    description: Directory holding the executables
+    default: bin
+  macos-arch:
+    description: Architecture every macOS executable must contain
+    default: arm64
+runs:
+  using: composite
+  steps:
+    - name: Check linkage
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        ARCH: ${{ inputs.macos-arch }}
+      run: |
+        status=0
+        case "$RUNNER_OS" in
+          Linux)
+            forbidden='libifcore|libifport|libimf|libsvml|libintlc|libirng'
+            for exe in $(find . -maxdepth 1 -type f -perm -u+x | sort); do
+              echo "::group::$exe"; ldd "$exe" || true; echo "::endgroup::"
+              if ldd "$exe" | grep -E "$forbidden"; then
+                echo "::error::$exe dynamically links the Intel runtime"
+                status=1
+              fi
+            done
+            ;;
+          macOS)
+            forbidden='libgfortran|libgcc_s|libquadmath|/libstdc\+\+'
+            for exe in $(find . -maxdepth 1 -type f -perm -u+x | sort); do
+              echo "::group::$exe"; otool -L "$exe"; lipo -info "$exe"; echo "::endgroup::"
+              if otool -L "$exe" | grep -E "$forbidden"; then
+                echo "::error::$exe dynamically links the gcc runtime"
+                status=1
+              fi
+              if ! lipo -archs "$exe" | grep -qw "$ARCH"; then
+                echo "::error::$exe is not built for $ARCH"
+                status=1
+              fi
+            done
+            ;;
+          Windows)
+            if command -v objdump >/dev/null; then
+              for exe in *.exe; do
+                echo "::group::$exe"
+                objdump -p "$exe" | grep -i 'DLL Name' || true
+                echo "::endgroup::"
+              done
+            else
+              echo "objdump not found, not listing dependencies"
+            fi
+            ;;
+        esac
+        exit $status

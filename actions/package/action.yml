@@ -1,0 +1,91 @@
+name: Package a MODFLOW program
+description: >
+  Zip the executables in bin/ as <ostag>.zip (linux, mac, macarm or win64),
+  with the files at the archive root, and on Linux also zip the source as
+  <name>_source.zip. Outputs the directory holding the archives, and
+  optionally uploads them as artifact dist-<ostag> for the release-finish
+  action.
+inputs:
+  path:
+    description: Directory of the program repo checkout
+    default: .
+  name:
+    description: Program name, used for the source archive
+    required: true
+  source-paths:
+    description: Space-separated paths to put in the source archive; empty for none
+    default: meson.build meson.options src
+  upload:
+    description: >
+      Upload the archives as artifact dist-<ostag>; do this from one job per
+      platform in a release build
+    default: "false"
+outputs:
+  ostag:
+    description: The platform tag
+    value: ${{ steps.ostag.outputs.ostag }}
+  dist:
+    description: Directory holding the archives
+    value: ${{ steps.ostag.outputs.dist }}
+runs:
+  using: composite
+  steps:
+    - name: Set ostag
+      id: ostag
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        case "$RUNNER_OS-$RUNNER_ARCH" in
+          Linux-X64) ostag=linux ;;
+          macOS-ARM64) ostag=macarm ;;
+          macOS-X64) ostag=mac ;;
+          Windows-X64) ostag=win64 ;;
+          *) echo "::error::no ostag for $RUNNER_OS $RUNNER_ARCH"; exit 1 ;;
+        esac
+        dist="$RUNNER_TEMP/dist"
+        mkdir -p "$dist"
+        echo "ostag=$ostag" >> "$GITHUB_OUTPUT"
+        echo "dist=$dist" >> "$GITHUB_OUTPUT"
+
+    - name: Zip executables
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        OSTAG: ${{ steps.ostag.outputs.ostag }}
+        DIST: ${{ steps.ostag.outputs.dist }}
+      run: |
+        zip -r -j "$DIST/$OSTAG.zip" bin/
+        unzip -l "$DIST/$OSTAG.zip"
+
+    - name: Zip executables (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      working-directory: ${{ inputs.path }}
+      env:
+        OSTAG: ${{ steps.ostag.outputs.ostag }}
+        DIST: ${{ steps.ostag.outputs.dist }}
+      run: |
+        Compress-Archive -Path "bin\*" -DestinationPath "$env:DIST\$env:OSTAG.zip"
+        Get-ChildItem $env:DIST
+
+    - name: Zip source
+      if: runner.os == 'Linux' && inputs.source-paths != ''
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        NAME: ${{ inputs.name }}
+        SOURCE_PATHS: ${{ inputs.source-paths }}
+        DIST: ${{ steps.ostag.outputs.dist }}
+      run: |
+        # shellcheck disable=SC2086
+        zip -r "$DIST/${NAME}_source.zip" $SOURCE_PATHS
+        ls -l "$DIST"
+
+    - name: Upload archives
+      if: inputs.upload == 'true'
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist-${{ steps.ostag.outputs.ostag }}
+        path: ${{ steps.ostag.outputs.dist }}/*.zip
+        if-no-files-found: error

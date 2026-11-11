@@ -1,0 +1,69 @@
+# Example release workflow for a program repo, e.g. mfusg. Copy it to
+# .github/workflows/release.yml and set the program name and long name, and
+# develop-branch in both actions if development happens on a separate branch.
+# It calls the repo's own build workflow (docs/examples/build.yml).
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. 1.5.2
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  start:
+    name: Start release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      stage: ${{ steps.start.outputs.stage }}
+      ref: ${{ steps.start.outputs.ref }}
+      version: ${{ steps.start.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Start release
+        id: start
+        uses: MODFLOW-ORG/modflow-devtools/actions/release-start@1.10.0
+        with:
+          version: ${{ inputs.version }}
+          long-name: MODFLOW-USG
+
+  build:
+    name: Build
+    needs: start
+    if: needs.start.outputs.stage != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.start.outputs.ref }}
+      release: true
+
+  finish:
+    name: Finish release
+    needs:
+      - start
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Finish release
+        uses: MODFLOW-ORG/modflow-devtools/actions/release-finish@1.10.0
+        with:
+          stage: ${{ needs.start.outputs.stage }}
+          ref: ${{ needs.start.outputs.ref }}
+          version: ${{ needs.start.outputs.version }}
+          name: mfusg
+          long-name: MODFLOW-USG

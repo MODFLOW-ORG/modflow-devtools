@@ -1,0 +1,76 @@
+name: Set up a MODFLOW program build
+description: >
+  Set up the compiler and pixi, and on macOS, Xcode and static linking of the
+  gcc runtime. Building and testing is left to the caller.
+inputs:
+  path:
+    description: Directory of the program repo checkout, holding pixi.toml
+    default: .
+  compiler:
+    description: Compiler for fortran-lang/setup-fortran (gcc, intel, intel-classic), or none
+    default: gcc
+  compiler-version:
+    description: Compiler version
+    default: "13"
+  xcode-version:
+    description: Xcode version to select on macOS, if any
+    default: ""
+  pixi-version:
+    description: pixi version
+    default: v0.82.1
+runs:
+  using: composite
+  steps:
+    - name: Setup ${{ inputs.compiler }} ${{ inputs.compiler-version }}
+      if: inputs.compiler != 'none'
+      uses: fortran-lang/setup-fortran@v1
+      with:
+        compiler: ${{ inputs.compiler }}
+        version: ${{ inputs.compiler-version }}
+
+    # setup-fortran leaves CXX unset for intel on Windows
+    - name: Set CXX (Windows intel)
+      if: runner.os == 'Windows' && inputs.compiler == 'intel'
+      shell: pwsh
+      run: echo "CXX=icx" >> $env:GITHUB_ENV
+
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0.11.3
+      with:
+        pixi-version: ${{ inputs.pixi-version }}
+        manifest-path: ${{ inputs.path }}/pixi.toml
+
+    - name: Set Xcode version (macOS)
+      if: runner.os == 'macOS' && inputs.xcode-version != ''
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Show toolchain (macOS)
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        xcode-select -p
+        xcrun --show-sdk-version
+        ld -v 2>&1 | head -2
+        if command -v gfortran >/dev/null; then gfortran --version | head -1; fi
+
+    # hide the gcc runtime dylibs so the linker uses the static libraries
+    - name: Hide gcc dylibs (macOS gcc)
+      if: runner.os == 'macOS' && inputs.compiler == 'gcc'
+      shell: bash
+      env:
+        GCC_VERSION: ${{ inputs.compiler-version }}
+      run: |
+        libpath="$(brew --prefix)/opt/gcc@$GCC_VERSION/lib/gcc/$GCC_VERSION"
+        for lib in libgcc_s.1.1 libgfortran.5 libquadmath.0 libstdc++.6; do
+          if [[ -f "$libpath/$lib.dylib" ]]; then
+            mv "$libpath/$lib.dylib" "$libpath/$lib.dylib.bak"
+          fi
+        done
+
+    # classic linker, static libgcc
+    - name: Set LDFLAGS (macOS gcc)
+      if: runner.os == 'macOS' && inputs.compiler == 'gcc'
+      shell: bash
+      run: echo "LDFLAGS=$LDFLAGS -Wl,-ld_classic -static-libgcc" >> "$GITHUB_ENV"

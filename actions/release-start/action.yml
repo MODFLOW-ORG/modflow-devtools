@@ -1,0 +1,118 @@
+name: Start a release
+description: >
+  First step of a release workflow. On workflow_dispatch from the development
+  branch, create release/vX.Y.Z, set the version, update CHANGELOG.md, and
+  push the branch (stage `prepare`). On push to the main branch, if the
+  version there is X.Y.Z and untagged, select the commit for release (stage
+  `publish`). Otherwise do nothing (empty stage). Build the `ref` output
+  when the stage is set, then run release-finish.
+inputs:
+  path:
+    description: Directory of the program repo checkout
+    default: .
+  version:
+    description: Version to release, X.Y.Z (workflow_dispatch only)
+    default: ""
+  long-name:
+    description: Program long name, e.g. MODFLOW-USG; used in the shared changelog template
+    required: true
+  main-branch:
+    description: Branch releases are merged into and tagged on
+    default: main
+  develop-branch:
+    description: Branch development happens on, if not the main branch
+    default: ""
+outputs:
+  stage:
+    description: prepare, publish, or empty if there is nothing to do
+    value: ${{ steps.stage.outputs.stage }}
+  ref:
+    description: Branch or commit to build and release
+    value: ${{ steps.stage.outputs.ref }}
+  version:
+    description: Version being released
+    value: ${{ steps.stage.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Select stage
+      id: stage
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/version.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        VERSION: ${{ inputs.version }}
+        MAIN_BRANCH: ${{ inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch || inputs.main-branch }}
+      run: |
+        tagged() { git ls-remote --exit-code --tags origin "refs/tags/v$1" >/dev/null; }
+        stage=""
+        ref=""
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$GITHUB_REF_NAME" != "$DEVELOP_BRANCH" ]]; then
+            echo "::error::Start a release from $DEVELOP_BRANCH, not $GITHUB_REF_NAME."
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$VERSION' is not X.Y.Z."
+            exit 1
+          fi
+          if tagged "$VERSION"; then
+            echo "::error::Tag v$VERSION already exists."
+            exit 1
+          fi
+          stage=prepare
+          ref="release/v$VERSION"
+        elif [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF_NAME" == "$MAIN_BRANCH" ]]; then
+          VERSION=$("$PYTHON" "$SCRIPT" --get)
+          if "$PYTHON" "$SCRIPT" --is-release && ! tagged "$VERSION"; then
+            stage=publish
+            ref="$GITHUB_SHA"
+          fi
+        fi
+        echo "stage '$stage', ref '$ref', version '$VERSION'"
+        {
+          echo "stage=$stage"
+          echo "ref=$ref"
+          echo "version=$VERSION"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Install git-cliff
+      if: steps.stage.outputs.stage == 'prepare'
+      shell: bash
+      run: pipx install git-cliff==2.14.2
+
+    - name: Prepare release branch
+      if: steps.stage.outputs.stage == 'prepare'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        SCRIPTS: ${{ github.action_path }}/../../modflow_devtools/release
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        VERSION: ${{ steps.stage.outputs.version }}
+        BRANCH: ${{ steps.stage.outputs.ref }}
+        LONG_NAME: ${{ inputs.long-name }}
+      run: |
+        # git-cliff needs the history and tags since the last release
+        if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+          git fetch --quiet --unshallow --tags origin
+        else
+          git fetch --quiet --tags origin
+        fi
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git switch -c "$BRANCH"
+        "$PYTHON" "$SCRIPTS/version.py" --set "$VERSION"
+        "$PYTHON" "$SCRIPTS/changelog.py" update --version "$VERSION" \
+          --repository "$GITHUB_REPOSITORY" --long-name "$LONG_NAME"
+        git add -A
+        git commit -m "chore(release): set version to $VERSION and update changelog"
+        git push origin "$BRANCH"
