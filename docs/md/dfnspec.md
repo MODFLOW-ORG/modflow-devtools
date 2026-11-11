@@ -94,14 +94,14 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Dimension sources](#dimension-sources)
     - [Bounds](#bounds)
     - [Dimension scope](#dimension-scope)
+  - [Bindings](#bindings)
+    - [Terms](#terms)
+    - [What a binding carries](#what-a-binding-carries)
   - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Scoped keys](#scoped-keys)
     - [Key sets](#key-sets)
     - [Rules](#rules)
-  - [Bindings](#bindings)
-    - [Terms](#terms)
-    - [What a binding carries](#what-a-binding-carries)
-    - [Parameters](#parameters)
+  - [Parameters](#parameters)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -161,7 +161,7 @@ The component's type. Required. One of:
 
 #### `parent`
 
-Except for the simulation, which is the root of the runtime hierarchy, all MF6 components have a parent. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a `gwf-nam` model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
+Except for the simulation, which is the root of the hierarchy, all MF6 components have a parent. The hierarchy is built by [bindings](#bindings): a `file` field with a [`component`](#component) makes the file it names a child of the file it's in. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a `gwf-nam` model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
 
 Parent relationships are defined bottom-up with attribute `parent`:
 
@@ -562,7 +562,7 @@ If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECT
 
 ###### `component`
 
-`string | [string] | null (default: null)`. The component the file is input for. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
+`string | [string] | null (default: null)`. The component the file is input for. A `file` field with a `component` is a [binding](#bindings): it makes the file it names a child of the file it's in. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
 
 ###### `component_ftype`
 
@@ -889,7 +889,165 @@ Examples:
 
 Only a dimension that every component in the model (or simulation) shares should be widened beyond `"component"`: in practice, the discretization's grid dims and TDIS's `nper`. Other package dimensions (`maxbound`, `nseg`, `numgnc`, `nexg`, ...) describe a single instance of their component, since two EVT packages in a model can have different `nseg`, so they keep the default `"component"` scope even when the component's parent is a model or the simulation.
 
+### Bindings
+
+A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model name files, the exchanges and the solutions; a model name file names its packages; a package's options name its utility files, such as time series and observations. This section says how the DFNs describe that tree, and what a file can know about where it sits in it. It comes before [keys](#primary-and-foreign-keys) and [parameters](#parameters) because they resolve in the tree that bindings build.
+
+#### Terms
+
+- A **binding** is a `file` field with a [`component`](#component), and each value of it: a file named as the input of an instance of the component. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
+- The bound instance's **parent** is the instance whose file holds the binding. Bindings make the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
+- The **binding row** is the record holding the binding field: here, the whole `GWF6 model.nam gwf_1` line. Its other columns may say something about the child, such as its name.
+- A **reference** is a value that names something else in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
+- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
+
+A binding and a reference are different things. A binding names a file, and so builds the tree: the file becomes a child of the file the binding is in. A reference names something in the tree, and is resolved once the tree is built. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
+
+So a component's file says what it says, and its binding row may say more about it. The question in each case is whether the file's references need any of that.
+
+#### What a binding carries
+
+Every binding in MODFLOW 6 is one of these cases.
+
+| | Case | Example | The child needs | Said with |
+|---|---|---|---|---|
+| 1 | A file, and nothing else | `OBS6 FILEIN chd.obs` | nothing | [`component`](#component) |
+| 2 | The row names the child | `CHD6 model.chd CHD-1` | nothing | a `pk` on the row |
+| 3 | The row says more, which the child doesn't use | `1 TAB6 FILEIN lake1.tab` | nothing | nothing |
+| 4 | The row says what the child's references need | `GWF6-GWF6 model.gwfgwf gwf_1 gwf_2` | the exchange's models | `params`, `args` |
+| 5 | The parent passes on what it was passed | `GNC6 FILEIN model.gnc` in an exchange | the exchange's models | `args` naming a parameter |
+| 6 | One component, bound under different parents | `GNC6 model.gnc` in a model name file | nothing | no `args`: unset |
+| 7 | The row names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
+| 8 | No binding says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
+
+**1. A file, and nothing else.** Most bindings name a file and its component, and that's all the child needs. Its references resolve against its parent:
+
+```
+# a CHD package's options
+TS6 FILEIN chd.ts
+OBS6 FILEIN chd.obs
+
+# chd.obs
+BEGIN continuous FILEOUT chd.obs.csv
+  q-west  chd  west
+END continuous
+```
+
+`west` names a CHD boundary, as CHD's [`[observations]`](#observations) declares, and an observation by cellid is in the CHD's model's grid. `utl-obs` is bound by 52 components and needs nothing from any of them: whatever binds it is what it observes. References can also point down the tree: a CHD head given as a time series name names a series in the TS file it binds.
+
+**2. The row names the child.** A name file's row gives the child its name:
+
+```
+# a GWF model name file's packages
+CHD6 model.chd CHD-1
+```
+
+`pname` is a key of the row (`pk`), and other files refer to the package by it, within its model: a mover's `packages`, a transport model's SSM. The name is the parent's data, though, and the CHD file never refers to itself, so the child needs nothing. `mfsim.nam`'s `models` rows name models the same way, and its `solutiongroup` rows name the models each solution solves, which the solution's file never mentions.
+
+**3. The row says more, which the child doesn't use.**
+
+```
+# a LAK package's tables
+1 TAB6 FILEIN lake1.tab
+```
+
+`ifno` says which lake the table is for. The table holds stage, volume and area, and nothing in it depends on the lake, so nothing is passed. SFR's cross-section tables are the same. A binding passes only what the child's references need.
+
+**4. The row says what the child's references need.**
+
+```
+# mfsim.nam exchanges
+GWF6-GWF6 model.gwfgwf gwf_1 gwf_2
+
+# model.gwfgwf exchangedata: cellidm1, cellidm2, ihc, cl1, cl2, hwva
+1 5 10   1 5 1   1 50.0 50.0 100.0
+```
+
+The first cellid is in `gwf_1`'s grid and the second in `gwf_2`'s, but nothing in the exchange file says which models those are. The row binding it does, with `exgmnamea` and `exgmnameb`, which are references to `sim-nam`'s `models`. So every exchange declares two [parameters](#parameters), and the binding passes them:
+
+```toml
+# every exchange
+[params.model1]
+type = "model"
+
+[params.model2]
+type = "model"
+
+# sim-nam exchanges row
+[blocks.exchanges.fields.exchanges.item.fields.exgfile]
+args = { model1 = "exgmnamea", model2 = "exgmnameb" }
+```
+
+The cellids then say which parameter they're in: `cellidm1` has [`model`](#model) `"model1"`, and `cellidm2` has `"model2"`.
+
+**5. The parent passes on what it was passed.**
+
+```
+# model.gwfgwf options
+GNC6 FILEIN model.gnc
+MVR6 FILEIN model.mvr
+
+# model.mvr period: mname1, pname1, id1, mname2, pname2, id2, mvrtype, value
+gwf_1 WEL-1 1   gwf_2 LAK-1 1   FACTOR 1.0
+```
+
+GNC's cellids and the mover's model names are in the exchange's models, which only the exchange's binding row says. The exchange passes its own parameters on:
+
+```toml
+# exg-gwfgwf
+[blocks.options.fields.mvr_filerecord.fields.mvr6_filename]
+args = { model1 = "model1", model2 = "model2" }
+```
+
+MVT and MVE, bound the same way in transport exchanges, refer to no model, so they're passed nothing.
+
+**6. One component, bound under different parents.** GNC and MVR can also be a model's packages:
+
+```
+# a GWF model name file's packages
+GNC6 model.gnc
+MVR6 model.mvr
+```
+
+A model name file passes them nothing, so their parameters are unset, which means null. Whatever names a parameter says what null means: a GNC whose cellids' models are null reads them all in its own model, and a mover whose `model2` is null has no `MODELNAMES` and no model columns.
+
+**7. The row names it by reference.**
+
+```
+# a GWT model's SSM fileinput
+WEL-1 SPC6 FILEIN wel.spc
+
+# wel.spc period: bndno, spcsetting
+1 CONCENTRATION 10.0
+```
+
+SPC's `bndno` numbers the bounds of `WEL-1`. The argument is the row's `pname`, and the parameter is what it references, the package, not the string:
+
+```toml
+# utl-spc
+[params.target]
+type = "package"
+rule = "no_advanced_transport"
+
+# gwt-ssm, gwe-ssm fileinput row
+[blocks.fileinput.fields.fileinput.item.fields.spc6_filename]
+args = { target = "pname" }
+```
+
+`WEL-1` is a package of the flow model, not of the transport model that SSM is in, so `pname`'s `fk` has the rule `flow_model`, which case 8 explains.
+
+**8. No binding says it.**
+
+```
+# a GWT model's SSM sources
+WEL-1 AUX CONCENTRATION
+```
+
+`WEL-1` is a package of the flow model that a `GWF6-GWT6` exchange pairs with this transport model. That's said by an exchange row naming the transport model, and an exchange binds neither SSM nor any of its ancestors, so no parameter can carry it. A [rule](#rules) does: `flow_model`. With flows read from a budget file there is no exchange, and no check.
+
 ### Primary and foreign keys
+
+A reference names something in the tree that [bindings](#bindings) build, and resolves in its component's [scope](#terms). This section covers references to rows and keys; [cellids](#cellid) and [time series](#time_series) are covered with their types.
 
 Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk` and `fk`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the [`cellid`](#cellid) type rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
 
@@ -1055,163 +1213,9 @@ The rest of the `fk` is checked as usual, by its scope or as if unscoped: its pa
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
 
-### Bindings
+### Parameters
 
-A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model name files, the exchanges and the solutions; a model name file names its packages; a package's options name its utility files, such as time series and observations. This section says how the DFNs describe that tree, and what a file can know about where it sits in it.
-
-#### Terms
-
-- A **binding** is a `file` field with a [`component`](#component), and each value of it: a file named as the input of an instance of the component. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
-- The bound instance's **parent** is the instance whose file holds the binding. Bindings make the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
-- The **binding row** is the record holding the binding field: here, the whole `GWF6 model.nam gwf_1` line. Its other columns may say something about the child, such as its name.
-- A **reference** is a value that names something else in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series. A binding names a file, and so builds the tree. A reference names something in the tree, and is resolved once the tree is built.
-- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
-
-So a component's file says what it says, and its binding row may say more about it. The question in each case is whether the file's references need any of that.
-
-#### What a binding carries
-
-Every binding in MODFLOW 6 is one of these cases.
-
-| | Case | Example | The child needs | Said with |
-|---|---|---|---|---|
-| 1 | A file, and nothing else | `OBS6 FILEIN chd.obs` | nothing | [`component`](#component) |
-| 2 | The row names the child | `CHD6 model.chd CHD-1` | nothing | a `pk` on the row |
-| 3 | The row says more, which the child doesn't use | `1 TAB6 FILEIN lake1.tab` | nothing | nothing |
-| 4 | The row says what the child's references need | `GWF6-GWF6 model.gwfgwf gwf_1 gwf_2` | the exchange's models | `params`, `args` |
-| 5 | The parent passes on what it was passed | `GNC6 FILEIN model.gnc` in an exchange | the exchange's models | `args` naming a parameter |
-| 6 | One component, bound under different parents | `GNC6 model.gnc` in a model name file | nothing | no `args`: unset |
-| 7 | The row names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
-| 8 | No binding says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
-
-**1. A file, and nothing else.** Most bindings name a file and its component, and that's all the child needs. Its references resolve against its parent:
-
-```
-# a CHD package's options
-TS6 FILEIN chd.ts
-OBS6 FILEIN chd.obs
-
-# chd.obs
-BEGIN continuous FILEOUT chd.obs.csv
-  q-west  chd  west
-END continuous
-```
-
-`west` names a CHD boundary, as CHD's [`[observations]`](#observations) declares, and an observation by cellid is in the CHD's model's grid. `utl-obs` is bound by 52 components and needs nothing from any of them: whatever binds it is what it observes. References can also point down the tree: a CHD head given as a time series name names a series in the TS file it binds.
-
-**2. The row names the child.** A name file's row gives the child its name:
-
-```
-# a GWF model name file's packages
-CHD6 model.chd CHD-1
-```
-
-`pname` is a key of the row (`pk`), and other files refer to the package by it, within its model: a mover's `packages`, a transport model's SSM. The name is the parent's data, though, and the CHD file never refers to itself, so the child needs nothing. `mfsim.nam`'s `models` rows name models the same way, and its `solutiongroup` rows name the models each solution solves, which the solution's file never mentions.
-
-**3. The row says more, which the child doesn't use.**
-
-```
-# a LAK package's tables
-1 TAB6 FILEIN lake1.tab
-```
-
-`ifno` says which lake the table is for. The table holds stage, volume and area, and nothing in it depends on the lake, so nothing is passed. SFR's cross-section tables are the same. A binding passes only what the child's references need.
-
-**4. The row says what the child's references need.**
-
-```
-# mfsim.nam exchanges
-GWF6-GWF6 model.gwfgwf gwf_1 gwf_2
-
-# model.gwfgwf exchangedata: cellidm1, cellidm2, ihc, cl1, cl2, hwva
-1 5 10   1 5 1   1 50.0 50.0 100.0
-```
-
-The first cellid is in `gwf_1`'s grid and the second in `gwf_2`'s, but nothing in the exchange file says which models those are. The row binding it does. So every exchange declares two [parameters](#parameters), and the binding passes them:
-
-```toml
-# every exchange
-[params.model1]
-type = "model"
-
-[params.model2]
-type = "model"
-
-# sim-nam exchanges row
-[blocks.exchanges.fields.exchanges.item.fields.exgfile]
-args = { model1 = "exgmnamea", model2 = "exgmnameb" }
-```
-
-The cellids then say which parameter they're in: `cellidm1` has [`model`](#model) `"model1"`, and `cellidm2` has `"model2"`.
-
-**5. The parent passes on what it was passed.**
-
-```
-# model.gwfgwf options
-GNC6 FILEIN model.gnc
-MVR6 FILEIN model.mvr
-
-# model.mvr period: mname1, pname1, id1, mname2, pname2, id2, mvrtype, value
-gwf_1 WEL-1 1   gwf_2 LAK-1 1   FACTOR 1.0
-```
-
-GNC's cellids and the mover's model names are in the exchange's models, which only the exchange's binding row says. The exchange passes its own parameters on:
-
-```toml
-# exg-gwfgwf
-[blocks.options.fields.mvr_filerecord.fields.mvr6_filename]
-args = { model1 = "model1", model2 = "model2" }
-```
-
-MVT and MVE, bound the same way in transport exchanges, refer to no model, so they're passed nothing.
-
-**6. One component, bound under different parents.** GNC and MVR can also be a model's packages:
-
-```
-# a GWF model name file's packages
-GNC6 model.gnc
-MVR6 model.mvr
-```
-
-A model name file passes them nothing, so their parameters are unset, which means null. Whatever names a parameter says what null means: a GNC whose cellids' models are null reads them all in its own model, and a mover whose `model2` is null has no `MODELNAMES` and no model columns.
-
-**7. The row names it by reference.**
-
-```
-# a GWT model's SSM fileinput
-WEL-1 SPC6 FILEIN wel.spc
-
-# wel.spc period: bndno, spcsetting
-1 CONCENTRATION 10.0
-```
-
-SPC's `bndno` numbers the bounds of `WEL-1`. The argument is the row's `pname`, and the parameter is what it references, the package, not the string:
-
-```toml
-# utl-spc
-[params.target]
-type = "package"
-rule = "no_advanced_transport"
-
-# gwt-ssm, gwe-ssm fileinput row
-[blocks.fileinput.fields.fileinput.item.fields.spc6_filename]
-args = { target = "pname" }
-```
-
-`WEL-1` is a package of the flow model, not of the transport model that SSM is in, so `pname`'s `fk` has the rule `flow_model`, which case 8 explains.
-
-**8. No binding says it.**
-
-```
-# a GWT model's SSM sources
-WEL-1 AUX CONCENTRATION
-```
-
-`WEL-1` is a package of the flow model that a `GWF6-GWT6` exchange pairs with this transport model. That's said by an exchange row naming the transport model, and an exchange binds neither SSM nor any of its ancestors, so no parameter can carry it. A [rule](#rules) does: `flow_model`. With flows read from a budget file there is no exchange, and no check.
-
-#### Parameters
-
-A component's **parameters** are what its references need from its binding (cases 4 to 7). Binding works like a function call:
+A component's **parameters** are what its references need from its binding: cases 4 to 7 under [What a binding carries](#what-a-binding-carries). Binding works like a function call:
 
 | Binding | Function call |
 |---|---|
