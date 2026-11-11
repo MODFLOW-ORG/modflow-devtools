@@ -597,17 +597,19 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 # only means "needs 1-based/0-based conversion"). In every entry here the list
 # field's own name matches its enclosing block's name.
 #
-# Each column also refers to one of two models' grids (see `v2.CellModel`), which
-# v1 only says in prose and MF6 hard-codes (IDM's `StructArray.f90` maps
-# `CELLIDM1`/`CELLIDM2` to `EXGMNAMEA`/`EXGMNAMEB`; `GhostNode.f90` reads
-# `cellidn` and `cellidsj` in model 1's grid, `cellidm` in model 2's).
-_CELLID_FIELDS: dict[str, tuple[str, dict[str, Literal["1", "2"]]]] = {
-    "exg-chfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
-    "exg-gwegwe": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
-    "exg-gwfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
-    "exg-gwtgwt": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
-    "exg-olfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
-    "gwf-gnc": ("gncdata", {"cellidn": "1", "cellidm": "2", "cellidsj": "1"}),
+# Each column also refers to one of two models' grids, named by a parameter
+# (see `v2.CellModel`, `_PARAMS`), which v1 only says in prose and MF6
+# hard-codes (IDM's `StructArray.f90` maps `CELLIDM1`/`CELLIDM2` to
+# `EXGMNAMEA`/`EXGMNAMEB`; `GhostNode.f90` reads `cellidn` and `cellidsj` in
+# model 1's grid, `cellidm` in model 2's).
+_EXG_CELLIDS = {"cellidm1": "model1", "cellidm2": "model2"}
+_CELLID_FIELDS: dict[str, tuple[str, dict[str, str]]] = {
+    "exg-chfgwf": ("exchangedata", _EXG_CELLIDS),
+    "exg-gwegwe": ("exchangedata", _EXG_CELLIDS),
+    "exg-gwfgwf": ("exchangedata", _EXG_CELLIDS),
+    "exg-gwtgwt": ("exchangedata", _EXG_CELLIDS),
+    "exg-olfgwf": ("exchangedata", _EXG_CELLIDS),
+    "gwf-gnc": ("gncdata", {"cellidn": "model1", "cellidm": "model2", "cellidsj": "model1"}),
 }
 
 
@@ -620,7 +622,7 @@ def _cellid_base(field: "v2.Integer | v2.Array") -> dict[str, Any]:
     return base
 
 
-def _as_cellid(field: v2.InputField, model: Literal["1", "2"] | None = None) -> v2.InputField:
+def _as_cellid(field: v2.InputField, model: str | None = None) -> v2.InputField:
     """Rewrite an integer column as a cellid in the given model's grid: a
     `CellID` if it's one cellid (a plain integer, or a v1 `shape (ncelldim)`
     array), else an array of them, shaped by what counts them (GNC's
@@ -1699,10 +1701,14 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       "mname"}`, `fk = {path = "gwf-nam.packages.pname", scope = "mname",
       rule = "mover_enabled"}`.
     - `packages.mname`, `period.perioddata`'s `mname1`/`mname2`:
-      `fk = {path = "sim-nam.models.mname", rule = "exchange_models"}`: a
-      model, and one of the exchange's two, which MF6 requires
-      (`xmvr_check_packages`, `GwfExchangeMover.f90:87-93`). In a model's
-      mover they're absent, since MF6 rejects `MODELNAMES` there.
+      `fk = {param = ["model1", "model2"]}`: one of the exchange's two
+      models (see `_PARAMS`), which MF6 requires (`xmvr_check_packages`,
+      `GwfExchangeMover.f90:87-93`). In a model's mover they're absent,
+      since MF6 rejects `MODELNAMES` there.
+    - `options.modelnames`: `when = "model2"`, required: MF6 rejects a
+      mover whose `MODELNAMES` disagrees with its binding, either way
+      (`gwf-mvr.f90:785-798`), so it's set exactly when an exchange binds
+      the mover, and a writer can set it.
     - `pname1`/`pname2`: `fk = {path = "packages.pname", scope = "mname1"}`
       (`"mname2"`), since `mvr_rp` looks each provider/receiver up among
       the `packages` rows, fatal if unlisted.
@@ -1738,7 +1744,18 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     ):
         return blocks
 
-    model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
+    model = v2.ForeignKey(param=("model1", "model2"))
+    options = blocks.get("options")
+    if options is not None and isinstance(options.fields.get("modelnames"), v2.Keyword):
+        modelnames = options.fields["modelnames"].model_copy(
+            update={"when": "model2", "optional": False}
+        )
+        blocks = {
+            **blocks,
+            "options": options.model_copy(
+                update={"fields": {**options.fields, "modelnames": modelnames}}
+            ),
+        }
     blocks = _set_list_item_attrs(
         blocks,
         "packages",
@@ -1804,6 +1821,48 @@ _BOUND_KEYS: dict[str, str] = {
 }
 
 
+# Binding parameters (see `v2.Param`): what a component needs from whatever
+# binds its file, which v1 says only in prose.
+#
+# - An exchange's two models are `sim-nam`'s `exchanges` row's `exgmnamea`
+#   and `exgmnameb`, not in its own file. Its cellids name them.
+# - An exchange's mover and GNC get them from the exchange, one explicit
+#   step down. Under a model they're unset, meaning that model.
+# - SPC and SPCA apply to the flow package SSM's `fileinput` row names
+#   (`TspSpc.f90:326-349`), skipped if an advanced transport package is
+#   paired with it (`tsp-ssm.f90:195`). MF6 rejects array SPC on any but
+#   RCHA and EVTA, and list SPC on those (`TspSpc.f90:353-375`): SPCA says
+#   so by its type, SPC by its `bound` key, which RCHA and EVTA don't
+#   declare.
+# - OBS observes whatever binds it.
+_EXG_PARAMS = {
+    "model1": v2.Param(type="model", from_="row.exgmnamea"),
+    "model2": v2.Param(type="model", from_="row.exgmnameb"),
+}
+_EXG_FORWARD = {
+    "model1": v2.Param(type="model", from_={"exg-gwfgwf": "parent.model1"}),
+    "model2": v2.Param(type="model", from_={"exg-gwfgwf": "parent.model2"}),
+}
+_PARAMS: dict[str, dict[str, v2.Param]] = {
+    **dict.fromkeys(
+        ("exg-chfgwf", "exg-gwegwe", "exg-gwfgwf", "exg-gwtgwt", "exg-olfgwf"), _EXG_PARAMS
+    ),
+    "gwf-mvr": _EXG_FORWARD,
+    "gwf-gnc": _EXG_FORWARD,
+    "utl-spc": {
+        "target": v2.Param(type="package", rule="no_advanced_transport", **{"from": "row.pname"})
+    },
+    "utl-spca": {
+        "target": v2.Param(
+            type=["gwf-rcha", "gwf-evta"],
+            rule="no_advanced_transport",
+            **{"from": "row.pname"},
+        )
+    },
+    "utl-obs": {"target": v2.Param(type=["model", "package"], from_="parent")},
+}
+
+
 def _component_keys(
     name: str, blocks: dict[str, v2.Block], dims: Mapping[str, Any]
 ) -> dict[str, v2.KeySet] | None:
@@ -1856,10 +1915,11 @@ def _ssm_pname_keyed(blocks: dict[str, v2.Block], block_name: str) -> bool:
 def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     SPC's `bndno` names a bound of the flow package its SSM `fileinput` row
-    (its binding row) names, so `fk = {key = "bound", rule =
-    "ssm_package"}`, keeping its `pk` (one row per bound per period). MF6 reads `bndno`
-    against SPC's own `maxbound` and requires that to be at least the flow
-    package's bound count (`TspSpc.f90:326-349`).
+    (its binding row) names, its `target` parameter (see `_PARAMS`), so
+    `fk = {key = "bound", param = "target"}`, keeping its `pk` (one row per
+    bound per period). MF6 reads `bndno` against SPC's own `maxbound` and
+    requires that to be at least the flow package's bound count
+    (`TspSpc.f90:326-349`).
 
     Must run after `_mark_lonely_pk`, which marks only a column without an fk.
     """
@@ -1875,7 +1935,7 @@ def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return _set_list_item_attrs(
         blocks,
         "period",
-        {"bndno": {"fk": v2.ForeignKey(key=BOUND, rule="ssm_package")}},
+        {"bndno": {"fk": v2.ForeignKey(key=BOUND, param="target")}},
         list_name=period_list,
     )
 
@@ -2919,6 +2979,7 @@ def to_v2_0_0_dev2(
         "blocks": blocks or None,
         "dims": dims,
         "keys": _component_keys(name, blocks, dims or {}),
+        "params": _PARAMS.get(name),
     }
     if name == "sim-nam":
         return v2.Simulation(**d)

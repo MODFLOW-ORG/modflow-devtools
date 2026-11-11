@@ -42,7 +42,11 @@
                 "type": "string",
                 "longname": "observation type",
                 "description": "a string of characters used to identify the observation type.",
-                "tagged": false
+                "tagged": false,
+                "fk": {
+                  "key": "observations",
+                  "param": "target"
+                }
               },
               "id": {
                 "type": "union",
@@ -108,6 +112,15 @@
           }
         }
       }
+    }
+  },
+  "params": {
+    "target": {
+      "from": "parent",
+      "type": [
+        "model",
+        "package"
+      ]
     }
   }
 }

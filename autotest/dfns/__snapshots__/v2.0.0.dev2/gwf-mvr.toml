@@ -29,7 +29,7 @@ optional = true
 type = "keyword"
 longname = "precede all package names with model names"
 description = "keyword to indicate that all package names will be preceded by the model name for the package.  Model names are required when the Mover Package is used with a GWF-GWF Exchange.  The MODELNAME keyword should not be used for a Mover Package that is for a single GWF Model."
-optional = true
+when = "model2"
 
 [blocks.options.fields.budget_filerecord]
 type = "record"
@@ -90,8 +90,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.packages.fields.packages.item.fields.mname.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
@@ -120,8 +122,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.period.fields.stress_period_data.item.fields.mname1.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
@@ -151,8 +155,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.period.fields.stress_period_data.item.fields.mname2.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"
@@ -198,3 +204,15 @@ longname = "stress period number"
 description = "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block."
 tagged = false
 index = true
+
+[params.model1]
+type = "model"
+
+[params.model1.from]
+exg-gwfgwf = "parent.model1"
+
+[params.model2]
+type = "model"
+
+[params.model2.from]
+exg-gwfgwf = "parent.model2"

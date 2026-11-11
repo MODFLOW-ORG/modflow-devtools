@@ -46,6 +46,9 @@ blocks:
               longname: observation type
               description: a string of characters used to identify the observation type.
               tagged: false
+              fk:
+                key: observations
+                param: target
             id:
               type: union
               longname: time
@@ -104,3 +107,9 @@ blocks:
             description: an optional keyword used to indicate that the output file should be written in
               binary (unformatted) form.
             optional: true
+params:
+  target:
+    from: parent
+    type:
+      - model
+      - package

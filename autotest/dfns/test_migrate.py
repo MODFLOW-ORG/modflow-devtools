@@ -381,9 +381,17 @@ def test_migrate_mvr_keys(dfn_dir):
     blocks = component.blocks
     packages = blocks["packages"].fields["packages"].item.fields
     period = blocks["period"].fields["stress_period_data"].item.fields
-    # a model, and one of the exchange's two (MF6's xmvr_check_packages)
-    model = v2.ForeignKey(path="sim-nam.models.mname", rule="exchange_models")
+    # one of the exchange's two models (MF6's xmvr_check_packages), passed
+    # down from the exchange; unset under a model
+    model = v2.ForeignKey(param=("model1", "model2"))
     assert packages["mname"].fk == model
+    assert component.params == {
+        f"model{i}": v2.Param(type="model", from_={"exg-gwfgwf": f"parent.model{i}"})
+        for i in (1, 2)
+    }
+    # MODELNAMES is set exactly when an exchange binds the mover
+    modelnames = blocks["options"].fields["modelnames"]
+    assert (modelnames.when, modelnames.optional) == ("model2", False)
     assert packages["pname"].pk == v2.PrimaryKey(scope="mname")
     # a package of that model, with its MOVER option set (MF6's check_packages)
     assert packages["pname"].fk == v2.ForeignKey(
@@ -511,10 +519,14 @@ def test_migrate_maw_without_angledata(dfn_dir, tmp_path):
 def test_migrate_spc_bndno(dfn_dir):
     """SPC's bndno is one row per bound, and names a bound of the flow
     package its SSM row names."""
-    blocks = _migrate_dev3(dfn_dir, "utl-spc").blocks
+    component = _migrate_dev3(dfn_dir, "utl-spc")
+    blocks = component.blocks
     bndno = blocks["period"].fields["stress_period_data"].item.fields["bndno"]
     assert bndno.pk == v2.PrimaryKey()
-    assert bndno.fk == v2.ForeignKey(key="bound", rule="ssm_package")
+    assert bndno.fk == v2.ForeignKey(key="bound", param="target")
+    assert component.params == {
+        "target": v2.Param(type="package", from_="row.pname", rule="no_advanced_transport")
+    }
     assert _fix_spc_relations("utl-spc", blocks) == blocks
 
 
@@ -589,7 +601,7 @@ def test_migrate_gnc_cellids(dfn_dir):
     item = component.blocks["gncdata"].fields["gncdata"].item
     # Under an exchange, `cellidn` and `cellidsj` are in model 1's grid and
     # `cellidm` in model 2's (MF6's GhostNode.f90).
-    for name, model in [("cellidn", "1"), ("cellidm", "2")]:
+    for name, model in [("cellidn", "model1"), ("cellidm", "model2")]:
         field = item.fields[name]
         assert isinstance(field, v2.CellID)
         assert (field.model, field.allow_zero) == (model, False)
@@ -599,7 +611,7 @@ def test_migrate_gnc_cellids(dfn_dir):
     assert (cellidsj.dtype, cellidsj.shape, cellidsj.model, cellidsj.allow_zero) == (
         "cellid",
         ["numalphaj"],
-        "1",
+        "model1",
         True,
     )
     assert cellidsj.render(inline=True) == "<cellidsj(ncelldim, numalphaj)>"
@@ -663,7 +675,7 @@ def test_migrate_exchange_cellids(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
     assert component.subtype == "exchange"
     item = component.blocks["exchangedata"].fields["exchangedata"].item
-    for col, model in (("cellidm1", "1"), ("cellidm2", "2")):
+    for col, model in (("cellidm1", "model1"), ("cellidm2", "model2")):
         field = item.fields[col]
         assert isinstance(field, v2.CellID)
         assert (field.model, field.allow_zero) == (model, False)
@@ -827,14 +839,18 @@ def test_migrate_period_header_is_index(dev3):
 
 
 def test_migrate_cellid_models_round_trip(dev3):
-    # "1"/"2" stay strings on disk in every format, and load back as such.
+    # A cellid's model names a parameter, on disk in every format.
     out, fmt = dev3
     raw = _load(out / f"exg-gwfgwf.{fmt}", fmt)
     cols = raw["blocks"]["exchangedata"]["fields"]["exchangedata"]["item"]["fields"]
-    assert (cols["cellidm1"]["model"], cols["cellidm2"]["model"]) == ("1", "2")
+    assert (cols["cellidm1"]["model"], cols["cellidm2"]["model"]) == ("model1", "model2")
     dfns = v2.Dfns.load(out)
     gnc = dfns.components["gwf-gnc"].blocks["gncdata"].fields["gncdata"].item.fields
-    assert [gnc[c].model for c in ("cellidn", "cellidm", "cellidsj")] == ["1", "2", "1"]
+    assert [gnc[c].model for c in ("cellidn", "cellidm", "cellidsj")] == [
+        "model1",
+        "model2",
+        "model1",
+    ]
     assert [type(gnc[c]) for c in ("cellidn", "cellidsj")] == [v2.CellID, v2.Array]
     assert gnc["cellidsj"].allow_zero
 
@@ -1035,7 +1051,9 @@ def test_dfns_validate_obs_when_names_no_keyword_option():
     cellid = v2.CellID(name="cellid", tagged=False)
     observation = v2.Union(name="wel", arms={"cellid": cellid, "boundname": boundname})
     package = v2.Package(name="gwf-wel", observations={"wel": observation})
-    with pytest.raises(ValueError, match="when='boundnames' names no keyword option of gwf-wel"):
+    with pytest.raises(
+        ValueError, match="when='boundnames' names no keyword option or parameter of gwf-wel"
+    ):
         v2.Dfns(components={"gwf-wel": package})
 
 

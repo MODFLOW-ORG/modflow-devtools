@@ -74,7 +74,7 @@
                 "pk": true,
                 "fk": {
                   "key": "bound",
-                  "rule": "ssm_package"
+                  "param": "target"
                 }
               },
               "spcsetting": {
@@ -121,6 +121,13 @@
       "set_in": "ar",
       "source": "maxbound",
       "type": "integer"
+    }
+  },
+  "params": {
+    "target": {
+      "type": "package",
+      "from": "row.pname",
+      "rule": "no_advanced_transport"
     }
   }
 }

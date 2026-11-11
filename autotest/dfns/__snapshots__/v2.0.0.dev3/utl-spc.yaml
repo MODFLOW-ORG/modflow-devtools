@@ -65,7 +65,7 @@ blocks:
               pk: true
               fk:
                 key: bound
-                rule: ssm_package
+                param: target
             spcsetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values
@@ -109,3 +109,8 @@ memory:
     set_in: ar
     source: maxbound
     type: integer
+params:
+  target:
+    type: package
+    from: row.pname
+    rule: no_advanced_transport

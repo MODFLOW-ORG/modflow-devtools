@@ -15,6 +15,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`memory`](#memory)
     - [`observations`](#observations)
     - [`keys`](#keys)
+    - [`params`](#params)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -96,6 +97,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
   - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Scoped keys](#scoped-keys)
     - [Key sets](#key-sets)
+    - [Parameters](#parameters)
     - [Rules](#rules)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
@@ -202,6 +204,10 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 #### `keys`
 
 `{string: string | [string] | {path, when}} (default: {})`. Named key sets: what a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types, or a key spanning several lists. See [Key sets](#key-sets).
+
+#### `params`
+
+`{string: {type, from, rule}} (default: {})`. Binding parameters: what the component needs from whatever binds its file, such as an exchange's two models. See [Parameters](#parameters).
 
 ### Component types
 
@@ -393,6 +399,8 @@ A field with a `when` renders in brackets, like an optional one, e.g. `[<petm0>]
 
 A [key set](#key-sets) may have a `when` too, which switches the component's part in a role on or off in the same way.
 
+A `when` may instead name one of the component's [parameters](#parameters). The field is then switched on when the parameter is set where the file is bound. `gwf-mvr`'s `MODELNAMES` keyword has `when = "model2"` and isn't optional: MODFLOW 6 rejects a mover whose `MODELNAMES` disagrees with its binding, either way (`gwf-mvr.f90:785-798`), so it's set exactly when an exchange binds the mover. A writer can set it, and a user never needs to.
+
 On an [observation](#observations) field, `when` names an option of the component declaring the observation, which is the observation's target, not of `utl-obs`. An observation can name a boundary only if its target sets `BOUNDNAMES`, so a `boundname` form has `when = "boundnames"`, and a component with no such option, like `gwf-chdg`, doesn't offer one.
 
 This is about whether a field is present at all, not how many values it holds. A column sized by another field, like `aux` (one value per auxiliary variable), uses `shape` instead, and a size of 0 means it's absent.
@@ -525,7 +533,7 @@ A cellid is only valid as a column in a list item, where each row names its cell
 
 ###### `model`
 
-`"1" | "2" | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model; `"1"` or `"2"` for the grid of the first or second model of the enclosing context, i.e. `EXGMNAMEA` or `EXGMNAMEB` under an exchange. Under a single model, both are that model, so a component read in either context (e.g. `gwf-gnc`) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must give `"1"` or `"2"`, since an exchange has no grid of its own, and a list item giving `"1"` or `"2"` on one cellid column must give one on every cellid column. For example, in an exchange `cellidm1` is `"1"` and `cellidm2` is `"2"`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"1"` and `cellidm` is `"2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
+`string | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model, or the name of one of the component's [parameters](#parameters) whose type is a model, for that model's grid. A parameter left unset where the file is bound means the component's own model too, so a component read in either context (e.g. `gwf-gnc`, under an exchange or a model) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must name one, since an exchange has no grid of its own, and a list item naming a model on one cellid column must name one on every cellid column. For example, in an exchange `cellidm1` is `"model1"` and `cellidm2` is `"model2"`, set from `EXGMNAMEA` and `EXGMNAMEB`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"model1"` and `cellidm` is `"model2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
 
 **Note:** The values are strings, not integers, as `true == 1` in many languages (e.g. Python). A reader rejects an integer or boolean `model`.
 
@@ -960,7 +968,7 @@ bound = "<=maxbound"
 
 In relational terms, a role is a supertype table: each declaring component adds its keys to it, keyed by (instance, key), and an `fk` with `key` is an ordinary foreign key to it.
 
-An `fk` names a role with `key`, and picks the instance with a scope, as for a scoped key across components (or with a [rule](#rules)):
+An `fk` names a role with `key`, and picks the instance with a scope, as for a scoped key across components, or with a [parameter](#parameters) (or a [rule](#rules)):
 
 ```toml
 # gwf-mvr period id1 / id2
@@ -987,7 +995,7 @@ A key set may be switched on by an option, written `{ path = "<path>", when = "<
 
 A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
 
-- each `key` an `fk` uses is declared by at least one component its scope can name (with a rule, by any component);
+- each `key` an `fk` uses is declared by at least one component its scope or parameter can name (with only a rule, by any component);
 - each declared `path` is valid in its component;
 - a `<=dim` path is referenced only by an integer column with `index: true`, and a `"block.field"` path by a column of the same type.
 
@@ -1005,25 +1013,100 @@ These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbo
 ```toml
 # utl-spc period bndno: a bound of the flow package its SSM row names
 pk = true
-fk = { key = "bound", rule = "ssm_package" }
+fk = { key = "bound", param = "target" }
 ```
 
 MODFLOW 6 checks `bndno` only against SPC's own `maxbound`, which must be at least the flow package's bound count (`TspSpc.f90:326-349`).
 
 An advanced package's bounds are its features or its connections. SFR and UZF have one per reach or UZF cell. LAK and MAW have one per connection, numbered through every feature's connections in feature order, NLAKECONN or `sum(ngwfnodes)` in all (`gwf-maw.f90:935`). SSM applies SPC to an advanced package only when no advanced transport package is paired with it (`tsp-ssm.f90:195`). Array-based packages (`gwf-rcha`, `gwf-evta`) declare no `bound`: MODFLOW 6 pairs them only with array-based SPC (`utl-spca`), which has no `bndno` (`TspSpc.f90:351-383`).
 
-[Observations](#observations) use the same idea, keyed by observation type: each component says what an observation's ID names, on the target side.
+[Observations](#observations) use the same idea, keyed by observation type: each component says what an observation's ID names, on the target side. The observation types themselves are a role too, under the reserved name `observations`: every component with [`observations`](#observations) declares it, and no component may declare a key set by that name. `utl-obs`'s `obstype` names one of its target's types:
+
+```toml
+# utl-obs continuous obstype
+fk = { param = "target", key = "observations" }
+```
+
+#### Parameters
+
+Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's cellids are in its two models' grids, but the models are named on `sim-nam`'s `exchanges` row, not in the exchange's file. An exchange's mover may name only those two models. SPC applies to whichever flow package SSM's row names. So a component declares what it needs from whatever binds it, as **parameters**, in [`params`](#params):
+
+```toml
+# exg-gwfgwf, and the other exchanges
+[params.model1]
+type = "model"
+from = "row.exgmnamea"
+
+[params.model2]
+type = "model"
+from = "row.exgmnameb"
+
+# gwf-mvr, gwf-gnc
+[params.model1]
+type = "model"
+from = { exg-gwfgwf = "parent.model1" }
+
+# utl-spc
+[params.target]
+type = "package"
+from = "row.pname"
+rule = "no_advanced_transport"
+
+# utl-obs
+[params.target]
+type = ["model", "package"]
+from = "parent"
+```
+
+- `type` is what the parameter names, a selector as in [`parent`](#parent).
+- `from` says where its value comes from: one source for every component that binds this one, or a table of sources keyed by binder. A binder with no entry leaves the parameter unset. A mover under a model has no exchange, so its `model1` and `model2` are unset, which means that model.
+- `rule` is optional, and means what it means on an `fk`: a named subset of the target (see [Rules](#rules)).
+
+A source is one of these, and there's no lookup or search:
+
+| source | the value | used by |
+|---|---|---|
+| `parent` | the component that binds this file | `utl-obs` |
+| `row.<column>` | that column of the binding row, following its `fk` to an instance | `utl-spc`, `utl-spca`, the exchanges |
+| `parent.<param>` | a parameter of the binder, passed down one step | `gwf-mvr` and `gwf-gnc` under an exchange |
+
+The binding row is the list row whose [`file`](#file) field links this component, such as SSM's `fileinput` row or `sim-nam`'s `exchanges` row.
+
+Three things can name a parameter:
+
+- an `fk`'s `param`. Alone, the value names the instance a parameter is set to, one of several if it's a list: `gwf-mvr`'s `mname1` is `fk = { param = ["model1", "model2"] }`, one of the exchange's two models. With a `key`, the parameter picks the instance whose key set is meant: `utl-spc`'s `bndno` is `fk = { key = "bound", param = "target" }`.
+- a cellid's [`model`](#model): `"model1"` or `"model2"`.
+- a field's [`when`](#when): `gwf-mvr`'s `MODELNAMES` has `when = "model2"`.
+
+A parameter's `type` can say what a key can't. MODFLOW 6 applies list-based SPC only to a list-based package, and array-based SPC (`utl-spca`) only to `gwf-rcha` and `gwf-evta` (`TspSpc.f90:353-375`). `utl-spca` says so with `type = ["gwf-rcha", "gwf-evta"]`, and `utl-spc` says so through `key = "bound"`, which RCHA and EVTA don't declare.
+
+In relational terms, a parameter is a column on the child's row with a foreign key, and naming one is an ordinary foreign key to it:
+
+| DFN | SQL |
+|---|---|
+| `[params.target]` on `utl-spc` | columns `flow_mname`, `flow_pname` on `spc` |
+| `fk = { param = ["model1", "model2"] }` | a composite key to `exchange_models (exchange, mname)` |
+| `fk = { param = "target", key = "bound" }` | a foreign key to the `bound` supertype table |
+| `when = "model2"`, `optional = false` | `CHECK (modelnames = (model2 IS NOT NULL))` |
+
+A validator checks, for each component that binds one with parameters, that:
+
+- each parameter's `type` admits some component;
+- each binder in a `from` table binds the component;
+- a `parent` source's binder is of the parameter's type;
+- a `row.<column>` source's binding row has the column, with an `fk`, and the column can name something of the parameter's type;
+- a `parent.<param>` source's binder declares that parameter, and its type can name something of this one's;
+- each `fk`, cellid `model` and `when` naming a parameter names one the component declares, and a cellid's is of a model.
+
+So an exchange's cellid always resolves, and so does a mover's model name.
 
 #### Rules
 
-Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's mover may name only the exchange's two models; a transport model's SSM names packages of whichever flow model an exchange pairs it with. No path or sibling scope can say this. Instead, the `fk` names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+Some constraints aren't about a binding, so no [parameter](#parameters) says them. A transport model's SSM names packages of whichever flow model an exchange pairs it with, which nothing that binds SSM supplies: it comes from an exchange naming the transport model, or from a budget file. A mover's packages must have `MOVER` set. Instead, the `fk` or parameter names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
 
-A rule names a subset of the `fk`'s target, and the value must be in it. In relational terms, the `fk` references a named view rather than the target table. A rule may stand in for a scope, or narrow a scoped target further:
+A rule names a subset of the target, and the value must be in it. In relational terms, the `fk` references a named view rather than the target table. A rule may stand in for a scope, or narrow a scoped target further:
 
 ```toml
-# gwf-mvr packages.mname, period mname1/mname2: the exchange's two models
-fk = { path = "sim-nam.models.mname", rule = "exchange_models" }
-
 # gwt-ssm / gwe-ssm sources.pname and fileinput.pname
 pk = true
 fk = { path = "gwf-nam.packages.pname", rule = "flow_model" }
@@ -1037,9 +1120,8 @@ The rest of the `fk` is checked as usual, by its scope or as if unscoped: its pa
 
 | rule | meaning | MODFLOW 6 |
 |---|---|---|
-| `exchange_models` | one of the two models (`exgmnamea`, `exgmnameb`) of the exchange whose `MVR6` option binds this mover. In a model's own mover the model names are absent (`MODELNAMES` is rejected there). | `GwfExchangeMover.f90:87-93` |
 | `flow_model` | in the flow model that a GWF-GWT or GWF-GWE exchange pairs with this transport model (its `exgmnamea`, where the transport model is `exgmnameb`). With flows read from a budget file there is no such exchange, and the reference isn't checked. | `exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`, `tsp-ssm.f90:800-811` |
-| `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file. If an advanced transport package is paired with that flow package, SSM doesn't apply the SPC file and the reference isn't checked. | `TspSpc.f90:326-349`, `tsp-ssm.f90:195` |
+| `no_advanced_transport` | a flow package with no advanced transport package paired with it. SSM doesn't apply an SPC file bound to one that has, so the file isn't checked. On `utl-spc`'s and `utl-spca`'s `target` | `tsp-ssm.f90:195` |
 | `mover_enabled` | a package that plays `mover_provider` or `mover_receiver`: one whose mover key sets are switched on by `MOVER` (see [Key sets](#key-sets)) | `gwf-mvr.f90:942-971` |
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.

@@ -64,7 +64,7 @@ pk = true
 
 [blocks.period.fields.stress_period_data.item.fields.bndno.fk]
 key = "bound"
-rule = "ssm_package"
+param = "target"
 
 [blocks.period.fields.stress_period_data.item.fields.spcsetting]
 type = "union"
@@ -98,3 +98,8 @@ index = true
 set_in = "ar"
 source = "maxbound"
 type = "integer"
+
+[params.target]
+type = "package"
+from = "row.pname"
+rule = "no_advanced_transport"

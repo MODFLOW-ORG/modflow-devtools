@@ -76,14 +76,14 @@
                 "longname": "cellid of cell in surface water model",
                 "description": "is the cellid of the cell in model 1, which must be the surface water model. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell.",
                 "tagged": false,
-                "model": "1"
+                "model": "model1"
               },
               "cellidm2": {
                 "type": "cellid",
                 "longname": "cellid of cell in groundwater model",
                 "description": "is the cellid of the cell in model 2, which must be the groundwater model. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell.",
                 "tagged": false,
-                "model": "2"
+                "model": "model2"
               },
               "bedleak": {
                 "type": "double",
@@ -166,6 +166,16 @@
       "shape": [
         "nexg"
       ]
+    }
+  },
+  "params": {
+    "model1": {
+      "type": "model",
+      "from": "row.exgmnamea"
+    },
+    "model2": {
+      "type": "model",
+      "from": "row.exgmnameb"
     }
   }
 }

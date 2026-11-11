@@ -33,7 +33,7 @@ blocks:
         description: keyword to indicate that all package names will be preceded by the model name for
           the package.  Model names are required when the Mover Package is used with a GWF-GWF Exchange.  The
           MODELNAME keyword should not be used for a Mover Package that is for a single GWF Model.
-        optional: true
+        when: model2
       budget_filerecord:
         type: record
         optional: true
@@ -90,8 +90,9 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                path: sim-nam.models.mname
-                rule: exchange_models
+                param:
+                  - model1
+                  - model2
             pname:
               type: string
               description: is the name of a package that may be included in a subsequent stress period
@@ -124,8 +125,9 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                path: sim-nam.models.mname
-                rule: exchange_models
+                param:
+                  - model1
+                  - model2
             pname1:
               type: string
               longname: provider package name
@@ -158,8 +160,9 @@ blocks:
               when: modelnames
               tagged: false
               fk:
-                path: sim-nam.models.mname
-                rule: exchange_models
+                param:
+                  - model1
+                  - model2
             pname2:
               type: string
               longname: receiver package name
@@ -220,3 +223,12 @@ memory:
     set_in: ar
     source: maxpackages
     type: integer
+params:
+  model1:
+    type: model
+    from:
+      exg-gwfgwf: parent.model1
+  model2:
+    type: model
+    from:
+      exg-gwfgwf: parent.model2

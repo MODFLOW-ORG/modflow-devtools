@@ -38,6 +38,10 @@ longname = "observation type"
 description = "a string of characters used to identify the observation type."
 tagged = false
 
+[blocks.continuous.fields.continuous.item.fields.obstype.fk]
+key = "observations"
+param = "target"
+
 [blocks.continuous.fields.continuous.item.fields.id]
 type = "union"
 longname = "time"
@@ -89,3 +93,10 @@ direction = "out"
 type = "keyword"
 description = "an optional keyword used to indicate that the output file should be written in binary (unformatted) form."
 optional = true
+
+[params.target]
+from = "parent"
+type = [
+    "model",
+    "package",
+]
