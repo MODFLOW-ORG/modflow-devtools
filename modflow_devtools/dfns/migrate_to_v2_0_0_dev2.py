@@ -1821,15 +1821,15 @@ _BOUND_KEYS: dict[str, str] = {
 }
 
 
-# Binding parameters (see `v2.Param`): what a component needs from whatever
-# binds its file, beyond the binder itself, which v1 says only in prose. The
-# component declares them, like a function's signature; the binding file
-# passes them (see `_ARGS`).
+# Binding parameters (see `v2.Param`): what a component's references need
+# from its binding, beyond its parent, which v1 says only in prose. The
+# component declares them, like a function's signature; the binding passes
+# them (see `_ARGS`).
 #
 # - Every exchange (`exg-*`) has two models, named on `sim-nam`'s
 #   `exchanges` row, not in its own file. Its cellids name them.
 # - An exchange's mover and GNC get them from the exchange. Under a model
-#   they're unset, meaning that model.
+#   they're unset (null), which a cellid reads as that model.
 # - SPC and SPCA apply to the flow package SSM's `fileinput` row names
 #   (`TspSpc.f90:326-349`), skipped if an advanced transport package is
 #   paired with it (`tsp-ssm.f90:195`). MF6 rejects array SPC on any but
@@ -1845,9 +1845,9 @@ _PARAMS: dict[str, dict[str, v2.Param]] = {
     "utl-spca": {"target": v2.Param(type=["gwf-rcha", "gwf-evta"], rule=_SPC_TARGET)},
 }
 
-# The arguments each binding file passes (see `v2.File.args`), as (block,
-# file field, args): a column of the binding row, or the binder's own
-# parameter, passed down.
+# The arguments each binding passes (see `v2.File.args`), as (block, file
+# field, args): a column of the binding row, or the parent's own parameter,
+# passed on.
 _PASS_MODELS = {"model1": "model1", "model2": "model2"}
 _ARGS: dict[str, list[tuple[str, str, dict[str, str]]]] = {
     "sim-nam": [("exchanges", "exgfile", {"model1": "exgmnamea", "model2": "exgmnameb"})],

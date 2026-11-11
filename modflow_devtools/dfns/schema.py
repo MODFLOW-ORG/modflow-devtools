@@ -411,16 +411,16 @@ class KeySet(BaseModel):
 
 class Param(BaseModel):
     """
-    A binding parameter: something a component needs from whatever binds its
-    file, beyond the binder itself (see `docs/md/dfnspec.md`, "Parameters").
+    A binding parameter: what a component's references need from its
+    binding, beyond its parent (see `docs/md/dfnspec.md`, "Bindings").
     Declared in the component's `params`, like a function's signature, and
-    passed by the binding file's `args` (see `File`). Named by an fk's
+    passed by the binding's `args` (see `File`). Named by an fk's
     `param`, a cellid's `model`, or a `when`.
 
     - `type`: what the parameter names, a selector as in `parent`.
     - `rule`: as on an fk (see `RULES`), a named subset of the target.
 
-    A binder that passes no argument leaves it unset. Relationally, a
+    A binding that passes no argument leaves it unset, i.e. null. Relationally, a
     parameter is a column on the child's row, with a foreign key.
     """
 

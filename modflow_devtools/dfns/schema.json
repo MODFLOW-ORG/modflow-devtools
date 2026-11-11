@@ -2090,7 +2090,7 @@
     },
     "Param": {
       "additionalProperties": false,
-      "description": "A binding parameter: something a component needs from whatever binds its\nfile, beyond the binder itself (see `docs/md/dfnspec.md`, \"Parameters\").\nDeclared in the component's `params`, like a function's signature, and\npassed by the binding file's `args` (see `File`). Named by an fk's\n`param`, a cellid's `model`, or a `when`.\n\n- `type`: what the parameter names, a selector as in `parent`.\n- `rule`: as on an fk (see `RULES`), a named subset of the target.\n\nA binder that passes no argument leaves it unset. Relationally, a\nparameter is a column on the child's row, with a foreign key.",
+      "description": "A binding parameter: what a component's references need from its\nbinding, beyond its parent (see `docs/md/dfnspec.md`, \"Bindings\").\nDeclared in the component's `params`, like a function's signature, and\npassed by the binding's `args` (see `File`). Named by an fk's\n`param`, a cellid's `model`, or a `when`.\n\n- `type`: what the parameter names, a selector as in `parent`.\n- `rule`: as on an fk (see `RULES`), a named subset of the target.\n\nA binding that passes no argument leaves it unset, i.e. null. Relationally, a\nparameter is a column on the child's row, with a foreign key.",
       "properties": {
         "type": {
           "anyOf": [
