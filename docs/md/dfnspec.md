@@ -875,7 +875,7 @@ An unprefixed length is exact, so a DFN must mark every bound. A consumer may re
 
 #### Dimension scope
 
-Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension:
+Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension, i.e. whose [scope](#terms) it's in:
 
 - **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent). The default scope.
 - **`"model"`**: visible to any component that can share the same model instance, as determined by component `parent` attributes. A dimension defined in component A with `scope: "model"` is visible to component B if:
@@ -903,11 +903,11 @@ An `fk` names an existing row: a file in which one names no row is invalid. An i
 
 An `fk` is a hierarchical path of the form `"[component.]block.field"`, naming the `pk` field it references. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
 
-A cross-component `fk` resolves in the file's [context](#terms): against a singleton component (e.g. `sim-nam`), or an ancestor of the instance the file is input for (e.g. a reference from a model's package to that model's name file).
+A cross-component `fk` resolves in the file's [scope](#terms): against a singleton component (e.g. `sim-nam`), or an ancestor of the instance the file is input for (e.g. a reference from a model's package to that model's name file).
 
 #### Scoped keys
 
-MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it, or of a record enclosing it within the same list item (a union arm's column may be scoped by the list item's). The scope belongs to the key, so it's written inside `pk` or `fk`:
+MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A scoped key is a qualified name, like `mname1::pname1` in C++, whose `::` is called the scope resolution operator: `pname1` is resolved in the [scope](#terms) of model `mname1`. A key can carry a **scope**, the name of another column in the same record that qualifies it, or of a record enclosing it within the same list item (a union arm's column may be scoped by the list item's). The scope belongs to the key, so it's written inside `pk` or `fk`:
 
 ```toml
 pk = { scope = "mname" }
@@ -918,7 +918,7 @@ fk = { path = "packages.pname", scope = "mname1" }
 - An `fk` with scope `s` takes the target key's qualifier from `s`.
   - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. If both scope columns have an `fk`, it must be the same.
   - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must name that instance: it must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)), either directly or through other `fk`s. For example, `gwf-mvr`'s `pname1` names a `packages` row, whose `pname` names a row of a model name file's `packages`.
-- An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
+- An absent scope value means the current scope, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
 - A scope column's own key may be scoped, forming a chain, but not a cycle.
 - If a column's `pk` and `fk` are both scoped, the scope is the same column.
 - A scope names the nearest column of that name: in the key's own record, then in each enclosing record of the same list item.
@@ -1065,7 +1065,7 @@ A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model nam
 - The bound instance's **parent** is the instance whose file holds the binding. Bindings make the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
 - The **binding row** is the record holding the binding field: here, the whole `GWF6 model.nam gwf_1` line. Its other columns may say something about the child, such as its name.
 - A **reference** is a value that names something else in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series. A binding names a file, and so builds the tree. A reference names something in the tree, and is resolved once the tree is built.
-- A reference resolves in its component's **context**: the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. Context is what programming languages call scope. This spec says context because it already uses scope for [scoped keys](#scoped-keys) and [dimension scope](#dimension-scope).
+- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
 
 So a component's file says what it says, and its binding row may say more about it. The question in each case is whether the file's references need any of that.
 
@@ -1237,12 +1237,12 @@ A component declares its parameters in [`params`](#params):
 - `type` is what the parameter names, a selector as in [`parent`](#parent).
 - `rule` is optional, and means what it means on an `fk`: a named subset of the target (see [Rules](#rules)).
 
-A binding passes them in its `file` field's [`args`](#args). An argument names one of two things, in the parent's context:
+A binding passes them in its `file` field's [`args`](#args). An argument names one of two things, in the parent's scope:
 
 - a column of the binding row with an `fk`, and the argument is what the `fk` references (cases 4 and 7);
 - one of the parent's own parameters (case 5).
 
-It must name exactly one, so nothing is searched. Context is lexical, as in most programming languages: a parent can pass only what's in its own context, so an exchange's models reach its mover by being passed twice, from `sim-nam` to the exchange and from the exchange to the mover, and no component looks up the tree for a name.
+It must name exactly one, so nothing is searched. Scope is lexical, as in most programming languages: a parent can pass only what's in its own scope, so an exchange's models reach its mover by being passed twice, from `sim-nam` to the exchange and from the exchange to the mover, and no component looks up the tree for a name.
 
 Following an argument's `fk` applies all of it, [rule](#rules) included, and the parameter's own `rule` applies after that. SSM's `pname` has `rule = "flow_model"`, so the `target` it passes is a package of the paired flow model, and `utl-spc`'s `rule = "no_advanced_transport"` then narrows it to one with no advanced transport package.
 
@@ -1254,7 +1254,7 @@ A binding that passes no argument leaves the parameter unset, which is null, as 
 
 A parameter's `type` can say what a key can't. MODFLOW 6 applies list-based SPC only to a list-based package, and array-based SPC (`utl-spca`) only to `gwf-rcha` and `gwf-evta` (`TspSpc.f90:353-375`). `utl-spca` says so with `type = ["gwf-rcha", "gwf-evta"]`, and `utl-spc` says so through `key = "bound"`, which RCHA and EVTA don't declare.
 
-Two things aren't parameters. The parent is already in context, as `self` is, so `utl-obs` declares none. And what no binding says (case 8) can't be passed, so it's a rule.
+Two things aren't parameters. The parent is already in scope, as `self` is, so `utl-obs` declares none. And what no binding says (case 8) can't be passed, so it's a rule.
 
 In relational terms, an argument is a foreign key on the binding row, and the parameter is that column carried onto the child's row:
 
