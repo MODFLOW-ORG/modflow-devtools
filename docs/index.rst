@@ -41,6 +41,7 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/programs.md
    md/ostags.md
+   md/release.md
 
 .. toctree::
    :maxdepth: 2

@@ -1,0 +1,58 @@
+name: Program version
+description: >
+  Get, check or set a program's version with modflow_devtools/release/version.py: meson.build
+  (or the version.txt it reads), pixi.toml, and any files in release.toml.
+inputs:
+  path:
+    description: Directory of the program repo checkout
+    default: .
+  get:
+    description: Output the current version
+    default: "false"
+  next:
+    description: Output the next minor development version
+    default: "false"
+  set:
+    description: Version to set (X.Y.Z or X.Y.Z.devN)
+    default: ""
+outputs:
+  version:
+    description: The current version, or the version set
+    value: ${{ steps.run.outputs.version }}
+  next:
+    description: The next minor development version, when requested
+    value: ${{ steps.run.outputs.next }}
+  release:
+    description: Whether the current version is a release version (X.Y.Z)
+    value: ${{ steps.run.outputs.release }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Run version script
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/version.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        SET: ${{ inputs.set }}
+        NEXT: ${{ inputs.next }}
+      run: |
+        if [[ -n "$SET" ]]; then
+          "$PYTHON" "$SCRIPT" --set "$SET"
+        fi
+        version=$("$PYTHON" "$SCRIPT" --get)
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        if "$PYTHON" "$SCRIPT" --is-release; then release=true; else release=false; fi
+        echo "release=$release" >> "$GITHUB_OUTPUT"
+        if [[ "$NEXT" == "true" ]]; then
+          echo "next=$("$PYTHON" "$SCRIPT" --next)" >> "$GITHUB_OUTPUT"
+        fi
+        echo "version $version, release $release"

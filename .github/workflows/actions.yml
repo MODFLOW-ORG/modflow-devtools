@@ -1,0 +1,171 @@
+# Tests for the release actions (actions/) and scripts
+# (modflow_devtools/release/): the scripts, the workflow syntax, and the
+# composite actions against a small Fortran program (autotest/release) on each
+# released platform.
+name: Release actions
+on:
+  push:
+    paths:
+      - 'actions/**'
+      - 'modflow_devtools/release/**'
+      - 'autotest/release/**'
+      - 'autotest/test_release.py'
+      - 'docs/examples/**'
+      - '.github/workflows/actions.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'actions/**'
+      - 'modflow_devtools/release/**'
+      - 'autotest/release/**'
+      - 'autotest/test_release.py'
+      - 'docs/examples/**'
+      - '.github/workflows/actions.yml'
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  PIXI_BETA_WARNING_OFF: true
+jobs:
+  scripts:
+    name: Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install
+        run: |
+          uv sync --group test
+          pipx install git-cliff==2.14.2
+
+      - name: Test
+        working-directory: autotest
+        run: uv run pytest -v test_release.py
+
+  lint:
+    name: Lint workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color .github/workflows/actions.yml
+
+      # the examples call each other, so lint them as a repo's workflows
+      - name: Lint examples
+        run: |
+          mkdir -p "$RUNNER_TEMP/examples/.github/workflows"
+          cp docs/examples/*.yml "$RUNNER_TEMP/examples/.github/workflows/"
+          git init -q "$RUNNER_TEMP/examples"
+          cd "$RUNNER_TEMP/examples" && "$GITHUB_WORKSPACE/actionlint" -color
+
+  release-start:
+    name: Release start (no-op)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # not a release event, so there should be nothing to do
+      - name: Start release
+        id: start
+        uses: ./actions/release-start
+        with:
+          path: autotest/release
+          long-name: Hello
+
+      - name: Check stage
+        env:
+          STAGE: ${{ steps.start.outputs.stage }}
+        run: '[[ -z "$STAGE" ]]'
+
+  actions:
+    name: Actions ${{ matrix.os }} ${{ matrix.compiler }} ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-22.04, compiler: intel, version: "2025.0"}
+          - {os: macos-15, compiler: gcc, version: "13", xcode-version: "16.4"}
+          - {os: windows-2022, compiler: intel, version: "2025.0"}
+          - {os: ubuntu-22.04, compiler: gcc, version: "13"}
+          - {os: windows-2022, compiler: gcc, version: "13"}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set version
+        id: version
+        uses: ./actions/version
+        with:
+          path: autotest/release
+          set: 1.2.3
+
+      - name: Check version
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          RELEASE: ${{ steps.version.outputs.release }}
+        run: |
+          [[ "$VERSION" == "1.2.3" && "$RELEASE" == "true" ]]
+          grep -q "VERSION = '1.2.3 " autotest/release/src/hello.f90
+
+      - name: Setup
+        uses: ./actions/setup
+        with:
+          path: autotest/release
+          compiler: ${{ matrix.compiler }}
+          compiler-version: ${{ matrix.version }}
+          xcode-version: ${{ matrix.xcode-version }}
+
+      - name: Build and test
+        shell: bash
+        working-directory: autotest/release
+        run: |
+          pixi run setup builddir
+          pixi run build builddir
+          pixi run setup builddir-dble -Ddouble=true
+          pixi run build builddir-dble
+          pixi run test
+          pixi run meson test --no-rebuild -C builddir-dble
+
+      - name: Check linkage
+        uses: ./actions/check-linkage
+        with:
+          path: autotest/release/bin
+
+      - name: Package
+        id: package
+        uses: ./actions/package
+        with:
+          path: autotest/release
+          name: hello
+
+      - name: Check archives
+        shell: bash
+        env:
+          DIST: ${{ steps.package.outputs.dist }}
+          OSTAG: ${{ steps.package.outputs.ostag }}
+        run: |
+          ls -l "$DIST"
+          python3 - "$DIST/$OSTAG.zip" <<'EOF'
+          import sys, zipfile
+          names = sorted(zipfile.ZipFile(sys.argv[1]).namelist())
+          print(names)
+          stems = sorted(n.removesuffix(".exe") for n in names)
+          assert stems == ["hello", "hellodbl"], names
+          EOF
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            unzip -l "$DIST/hello_source.zip" | grep -q src/hello.f90
+          fi

@@ -1,0 +1,15 @@
+# Program repos pin the release actions (actions/) at a devtools release, so
+# updates to the actions they use land here once instead of in every program
+# repo.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /actions/*
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - "*"

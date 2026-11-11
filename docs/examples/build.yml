@@ -1,0 +1,89 @@
+# Example build workflow for a program repo, e.g. mfusg. Copy it to
+# .github/workflows/build.yml and adapt it. It runs on pushes, pull requests
+# and a schedule, and is also called by the release workflow, which sets
+# `ref` and `release`. Release builds must upload one archive per platform
+# with the package action (`upload: true`).
+name: build
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Branch or commit to build
+        type: string
+        default: ""
+      release:
+        description: Package and upload the release archives
+        type: boolean
+        default: false
+# a build called by the release workflow mustn't share a group with (and get
+# cancelled by) a regular build of the same push
+concurrency:
+  group: build-${{ inputs.release }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  PIXI_BETA_WARNING_OFF: true
+jobs:
+  build:
+    name: ${{ matrix.os }} ${{ matrix.compiler }} ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # release builds, one per platform
+          - {os: ubuntu-22.04, compiler: intel, version: "2025.0", release: true}
+          - {os: macos-15, compiler: gcc, version: "13", xcode-version: "16.4", release: true}
+          - {os: windows-2022, compiler: intel, version: "2025.0", release: true}
+          # extra coverage
+          - {os: ubuntu-22.04, compiler: gcc, version: "13"}
+          - {os: windows-2022, compiler: gcc, version: "13"}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup
+        uses: MODFLOW-ORG/modflow-devtools/actions/setup@1.10.0
+        with:
+          compiler: ${{ matrix.compiler }}
+          compiler-version: ${{ matrix.version }}
+          xcode-version: ${{ matrix.xcode-version }}
+
+      - name: Build
+        run: |
+          pixi run setup builddir
+          pixi run build builddir
+          pixi run setup builddir-dble -Ddouble=true
+          pixi run build builddir-dble
+
+      - name: Test
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pixi run test
+
+      - name: Check linkage
+        uses: MODFLOW-ORG/modflow-devtools/actions/check-linkage@1.10.0
+
+      - name: Package
+        if: inputs.release && matrix.release
+        uses: MODFLOW-ORG/modflow-devtools/actions/package@1.10.0
+        with:
+          name: mfusg
+          upload: true
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meson-logs-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.version }}
+          path: builddir*/meson-logs/
+          if-no-files-found: ignore

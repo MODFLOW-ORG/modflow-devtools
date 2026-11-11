@@ -1,0 +1,159 @@
+name: Finish a release
+description: >
+  Last step of a release workflow, after the release-start action and the
+  build. For stage `prepare`, open the release pull request into the main
+  branch. For stage `publish`, download the dist-* artifacts uploaded by the
+  package action, check them, publish the GitHub release, and open a pull
+  request setting the next development version on the development branch.
+  Expects a checkout of the commit being released.
+inputs:
+  path:
+    description: Directory of the program repo checkout
+    default: .
+  stage:
+    description: The release-start action's stage output
+    required: true
+  ref:
+    description: The release-start action's ref output
+    required: true
+  version:
+    description: The release-start action's version output
+    required: true
+  name:
+    description: Program name, e.g. mfusg; used for the source archive and release title
+    required: true
+  long-name:
+    description: Program long name, e.g. MODFLOW-USG; used in the release notes
+    required: true
+  main-branch:
+    description: Branch releases are merged into and tagged on
+    default: main
+  develop-branch:
+    description: Branch development happens on, if not the main branch
+    default: ""
+  platforms:
+    description: Space-separated OS tags that must each have an archive
+    default: linux macarm win64
+  github-token:
+    description: Token for creating the release and pull requests
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Check stage
+      shell: bash
+      env:
+        STAGE: ${{ inputs.stage }}
+      run: |
+        if [[ "$STAGE" != "prepare" && "$STAGE" != "publish" ]]; then
+          echo "::error::Unexpected stage '$STAGE', expected prepare or publish."
+          exit 1
+        fi
+
+    - name: Open release pull request
+      if: inputs.stage == 'prepare'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        BRANCH: ${{ inputs.ref }}
+        VERSION: ${{ inputs.version }}
+        MAIN_BRANCH: ${{ inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch || inputs.main-branch }}
+      run: |
+        body="Review the $VERSION section of CHANGELOG.md, it becomes the release notes. Merging this publishes release v$VERSION and opens a pull request setting the next development version on $DEVELOP_BRANCH."
+        gh pr create -R "$GITHUB_REPOSITORY" -B "$MAIN_BRANCH" -H "$BRANCH" \
+          --title "chore(release): $VERSION" --body "$body"
+
+    - name: Setup Python
+      if: inputs.stage == 'publish'
+      id: python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Download archives
+      if: inputs.stage == 'publish'
+      uses: actions/download-artifact@v8
+      with:
+        pattern: dist-*
+        merge-multiple: true
+        path: ${{ runner.temp }}/dist
+
+    - name: Check archives
+      if: inputs.stage == 'publish'
+      shell: bash
+      env:
+        DIST: ${{ runner.temp }}/dist
+        NAME: ${{ inputs.name }}
+        PLATFORMS: ${{ inputs.platforms }}
+      run: |
+        ls -l "$DIST"
+        status=0
+        for ostag in $PLATFORMS; do
+          if [[ ! -f "$DIST/$ostag.zip" ]]; then
+            echo "::error::Missing $ostag.zip."
+            status=1
+          fi
+        done
+        for file in "$DIST"/*; do
+          base=$(basename "$file")
+          case "$base" in
+            linux.zip|mac.zip|macarm.zip|win64.zip|"${NAME}_source.zip") ;;
+            *) echo "::error::Unexpected file $base."; status=1 ;;
+          esac
+        done
+        exit $status
+
+    - name: Publish release
+      if: inputs.stage == 'publish'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/changelog.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        DIST: ${{ runner.temp }}/dist
+        NOTES: ${{ runner.temp }}/notes.md
+        VERSION: ${{ inputs.version }}
+        REF: ${{ inputs.ref }}
+        NAME: ${{ inputs.name }}
+        LONG_NAME: ${{ inputs.long-name }}
+      run: |
+        {
+          echo "$LONG_NAME version $VERSION"
+          echo
+          "$PYTHON" "$SCRIPT" notes --version "$VERSION"
+        } > "$NOTES"
+        cat "$NOTES"
+        gh release create "v$VERSION" "$DIST"/* -R "$GITHUB_REPOSITORY" \
+          --target "$REF" --title "$NAME $VERSION" --notes-file "$NOTES" --latest
+
+    # in the dual-branch model this also merges the release back into the
+    # development branch, so it must be merged with a merge commit
+    - name: Open next version pull request
+      if: inputs.stage == 'publish'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/version.py
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        VERSION: ${{ inputs.version }}
+        MAIN_BRANCH: ${{ inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch || inputs.main-branch }}
+      run: |
+        next=$("$PYTHON" "$SCRIPT" --next)
+        branch="release/v$next"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git switch -c "$branch"
+        "$PYTHON" "$SCRIPT" --set "$next"
+        git commit -am "chore(release): set version to $next"
+        git push origin "$branch"
+        body="Set the version on $DEVELOP_BRANCH to $next after the $VERSION release."
+        if [[ "$DEVELOP_BRANCH" != "$MAIN_BRANCH" ]]; then
+          body="$body This also merges $MAIN_BRANCH into $DEVELOP_BRANCH. Merge it with a merge commit, not a squash, so the v$VERSION tag is reachable from $DEVELOP_BRANCH."
+        fi
+        gh pr create -R "$GITHUB_REPOSITORY" -B "$DEVELOP_BRANCH" -H "$branch" \
+          --title "chore(release): set version to $next" --body "$body"

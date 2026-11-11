@@ -1,0 +1,4 @@
+[[version-files]]
+path = "src/hello.f90"
+pattern = "VERSION = '([^']*)'"
+format = "{version} {date:%m/%d/%Y}"

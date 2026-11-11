@@ -1,0 +1,41 @@
+# Shared git-cliff template for CHANGELOG.md and the release notes. Used when
+# a program repo has no cliff.toml of its own; changelog.py fills in
+# __REPOSITORY__ (owner/repo) and __NAME__ (the program's long name). Only
+# features, fixes, and performance changes are listed.
+
+[changelog]
+header = """
+# Changelog
+
+Features, fixes, and performance changes in each __NAME__ release.\n
+"""
+body = """
+{% if version %}\
+    ## Version {{ version | trim_start_matches(pat="v") }} ({{ timestamp | date(format="%Y-%m-%d") }})
+{% else %}\
+    ## Unreleased
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        * {% if commit.scope %}{{ commit.scope }}: {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/__REPOSITORY__/commit/{{ commit.id }}))\
+    {% endfor %}
+{% endfor %}\n
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+    { message = "^[a-zA-Z]+\\(ci\\)", skip = true },
+    { message = "^[fF]eat", group = "<!-- 0 -->Features" },
+    { message = "^[fF]ix", group = "<!-- 1 -->Fixes" },
+    { message = "^[pP]erf", group = "<!-- 2 -->Performance" },
+    { message = ".*", skip = true },
+]
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9]+\\.[0-9]+\\.[0-9]+"
+sort_commits = "oldest"
