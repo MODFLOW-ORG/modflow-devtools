@@ -74,7 +74,7 @@
                 "pk": true,
                 "fk": {
                   "key": "bound",
-                  "rule": "ssm_package"
+                  "param": "target"
                 }
               },
               "spcsetting": {
@@ -114,6 +114,12 @@
           "index": true
         }
       }
+    }
+  },
+  "params": {
+    "target": {
+      "type": "package",
+      "rule": "no_advanced_transport"
     }
   }
 }

@@ -141,7 +141,11 @@
                 "direction": "in",
                 "mode_keyword": false,
                 "component": "exchange",
-                "component_ftype": "exgtype"
+                "component_ftype": "exgtype",
+                "args": {
+                  "model1": "exgmnamea",
+                  "model2": "exgmnameb"
+                }
               },
               "exgmnamea": {
                 "type": "string",

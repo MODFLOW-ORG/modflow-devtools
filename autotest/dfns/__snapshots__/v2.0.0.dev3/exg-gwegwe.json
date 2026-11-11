@@ -153,14 +153,14 @@
                 "longname": "cellid of first cell",
                 "description": "is the cellid of the cell in model 1 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell.",
                 "tagged": false,
-                "model": "1"
+                "model": "model1"
               },
               "cellidm2": {
                 "type": "cellid",
                 "longname": "cellid of second cell",
                 "description": "is the cellid of the cell in model 2 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell.",
                 "tagged": false,
-                "model": "2"
+                "model": "model2"
               },
               "ihc": {
                 "type": "integer",
@@ -343,6 +343,14 @@
           "tagged": false
         }
       }
+    }
+  },
+  "params": {
+    "model1": {
+      "type": "model"
+    },
+    "model2": {
+      "type": "model"
     }
   }
 }

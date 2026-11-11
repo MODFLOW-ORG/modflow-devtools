@@ -15,6 +15,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`memory`](#memory)
     - [`observations`](#observations)
     - [`keys`](#keys)
+    - [`params`](#params)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -93,10 +94,14 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [Dimension sources](#dimension-sources)
     - [Bounds](#bounds)
     - [Dimension scope](#dimension-scope)
+  - [Bindings](#bindings)
+    - [Terms](#terms)
+    - [What a binding carries](#what-a-binding-carries)
   - [Primary/foreign keys](#primary-and-foreign-keys)
     - [Scoped keys](#scoped-keys)
     - [Key sets](#key-sets)
     - [Rules](#rules)
+  - [Parameters](#parameters)
 - [Memory catalog](#memory-catalog)
   - [Attributes](#attributes-1)
     - [`type`](#type-2)
@@ -156,7 +161,7 @@ The component's type. Required. One of:
 
 #### `parent`
 
-Except for the simulation, which is the root of the runtime hierarchy, all MF6 components have a parent. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a `gwf-nam` model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
+Except for the simulation, which is the root of the hierarchy, all MF6 components have a parent. The hierarchy is built by [bindings](#bindings): a `file` field with a [`component`](#component) makes the file it names a child of the file it's in. Parent-child relations may range from fully constrained (e.g., a `gwf-chd` package must be a child of a `gwf-nam` model) to completely unconstrained. Components which may be attached to multiple possible parents are historically called **subpackages**.
 
 Parent relationships are defined bottom-up with attribute `parent`:
 
@@ -171,7 +176,7 @@ A term **admits** a component if it equals the component's name, type, or subtyp
 
 **Note:** Terms may be mixed. A type or subtype subsumes any named component of the same type or subtype: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
 
-A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them. The links are the exact relation; such a `parent` covers them but may admit more (e.g. `utl-ts`'s `package` admits `gwf-npf`, which never links a time series file).
+A component that other components' input files bind (see [Bindings](#bindings)), such as a utility, has its `parent` derived from the components that bind it: the simplest selector that admits all of them. The bindings are the exact relation; such a `parent` covers them but may admit more (e.g. `utl-ts`'s `package` admits `gwf-npf`, which never binds a time series file).
 
 #### `ftype`
 
@@ -202,6 +207,10 @@ If a component does not provide a `memory` catalog, all memory-managed variables
 #### `keys`
 
 `{string: string | [string] | {path, when}} (default: {})`. Named key sets: what a foreign key elsewhere can name with `key`, when the instance it references can be one of several component types, or a key spanning several lists. See [Key sets](#key-sets).
+
+#### `params`
+
+`{string: {type, rule}} (default: {})`. What the component's references need from its binding, beyond its parent, such as an exchange's two models. The binding passes them in [`args`](#args). See [Parameters](#parameters).
 
 ### Component types
 
@@ -393,6 +402,8 @@ A field with a `when` renders in brackets, like an optional one, e.g. `[<petm0>]
 
 A [key set](#key-sets) may have a `when` too, which switches the component's part in a role on or off in the same way.
 
+A `when` may instead name one of the component's [parameters](#parameters). The field is then switched on when the parameter is set where the file is bound. `gwf-mvr`'s `MODELNAMES` keyword has `when = "model2"` and isn't optional: MODFLOW 6 rejects a mover whose `MODELNAMES` disagrees with its binding, either way (`gwf-mvr.f90:785-798`), so it's set exactly when an exchange binds the mover. A writer can set it, and a user never needs to.
+
 On an [observation](#observations) field, `when` names an option of the component declaring the observation, which is the observation's target, not of `utl-obs`. An observation can name a boundary only if its target sets `BOUNDNAMES`, so a `boundname` form has `when = "boundnames"`, and a component with no such option, like `gwf-chdg`, doesn't offer one.
 
 This is about whether a field is present at all, not how many values it holds. A column sized by another field, like `aux` (one value per auxiliary variable), uses `shape` instead, and a size of 0 means it's absent.
@@ -525,7 +536,7 @@ A cellid is only valid as a column in a list item, where each row names its cell
 
 ###### `model`
 
-`"1" | "2" | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model; `"1"` or `"2"` for the grid of the first or second model of the enclosing context, i.e. `EXGMNAMEA` or `EXGMNAMEB` under an exchange. Under a single model, both are that model, so a component read in either context (e.g. `gwf-gnc`) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must give `"1"` or `"2"`, since an exchange has no grid of its own, and a list item giving `"1"` or `"2"` on one cellid column must give one on every cellid column. For example, in an exchange `cellidm1` is `"1"` and `cellidm2` is `"2"`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"1"` and `cellidm` is `"2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
+`string | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model, or the name of one of the component's [parameters](#parameters) whose type is a model, for that model's grid. A parameter that's unset where the file is bound is null, so it means the component's own model too, so a component read in either context (e.g. `gwf-gnc`, under an exchange or a model) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must name one, since an exchange has no grid of its own, and a list item naming a model on one cellid column must name one on every cellid column. For example, in an exchange `cellidm1` is `"model1"` and `cellidm2` is `"model2"`, set from `EXGMNAMEA` and `EXGMNAMEB`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"model1"` and `cellidm` is `"model2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
 
 **Note:** The values are strings, not integers, as `true == 1` in many languages (e.g. Python). A reader rejects an integer or boolean `model`.
 
@@ -551,13 +562,17 @@ If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECT
 
 ###### `component`
 
-`string | [string] | null (default: null)`. The component the file is input for. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
+`string | [string] | null (default: null)`. The component the file is input for. A `file` field with a `component` is a [binding](#bindings): it makes the file it names a child of the file it's in. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
 
 ###### `component_ftype`
 
 `string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target component's **ftype** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`). The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ftype: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ftype: "mtype"`.
 
 Each component declares its token in [`ftype`](#ftype).
+
+###### `args`
+
+`{string: string} (default: {})`. The arguments this [binding](#bindings) passes the target's [parameters](#parameters), by name. Each names a sibling field with an `fk`, i.e. another field of the binding's record, or one of this component's own parameters, passed on. For example, `sim-nam`'s `exchanges` rows have `exgfile` with `args = { model1 = "exgmnamea", model2 = "exgmnameb" }`. Only valid with `component`.
 
 ### Composites
 
@@ -860,7 +875,7 @@ An unprefixed length is exact, so a DFN must mark every bound. A consumer may re
 
 #### Dimension scope
 
-Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension:
+Dimensions may specify a `scope` attribute controlling which other components can inherit the dimension, i.e. whose [scope](#terms) it's in:
 
 - **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent). The default scope.
 - **`"model"`**: visible to any component that can share the same model instance, as determined by component `parent` attributes. A dimension defined in component A with `scope: "model"` is visible to component B if:
@@ -874,7 +889,166 @@ Examples:
 
 Only a dimension that every component in the model (or simulation) shares should be widened beyond `"component"`: in practice, the discretization's grid dims and TDIS's `nper`. Other package dimensions (`maxbound`, `nseg`, `numgnc`, `nexg`, ...) describe a single instance of their component, since two EVT packages in a model can have different `nseg`, so they keep the default `"component"` scope even when the component's parent is a model or the simulation.
 
+### Bindings
+
+A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model name files, the exchanges and the solutions; a model name file names its packages; a package's options name its utility files, such as time series and observations. This section says how the DFNs describe that tree, and what a file can know about where it sits in it. It comes before [keys](#primary-and-foreign-keys) and [parameters](#parameters) because they resolve in the tree that bindings build.
+
+#### Terms
+
+- A **binding** is a field in a component's input that names a subcomponent's input file: a `file` field with a [`component`](#component), which says what the subcomponent is. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
+- The subcomponent's **parent** is the component whose input holds the binding. Bindings build the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
+- A binding is one field of a record, and its **siblings** are the record's other fields: on the `GWF6 model.nam gwf_1` line, `GWF6` and `gwf_1`. Siblings may be keys, references or plain data, and may say something about the child, such as its name.
+- A **reference** is a value that names something introduced elsewhere in the simulation, and resolves by looking it up in the tree: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
+- A component's **parameters** declare what its references need from the component that binds it, and **arguments** are what the parent passes to them, at the binding. See [Parameters](#parameters).
+- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, `sim-tdis`, and the component's [parameters](#parameters), which its binding passes it. `sim-tdis` is a child of the simulation, not an ancestor, but there's only one, so every component can see it: its `nper` is a [dimension](#dimension-scope) of every component. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
+
+A binding and a reference are different things. A binding introduces what it names: the subcomponent is in the simulation because its parent binds it. A reference names something that exists without it, and resolves by looking it up in the tree, once bindings have built it. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
+
+So a component's file says what it says, and the binding's siblings may say more about it. The question in each case is whether the file's references need any of that.
+
+#### What a binding carries
+
+Every binding in MODFLOW 6 is one of these cases.
+
+| | Case | Example | The child needs | Said with |
+|---|---|---|---|---|
+| 1 | A file, and nothing else | `OBS6 FILEIN chd.obs` | nothing | [`component`](#component) |
+| 2 | A sibling names the child | `CHD6 model.chd CHD-1` | nothing | a `pk` |
+| 3 | A sibling says more, which the child doesn't use | `1 TAB6 FILEIN lake1.tab` | nothing | nothing |
+| 4 | A sibling says what the child's references need | `GWF6-GWF6 model.gwfgwf gwf_1 gwf_2` | the exchange's models | `params`, `args` |
+| 5 | The parent passes on what it was passed | `GNC6 FILEIN model.gnc` in an exchange | the exchange's models | `args` naming a parameter |
+| 6 | One component, bound under different parents | `GNC6 model.gnc` in a model name file | nothing | no `args`: unset |
+| 7 | A sibling names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
+| 8 | Another row in the parent says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
+
+**1. A file, and nothing else.** Most bindings name a file and its component, and that's all the child needs. Its references resolve against its parent:
+
+```
+# a CHD package's options
+TS6 FILEIN chd.ts
+OBS6 FILEIN chd.obs
+
+# chd.obs
+BEGIN continuous FILEOUT chd.obs.csv
+  q-west  chd  west
+END continuous
+```
+
+`west` names a CHD boundary, as CHD's [`[observations]`](#observations) declares, and an observation by cellid is in the CHD's model's grid. `utl-obs` is bound by 52 components and needs nothing from any of them: whatever binds it is what it observes. References can also point down the tree: a CHD head given as a time series name names a series in the TS file it binds.
+
+**2. A sibling names the child.** A name file's row gives the child its name:
+
+```
+# a GWF model name file's packages
+CHD6 model.chd CHD-1
+```
+
+`pname` is a key of the row (`pk`), and other files refer to the package by it, within its model: a mover's `packages`, a transport model's SSM. The name is the parent's data, though, and the CHD file never refers to itself, so the child needs nothing. `mfsim.nam`'s `models` rows name models the same way, and its `solutiongroup` rows name the models each solution solves, which the solution's file never mentions.
+
+**3. A sibling says more, which the child doesn't use.**
+
+```
+# a LAK package's tables
+1 TAB6 FILEIN lake1.tab
+```
+
+`ifno` says which lake the table is for. The table holds stage, volume and area, and nothing in it depends on the lake, so nothing is passed. SFR's cross-section tables are the same. A binding passes only what the child's references need.
+
+**4. A sibling says what the child's references need.**
+
+```
+# mfsim.nam exchanges
+GWF6-GWF6 model.gwfgwf gwf_1 gwf_2
+
+# model.gwfgwf exchangedata: cellidm1, cellidm2, ihc, cl1, cl2, hwva
+1 5 10   1 5 1   1 50.0 50.0 100.0
+```
+
+The first cellid is in `gwf_1`'s grid and the second in `gwf_2`'s, but nothing in the exchange file says which models those are. The binding's siblings do: `exgmnamea` and `exgmnameb`, which are references to `sim-nam`'s `models`. So every exchange declares two [parameters](#parameters), and the binding passes them:
+
+```toml
+# every exchange
+[params.model1]
+type = "model"
+
+[params.model2]
+type = "model"
+
+# sim-nam exchanges row
+[blocks.exchanges.fields.exchanges.item.fields.exgfile]
+args = { model1 = "exgmnamea", model2 = "exgmnameb" }
+```
+
+The cellids then say which parameter they're in: `cellidm1` has [`model`](#model) `"model1"`, and `cellidm2` has `"model2"`.
+
+**5. The parent passes on what it was passed.**
+
+```
+# model.gwfgwf options
+GNC6 FILEIN model.gnc
+MVR6 FILEIN model.mvr
+
+# model.mvr period: mname1, pname1, id1, mname2, pname2, id2, mvrtype, value
+gwf_1 WEL-1 1   gwf_2 LAK-1 1   FACTOR 1.0
+```
+
+GNC's cellids and the mover's model names are in the exchange's models, which only the exchange's row in `mfsim.nam` says. The exchange passes its own parameters on:
+
+```toml
+# exg-gwfgwf
+[blocks.options.fields.mvr_filerecord.fields.mvr6_filename]
+args = { model1 = "model1", model2 = "model2" }
+```
+
+MVT and MVE, bound the same way in transport exchanges, refer to no model, so they're passed nothing.
+
+**6. One component, bound under different parents.** GNC and MVR can also be a model's packages:
+
+```
+# a GWF model name file's packages
+GNC6 model.gnc
+MVR6 model.mvr
+```
+
+A model name file passes them nothing, so their parameters are unset, which means null. Whatever names a parameter says what null means: a GNC whose cellids' models are null reads them all in its own model, and a mover whose `model2` is null has no `MODELNAMES` and no model columns.
+
+**7. A sibling names it by reference.**
+
+```
+# a GWT model's SSM fileinput
+WEL-1 SPC6 FILEIN wel.spc
+
+# wel.spc period: bndno, spcsetting
+1 CONCENTRATION 10.0
+```
+
+SPC's `bndno` numbers the bounds of `WEL-1`. The argument is the binding's sibling `pname`, and the parameter is what it references, the package, not the string:
+
+```toml
+# utl-spc
+[params.target]
+type = "package"
+rule = "no_advanced_transport"
+
+# gwt-ssm, gwe-ssm fileinput row
+[blocks.fileinput.fields.fileinput.item.fields.spc6_filename]
+args = { target = "pname" }
+```
+
+`WEL-1` is a package of the flow model, not of the transport model that SSM is in, so `pname`'s `fk` has the rule `flow_model`, which case 8 explains.
+
+**8. Another row in the parent says it.**
+
+```
+# a GWT model's SSM sources
+WEL-1 AUX CONCENTRATION
+```
+
+`WEL-1` is a package of the flow model that a `GWF6-GWT6` exchange pairs with this transport model. `mfsim.nam` says so, and `mfsim.nam` binds the transport model, but not in that binding's siblings. The pairing is in an `exchanges` row, which refers back to the transport model by `exgmnameb`. An argument names only a sibling or one of the parent's parameters, so no argument can pass it. A [rule](#rules) does: `flow_model`. With flows read from a budget file there is no exchange, and no check.
+
 ### Primary and foreign keys
+
+A reference names something in the tree that [bindings](#bindings) build, and resolves in its component's [scope](#terms). This section covers references to rows and keys; [cellids](#cellid) and [time series](#time_series) are covered with their types.
 
 Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk` and `fk`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the [`cellid`](#cellid) type rather than `pk`/`fk` — grid cells are resolved against the grid (DIS/DISV/DISU) the column refers to at runtime, not looked up via a `pk` column.
 
@@ -888,11 +1062,11 @@ An `fk` names an existing row: a file in which one names no row is invalid. An i
 
 An `fk` is a hierarchical path of the form `"[component.]block.field"`, naming the `pk` field it references. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
 
-A cross-component `fk` resolves in the current context: against the singleton component (e.g. `sim-nam`), or the instance that owns this file (e.g. a reference from a model's package to that model's name file).
+A cross-component `fk` resolves in the file's [scope](#terms): against an ancestor of the instance the file is input for (e.g. `sim-nam`, or a model's name file for a reference from one of its packages), or through a [parameter](#parameters).
 
 #### Scoped keys
 
-MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A key can carry a **scope**, the name of another column in the same record that qualifies it, or of a record enclosing it within the same list item (a union arm's column may be scoped by the list item's). The scope belongs to the key, so it's written inside `pk` or `fk`:
+MODFLOW names things hierarchically: a package name is unique within a model, and a model name within the simulation. A scoped key is a qualified name, like `mname1::pname1` in C++, whose `::` is called the scope resolution operator: `pname1` is resolved in the [scope](#terms) of model `mname1`. A key can carry a **scope**, the name of another column in the same record that qualifies it, or of a record enclosing it within the same list item (a union arm's column may be scoped by the list item's). The scope belongs to the key, so it's written inside `pk` or `fk`:
 
 ```toml
 pk = { scope = "mname" }
@@ -903,7 +1077,7 @@ fk = { path = "packages.pname", scope = "mname1" }
 - An `fk` with scope `s` takes the target key's qualifier from `s`.
   - Within a component (`"block.field"`), the target `pk` must be scoped too, and `s` matches the target row's scope column. If both scope columns have an `fk`, it must be the same.
   - Across components (`"component.block.field"`), `s` picks the target component's *instance*. `s` must name that instance: it must be an `fk` to the key of the row that binds that component in its parent, i.e. a list whose item has a `file` naming the component (see [`component`](#component)), either directly or through other `fk`s. For example, `gwf-mvr`'s `pname1` names a `packages` row, whose `pname` names a row of a model name file's `packages`.
-- An absent scope value means the current one, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
+- An absent scope value means the current scope, as a relative path resolves against the current directory. For example, `gwf-mvr`'s `packages` rows name a package within a model, `mname`, which is given only in an exchange's mover; in a model's own mover it's absent and means that model. Like an optional `pk` given a default, the key is complete once the default is applied.
 - A scope column's own key may be scoped, forming a chain, but not a cycle.
 - If a column's `pk` and `fk` are both scoped, the scope is the same column.
 - A scope names the nearest column of that name: in the key's own record, then in each enclosing record of the same list item.
@@ -960,7 +1134,7 @@ bound = "<=maxbound"
 
 In relational terms, a role is a supertype table: each declaring component adds its keys to it, keyed by (instance, key), and an `fk` with `key` is an ordinary foreign key to it.
 
-An `fk` names a role with `key`, and picks the instance with a scope, as for a scoped key across components (or with a [rule](#rules)):
+An `fk` names a role with `key`, and picks the instance with a scope, as for a scoped key across components, or with a [parameter](#parameters):
 
 ```toml
 # gwf-mvr period id1 / id2
@@ -987,7 +1161,7 @@ A key set may be switched on by an option, written `{ path = "<path>", when = "<
 
 A component that doesn't declare a role can't be named by an `fk` with that `key`. A validator checks that:
 
-- each `key` an `fk` uses is declared by at least one component its scope can name (with a rule, by any component);
+- each `key` an `fk` uses is declared by at least one component its scope or parameter can name;
 - each declared `path` is valid in its component;
 - a `<=dim` path is referenced only by an integer column with `index: true`, and a `"block.field"` path by a column of the same type.
 
@@ -1005,7 +1179,7 @@ These follow each package's `pakmvrobj%ar(nproviders, nreceivers)` call: `(maxbo
 ```toml
 # utl-spc period bndno: a bound of the flow package its SSM row names
 pk = true
-fk = { key = "bound", rule = "ssm_package" }
+fk = { key = "bound", param = "target" }
 ```
 
 MODFLOW 6 checks `bndno` only against SPC's own `maxbound`, which must be at least the flow package's bound count (`TspSpc.f90:326-349`).
@@ -1016,14 +1190,11 @@ An advanced package's bounds are its features or its connections. SFR and UZF ha
 
 #### Rules
 
-Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's mover may name only the exchange's two models; a transport model's SSM names packages of whichever flow model an exchange pairs it with. No path or sibling scope can say this. Instead, the `fk` names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+Some constraints can't be said with a path, a scope or a [parameter](#parameters). A transport model's SSM names packages of whichever flow model an exchange pairs it with. `mfsim.nam` says which, in an `exchanges` row and not among the siblings of the binding that names the transport model, so no argument can pass it (case 8 in [What a binding carries](#what-a-binding-carries)). With flows from a budget file, nothing says it. A mover's packages must have `MOVER` set. Instead, the `fk` or parameter names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
 
-A rule names a subset of the `fk`'s target, and the value must be in it. In relational terms, the `fk` references a named view rather than the target table. A rule may stand in for a scope, or narrow a scoped target further:
+A rule names a subset of the target, and the value must be in it. In relational terms, the `fk` references a named view rather than the target table. A rule may stand in for a scope, or narrow a scoped target further:
 
 ```toml
-# gwf-mvr packages.mname, period mname1/mname2: the exchange's two models
-fk = { path = "sim-nam.models.mname", rule = "exchange_models" }
-
 # gwt-ssm / gwe-ssm sources.pname and fileinput.pname
 pk = true
 fk = { path = "gwf-nam.packages.pname", rule = "flow_model" }
@@ -1037,12 +1208,76 @@ The rest of the `fk` is checked as usual, by its scope or as if unscoped: its pa
 
 | rule | meaning | MODFLOW 6 |
 |---|---|---|
-| `exchange_models` | one of the two models (`exgmnamea`, `exgmnameb`) of the exchange whose `MVR6` option binds this mover. In a model's own mover the model names are absent (`MODELNAMES` is rejected there). | `GwfExchangeMover.f90:87-93` |
 | `flow_model` | in the flow model that a GWF-GWT or GWF-GWE exchange pairs with this transport model (its `exgmnamea`, where the transport model is `exgmnameb`). With flows read from a budget file there is no such exchange, and the reference isn't checked. | `exg-gwfgwt.f90:124-129`, `exg-gwfgwe.f90:121-126`, `tsp-ssm.f90:800-811` |
-| `ssm_package` | in the flow package named by the SSM `fileinput` row that binds this SPC file. If an advanced transport package is paired with that flow package, SSM doesn't apply the SPC file and the reference isn't checked. | `TspSpc.f90:326-349`, `tsp-ssm.f90:195` |
+| `no_advanced_transport` | a flow package with no advanced transport package paired with it. SSM doesn't apply an SPC file bound to one that has, so the file isn't checked. On `utl-spc`'s and `utl-spca`'s `target` | `tsp-ssm.f90:195` |
 | `mover_enabled` | a package that plays `mover_provider` or `mover_receiver`: one whose mover key sets are switched on by `MOVER` (see [Key sets](#key-sets)) | `gwf-mvr.f90:942-971` |
 
 The names are fixed by the schema, so a misspelled rule is an error. A new rule is added to the schema and this table together.
+
+### Parameters
+
+A component's **parameters** declare what its references need from the component that binds it: cases 4 to 7 under [What a binding carries](#what-a-binding-carries). Binding works like a function call:
+
+| Binding | Function call |
+|---|---|
+| the component | the function |
+| `params` | its signature |
+| the binding field | a call site |
+| `args` | the arguments |
+| the parent | `self` |
+| an unset parameter | an argument left at its default, `None` |
+
+In Python terms, for GNC:
+
+```python
+class Gnc:
+    def __init__(self, model1=None, model2=None): ...
+
+Gnc(model1=self.model1, model2=self.model2)  # in an exchange: passes on its own
+Gnc()                                        # in a model name file
+```
+
+A component declares its parameters in [`params`](#params):
+
+- `type` is what the parameter names, a selector as in [`parent`](#parent).
+- `rule` is optional, and means what it means on an `fk`: a named subset of the target (see [Rules](#rules)).
+
+A binding passes them in its `file` field's [`args`](#args). An argument names one of two things, in the parent's scope:
+
+- a sibling of the binding with an `fk`, and the argument is what the `fk` references (cases 4 and 7);
+- one of the parent's own parameters (case 5).
+
+It must name exactly one, so nothing is searched. Scope is lexical, as in most programming languages: a parent can pass only what's in its own scope, so an exchange's models reach its mover by being passed twice, from `sim-nam` to the exchange and from the exchange to the mover, and no component looks up the tree for a name.
+
+Following an argument's `fk` applies all of it, [rule](#rules) included, and the parameter's own `rule` applies after that. SSM's `pname` has `rule = "flow_model"`, so the `target` it passes is a package of the paired flow model, and `utl-spc`'s `rule = "no_advanced_transport"` then narrows it to one with no advanced transport package.
+
+A binding that passes no argument leaves the parameter unset, which is null, as for a field. Nothing fills it in from elsewhere. What null means is said by whatever names the parameter, which is one of:
+
+- an `fk`'s `param`. Alone, the value names the instance a parameter is set to, one of several if it's a list: `gwf-mvr`'s `mname1` is `fk = { param = ["model1", "model2"] }`, one of the exchange's two models. With a `key`, the parameter picks the instance whose key set is meant: `utl-spc`'s `bndno` is `fk = { key = "bound", param = "target" }`.
+- a cellid's [`model`](#model): `"model1"` or `"model2"`. Null means the component's own model.
+- a field's [`when`](#when): `gwf-mvr`'s `MODELNAMES` has `when = "model2"`. Null means off.
+
+A parameter's `type` can say what a key can't. MODFLOW 6 applies list-based SPC only to a list-based package, and array-based SPC (`utl-spca`) only to `gwf-rcha` and `gwf-evta` (`TspSpc.f90:353-375`). `utl-spca` says so with `type = ["gwf-rcha", "gwf-evta"]`, and `utl-spc` says so through `key = "bound"`, which RCHA and EVTA don't declare.
+
+Two things aren't parameters. The parent is already in scope, as `self` is, so `utl-obs` declares none. And what's in another row of the parent, not a sibling of the binding (case 8), can't be passed, so it's a rule.
+
+In relational terms, an argument is a foreign key in the binding's record, and the parameter is that column carried onto the child's row:
+
+| DFN | SQL |
+|---|---|
+| `args = { target = "pname" }` on SSM's `fileinput`, `[params.target]` on `utl-spc` | columns `flow_mname`, `flow_pname` on `spc`, from the `fileinput` row |
+| `fk = { param = ["model1", "model2"] }` | a composite key to `exchange_models (exchange, mname)` |
+| `fk = { param = "target", key = "bound" }` | a foreign key to the `bound` supertype table |
+| `when = "model2"`, `optional = false` | `CHECK (modelnames = (model2 IS NOT NULL))` |
+
+A validator checks that:
+
+- each parameter's `type` admits some component;
+- each argument is a parameter of every component its `file` can bind;
+- each argument names exactly one of a sibling, with an `fk`, and a parent's parameter, and can name something of the parameter's type;
+- each `fk`, cellid `model` and `when` naming a parameter names one the component declares, and a cellid's is of a model.
+
+So an exchange's cellid always resolves, and so does a mover's model name.
 
 ## Memory catalog
 

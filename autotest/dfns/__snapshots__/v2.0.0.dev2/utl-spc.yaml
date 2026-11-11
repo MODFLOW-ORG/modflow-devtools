@@ -65,7 +65,7 @@ blocks:
               pk: true
               fk:
                 key: bound
-                rule: ssm_package
+                param: target
             spcsetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values
@@ -104,3 +104,7 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+params:
+  target:
+    type: package
+    rule: no_advanced_transport

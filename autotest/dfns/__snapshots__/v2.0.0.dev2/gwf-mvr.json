@@ -34,7 +34,7 @@
           "type": "keyword",
           "longname": "precede all package names with model names",
           "description": "keyword to indicate that all package names will be preceded by the model name for the package.  Model names are required when the Mover Package is used with a GWF-GWF Exchange.  The MODELNAME keyword should not be used for a Mover Package that is for a single GWF Model.",
-          "optional": true
+          "when": "model2"
         },
         "budget_filerecord": {
           "type": "record",
@@ -102,8 +102,10 @@
                 "when": "modelnames",
                 "tagged": false,
                 "fk": {
-                  "path": "sim-nam.models.mname",
-                  "rule": "exchange_models"
+                  "param": [
+                    "model1",
+                    "model2"
+                  ]
                 }
               },
               "pname": {
@@ -141,8 +143,10 @@
                 "when": "modelnames",
                 "tagged": false,
                 "fk": {
-                  "path": "sim-nam.models.mname",
-                  "rule": "exchange_models"
+                  "param": [
+                    "model1",
+                    "model2"
+                  ]
                 }
               },
               "pname1": {
@@ -172,8 +176,10 @@
                 "when": "modelnames",
                 "tagged": false,
                 "fk": {
-                  "path": "sim-nam.models.mname",
-                  "rule": "exchange_models"
+                  "param": [
+                    "model1",
+                    "model2"
+                  ]
                 }
               },
               "pname2": {
@@ -225,6 +231,14 @@
           "index": true
         }
       }
+    }
+  },
+  "params": {
+    "model1": {
+      "type": "model"
+    },
+    "model2": {
+      "type": "model"
     }
   }
 }

@@ -2,6 +2,7 @@
 
 import pytest
 
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _replace_named
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
@@ -17,6 +18,7 @@ from modflow_devtools.dfns.schema import (
     List,
     Model,
     Package,
+    Param,
     PrimaryKey,
     Record,
     Simulation,
@@ -442,11 +444,15 @@ def test_array_fk_requires_integer_or_string_dtype(dtype):
         Array(name="slnmnames", dtype=dtype, fk="models.mname")
 
 
+# A GNC's or an exchange's two models, as parameters (see `Param`).
+_MODELS = {"model1": Param(type="model"), "model2": Param(type="model")}
+
+
 def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
     item = Record(name="item", fields={field.name: field})
     lst = List(name="data", item=item)
     block = Block(name="data", fields={"data": lst})
-    pkg = Package(name=name, parent=parent, blocks={"data": block}, dims=dims)
+    pkg = Package(name=name, parent=parent, blocks={"data": block}, dims=dims, params=_MODELS)
     gwf = Model(name="gwf-nam", blocks=None)
     return {"gwf-nam": gwf, name: pkg}
 
@@ -476,8 +482,8 @@ def test_dfns_validate_cellid_array_shape_resolves():
 def _exchange_ctx(*fields):
     item = Record(name="item", fields={f.name: f for f in fields})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
-    exg = Package(name="exg-gwfgwf", subtype="exchange", blocks={"data": block})
-    return {"exg-gwfgwf": exg}
+    exg = Package(name="exg-gwfgwf", subtype="exchange", blocks={"data": block}, params=_MODELS)
+    return {"gwf-nam": Model(name="gwf-nam", blocks=None), "exg-gwfgwf": exg}
 
 
 def _cellid_col(name, model=None, shape=None):
@@ -487,10 +493,11 @@ def _cellid_col(name, model=None, shape=None):
 
 
 def test_dfns_validate_cellid_in_exchange():
-    fields = (_cellid_col("cellidm1", "1"), _cellid_col("cellidm2", "2"))
+    fields = (_cellid_col("cellidm1", "model1"), _cellid_col("cellidm2", "model2"))
     spec = Dfns(components=_exchange_ctx(*fields))
     item = spec.components["exg-gwfgwf"].blocks["data"].fields["data"].item
-    assert {n: f.model for n, f in item.fields.items()} == {"cellidm1": "1", "cellidm2": "2"}
+    models = {n: f.model for n, f in item.fields.items()}
+    assert models == {"cellidm1": "model1", "cellidm2": "model2"}
 
 
 @pytest.mark.parametrize("shape", [None, ["n"]])
@@ -501,11 +508,11 @@ def test_dfns_validate_exchange_cellid_must_name_model(shape):
 
 
 def test_dfns_validate_cellid_models_under_a_model():
-    # GNC under a model: both models are that model, so "1"/"2" are valid.
+    # GNC under a model: its model parameters are unset, meaning that model.
     fields = (
-        _cellid_col("cellidn", "1"),
-        _cellid_col("cellidm", "2"),
-        _cellid_col("cellidsj", "1", shape=("n",)),
+        _cellid_col("cellidn", "model1"),
+        _cellid_col("cellidm", "model2"),
+        _cellid_col("cellidsj", "model1", shape=("n",)),
     )
     item = Record(name="item", fields={f.name: f for f in fields})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
@@ -514,16 +521,17 @@ def test_dfns_validate_cellid_models_under_a_model():
         parent="gwf-nam",
         blocks={"data": block},
         dims={"n": InputDim(value="2", scope="model")},
+        params=_MODELS,
     )
     spec = Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
     assert "gwf-gnc" in spec.components
 
 
 def test_dfns_validate_cellid_no_mixing():
-    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "b": _cellid_col("b")})
+    item = Record(name="item", fields={"a": _cellid_col("a", "model1"), "b": _cellid_col("b")})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
-    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
-    with pytest.raises(ValueError, match="mix model=None with '1'/'2'"):
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block}, params=_MODELS)
+    with pytest.raises(ValueError, match="mix model=None with a named model"):
         Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
 
 
@@ -538,17 +546,17 @@ def _union_cellid_pkg(arm_model, sibling_model):
     )
     item = Record(name="item", fields={"a": _cellid_col("a", sibling_model), "id": union})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
-    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block}, params=_MODELS)
     return {"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg}
 
 
 def test_dfns_validate_cellid_no_mixing_across_union_arm():
     # A union arm's cellid is read in the same row as its sibling columns.
-    with pytest.raises(ValueError, match="mix model=None with '1'/'2'"):
-        Dfns(components=_union_cellid_pkg(None, "1"))
+    with pytest.raises(ValueError, match="mix model=None with a named model"):
+        Dfns(components=_union_cellid_pkg(None, "model1"))
 
 
-@pytest.mark.parametrize("model", [None, "1"])
+@pytest.mark.parametrize("model", [None, "model1"])
 def test_dfns_validate_cellid_union_arm_consistent(model):
     assert "gwf-gnc" in Dfns(components=_union_cellid_pkg(model, model)).components
 
@@ -558,20 +566,31 @@ def test_dfns_validate_cellid_union_arms_are_alternatives():
     # is checked against the row's other cellid columns.
     union = Union(
         name="id",
-        arms={"x": _cellid_col("x", "1"), "y": _cellid_col("y", "2")},
+        arms={"x": _cellid_col("x", "model1"), "y": _cellid_col("y", "model2")},
     )
-    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "id": union})
+    item = Record(name="item", fields={"a": _cellid_col("a", "model1"), "id": union})
     block = Block(name="data", fields={"data": List(name="data", item=item)})
-    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block}, params=_MODELS)
     Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
 
 
-@pytest.mark.parametrize("value", [True, 1, 2, 0, "true", "3", "a"])
+@pytest.mark.parametrize("value", [True, 1, 2, 0, "1", "", "model 1"])
 @pytest.mark.parametrize("shape", [None, ["n"]])
 def test_cellid_rejects_non_model_values(value, shape):
-    # `True == 1`: an int or bool must never be read as (or coerced to) a model.
+    # A model is a parameter's name. `True == 1`: an int or bool must never be
+    # read as (or coerced to) one.
     with pytest.raises(ValueError, match="model"):
         _cellid_col("cellid", value, shape=shape)
+
+
+@pytest.mark.parametrize("params", [None, {"model1": Param(type="package")}])
+def test_dfns_validate_cellid_model_names_a_model_param(params):
+    # The name must be a parameter of the component, and of a model.
+    item = Record(name="item", fields={"a": _cellid_col("a", "model1")})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block}, params=params)
+    with pytest.raises(ValueError, match="model='model1' names no parameter of gwf-gnc"):
+        Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
 
 
 def test_cellid_render():
@@ -583,7 +602,7 @@ def test_cellid_render():
 
 @pytest.mark.parametrize("attr", ["model", "allow_zero"])
 def test_array_cellid_attrs_require_cellid_dtype(attr):
-    value = "1" if attr == "model" else True
+    value = "model1" if attr == "model" else True
     with pytest.raises(ValueError, match=f"{attr} requires dtype='cellid'"):
         Array(name="alphasj", dtype="integer", shape=["n"], **{attr: value})
 
@@ -848,7 +867,9 @@ def test_dfns_validate_when_names_keyword_option():
     "option", [None, Keyword(name="other", optional=True), Integer(name="surf", optional=True)]
 )
 def test_dfns_validate_when_names_no_keyword_option(option):
-    with pytest.raises(ValueError, match="when='surf' names no keyword option of gwf-evt"):
+    with pytest.raises(
+        ValueError, match="when='surf' names no keyword option or parameter of gwf-evt"
+    ):
         Dfns(components=_when_ctx("surf", option))
 
 
@@ -880,7 +901,8 @@ def test_integer_allow_zero_round_trips():
             {"scope": "pname1", "key": "mover_provider"},
             ForeignKey(scope="pname1", key="mover_provider"),
         ),
-        ({"key": "bound", "rule": "ssm_package"}, ForeignKey(key="bound", rule="ssm_package")),
+        ({"key": "bound", "param": "target"}, ForeignKey(key="bound", param="target")),
+        ({"param": ["model1", "model2"]}, ForeignKey(param=("model1", "model2"))),
         (
             {"path": "gwf-nam.packages.pname", "rule": "flow_model"},
             ForeignKey(path="gwf-nam.packages.pname", rule="flow_model"),
@@ -905,9 +927,18 @@ def test_key_fk_parts():
 @pytest.mark.parametrize(
     "kwargs, match",
     [
-        ({}, "exactly one of path and key"),
-        ({"path": "a.b", "key": "k", "scope": "s"}, "exactly one of path and key"),
-        ({"key": "mover_provider"}, "needs a scope or rule"),
+        ({}, "needs one of path, key and param"),
+        ({"path": "a.b", "key": "k", "scope": "s"}, "with a path can't have a key or param"),
+        ({"path": "a.b", "param": "target"}, "with a path can't have a key or param"),
+        ({"key": "mover_provider"}, "needs one of scope and param"),
+        ({"key": "bound", "rule": "flow_model"}, "needs one of scope and param"),
+        ({"key": "bound", "scope": "s", "param": "p"}, "needs one of scope and param"),
+        ({"key": "bound", "param": ["p", "q"]}, "picks its instance by one param"),
+        ({"param": "p", "scope": "s"}, "only a param can't have a scope or rule"),
+        ({"param": "p", "rule": "flow_model"}, "only a param can't have a scope or rule"),
+        ({"param": []}, "at least one parameter"),
+        ({"param": ["p", "p"]}, "repeat a parameter"),
+        ({"param": "a.b"}, "must be a parameter name"),
         ({"key": "a.b", "scope": "s"}, "must be a key set name"),
         ({"path": "a.b", "rule": "nope"}, "fk rule 'nope' is not one of"),
     ],
@@ -1023,6 +1054,7 @@ def _ctx_sim():
                     mode_keyword=False,
                     component="exchange",
                     component_ftype="exgtype",
+                    args={"model1": "exgmnamea", "model2": "exgmnameb"},
                 ),
                 String(name="exgmnamea", tagged=False, fk="models.mname"),
                 String(name="exgmnameb", tagged=False, fk="models.mname"),
@@ -1053,7 +1085,11 @@ def _ctx_sim():
             "mvr6": Keyword(name="mvr6"),
             "filein": Keyword(name="filein"),
             "mvr6_filename": File(
-                name="mvr6_filename", tagged=False, direction="in", component="gwf-mvr"
+                name="mvr6_filename",
+                tagged=False,
+                direction="in",
+                component="gwf-mvr",
+                args={"model1": "model1", "model2": "model2"},
             ),
         },
     )
@@ -1062,6 +1098,7 @@ def _ctx_sim():
         parent="sim-nam",
         subtype="exchange",
         ftype="GWF6-GWF6",
+        params=_MODELS,
         blocks={"options": Block(name="options", fields={"mvr_filerecord": mvr_file})},
     )
     return {"sim-nam": sim, "gwf-nam": _nam("gwf-nam", "GWF6"), "exg-gwfgwf": exg}, _nam
@@ -1107,7 +1144,10 @@ def _mover_pkgs(lak_keys=None, wel_keys=None, wel_options=("mover",)):
     return {"gwf-lak": lak, "gwf-wel": wel}
 
 
-_MNAME_FK = {"path": "sim-nam.models.mname", "rule": "exchange_models"}
+_MNAME_FK = {"param": ["model1", "model2"]}
+
+# A mover's models, passed down from the exchange that binds it.
+_FORWARD = _MODELS
 
 
 _PNAME_FK = {"path": "gwf-nam.packages.pname", "scope": "mname", "rule": "mover_enabled"}
@@ -1152,6 +1192,7 @@ def _ctx_mvr(mname_fk=_MNAME_FK, id1_fk=None, id2_fk=None, pname_fk=_PNAME_FK, *
         parent=["exg-gwfgwf", "gwf-nam"],
         ftype="MVR6",
         blocks={"options": _options("modelnames"), "packages": packages, "period": period},
+        params=_FORWARD,
     )
     return {**_ctx_sim()[0], "gwf-mvr": mvr, **(pkgs or _mover_pkgs())}
 
@@ -1160,7 +1201,7 @@ def test_dfns_validate_mover_keys():
     spec = Dfns(components=_ctx_mvr())
     period = spec.components["gwf-mvr"].blocks["period"].fields["stress_period_data"]
     assert period.item.fields["id1"].fk == ForeignKey(scope="pname1", key="mover_provider")
-    assert period.item.fields["mname1"].fk.rule == "exchange_models"
+    assert period.item.fields["mname1"].fk.params == ("model1", "model2")
     assert spec.components["gwf-wel"].keys["mover_provider"].bound == "maxbound"
 
 
@@ -1181,10 +1222,9 @@ def test_dfns_validate_rule_with_scope_checks_scope():
 
 
 def test_dfns_validate_rule_fk_path_checked():
-    with pytest.raises(ValueError, match="'nope' is not the pk of list 'models'"):
-        Dfns(
-            components=_ctx_mvr(mname_fk={"path": "sim-nam.models.nope", "rule": "exchange_models"})
-        )
+    bad = {**_PNAME_FK, "path": "gwf-nam.packages.nope"}
+    with pytest.raises(ValueError, match="'nope' is not the pk of list 'packages'"):
+        Dfns(components=_ctx_mvr(pname_fk=bad))
 
 
 def test_dfns_validate_key_undeclared():
@@ -1275,7 +1315,13 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
                 "fileinput",
                 String(name="pname", tagged=False, pk=True, fk=pname_fk),
                 Keyword(name="spc6"),
-                File(name="spc6_filename", tagged=False, direction="in", component="utl-spc"),
+                File(
+                    name="spc6_filename",
+                    tagged=False,
+                    direction="in",
+                    component="utl-spc",
+                    args={"target": "pname"},
+                ),
             ),
         },
     )
@@ -1284,6 +1330,7 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
         parent="gwt-ssm",
         subtype="utility",
         ftype="SPC6",
+        params={"target": Param(type="package", rule="no_advanced_transport")},
         blocks={
             "period": _list_block(
                 "period",
@@ -1292,7 +1339,7 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
                     tagged=False,
                     index=True,
                     pk=True,
-                    fk={"key": spc_key, "rule": "ssm_package"},
+                    fk={"key": spc_key, "param": "target"},
                 ),
                 Double(name="concentration", tagged=False),
                 list_name="stress_period_data",
@@ -1312,7 +1359,140 @@ def test_dfns_validate_ssm_and_spc_rules():
     item = spec.components["gwt-ssm"].blocks["fileinput"].fields["fileinput"].item
     assert item.fields["pname"].fk.rule == "flow_model"
     period = spec.components["utl-spc"].blocks["period"].fields["stress_period_data"]
-    assert period.item.fields["bndno"].fk == ForeignKey(key="bound", rule="ssm_package")
+    assert period.item.fields["bndno"].fk == ForeignKey(key="bound", param="target")
+
+
+# Binding parameters (`params`, see `Param`): what a component needs from
+# whatever binds it, named by an fk's `param`, a cellid's `model` or a `when`.
+
+
+def _with_params(ctx, name, **params):
+    """`ctx` with component `name`'s parameters replaced or added."""
+    component = ctx[name]
+    merged = {**(component.params or {}), **params}
+    return {**ctx, name: component.model_copy(update={"params": merged})}
+
+
+def _with_args(ctx, name, block, field, args):
+    """`ctx` with the args of component `name`'s File `field` replaced."""
+    blocks = _replace_named(
+        name,
+        ctx[name].blocks,
+        block,
+        lambda f, _: f.model_copy(update={"args": args}),
+        {field},
+    )
+    return {**ctx, name: ctx[name].model_copy(update={"blocks": blocks})}
+
+
+def test_param_loads_and_dumps():
+    toml = {"type": ["gwf-rcha", "gwf-evta"], "rule": "no_advanced_transport"}
+    pkg = Package.model_validate({"name": "utl-spca", "params": {"target": toml}})
+    assert pkg.params["target"] == Param(
+        type=["gwf-rcha", "gwf-evta"], rule="no_advanced_transport"
+    )
+    assert pkg.model_dump(exclude_none=True)["params"] == {"target": toml}
+
+
+def test_param_rule_checked():
+    with pytest.raises(ValueError, match="parameter rule 'nope' is not one of"):
+        Param(type="package", rule="nope")
+
+
+def test_param_name_checked():
+    with pytest.raises(ValueError, match="parameter name 'a-b' must be an identifier"):
+        Package(name="x", params={"a-b": Param(type="model")})
+
+
+@pytest.mark.parametrize("args", [{"a": "b.c"}, {"a.b": "c"}, {"a": ""}])
+def test_file_args_checked(args):
+    with pytest.raises(ValueError, match="must name a column or parameter"):
+        File(name="f", direction="in", component="x", args=args)
+
+
+def test_dfns_validate_args():
+    """An exchange's models are passed from its `sim-nam` row, a mover's from
+    the exchange's own, and SPC's target from SSM's row. A mover under a
+    model gets none."""
+    spec = Dfns(components=_ctx_transport())
+    assert spec.components["exg-gwfgwf"].params == _MODELS
+    item = spec.components["gwt-ssm"].blocks["fileinput"].fields["fileinput"].item
+    assert item.fields["spc6_filename"].args == {"target": "pname"}
+
+
+_EXG = ("sim-nam", "exchanges", "exgfile")
+_MVR = ("exg-gwfgwf", "options", "mvr6_filename")
+
+
+@pytest.mark.parametrize(
+    "where, args, match",
+    [
+        (
+            _EXG,
+            {"model1": "nope"},
+            "arg model1='nope' must name exactly one of a sibling column and a parameter "
+            "of sim-nam",
+        ),
+        (_EXG, {"model1": "exgtype"}, "arg model1='exgtype': the column has no fk to follow"),
+        (_EXG, {"model3": "exgmnamea"}, "passes 'model3', which exg-gwfgwf doesn't declare"),
+        (_MVR, {"model1": "model3"}, "must name exactly one of a sibling column"),
+        (_MVR, {"model3": "model1"}, "passes 'model3', which gwf-mvr doesn't declare"),
+    ],
+)
+def test_dfns_validate_args_bad(where, args, match):
+    with pytest.raises(ValueError, match=match):
+        Dfns(components=_with_args(_ctx_transport(), *where, args))
+
+
+@pytest.mark.parametrize(
+    "param, match",
+    [
+        (Param(type="package"), "names nothing of type 'package'"),
+        (Param(type="nope-nam"), "admits no component"),
+    ],
+)
+def test_dfns_validate_params_bad(param, match):
+    with pytest.raises(ValueError, match=match):
+        Dfns(components=_with_params(_ctx_transport(), "exg-gwfgwf", model1=param))
+
+
+def test_dfns_validate_fk_param_undeclared():
+    ctx = _with_args(_ctx_transport(), *_MVR, None)
+    ctx["gwf-mvr"] = ctx["gwf-mvr"].model_copy(update={"params": None})
+    with pytest.raises(ValueError, match="fk param='model1': gwf-mvr declares no such parameter"):
+        Dfns(components=ctx)
+
+
+def test_dfns_validate_fk_param_only_names_from_a_string():
+    with pytest.raises(ValueError, match="only a string column may name a parameter's instance"):
+        Dfns(components=_ctx_mvr(id1_fk={"param": "model1"}))
+
+
+def _mvr_with_modelnames(**attrs):
+    ctx = _ctx_mvr()
+    mvr = ctx["gwf-mvr"]
+    options = Block(name="options", fields={"modelnames": Keyword(name="modelnames", **attrs)})
+    ctx["gwf-mvr"] = mvr.model_copy(update={"blocks": {**mvr.blocks, "options": options}})
+    return ctx
+
+
+def test_dfns_validate_when_names_param():
+    """`MODELNAMES` is set exactly when the mover's `model2` is: when an
+    exchange binds it."""
+    spec = Dfns(components=_mvr_with_modelnames(when="model2"))
+    assert spec.components["gwf-mvr"].blocks["options"].fields["modelnames"].when == "model2"
+
+
+@pytest.mark.parametrize(
+    "when, match",
+    [
+        ("model3", "when='model3' names no keyword option or parameter of gwf-mvr"),
+        ("modelnames", "when='modelnames' names the field itself"),
+    ],
+)
+def test_dfns_validate_when_names_param_bad(when, match):
+    with pytest.raises(ValueError, match=match):
+        Dfns(components=_mvr_with_modelnames(when=when))
 
 
 def test_dfns_validate_multi_path_keyset():
@@ -1340,5 +1520,5 @@ def test_dfns_validate_multi_path_keyset_types_differ():
 
 
 def test_dfns_validate_rule_key_undeclared():
-    with pytest.raises(ValueError, match="no component in the spec declares key 'nope'"):
+    with pytest.raises(ValueError, match="no component the parameter 'target' can name declares"):
         Dfns(components=_ctx_transport(spc_key="nope"))

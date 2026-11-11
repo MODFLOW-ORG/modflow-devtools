@@ -84,3 +84,9 @@ blocks:
           another PERIOD block.
         tagged: false
         index: true
+params:
+  target:
+    rule: no_advanced_transport
+    type:
+      - gwf-rcha
+      - gwf-evta

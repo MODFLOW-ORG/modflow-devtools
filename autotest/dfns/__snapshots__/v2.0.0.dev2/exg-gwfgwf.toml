@@ -99,6 +99,10 @@ tagged = false
 direction = "in"
 component = "gwf-gnc"
 
+[blocks.options.fields.gnc_filerecord.fields.gnc6_filename.args]
+model1 = "model1"
+model2 = "model2"
+
 [blocks.options.fields.mvr_filerecord]
 type = "record"
 optional = true
@@ -115,6 +119,10 @@ description = "is the file name of the water mover input file to apply to this e
 tagged = false
 direction = "in"
 component = "gwf-mvr"
+
+[blocks.options.fields.mvr_filerecord.fields.mvr6_filename.args]
+model1 = "model1"
+model2 = "model2"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -161,14 +169,14 @@ type = "cellid"
 longname = "cellid of first cell"
 description = "is the cellid of the cell in model 1 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell."
 tagged = false
-model = "1"
+model = "model1"
 
 [blocks.exchangedata.fields.exchangedata.item.fields.cellidm2]
 type = "cellid"
 longname = "cellid of second cell"
 description = "is the cellid of the cell in model 2 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell."
 tagged = false
-model = "2"
+model = "model2"
 
 [blocks.exchangedata.fields.exchangedata.item.fields.ihc]
 type = "integer"
@@ -212,3 +220,9 @@ description = "name of the GWF Exchange cell.  BOUNDNAME is an ASCII character v
 optional = true
 when = "boundnames"
 tagged = false
+
+[params.model1]
+type = "model"
+
+[params.model2]
+type = "model"

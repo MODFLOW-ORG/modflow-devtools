@@ -85,6 +85,9 @@ component = [
     "utl-spca",
 ]
 
+[blocks.fileinput.fields.fileinput.item.fields.spc6_filename.args]
+target = "pname"
+
 [blocks.fileinput.fields.fileinput.item.fields.mixed]
 type = "keyword"
 longname = "mixed keyword"

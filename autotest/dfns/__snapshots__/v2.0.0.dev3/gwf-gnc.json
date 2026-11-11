@@ -65,14 +65,14 @@
                 "longname": "GNC cellid n",
                 "description": "is the cellid of the cell, $n$, in which the ghost node is located. For a structured grid that uses the DIS input file, CELLIDN is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDN is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDN is the node number for the cell.",
                 "tagged": false,
-                "model": "1"
+                "model": "model1"
               },
               "cellidm": {
                 "type": "cellid",
                 "longname": "GNC cellid n",
                 "description": "is the cellid of the connecting cell, $m$, to which flow occurs from the ghost node. For a structured grid that uses the DIS input file, CELLIDM is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM is the node number for the cell.",
                 "tagged": false,
-                "model": "2"
+                "model": "model2"
               },
               "cellidsj": {
                 "type": "array",
@@ -80,7 +80,7 @@
                 "description": "is the array of CELLIDS for the contributing j cells, which contribute to the interpolated head value at the ghost node. This item contains one CELLID for each of the contributing cells of the ghost node. Note that if the number of actual contributing cells needed by the user is less than NUMALPHAJ for any ghost node, then a dummy CELLID of zero(s) should be inserted with an associated contributing factor of zero. For a structured grid that uses the DIS input file, CELLID is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLID is the layer number and cell2d number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLID is the node number for the cell.",
                 "tagged": false,
                 "dtype": "cellid",
-                "model": "1",
+                "model": "model1",
                 "allow_zero": true,
                 "shape": [
                   "numalphaj"
@@ -115,6 +115,14 @@
       "set_in": "ar",
       "source": "numalphaj",
       "type": "integer"
+    }
+  },
+  "params": {
+    "model1": {
+      "type": "model"
+    },
+    "model2": {
+      "type": "model"
     }
   }
 }

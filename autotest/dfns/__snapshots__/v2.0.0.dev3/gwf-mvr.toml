@@ -29,7 +29,7 @@ optional = true
 type = "keyword"
 longname = "precede all package names with model names"
 description = "keyword to indicate that all package names will be preceded by the model name for the package.  Model names are required when the Mover Package is used with a GWF-GWF Exchange.  The MODELNAME keyword should not be used for a Mover Package that is for a single GWF Model."
-optional = true
+when = "model2"
 
 [blocks.options.fields.budget_filerecord]
 type = "record"
@@ -90,8 +90,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.packages.fields.packages.item.fields.mname.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
@@ -120,8 +122,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.period.fields.stress_period_data.item.fields.mname1.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.period.fields.stress_period_data.item.fields.pname1]
 type = "string"
@@ -151,8 +155,10 @@ when = "modelnames"
 tagged = false
 
 [blocks.period.fields.stress_period_data.item.fields.mname2.fk]
-path = "sim-nam.models.mname"
-rule = "exchange_models"
+param = [
+    "model1",
+    "model2",
+]
 
 [blocks.period.fields.stress_period_data.item.fields.pname2]
 type = "string"
@@ -208,3 +214,9 @@ type = "integer"
 set_in = "ar"
 source = "maxpackages"
 type = "integer"
+
+[params.model1]
+type = "model"
+
+[params.model2]
+type = "model"

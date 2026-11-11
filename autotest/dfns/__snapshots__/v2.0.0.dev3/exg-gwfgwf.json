@@ -107,7 +107,11 @@
               "description": "is the file name for ghost node correction input file.  Information for the ghost nodes are provided in the file provided with these keywords.  The format for specifying the ghost nodes is the same as described for the GNC Package of the GWF Model.  This includes specifying OPTIONS, DIMENSIONS, and GNCDATA blocks.  The order of the ghost nodes must follow the same order as the order of the cells in the EXCHANGEDATA block.  For the GNCDATA, noden and all of the nodej values are assumed to be located in model 1, and nodem is assumed to be in model 2.",
               "tagged": false,
               "direction": "in",
-              "component": "gwf-gnc"
+              "component": "gwf-gnc",
+              "args": {
+                "model1": "model1",
+                "model2": "model2"
+              }
             }
           }
         },
@@ -126,7 +130,11 @@
               "description": "is the file name of the water mover input file to apply to this exchange.  Information for the water mover are provided in the file provided with these keywords.  The format for specifying the water mover information is the same as described for the Water Mover (MVR) Package of the GWF Model, with two exceptions.  First, in the PACKAGES block, the model name must be included as a separate string before each package.  Second, the appropriate model name must be included before package name 1 and package name 2 in the BEGIN PERIOD block.  This allows providers and receivers to be located in both models listed as part of this exchange.",
               "tagged": false,
               "direction": "in",
-              "component": "gwf-mvr"
+              "component": "gwf-mvr",
+              "args": {
+                "model1": "model1",
+                "model2": "model2"
+              }
             }
           }
         },
@@ -181,14 +189,14 @@
                 "longname": "cellid of first cell",
                 "description": "is the cellid of the cell in model 1 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM1 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM1 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM1 is the node number for the cell.",
                 "tagged": false,
-                "model": "1"
+                "model": "model1"
               },
               "cellidm2": {
                 "type": "cellid",
                 "longname": "cellid of second cell",
                 "description": "is the cellid of the cell in model 2 as specified in the simulation name file. For a structured grid that uses the DIS input file, CELLIDM2 is the layer, row, and column numbers of the cell.   For a grid that uses the DISV input file, CELLIDM2 is the layer number and CELL2D number for the two cells.  If the model uses the unstructured discretization (DISU) input file, then CELLIDM2 is the node number for the cell.",
                 "tagged": false,
-                "model": "2"
+                "model": "model2"
               },
               "ihc": {
                 "type": "integer",
@@ -371,6 +379,14 @@
           "tagged": false
         }
       }
+    }
+  },
+  "params": {
+    "model1": {
+      "type": "model"
+    },
+    "model2": {
+      "type": "model"
     }
   }
 }

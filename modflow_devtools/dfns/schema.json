@@ -165,10 +165,6 @@
         "model": {
           "anyOf": [
             {
-              "enum": [
-                "1",
-                "2"
-              ],
               "type": "string"
             },
             {
@@ -461,10 +457,6 @@
         "model": {
           "anyOf": [
             {
-              "enum": [
-                "1",
-                "2"
-              ],
               "type": "string"
             },
             {
@@ -744,6 +736,21 @@
           ],
           "default": null,
           "title": "Component Ftype"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Args"
         }
       },
       "required": [
@@ -755,7 +762,7 @@
     },
     "ForeignKey": {
       "additionalProperties": false,
-      "description": "A reference to a `pk` column (or a string array's entries), one of:\n\n- `path`, `[component.]block.field`. With a `scope`, the name of a\n  sibling column, that column qualifies the reference: within a\n  component, it matches the target pk's own scope; across components, it\n  picks the target component's instance. Written `fk = \"<path>\"` when\n  unscoped.\n- `key`, with a `scope` or `rule`: a key set (see `KeySet`) that the\n  component of the picked instance declares, by name, in its `keys`. For\n  an instance whose type is known only at runtime (MVR's `id1`).\n\nA `rule` (see `RULES`) names a subset of the target the value must fall\nin. It may stand in for a `scope` (MVR's `mname1`: `exchange_models`) or\nrestrict a scoped target further (MVR's `packages.pname`:\n`mover_enabled`).",
+      "description": "A reference to a `pk` column (or a string array's entries), one of:\n\n- `path`, `[component.]block.field`. With a `scope`, the name of a\n  sibling column, that column qualifies the reference: within a\n  component, it matches the target pk's own scope; across components, it\n  picks the target component's instance. Written `fk = \"<path>\"` when\n  unscoped.\n- `key`, with a `scope` or `param` that picks the instance: a key set\n  (see `KeySet`) that the instance's component declares, by name, in\n  its `keys`. For an instance whose type is known only at runtime\n  (MVR's `id1`).\n- `param` alone, one or more of this component's parameters (see\n  `Param`): the value names the instance one of them is set to (MVR's\n  `mname1`: `model1` or `model2`).\n\nWith a `key`, `param` names the parameter whose instance declares the\nkey set (SPC's `bndno`: `target`).\n\nA `rule` (see `RULES`) names a subset of the target the value must fall\nin. It may stand in for a `scope` (SSM's `pname`: `flow_model`) or\nrestrict a scoped target further (MVR's `packages.pname`:\n`mover_enabled`).",
       "properties": {
         "path": {
           "anyOf": [
@@ -804,6 +811,24 @@
           ],
           "default": null,
           "title": "Rule"
+        },
+        "param": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Param"
         }
       },
       "title": "ForeignKey",
@@ -1751,6 +1776,21 @@
           "default": null,
           "title": "Keys"
         },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Param"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
+        },
         "type": {
           "const": "model",
           "default": "model",
@@ -1996,6 +2036,21 @@
           "default": null,
           "title": "Keys"
         },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Param"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
+        },
         "type": {
           "const": "package",
           "default": "package",
@@ -2031,6 +2086,43 @@
         "name"
       ],
       "title": "Package",
+      "type": "object"
+    },
+    "Param": {
+      "additionalProperties": false,
+      "description": "A binding parameter: what a component's references need from its\nbinding, beyond its parent (see `docs/md/dfnspec.md`, \"Bindings\").\nDeclared in the component's `params`, like a function's signature, and\npassed by the binding's `args` (see `File`). Named by an fk's\n`param`, a cellid's `model`, or a `when`.\n\n- `type`: what the parameter names, a selector as in `parent`.\n- `rule`: as on an fk (see `RULES`), a named subset of the target.\n\nA binding that passes no argument leaves it unset, i.e. null. Relationally, a\nparameter is a column on the child's row, with a foreign key.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Type"
+        },
+        "rule": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Param",
       "type": "object"
     },
     "PrimaryKey": {
@@ -2441,6 +2533,21 @@
           ],
           "default": null,
           "title": "Keys"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/Param"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
         },
         "type": {
           "const": "simulation",

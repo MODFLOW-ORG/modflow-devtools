@@ -129,6 +129,9 @@ blocks:
             tagged: false
             direction: in
             component: gwf-gnc
+            args:
+              model1: model1
+              model2: model2
       mvr_filerecord:
         type: record
         optional: true
@@ -151,6 +154,9 @@ blocks:
             tagged: false
             direction: in
             component: gwf-mvr
+            args:
+              model1: model1
+              model2: model2
       obs_filerecord:
         type: record
         optional: true
@@ -199,7 +205,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM1 is the node number for the cell.
               tagged: false
-              model: '1'
+              model: model1
             cellidm2:
               type: cellid
               longname: cellid of second cell
@@ -209,7 +215,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM2 is the node number for the cell.
               tagged: false
-              model: '2'
+              model: model2
             ihc:
               type: integer
               longname: integer flag for connection type
@@ -364,3 +370,8 @@ observations:
         type: string
         when: boundnames
         tagged: false
+params:
+  model1:
+    type: model
+  model2:
+    type: model

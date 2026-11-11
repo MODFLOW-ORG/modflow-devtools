@@ -4,3 +4,9 @@ name = "exg-gwfprt"
 parent = "sim-nam"
 ftype = "GWF6-PRT6"
 subtype = "exchange"
+
+[params.model1]
+type = "model"
+
+[params.model2]
+type = "model"
