@@ -918,7 +918,7 @@ Every binding in MODFLOW 6 is one of these cases.
 | 5 | The parent passes on what it was passed | `GNC6 FILEIN model.gnc` in an exchange | the exchange's models | `args` naming a parameter |
 | 6 | One component, bound under different parents | `GNC6 model.gnc` in a model name file | nothing | no `args`: unset |
 | 7 | A sibling names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
-| 8 | No binding says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
+| 8 | Another row in the parent says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
 
 **1. A file, and nothing else.** Most bindings name a file and its component, and that's all the child needs. Its references resolve against its parent:
 
@@ -1036,14 +1036,14 @@ args = { target = "pname" }
 
 `WEL-1` is a package of the flow model, not of the transport model that SSM is in, so `pname`'s `fk` has the rule `flow_model`, which case 8 explains.
 
-**8. No binding says it.**
+**8. Another row in the parent says it.**
 
 ```
 # a GWT model's SSM sources
 WEL-1 AUX CONCENTRATION
 ```
 
-`WEL-1` is a package of the flow model that a `GWF6-GWT6` exchange pairs with this transport model. That's said by an exchange row naming the transport model, and an exchange binds neither SSM nor any of its ancestors, so no parameter can carry it. A [rule](#rules) does: `flow_model`. With flows read from a budget file there is no exchange, and no check.
+`WEL-1` is a package of the flow model that a `GWF6-GWT6` exchange pairs with this transport model. `mfsim.nam` says so, and `mfsim.nam` binds the transport model, but not in that binding's siblings. The pairing is in an `exchanges` row, which refers back to the transport model by `exgmnameb`. An argument names only a sibling or one of the parent's parameters, so no argument can pass it. A [rule](#rules) does: `flow_model`. With flows read from a budget file there is no exchange, and no check.
 
 ### Primary and foreign keys
 
@@ -1189,7 +1189,7 @@ An advanced package's bounds are its features or its connections. SFR and UZF ha
 
 #### Rules
 
-Some constraints aren't about a binding, so no [parameter](#parameters) says them. A transport model's SSM names packages of whichever flow model an exchange pairs it with, which nothing that binds SSM supplies: it comes from an exchange naming the transport model, or from a budget file. A mover's packages must have `MOVER` set. Instead, the `fk` or parameter names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
+Some constraints can't be said with a path, a scope or a [parameter](#parameters). A transport model's SSM names packages of whichever flow model an exchange pairs it with. `mfsim.nam` says which, in an `exchanges` row and not among the siblings of the binding that names the transport model, so no argument can pass it (case 8 in [What a binding carries](#what-a-binding-carries)). With flows from a budget file, nothing says it. A mover's packages must have `MOVER` set. Instead, the `fk` or parameter names a **rule**: the spec states what the rule means, below, and consumers implement it in code, like JSON Schema's `format`.
 
 A rule names a subset of the target, and the value must be in it. In relational terms, the `fk` references a named view rather than the target table. A rule may stand in for a scope, or narrow a scoped target further:
 
@@ -1258,7 +1258,7 @@ A binding that passes no argument leaves the parameter unset, which is null, as 
 
 A parameter's `type` can say what a key can't. MODFLOW 6 applies list-based SPC only to a list-based package, and array-based SPC (`utl-spca`) only to `gwf-rcha` and `gwf-evta` (`TspSpc.f90:353-375`). `utl-spca` says so with `type = ["gwf-rcha", "gwf-evta"]`, and `utl-spc` says so through `key = "bound"`, which RCHA and EVTA don't declare.
 
-Two things aren't parameters. The parent is already in scope, as `self` is, so `utl-obs` declares none. And what no binding says (case 8) can't be passed, so it's a rule.
+Two things aren't parameters. The parent is already in scope, as `self` is, so `utl-obs` declares none. And what's in another row of the parent, not a sibling of the binding (case 8), can't be passed, so it's a rule.
 
 In relational terms, an argument is a foreign key in the binding's record, and the parameter is that column carried onto the child's row:
 
