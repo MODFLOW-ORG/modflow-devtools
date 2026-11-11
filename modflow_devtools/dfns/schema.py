@@ -9,7 +9,6 @@ from typing import Annotated, Any, Literal, cast
 from boltons.dictutils import OMD
 from pydantic import (
     AfterValidator,
-    AliasChoices,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -189,12 +188,10 @@ class ForeignKey(BaseModel):
       component, it matches the target pk's own scope; across components, it
       picks the target component's instance. Written `fk = "<path>"` when
       unscoped.
-    - `key`, with a `scope`, `rule` or `param`: a key set (see `KeySet`)
-      that the component of the picked instance declares, by name, in its
-      `keys`. For an instance whose type is known only at runtime (MVR's
-      `id1`). The reserved key `observations` is the instance's observation
-      types (see `ComponentBase.observations`), which every component with
-      any declares.
+    - `key`, with a `scope` or `param` that picks the instance: a key set
+      (see `KeySet`) that the instance's component declares, by name, in
+      its `keys`. For an instance whose type is known only at runtime
+      (MVR's `id1`).
     - `param` alone, one or more of this component's parameters (see
       `Param`): the value names the instance one of them is set to (MVR's
       `mname1`: `model1` or `model2`).
@@ -272,12 +269,9 @@ class ForeignKey(BaseModel):
                 raise ValueError("an fk with a path can't have a key or param")
             return self
         if self.key is not None:
-            pickers = [a for a in ("scope", "param") if getattr(self, a) is not None]
-            if len(pickers) > 1:
-                raise ValueError("an fk with a key needs one of scope and param, not both")
-            if not pickers and self.rule is None:
+            if (self.scope is None) == (self.param is None):
                 raise ValueError(
-                    "an fk with a key needs a scope, param or rule, which picks the instance"
+                    "an fk with a key needs one of scope and param, which picks the instance"
                 )
             if self.param is not None and not isinstance(self.param, str):
                 raise ValueError("an fk with a key picks its instance by one param")
@@ -415,55 +409,25 @@ class KeySet(BaseModel):
         return None
 
 
-# The reserved key set name: an instance's observation types (see
-# `ForeignKey`), which no component declares in `keys`.
-OBSERVATIONS_KEY = "observations"
-
-_PARAM_SOURCE_RE = re.compile(r"^(?:parent(?:\.[A-Za-z_]\w*)?|row\.[A-Za-z_]\w*)$")
-
-
 class Param(BaseModel):
     """
     A binding parameter: something a component needs from whatever binds its
-    file (see `docs/md/dfnspec.md`, "Parameters"). Declared in the
-    component's `params`, and named by an fk's `param`, a cellid's `model`,
-    or a `when`.
+    file, beyond the binder itself (see `docs/md/dfnspec.md`, "Parameters").
+    Declared in the component's `params`, like a function's signature, and
+    passed by the binding file's `args` (see `File`). Named by an fk's
+    `param`, a cellid's `model`, or a `when`.
 
     - `type`: what the parameter names, a selector as in `parent`.
-    - `from`: where its value comes from, one source for every binder, or a
-      table of sources keyed by binder. A binder with no entry leaves it
-      unset. A source is one of:
-      - `parent`: the component that binds this file (OBS's `target`);
-      - `row.<column>`: that column of the binding row, following its fk to
-        an instance (SPC's `target`, from SSM's `pname`);
-      - `parent.<param>`: a parameter of the binder, passed down (an
-        exchange's mover's `model1`).
     - `rule`: as on an fk (see `RULES`), a named subset of the target.
 
-    There's no lookup or search: each binder's source is stated.
-    Relationally, a parameter is a column on the child's row, with a
-    foreign key.
+    A binder that passes no argument leaves it unset. Relationally, a
+    parameter is a column on the child's row, with a foreign key.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type: str | list[str]
-    # `from` in a file, which Python reserves.
-    from_: str | dict[str, str] = PydanticField(validation_alias=AliasChoices("from", "from_"))
     rule: str | None = None
-
-    @field_validator("from_")
-    @classmethod
-    def _check_from(cls, v: str | dict[str, str]) -> str | dict[str, str]:
-        if isinstance(v, dict) and not v:
-            raise ValueError("a parameter's from table needs at least one binder")
-        for source in [v] if isinstance(v, str) else v.values():
-            if not _PARAM_SOURCE_RE.match(source):
-                raise ValueError(
-                    f"parameter source {source!r} must be 'parent', 'parent.<param>' "
-                    "or 'row.<column>'"
-                )
-        return v
 
     @field_validator("rule")
     @classmethod
@@ -471,21 +435,6 @@ class Param(BaseModel):
         if v is not None and v not in RULES:
             raise ValueError(f"parameter rule {v!r} is not one of {sorted(RULES)!r}")
         return v
-
-    def source_for(self, binder: str) -> str | None:
-        """The source under the given binding component, or None if it
-        leaves the parameter unset."""
-        return self.from_ if isinstance(self.from_, str) else self.from_.get(binder)
-
-
-def _dump_param(p: Param) -> dict[str, Any]:
-    data: dict[str, Any] = {"type": p.type, "from": p.from_}
-    if p.rule is not None:
-        data["rule"] = p.rule
-    return data
-
-
-ParamT = Annotated[Param, PlainSerializer(_dump_param)]
 
 
 def _dump_keyset(k: KeySet) -> Any:
@@ -606,6 +555,19 @@ class File(InputFieldBase):
     # A sibling String whose value is the target's ftype token (e.g. `DIS6`),
     # picking one family among the selector's matches. See `Dfns.ftype_family`.
     component_ftype: str | None = None
+    # The arguments this binding passes the target's parameters (see `Param`),
+    # by name: each a column of the binding row (`exgmnamea`), or a parameter
+    # of this component, passed down (an exchange's `model1`). See
+    # `_validate_params`.
+    args: dict[str, str] | None = None
+
+    @field_validator("args")
+    @classmethod
+    def _check_args(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        for name, value in (v or {}).items():
+            if not _IDENT_RE.match(name) or not _IDENT_RE.match(value):
+                raise ValueError(f"file arg {name!r} = {value!r} must name a column or parameter")
+        return v
 
 
 Scalar = Annotated[
@@ -1646,7 +1608,7 @@ class ComponentBase(BaseModel):
     keys: dict[str, KeySetT] | None = None
     # What this component needs from whatever binds its file, by name (an
     # exchange's `model1`, SPC's `target`). See `Param`.
-    params: dict[str, ParamT] | None = None
+    params: dict[str, Param] | None = None
 
     @field_validator("keys")
     @classmethod
@@ -1654,8 +1616,6 @@ class ComponentBase(BaseModel):
         for name in v or {}:
             if not _IDENT_RE.match(name):
                 raise ValueError(f"key set name {name!r} must be an identifier")
-            if name == OBSERVATIONS_KEY:
-                raise ValueError(f"key set name {name!r} is reserved for observation types")
         return v
 
     @field_validator("params")
@@ -2132,19 +2092,10 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
         if fk.scope is not None:
             named = sorted(_named_components(spec, component, fields, fields[fk.scope]))
             where_named = f"the scope {fk.scope!r} can name ({named!r})"
-        elif fk.param is not None:
+        else:
             assert isinstance(fk.param, str)
             named = sorted(_param_components(spec, component, fk.param))
             where_named = f"the parameter {fk.param!r} can name"
-        else:
-            named = sorted(spec.components)
-            where_named = "in the spec"
-        if fk.key == OBSERVATIONS_KEY:
-            if not isinstance(field, String):
-                raise ValueError(f"{where_fk}: observation types are named by a string column")
-            if not any(spec.components[n].observations for n in named):
-                raise ValueError(f"{where_fk}: no component {where_named} has observations")
-            return
         declaring = [spec.components[n] for n in named if fk.key in (spec.components[n].keys or {})]
         if not declaring:
             raise ValueError(f"{where_fk}: no component {where_named} declares key {fk.key!r}")
@@ -2385,74 +2336,68 @@ def _validate_when_fields(component: "ComponentBase") -> None:
                 raise ValueError(f"{f.name!r}: when={f.when!r} names the field itself")
 
 
-def _binders(
-    component: "ComponentBase", spec: "Dfns"
-) -> "list[tuple[ComponentBase, Mapping[str, InputField]]]":
-    """Each component that can bind this one's file, with the binding row:
-    the fields beside the File that links it. A component's `parent` must
-    admit the binder too."""
-    out: list[tuple[ComponentBase, Mapping[str, InputField]]] = []
-    for binder in spec.components.values():
-        if component.parent is not None and not admits(component.parent, binder):
-            continue
-        for block in (binder.blocks or {}).values():
-            for file, siblings in _iter_files(block.fields):
-                if file.direction == "in" and file.component and admits(file.component, component):
-                    out.append((binder, siblings))
-    return out
+def _validate_args(component: "ComponentBase", spec: "Dfns") -> None:
+    """
+    Each File's `args` pass parameters (see `Param`) of every component it
+    can bind, as a call passes a function's arguments:
+
+    - each component the File can bind (see `Dfns.children`) declares each
+      parameter passed;
+    - each argument names exactly one of a column of the binding row (the
+      File's siblings) and a parameter of this component, so nothing is
+      searched;
+    - a column has an fk, and can name something of the parameter's type
+      (see `_named_components`); a parameter's type can name something of
+      the parameter's type.
+
+    A parameter a binder doesn't pass is unset there. Fks, cellids and
+    `when`s that name a parameter are checked with the fields they're on.
+    """
+    for block in (component.blocks or {}).values():
+        for file, row in _iter_files(block.fields):
+            if not file.args:
+                continue
+            where = f"{component.name}: File {file.name!r}"
+            if file.component is None:
+                raise ValueError(f"{where}: args without a component")
+            targets = [
+                c for c in spec.children(component.name).values() if admits(file.component, c)
+            ]
+            for target in targets:
+                for name in file.args:
+                    if name not in (target.params or {}):
+                        raise ValueError(
+                            f"{where}: passes {name!r}, which {target.name} doesn't declare"
+                        )
+            for name, value in file.args.items():
+                at = f"{where}: arg {name}={value!r}"
+                column = row.get(value)
+                is_param = value in (component.params or {})
+                if (column is None) == (not is_param):
+                    raise ValueError(
+                        f"{at} must name exactly one of a binding row column and a parameter "
+                        f"of {component.name}"
+                    )
+                if is_param:
+                    named = _param_components(spec, component, value)
+                else:
+                    if getattr(column, "fk", None) is None:
+                        raise ValueError(f"{at}: the column has no fk to follow")
+                    named = _named_components(spec, component, row, column)
+                for target in targets:
+                    param = (target.params or {})[name]
+                    if not named & _param_components(spec, target, name):
+                        raise ValueError(f"{at} names nothing of type {param.type!r}")
 
 
 def _validate_params(component: "ComponentBase", spec: "Dfns") -> None:
-    """
-    Each parameter (see `Param`) resolves under every component that binds
-    this one:
-
-    - its `type` admits some component in the spec;
-    - each binder named in a `from` table binds this component;
-    - `parent`: the binder is of the parameter's type;
-    - `row.<column>`: the binding row has the column, with an fk, and what
-      the column can name (see `_named_components`) includes something of
-      the parameter's type;
-    - `parent.<param>`: the binder declares that parameter, and its type
-      can name something of this one's type.
-
-    Fks, cellids and `when`s that name a parameter are checked with the
-    fields they're on.
-    """
-    if not component.params:
-        return
-    binders = _binders(component, spec)
-    binder_names = {b.name for b, _ in binders}
-    for name, param in component.params.items():
-        where = f"{component.name}: parameter {name!r}"
-        admitted = _param_components(spec, component, name)
-        if not admitted:
-            raise ValueError(f"{where}: type={param.type!r} admits no component in the spec")
-        if isinstance(param.from_, dict):
-            if unknown := sorted(set(param.from_) - binder_names):
-                raise ValueError(f"{where}: {unknown!r} don't bind {component.name}")
-        for binder, row in binders:
-            source = param.source_for(binder.name)
-            if source is None:
-                continue
-            under = f"{where} under {binder.name}"
-            kind, _, rest = source.partition(".")
-            if kind == "parent" and not rest:
-                if not admits(param.type, binder):
-                    raise ValueError(f"{under}: the binder isn't of type {param.type!r}")
-            elif kind == "parent":
-                if rest not in (binder.params or {}):
-                    raise ValueError(f"{under}: {binder.name} declares no parameter {rest!r}")
-                if not _param_components(spec, binder, rest) & admitted:
-                    raise ValueError(f"{under}: {binder.name}'s {rest!r} names no {param.type!r}")
-            else:
-                column = row.get(rest)
-                if column is None:
-                    raise ValueError(f"{under}: the binding row has no column {rest!r}")
-                if getattr(column, "fk", None) is None:
-                    raise ValueError(f"{under}: the binding row's {rest!r} has no fk to follow")
-                if not _named_components(spec, binder, row, column) & admitted:
-                    raise ValueError(f"{under}: {rest!r} names nothing of type {param.type!r}")
+    """Each parameter's `type` admits some component in the spec."""
+    for name, param in (component.params or {}).items():
+        if not _param_components(spec, component, name):
+            raise ValueError(
+                f"{component.name}: parameter {name!r}: type={param.type!r} admits no "
+                f"component in the spec"
+            )
 
 
 def _obs_columns(field: "InputField") -> list[int]:
@@ -2811,6 +2756,8 @@ class Dfns(BaseModel):
             _validate_file_links(component, self)
         for name, component in self.components.items():
             _validate_params(component, self)
+        for name, component in self.components.items():
+            _validate_args(component, self)
         for name, component in self.components.items():
             _validate_cellid_fields(component)
         for name, component in self.components.items():

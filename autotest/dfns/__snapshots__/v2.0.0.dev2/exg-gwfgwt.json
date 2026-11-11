@@ -4,5 +4,13 @@
   "name": "exg-gwfgwt",
   "parent": "sim-nam",
   "ftype": "GWF6-GWT6",
-  "subtype": "exchange"
+  "subtype": "exchange",
+  "params": {
+    "model1": {
+      "type": "model"
+    },
+    "model2": {
+      "type": "model"
+    }
+  }
 }

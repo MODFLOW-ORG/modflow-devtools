@@ -106,6 +106,8 @@ blocks:
               component:
                 - utl-spc
                 - utl-spca
+              args:
+                target: pname
             mixed:
               type: keyword
               longname: mixed keyword

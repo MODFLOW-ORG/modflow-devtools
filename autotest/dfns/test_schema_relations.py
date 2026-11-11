@@ -2,6 +2,7 @@
 
 import pytest
 
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import _replace_named
 from modflow_devtools.dfns.schema import (
     Array,
     Block,
@@ -444,10 +445,7 @@ def test_array_fk_requires_integer_or_string_dtype(dtype):
 
 
 # A GNC's or an exchange's two models, as parameters (see `Param`).
-_MODELS = {
-    "model1": Param(type="model", from_="row.exgmnamea"),
-    "model2": Param(type="model", from_="row.exgmnameb"),
-}
+_MODELS = {"model1": Param(type="model"), "model2": Param(type="model")}
 
 
 def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
@@ -585,7 +583,7 @@ def test_cellid_rejects_non_model_values(value, shape):
         _cellid_col("cellid", value, shape=shape)
 
 
-@pytest.mark.parametrize("params", [None, {"model1": Param(type="package", from_="parent")}])
+@pytest.mark.parametrize("params", [None, {"model1": Param(type="package")}])
 def test_dfns_validate_cellid_model_names_a_model_param(params):
     # The name must be a parameter of the component, and of a model.
     item = Record(name="item", fields={"a": _cellid_col("a", "model1")})
@@ -906,10 +904,6 @@ def test_integer_allow_zero_round_trips():
         ({"key": "bound", "param": "target"}, ForeignKey(key="bound", param="target")),
         ({"param": ["model1", "model2"]}, ForeignKey(param=("model1", "model2"))),
         (
-            {"key": "observations", "param": "target"},
-            ForeignKey(key="observations", param="target"),
-        ),
-        (
             {"path": "gwf-nam.packages.pname", "rule": "flow_model"},
             ForeignKey(path="gwf-nam.packages.pname", rule="flow_model"),
         ),
@@ -936,8 +930,9 @@ def test_key_fk_parts():
         ({}, "needs one of path, key and param"),
         ({"path": "a.b", "key": "k", "scope": "s"}, "with a path can't have a key or param"),
         ({"path": "a.b", "param": "target"}, "with a path can't have a key or param"),
-        ({"key": "mover_provider"}, "needs a scope, param or rule"),
-        ({"key": "bound", "scope": "s", "param": "p"}, "one of scope and param, not both"),
+        ({"key": "mover_provider"}, "needs one of scope and param"),
+        ({"key": "bound", "rule": "flow_model"}, "needs one of scope and param"),
+        ({"key": "bound", "scope": "s", "param": "p"}, "needs one of scope and param"),
         ({"key": "bound", "param": ["p", "q"]}, "picks its instance by one param"),
         ({"param": "p", "scope": "s"}, "only a param can't have a scope or rule"),
         ({"param": "p", "rule": "flow_model"}, "only a param can't have a scope or rule"),
@@ -1059,6 +1054,7 @@ def _ctx_sim():
                     mode_keyword=False,
                     component="exchange",
                     component_ftype="exgtype",
+                    args={"model1": "exgmnamea", "model2": "exgmnameb"},
                 ),
                 String(name="exgmnamea", tagged=False, fk="models.mname"),
                 String(name="exgmnameb", tagged=False, fk="models.mname"),
@@ -1089,7 +1085,11 @@ def _ctx_sim():
             "mvr6": Keyword(name="mvr6"),
             "filein": Keyword(name="filein"),
             "mvr6_filename": File(
-                name="mvr6_filename", tagged=False, direction="in", component="gwf-mvr"
+                name="mvr6_filename",
+                tagged=False,
+                direction="in",
+                component="gwf-mvr",
+                args={"model1": "model1", "model2": "model2"},
             ),
         },
     )
@@ -1147,10 +1147,7 @@ def _mover_pkgs(lak_keys=None, wel_keys=None, wel_options=("mover",)):
 _MNAME_FK = {"param": ["model1", "model2"]}
 
 # A mover's models, passed down from the exchange that binds it.
-_FORWARD = {
-    "model1": Param(type="model", from_={"exg-gwfgwf": "parent.model1"}),
-    "model2": Param(type="model", from_={"exg-gwfgwf": "parent.model2"}),
-}
+_FORWARD = _MODELS
 
 
 _PNAME_FK = {"path": "gwf-nam.packages.pname", "scope": "mname", "rule": "mover_enabled"}
@@ -1318,7 +1315,13 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
                 "fileinput",
                 String(name="pname", tagged=False, pk=True, fk=pname_fk),
                 Keyword(name="spc6"),
-                File(name="spc6_filename", tagged=False, direction="in", component="utl-spc"),
+                File(
+                    name="spc6_filename",
+                    tagged=False,
+                    direction="in",
+                    component="utl-spc",
+                    args={"target": "pname"},
+                ),
             ),
         },
     )
@@ -1327,7 +1330,7 @@ def _ctx_transport(spc_key="bound", ssm_keys=_SOURCE, srctype=None):
         parent="gwt-ssm",
         subtype="utility",
         ftype="SPC6",
-        params={"target": Param(type="package", from_="row.pname", rule="no_advanced_transport")},
+        params={"target": Param(type="package", rule="no_advanced_transport")},
         blocks={
             "period": _list_block(
                 "period",
@@ -1370,100 +1373,91 @@ def _with_params(ctx, name, **params):
     return {**ctx, name: component.model_copy(update={"params": merged})}
 
 
+def _with_args(ctx, name, block, field, args):
+    """`ctx` with the args of component `name`'s File `field` replaced."""
+    blocks = _replace_named(
+        name,
+        ctx[name].blocks,
+        block,
+        lambda f, _: f.model_copy(update={"args": args}),
+        {field},
+    )
+    return {**ctx, name: ctx[name].model_copy(update={"blocks": blocks})}
+
+
 def test_param_loads_and_dumps():
-    toml = {"type": ["gwf-rcha", "gwf-evta"], "from": "row.pname", "rule": "no_advanced_transport"}
+    toml = {"type": ["gwf-rcha", "gwf-evta"], "rule": "no_advanced_transport"}
     pkg = Package.model_validate({"name": "utl-spca", "params": {"target": toml}})
     assert pkg.params["target"] == Param(
-        type=["gwf-rcha", "gwf-evta"], from_="row.pname", rule="no_advanced_transport"
+        type=["gwf-rcha", "gwf-evta"], rule="no_advanced_transport"
     )
     assert pkg.model_dump(exclude_none=True)["params"] == {"target": toml}
-    forward = {"type": "model", "from": {"exg-gwfgwf": "parent.model1"}}
-    assert Param.model_validate(forward).source_for("exg-gwfgwf") == "parent.model1"
-    assert Param.model_validate(forward).source_for("gwf-nam") is None
-
-
-@pytest.mark.parametrize(
-    "source, match",
-    [
-        ("row", "must be 'parent', 'parent.<param>' or 'row.<column>'"),
-        ("row.a.b", "must be 'parent', 'parent.<param>' or 'row.<column>'"),
-        ("parent.", "must be 'parent', 'parent.<param>' or 'row.<column>'"),
-        ("sibling.x", "must be 'parent', 'parent.<param>' or 'row.<column>'"),
-        ({}, "needs at least one binder"),
-        ({"exg-gwfgwf": "nope"}, "must be 'parent'"),
-    ],
-)
-def test_param_source_rejected(source, match):
-    with pytest.raises(ValueError, match=match):
-        Param(type="model", from_=source)
 
 
 def test_param_rule_checked():
     with pytest.raises(ValueError, match="parameter rule 'nope' is not one of"):
-        Param(type="package", from_="parent", rule="nope")
+        Param(type="package", rule="nope")
 
 
 def test_param_name_checked():
     with pytest.raises(ValueError, match="parameter name 'a-b' must be an identifier"):
-        Package(name="x", params={"a-b": Param(type="model", from_="parent")})
+        Package(name="x", params={"a-b": Param(type="model")})
 
 
-def test_dfns_validate_params():
-    """An exchange's models come from its binding row, a mover's from the
-    exchange, and SPC's target from SSM's row."""
+@pytest.mark.parametrize("args", [{"a": "b.c"}, {"a.b": "c"}, {"a": ""}])
+def test_file_args_checked(args):
+    with pytest.raises(ValueError, match="must name a column or parameter"):
+        File(name="f", direction="in", component="x", args=args)
+
+
+def test_dfns_validate_args():
+    """An exchange's models are passed from its binding row, a mover's from
+    the exchange's own, and SPC's target from SSM's row. A mover under a
+    model gets none."""
     spec = Dfns(components=_ctx_transport())
     assert spec.components["exg-gwfgwf"].params == _MODELS
-    assert spec.components["gwf-mvr"].params["model1"].source_for("gwf-nam") is None
+    item = spec.components["gwt-ssm"].blocks["fileinput"].fields["fileinput"].item
+    assert item.fields["spc6_filename"].args == {"target": "pname"}
+
+
+_EXG = ("sim-nam", "exchanges", "exgfile")
+_MVR = ("exg-gwfgwf", "options", "mvr6_filename")
 
 
 @pytest.mark.parametrize(
-    "name, param, match",
+    "where, args, match",
     [
         (
-            "exg-gwfgwf",
-            Param(type="model", from_="row.nope"),
-            "under sim-nam: the binding row has no column 'nope'",
+            _EXG,
+            {"model1": "nope"},
+            "arg model1='nope' must name exactly one of a binding row column and a parameter "
+            "of sim-nam",
         ),
-        (
-            "exg-gwfgwf",
-            Param(type="model", from_="row.exgtype"),
-            "the binding row's 'exgtype' has no fk to follow",
-        ),
-        (
-            "gwf-mvr",
-            Param(type="model", from_={"exg-gwfgwf": "parent.model3"}),
-            "exg-gwfgwf declares no parameter 'model3'",
-        ),
-        (
-            "gwf-mvr",
-            Param(type="model", from_={"exg-gwtgwt": "parent.model1"}),
-            r"\['exg-gwtgwt'\] don't bind gwf-mvr",
-        ),
-        (
-            "gwf-mvr",
-            Param(type="model", from_="parent"),
-            "under exg-gwfgwf: the binder isn't of type 'model'",
-        ),
-        (
-            "gwf-mvr",
-            Param(type="gwf-wel", from_={"exg-gwfgwf": "parent.model1"}),
-            "exg-gwfgwf's 'model1' names no 'gwf-wel'",
-        ),
-        (
-            "exg-gwfgwf",
-            Param(type="package", from_="row.exgmnamea"),
-            "'exgmnamea' names nothing of type 'package'",
-        ),
-        ("exg-gwfgwf", Param(type="nope-nam", from_="row.exgmnamea"), "admits no component"),
+        (_EXG, {"model1": "exgtype"}, "arg model1='exgtype': the column has no fk to follow"),
+        (_EXG, {"model3": "exgmnamea"}, "passes 'model3', which exg-gwfgwf doesn't declare"),
+        (_MVR, {"model1": "model3"}, "must name exactly one of a binding row column"),
+        (_MVR, {"model3": "model1"}, "passes 'model3', which gwf-mvr doesn't declare"),
     ],
 )
-def test_dfns_validate_params_bad(name, param, match):
+def test_dfns_validate_args_bad(where, args, match):
     with pytest.raises(ValueError, match=match):
-        Dfns(components=_with_params(_ctx_transport(), name, model1=param))
+        Dfns(components=_with_args(_ctx_transport(), *where, args))
+
+
+@pytest.mark.parametrize(
+    "param, match",
+    [
+        (Param(type="package"), "names nothing of type 'package'"),
+        (Param(type="nope-nam"), "admits no component"),
+    ],
+)
+def test_dfns_validate_params_bad(param, match):
+    with pytest.raises(ValueError, match=match):
+        Dfns(components=_with_params(_ctx_transport(), "exg-gwfgwf", model1=param))
 
 
 def test_dfns_validate_fk_param_undeclared():
-    ctx = _ctx_transport()
+    ctx = _with_args(_ctx_transport(), *_MVR, None)
     ctx["gwf-mvr"] = ctx["gwf-mvr"].model_copy(update={"params": None})
     with pytest.raises(ValueError, match="fk param='model1': gwf-mvr declares no such parameter"):
         Dfns(components=ctx)
@@ -1472,17 +1466,6 @@ def test_dfns_validate_fk_param_undeclared():
 def test_dfns_validate_fk_param_only_names_from_a_string():
     with pytest.raises(ValueError, match="only a string column may name a parameter's instance"):
         Dfns(components=_ctx_mvr(id1_fk={"param": "model1"}))
-
-
-def test_dfns_validate_observations_key_needs_a_string():
-    ctx = _ctx_transport(spc_key="observations")
-    with pytest.raises(ValueError, match="observation types are named by a string column"):
-        Dfns(components=ctx)
-
-
-def test_keyset_observations_reserved():
-    with pytest.raises(ValueError, match="'observations' is reserved"):
-        Package(name="x", keys={"observations": "packagedata.ifno"})
 
 
 def _mvr_with_modelnames(**attrs):

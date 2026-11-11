@@ -385,10 +385,7 @@ def test_migrate_mvr_keys(dfn_dir):
     # down from the exchange; unset under a model
     model = v2.ForeignKey(param=("model1", "model2"))
     assert packages["mname"].fk == model
-    assert component.params == {
-        f"model{i}": v2.Param(type="model", from_={"exg-gwfgwf": f"parent.model{i}"})
-        for i in (1, 2)
-    }
+    assert component.params == {f"model{i}": v2.Param(type="model") for i in (1, 2)}
     # MODELNAMES is set exactly when an exchange binds the mover
     modelnames = blocks["options"].fields["modelnames"]
     assert (modelnames.when, modelnames.optional) == ("model2", False)
@@ -524,9 +521,7 @@ def test_migrate_spc_bndno(dfn_dir):
     bndno = blocks["period"].fields["stress_period_data"].item.fields["bndno"]
     assert bndno.pk == v2.PrimaryKey()
     assert bndno.fk == v2.ForeignKey(key="bound", param="target")
-    assert component.params == {
-        "target": v2.Param(type="package", from_="row.pname", rule="no_advanced_transport")
-    }
+    assert component.params == {"target": v2.Param(type="package", rule="no_advanced_transport")}
     assert _fix_spc_relations("utl-spc", blocks) == blocks
 
 

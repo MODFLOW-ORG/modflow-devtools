@@ -101,5 +101,4 @@ type = "integer"
 
 [params.target]
 type = "package"
-from = "row.pname"
 rule = "no_advanced_transport"

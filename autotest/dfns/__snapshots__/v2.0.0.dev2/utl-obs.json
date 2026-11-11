@@ -109,14 +109,5 @@
         }
       }
     }
-  },
-  "params": {
-    "target": {
-      "from": "parent",
-      "type": [
-        "model",
-        "package"
-      ]
-    }
   }
 }

@@ -30,11 +30,7 @@ from typing import Literal
 from boltons.dictutils import OMD
 
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import (
-    _set_list_item_attrs,
-    to_v2_0_0_dev2,
-    try_parse_bool,
-)
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2, try_parse_bool
 from modflow_devtools.dfns.observations import OBSERVATIONS
 
 # ---------------------------------------------------------------------------
@@ -1327,19 +1323,6 @@ _MODEL_MEMORY["prt-nam"] = {
 # ---------------------------------------------------------------------------
 
 
-def _fix_obs_type(name: str, blocks: dict[str, v2.Block] | None) -> dict[str, v2.Block] | None:
-    """OBS's `obstype` names one of its target's observation types (the
-    `observations` tables this version adds), so `fk = {param = "target",
-    key = "observations"}`. MF6 rejects a type the target doesn't accept."""
-    if name != "utl-obs" or not blocks:
-        return blocks
-    fk = v2.ForeignKey(param="target", key=v2.OBSERVATIONS_KEY)
-    for block_name in ("continuous", "single"):
-        if block_name in blocks:
-            blocks = _set_list_item_attrs(blocks, block_name, {"obstype": {"fk": fk}})
-    return blocks
-
-
 def to_v2_0_0_dev3(
     name: str,
     fields: OMD,
@@ -1495,7 +1478,7 @@ def to_v2_0_0_dev3(
             else:
                 existing_runtime_dims[dim_name] = v2.RuntimeDim(set_in="ar")
 
-    blocks = _fix_obs_type(name, component.blocks)
+    blocks = component.blocks
 
     return component.model_copy(
         update={

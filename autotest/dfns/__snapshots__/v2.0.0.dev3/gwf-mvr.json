@@ -247,16 +247,10 @@
   },
   "params": {
     "model1": {
-      "type": "model",
-      "from": {
-        "exg-gwfgwf": "parent.model1"
-      }
+      "type": "model"
     },
     "model2": {
-      "type": "model",
-      "from": {
-        "exg-gwfgwf": "parent.model2"
-      }
+      "type": "model"
     }
   }
 }

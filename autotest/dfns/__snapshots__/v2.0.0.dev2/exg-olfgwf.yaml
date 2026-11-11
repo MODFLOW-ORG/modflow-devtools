@@ -109,7 +109,5 @@ blocks:
 params:
   model1:
     type: model
-    from: row.exgmnamea
   model2:
     type: model
-    from: row.exgmnameb

@@ -89,10 +89,3 @@ direction = "out"
 type = "keyword"
 description = "an optional keyword used to indicate that the output file should be written in binary (unformatted) form."
 optional = true
-
-[params.target]
-from = "parent"
-type = [
-    "model",
-    "package",
-]

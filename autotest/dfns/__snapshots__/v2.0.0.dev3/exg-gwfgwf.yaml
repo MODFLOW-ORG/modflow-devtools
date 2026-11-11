@@ -129,6 +129,9 @@ blocks:
             tagged: false
             direction: in
             component: gwf-gnc
+            args:
+              model1: model1
+              model2: model2
       mvr_filerecord:
         type: record
         optional: true
@@ -151,6 +154,9 @@ blocks:
             tagged: false
             direction: in
             component: gwf-mvr
+            args:
+              model1: model1
+              model2: model2
       obs_filerecord:
         type: record
         optional: true
@@ -367,7 +373,5 @@ observations:
 params:
   model1:
     type: model
-    from: row.exgmnamea
   model2:
     type: model
-    from: row.exgmnameb

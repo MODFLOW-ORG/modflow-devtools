@@ -319,8 +319,6 @@ tagged = false
 
 [params.model1]
 type = "model"
-from = "row.exgmnamea"
 
 [params.model2]
 type = "model"
-from = "row.exgmnameb"

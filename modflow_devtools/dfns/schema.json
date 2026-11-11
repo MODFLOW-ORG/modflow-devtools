@@ -736,6 +736,21 @@
           ],
           "default": null,
           "title": "Component Ftype"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Args"
         }
       },
       "required": [
@@ -747,7 +762,7 @@
     },
     "ForeignKey": {
       "additionalProperties": false,
-      "description": "A reference to a `pk` column (or a string array's entries), one of:\n\n- `path`, `[component.]block.field`. With a `scope`, the name of a\n  sibling column, that column qualifies the reference: within a\n  component, it matches the target pk's own scope; across components, it\n  picks the target component's instance. Written `fk = \"<path>\"` when\n  unscoped.\n- `key`, with a `scope`, `rule` or `param`: a key set (see `KeySet`)\n  that the component of the picked instance declares, by name, in its\n  `keys`. For an instance whose type is known only at runtime (MVR's\n  `id1`). The reserved key `observations` is the instance's observation\n  types (see `ComponentBase.observations`), which every component with\n  any declares.\n- `param` alone, one or more of this component's parameters (see\n  `Param`): the value names the instance one of them is set to (MVR's\n  `mname1`: `model1` or `model2`).\n\nWith a `key`, `param` names the parameter whose instance declares the\nkey set (SPC's `bndno`: `target`).\n\nA `rule` (see `RULES`) names a subset of the target the value must fall\nin. It may stand in for a `scope` (SSM's `pname`: `flow_model`) or\nrestrict a scoped target further (MVR's `packages.pname`:\n`mover_enabled`).",
+      "description": "A reference to a `pk` column (or a string array's entries), one of:\n\n- `path`, `[component.]block.field`. With a `scope`, the name of a\n  sibling column, that column qualifies the reference: within a\n  component, it matches the target pk's own scope; across components, it\n  picks the target component's instance. Written `fk = \"<path>\"` when\n  unscoped.\n- `key`, with a `scope` or `param` that picks the instance: a key set\n  (see `KeySet`) that the instance's component declares, by name, in\n  its `keys`. For an instance whose type is known only at runtime\n  (MVR's `id1`).\n- `param` alone, one or more of this component's parameters (see\n  `Param`): the value names the instance one of them is set to (MVR's\n  `mname1`: `model1` or `model2`).\n\nWith a `key`, `param` names the parameter whose instance declares the\nkey set (SPC's `bndno`: `target`).\n\nA `rule` (see `RULES`) names a subset of the target the value must fall\nin. It may stand in for a `scope` (SSM's `pname`: `flow_model`) or\nrestrict a scoped target further (MVR's `packages.pname`:\n`mover_enabled`).",
       "properties": {
         "path": {
           "anyOf": [
@@ -2075,7 +2090,7 @@
     },
     "Param": {
       "additionalProperties": false,
-      "description": "A binding parameter: something a component needs from whatever binds its\nfile (see `docs/md/dfnspec.md`, \"Parameters\"). Declared in the\ncomponent's `params`, and named by an fk's `param`, a cellid's `model`,\nor a `when`.\n\n- `type`: what the parameter names, a selector as in `parent`.\n- `from`: where its value comes from, one source for every binder, or a\n  table of sources keyed by binder. A binder with no entry leaves it\n  unset. A source is one of:\n  - `parent`: the component that binds this file (OBS's `target`);\n  - `row.<column>`: that column of the binding row, following its fk to\n    an instance (SPC's `target`, from SSM's `pname`);\n  - `parent.<param>`: a parameter of the binder, passed down (an\n    exchange's mover's `model1`).\n- `rule`: as on an fk (see `RULES`), a named subset of the target.\n\nThere's no lookup or search: each binder's source is stated.\nRelationally, a parameter is a column on the child's row, with a\nforeign key.",
+      "description": "A binding parameter: something a component needs from whatever binds its\nfile, beyond the binder itself (see `docs/md/dfnspec.md`, \"Parameters\").\nDeclared in the component's `params`, like a function's signature, and\npassed by the binding file's `args` (see `File`). Named by an fk's\n`param`, a cellid's `model`, or a `when`.\n\n- `type`: what the parameter names, a selector as in `parent`.\n- `rule`: as on an fk (see `RULES`), a named subset of the target.\n\nA binder that passes no argument leaves it unset. Relationally, a\nparameter is a column on the child's row, with a foreign key.",
       "properties": {
         "type": {
           "anyOf": [
@@ -2091,20 +2106,6 @@
           ],
           "title": "Type"
         },
-        "from": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            }
-          ],
-          "title": "From"
-        },
         "rule": {
           "anyOf": [
             {
@@ -2119,8 +2120,7 @@
         }
       },
       "required": [
-        "type",
-        "from"
+        "type"
       ],
       "title": "Param",
       "type": "object"

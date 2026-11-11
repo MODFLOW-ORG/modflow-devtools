@@ -1822,45 +1822,56 @@ _BOUND_KEYS: dict[str, str] = {
 
 
 # Binding parameters (see `v2.Param`): what a component needs from whatever
-# binds its file, which v1 says only in prose.
+# binds its file, beyond the binder itself, which v1 says only in prose. The
+# component declares them, like a function's signature; the binding file
+# passes them (see `_ARGS`).
 #
-# - An exchange's two models are `sim-nam`'s `exchanges` row's `exgmnamea`
-#   and `exgmnameb`, not in its own file. Its cellids name them.
-# - An exchange's mover and GNC get them from the exchange, one explicit
-#   step down. Under a model they're unset, meaning that model.
+# - Every exchange (`exg-*`) has two models, named on `sim-nam`'s
+#   `exchanges` row, not in its own file. Its cellids name them.
+# - An exchange's mover and GNC get them from the exchange. Under a model
+#   they're unset, meaning that model.
 # - SPC and SPCA apply to the flow package SSM's `fileinput` row names
 #   (`TspSpc.f90:326-349`), skipped if an advanced transport package is
 #   paired with it (`tsp-ssm.f90:195`). MF6 rejects array SPC on any but
 #   RCHA and EVTA, and list SPC on those (`TspSpc.f90:353-375`): SPCA says
 #   so by its type, SPC by its `bound` key, which RCHA and EVTA don't
 #   declare.
-# - OBS observes whatever binds it.
-_EXG_PARAMS = {
-    "model1": v2.Param(type="model", from_="row.exgmnamea"),
-    "model2": v2.Param(type="model", from_="row.exgmnameb"),
-}
-_EXG_FORWARD = {
-    "model1": v2.Param(type="model", from_={"exg-gwfgwf": "parent.model1"}),
-    "model2": v2.Param(type="model", from_={"exg-gwfgwf": "parent.model2"}),
-}
+_MODELS = {"model1": v2.Param(type="model"), "model2": v2.Param(type="model")}
+_SPC_TARGET = "no_advanced_transport"
 _PARAMS: dict[str, dict[str, v2.Param]] = {
-    **dict.fromkeys(
-        ("exg-chfgwf", "exg-gwegwe", "exg-gwfgwf", "exg-gwtgwt", "exg-olfgwf"), _EXG_PARAMS
-    ),
-    "gwf-mvr": _EXG_FORWARD,
-    "gwf-gnc": _EXG_FORWARD,
-    "utl-spc": {
-        "target": v2.Param(type="package", rule="no_advanced_transport", **{"from": "row.pname"})
-    },
-    "utl-spca": {
-        "target": v2.Param(
-            type=["gwf-rcha", "gwf-evta"],
-            rule="no_advanced_transport",
-            **{"from": "row.pname"},
-        )
-    },
-    "utl-obs": {"target": v2.Param(type=["model", "package"], from_="parent")},
+    "gwf-mvr": _MODELS,
+    "gwf-gnc": _MODELS,
+    "utl-spc": {"target": v2.Param(type="package", rule=_SPC_TARGET)},
+    "utl-spca": {"target": v2.Param(type=["gwf-rcha", "gwf-evta"], rule=_SPC_TARGET)},
 }
+
+# The arguments each binding file passes (see `v2.File.args`), as (block,
+# file field, args): a column of the binding row, or the binder's own
+# parameter, passed down.
+_PASS_MODELS = {"model1": "model1", "model2": "model2"}
+_ARGS: dict[str, list[tuple[str, str, dict[str, str]]]] = {
+    "sim-nam": [("exchanges", "exgfile", {"model1": "exgmnamea", "model2": "exgmnameb"})],
+    "exg-gwfgwf": [
+        ("options", "gnc6_filename", _PASS_MODELS),
+        ("options", "mvr6_filename", _PASS_MODELS),
+    ],
+    "gwt-ssm": [("fileinput", "spc6_filename", {"target": "pname"})],
+    "gwe-ssm": [("fileinput", "spc6_filename", {"target": "pname"})],
+}
+
+
+def _fix_file_args(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Set the arguments this component's binding files pass. See `_ARGS`.
+    Skips an absent block, as a trimmed DFN may have."""
+    for block_name, field_name, args in _ARGS.get(name, []):
+        if block_name not in blocks:
+            continue
+
+        def _pass(field: Any, _in_union: bool, args: dict[str, str] = args) -> Any:
+            return field.model_copy(update={"args": args})
+
+        blocks = _replace_named(name, blocks, block_name, _pass, {field_name})
+    return blocks
 
 
 def _component_keys(
@@ -2966,6 +2977,7 @@ def to_v2_0_0_dev2(
     blocks = _link_namefile_fields(name, blocks)
     blocks = _fix_model_nam_package_keys(name, blocks)
     blocks = _fix_spc_relations(name, blocks)
+    blocks = _fix_file_args(name, blocks)
     blocks = _fix_scoped_index_keys(name, blocks)
     blocks = _name_period_lists(blocks)
     blocks = _set_header_update(blocks)
@@ -2979,7 +2991,7 @@ def to_v2_0_0_dev2(
         "blocks": blocks or None,
         "dims": dims,
         "keys": _component_keys(name, blocks, dims or {}),
-        "params": _PARAMS.get(name),
+        "params": _MODELS if name.startswith("exg-") else _PARAMS.get(name),
     }
     if name == "sim-nam":
         return v2.Simulation(**d)

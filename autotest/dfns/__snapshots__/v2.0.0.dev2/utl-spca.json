@@ -90,7 +90,6 @@
   },
   "params": {
     "target": {
-      "from": "row.pname",
       "rule": "no_advanced_transport",
       "type": [
         "gwf-rcha",

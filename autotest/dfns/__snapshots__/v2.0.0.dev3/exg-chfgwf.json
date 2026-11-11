@@ -170,12 +170,10 @@
   },
   "params": {
     "model1": {
-      "type": "model",
-      "from": "row.exgmnamea"
+      "type": "model"
     },
     "model2": {
-      "type": "model",
-      "from": "row.exgmnameb"
+      "type": "model"
     }
   }
 }

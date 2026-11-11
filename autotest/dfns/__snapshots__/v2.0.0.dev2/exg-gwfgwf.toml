@@ -99,6 +99,10 @@ tagged = false
 direction = "in"
 component = "gwf-gnc"
 
+[blocks.options.fields.gnc_filerecord.fields.gnc6_filename.args]
+model1 = "model1"
+model2 = "model2"
+
 [blocks.options.fields.mvr_filerecord]
 type = "record"
 optional = true
@@ -115,6 +119,10 @@ description = "is the file name of the water mover input file to apply to this e
 tagged = false
 direction = "in"
 component = "gwf-mvr"
+
+[blocks.options.fields.mvr_filerecord.fields.mvr6_filename.args]
+model1 = "model1"
+model2 = "model2"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -215,8 +223,6 @@ tagged = false
 
 [params.model1]
 type = "model"
-from = "row.exgmnamea"
 
 [params.model2]
 type = "model"
-from = "row.exgmnameb"

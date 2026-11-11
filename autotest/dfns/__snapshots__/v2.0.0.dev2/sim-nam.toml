@@ -125,6 +125,10 @@ mode_keyword = false
 component = "exchange"
 component_ftype = "exgtype"
 
+[blocks.exchanges.fields.exchanges.item.fields.exgfile.args]
+model1 = "exgmnamea"
+model2 = "exgmnameb"
+
 [blocks.exchanges.fields.exchanges.item.fields.exgmnamea]
 type = "string"
 longname = "name of model A"

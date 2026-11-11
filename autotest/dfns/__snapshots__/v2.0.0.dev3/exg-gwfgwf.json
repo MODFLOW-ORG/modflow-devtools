@@ -107,7 +107,11 @@
               "description": "is the file name for ghost node correction input file.  Information for the ghost nodes are provided in the file provided with these keywords.  The format for specifying the ghost nodes is the same as described for the GNC Package of the GWF Model.  This includes specifying OPTIONS, DIMENSIONS, and GNCDATA blocks.  The order of the ghost nodes must follow the same order as the order of the cells in the EXCHANGEDATA block.  For the GNCDATA, noden and all of the nodej values are assumed to be located in model 1, and nodem is assumed to be in model 2.",
               "tagged": false,
               "direction": "in",
-              "component": "gwf-gnc"
+              "component": "gwf-gnc",
+              "args": {
+                "model1": "model1",
+                "model2": "model2"
+              }
             }
           }
         },
@@ -126,7 +130,11 @@
               "description": "is the file name of the water mover input file to apply to this exchange.  Information for the water mover are provided in the file provided with these keywords.  The format for specifying the water mover information is the same as described for the Water Mover (MVR) Package of the GWF Model, with two exceptions.  First, in the PACKAGES block, the model name must be included as a separate string before each package.  Second, the appropriate model name must be included before package name 1 and package name 2 in the BEGIN PERIOD block.  This allows providers and receivers to be located in both models listed as part of this exchange.",
               "tagged": false,
               "direction": "in",
-              "component": "gwf-mvr"
+              "component": "gwf-mvr",
+              "args": {
+                "model1": "model1",
+                "model2": "model2"
+              }
             }
           }
         },
@@ -375,12 +383,10 @@
   },
   "params": {
     "model1": {
-      "type": "model",
-      "from": "row.exgmnamea"
+      "type": "model"
     },
     "model2": {
-      "type": "model",
-      "from": "row.exgmnameb"
+      "type": "model"
     }
   }
 }
