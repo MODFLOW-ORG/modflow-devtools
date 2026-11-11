@@ -1028,6 +1028,8 @@ An advanced package's bounds are its features or its connections. SFR and UZF ha
 
 #### Parameters
 
+A reference resolves in a scope. Most resolve against the file's owner, the instance whose file names it (see [Primary and foreign keys](#primary-and-foreign-keys)): a package's references reach its own model, and an OBS file's IDs reach the package or model that names it. Parameters add to that scope what the owner can't know from its own file, because it's written on the row that names the file. They're the exception, and most components declare none.
+
 Some references depend on where a component's file is bound in a simulation, not only on the data in it. An exchange's cellids are in its two models' grids, but the models are named on `sim-nam`'s `exchanges` row, not in the exchange's file. An exchange's mover may name only those two models. SPC applies to whichever flow package SSM's row names.
 
 So binding works like a function call. A component declares what it needs, its **parameters**, in [`params`](#params), as a signature. The file that binds it passes them, as arguments, in its `file` field's [`args`](#args):
@@ -1058,7 +1060,7 @@ args = { target = "pname" }
 - `type` is what the parameter names, a selector as in [`parent`](#parent).
 - `rule` is optional, and means what it means on an `fk`: a named subset of the target (see [Rules](#rules)).
 
-An argument names something in the binder's scope: a column of the binding row, following its `fk` to an instance, or one of the binder's own parameters. It must name exactly one, so nothing is searched.
+An argument names something in the binder's scope: a column of the binding row, following its `fk` to an instance, or one of the binder's own parameters. It must name exactly one, so nothing is searched. The scoping is lexical: a binder can pass only what's in its own scope, so an exchange's models reach its mover by being passed twice, from `sim-nam` to the exchange and from the exchange to the mover, and no component looks up the tree for a name.
 
 Following an argument's `fk` applies all of it, [rule](#rules) included, and the parameter's own `rule` applies after that. SSM's `pname` has `rule = "flow_model"`, so the `target` it passes is a package of the paired flow model; `utl-spc`'s `rule = "no_advanced_transport"` then narrows it to one with no advanced transport package.
 
