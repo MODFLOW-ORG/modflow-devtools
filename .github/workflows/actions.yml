@@ -5,7 +5,7 @@
 name: Release actions
 on:
   push:
-    paths: &paths
+    paths:
       - 'actions/**'
       - 'modflow_devtools/release/**'
       - 'autotest/release/**'
@@ -16,7 +16,13 @@ on:
     branches:
       - main
       - develop
-    paths: *paths
+    paths:
+      - 'actions/**'
+      - 'modflow_devtools/release/**'
+      - 'autotest/release/**'
+      - 'autotest/test_release.py'
+      - 'docs/examples/**'
+      - '.github/workflows/actions.yml'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
