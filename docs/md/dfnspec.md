@@ -942,6 +942,8 @@ fk = { path = "diversions.idv", scope = "ifno" }
 
 Likewise `gwf-lak`'s `connectiondata.iconn` and `gwf-maw`'s `connectiondata.icon` are scoped by `ifno`. MAW's `angledata.icon` and the LAK and MAW observations' connection numbers reference them, with the same scope.
 
+The observations' keys are deliberately stricter than MODFLOW 6, which doesn't check a connection number against the feature. It counts from the feature's first connection across the package (`lak_rp_obs`, `maw_rp_obs`), so `lak 1 58` on a lake with 57 connections runs, and observes the next lake's first connection. What the key rejects is almost certainly a mistake reported as another feature's value.
+
 #### Key sets
 
 A normal `fk` is written as a path because the referrer knows the target's type: `gwf-mvr`'s `pname1` always names a row of its own `packages`. When the referenced instance is picked at runtime and may be one of several component types, the referrer can't write a path. Instead, it names a **role**, and each component type that can play it says what it means, like an interface or protocol. A component declares its roles in [`keys`](#keys):
