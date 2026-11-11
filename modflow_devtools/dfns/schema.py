@@ -556,7 +556,7 @@ class File(InputFieldBase):
     # picking one family among the selector's matches. See `Dfns.ftype_family`.
     component_ftype: str | None = None
     # The arguments this binding passes the target's parameters (see `Param`),
-    # by name: each a column of the binding row (`exgmnamea`), or a parameter
+    # by name: each a sibling field with an fk (`exgmnamea`), or a parameter
     # of this component, passed down (an exchange's `model1`). See
     # `_validate_params`.
     args: dict[str, str] | None = None
@@ -1957,8 +1957,8 @@ def _named_components(
     The components whose instance a column's value can name: whatever its
     fk's target column names, following fks across components (MVR's
     `pname1` names a `packages` row, whose `pname` names a package in a
-    model), or, for a column without an fk that is the pk of a binding row,
-    the components that row binds (a name file's `pname`).
+    model), or, for a column without an fk that is a pk and a sibling of a
+    binding, the components that binding binds (a name file's `pname`).
     """
     if (owner.name, column.name) in seen:
         return set()
@@ -2343,9 +2343,8 @@ def _validate_args(component: "ComponentBase", spec: "Dfns") -> None:
 
     - each component the File can bind (see `Dfns.children`) declares each
       parameter passed;
-    - each argument names exactly one of a column of the binding row (the
-      File's siblings) and a parameter of this component, so nothing is
-      searched;
+    - each argument names exactly one of a sibling of the File and a
+      parameter of this component, so nothing is searched;
     - a column has an fk, and can name something of the parameter's type
       (see `_named_components`); a parameter's type can name something of
       the parameter's type.
@@ -2375,7 +2374,7 @@ def _validate_args(component: "ComponentBase", spec: "Dfns") -> None:
                 is_param = value in (component.params or {})
                 if (column is None) == (not is_param):
                     raise ValueError(
-                        f"{at} must name exactly one of a binding row column and a parameter "
+                        f"{at} must name exactly one of a sibling column and a parameter "
                         f"of {component.name}"
                     )
                 if is_param:

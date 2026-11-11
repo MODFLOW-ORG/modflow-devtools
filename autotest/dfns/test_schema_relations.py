@@ -1411,7 +1411,7 @@ def test_file_args_checked(args):
 
 
 def test_dfns_validate_args():
-    """An exchange's models are passed from its binding row, a mover's from
+    """An exchange's models are passed from its `sim-nam` row, a mover's from
     the exchange's own, and SPC's target from SSM's row. A mover under a
     model gets none."""
     spec = Dfns(components=_ctx_transport())
@@ -1430,12 +1430,12 @@ _MVR = ("exg-gwfgwf", "options", "mvr6_filename")
         (
             _EXG,
             {"model1": "nope"},
-            "arg model1='nope' must name exactly one of a binding row column and a parameter "
+            "arg model1='nope' must name exactly one of a sibling column and a parameter "
             "of sim-nam",
         ),
         (_EXG, {"model1": "exgtype"}, "arg model1='exgtype': the column has no fk to follow"),
         (_EXG, {"model3": "exgmnamea"}, "passes 'model3', which exg-gwfgwf doesn't declare"),
-        (_MVR, {"model1": "model3"}, "must name exactly one of a binding row column"),
+        (_MVR, {"model1": "model3"}, "must name exactly one of a sibling column"),
         (_MVR, {"model3": "model1"}, "passes 'model3', which gwf-mvr doesn't declare"),
     ],
 )

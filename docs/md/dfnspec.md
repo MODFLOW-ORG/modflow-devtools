@@ -572,7 +572,7 @@ Each component declares its token in [`ftype`](#ftype).
 
 ###### `args`
 
-`{string: string} (default: {})`. The arguments this [binding](#bindings) passes the target's [parameters](#parameters), by name. Each names a column of the binding row with an `fk`, i.e. a sibling field, or one of this component's own parameters, passed on. For example, `sim-nam`'s `exchanges` rows have `exgfile` with `args = { model1 = "exgmnamea", model2 = "exgmnameb" }`. Only valid with `component`.
+`{string: string} (default: {})`. The arguments this [binding](#bindings) passes the target's [parameters](#parameters), by name. Each names a sibling field with an `fk`, i.e. another field of the binding's record, or one of this component's own parameters, passed on. For example, `sim-nam`'s `exchanges` rows have `exgfile` with `args = { model1 = "exgmnamea", model2 = "exgmnameb" }`. Only valid with `component`.
 
 ### Composites
 
@@ -897,13 +897,13 @@ A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model nam
 
 - A **binding** is a `file` field with a [`component`](#component), and each value of it: a file named as the input of an instance of the component. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
 - The bound instance's **parent** is the instance whose file holds the binding. Bindings make the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
-- The **binding row** is the record holding the binding field: here, the whole `GWF6 model.nam gwf_1` line. Its other columns may say something about the child, such as its name.
+- A binding is one field of a record, and its **siblings** are the record's other fields: on the `GWF6 model.nam gwf_1` line, `GWF6` and `gwf_1`. Siblings may be keys, references or plain data, and may say something about the child, such as its name.
 - A **reference** is a value that names something else in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
 - A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
 
 A binding and a reference are different things. A binding names a file, and so builds the tree: the file becomes a child of the file the binding is in. A reference names something in the tree, and is resolved once the tree is built. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
 
-So a component's file says what it says, and its binding row may say more about it. The question in each case is whether the file's references need any of that.
+So a component's file says what it says, and the binding's siblings may say more about it. The question in each case is whether the file's references need any of that.
 
 #### What a binding carries
 
@@ -912,12 +912,12 @@ Every binding in MODFLOW 6 is one of these cases.
 | | Case | Example | The child needs | Said with |
 |---|---|---|---|---|
 | 1 | A file, and nothing else | `OBS6 FILEIN chd.obs` | nothing | [`component`](#component) |
-| 2 | The row names the child | `CHD6 model.chd CHD-1` | nothing | a `pk` on the row |
-| 3 | The row says more, which the child doesn't use | `1 TAB6 FILEIN lake1.tab` | nothing | nothing |
-| 4 | The row says what the child's references need | `GWF6-GWF6 model.gwfgwf gwf_1 gwf_2` | the exchange's models | `params`, `args` |
+| 2 | A sibling names the child | `CHD6 model.chd CHD-1` | nothing | a `pk` |
+| 3 | A sibling says more, which the child doesn't use | `1 TAB6 FILEIN lake1.tab` | nothing | nothing |
+| 4 | A sibling says what the child's references need | `GWF6-GWF6 model.gwfgwf gwf_1 gwf_2` | the exchange's models | `params`, `args` |
 | 5 | The parent passes on what it was passed | `GNC6 FILEIN model.gnc` in an exchange | the exchange's models | `args` naming a parameter |
 | 6 | One component, bound under different parents | `GNC6 model.gnc` in a model name file | nothing | no `args`: unset |
-| 7 | The row names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
+| 7 | A sibling names it by reference | `WEL-1 SPC6 FILEIN wel.spc` in SSM | the flow package `WEL-1` | `args` naming a column with an `fk` |
 | 8 | No binding says it | `WEL-1 AUX CONCENTRATION` in a transport SSM's `sources` | the flow model | a [rule](#rules) |
 
 **1. A file, and nothing else.** Most bindings name a file and its component, and that's all the child needs. Its references resolve against its parent:
@@ -935,7 +935,7 @@ END continuous
 
 `west` names a CHD boundary, as CHD's [`[observations]`](#observations) declares, and an observation by cellid is in the CHD's model's grid. `utl-obs` is bound by 52 components and needs nothing from any of them: whatever binds it is what it observes. References can also point down the tree: a CHD head given as a time series name names a series in the TS file it binds.
 
-**2. The row names the child.** A name file's row gives the child its name:
+**2. A sibling names the child.** A name file's row gives the child its name:
 
 ```
 # a GWF model name file's packages
@@ -944,7 +944,7 @@ CHD6 model.chd CHD-1
 
 `pname` is a key of the row (`pk`), and other files refer to the package by it, within its model: a mover's `packages`, a transport model's SSM. The name is the parent's data, though, and the CHD file never refers to itself, so the child needs nothing. `mfsim.nam`'s `models` rows name models the same way, and its `solutiongroup` rows name the models each solution solves, which the solution's file never mentions.
 
-**3. The row says more, which the child doesn't use.**
+**3. A sibling says more, which the child doesn't use.**
 
 ```
 # a LAK package's tables
@@ -953,7 +953,7 @@ CHD6 model.chd CHD-1
 
 `ifno` says which lake the table is for. The table holds stage, volume and area, and nothing in it depends on the lake, so nothing is passed. SFR's cross-section tables are the same. A binding passes only what the child's references need.
 
-**4. The row says what the child's references need.**
+**4. A sibling says what the child's references need.**
 
 ```
 # mfsim.nam exchanges
@@ -963,7 +963,7 @@ GWF6-GWF6 model.gwfgwf gwf_1 gwf_2
 1 5 10   1 5 1   1 50.0 50.0 100.0
 ```
 
-The first cellid is in `gwf_1`'s grid and the second in `gwf_2`'s, but nothing in the exchange file says which models those are. The row binding it does, with `exgmnamea` and `exgmnameb`, which are references to `sim-nam`'s `models`. So every exchange declares two [parameters](#parameters), and the binding passes them:
+The first cellid is in `gwf_1`'s grid and the second in `gwf_2`'s, but nothing in the exchange file says which models those are. The binding's siblings do: `exgmnamea` and `exgmnameb`, which are references to `sim-nam`'s `models`. So every exchange declares two [parameters](#parameters), and the binding passes them:
 
 ```toml
 # every exchange
@@ -991,7 +991,7 @@ MVR6 FILEIN model.mvr
 gwf_1 WEL-1 1   gwf_2 LAK-1 1   FACTOR 1.0
 ```
 
-GNC's cellids and the mover's model names are in the exchange's models, which only the exchange's binding row says. The exchange passes its own parameters on:
+GNC's cellids and the mover's model names are in the exchange's models, which only the exchange's row in `mfsim.nam` says. The exchange passes its own parameters on:
 
 ```toml
 # exg-gwfgwf
@@ -1011,7 +1011,7 @@ MVR6 model.mvr
 
 A model name file passes them nothing, so their parameters are unset, which means null. Whatever names a parameter says what null means: a GNC whose cellids' models are null reads them all in its own model, and a mover whose `model2` is null has no `MODELNAMES` and no model columns.
 
-**7. The row names it by reference.**
+**7. A sibling names it by reference.**
 
 ```
 # a GWT model's SSM fileinput
@@ -1021,7 +1021,7 @@ WEL-1 SPC6 FILEIN wel.spc
 1 CONCENTRATION 10.0
 ```
 
-SPC's `bndno` numbers the bounds of `WEL-1`. The argument is the row's `pname`, and the parameter is what it references, the package, not the string:
+SPC's `bndno` numbers the bounds of `WEL-1`. The argument is the binding's sibling `pname`, and the parameter is what it references, the package, not the string:
 
 ```toml
 # utl-spc
@@ -1243,7 +1243,7 @@ A component declares its parameters in [`params`](#params):
 
 A binding passes them in its `file` field's [`args`](#args). An argument names one of two things, in the parent's scope:
 
-- a column of the binding row with an `fk`, and the argument is what the `fk` references (cases 4 and 7);
+- a sibling of the binding with an `fk`, and the argument is what the `fk` references (cases 4 and 7);
 - one of the parent's own parameters (case 5).
 
 It must name exactly one, so nothing is searched. Scope is lexical, as in most programming languages: a parent can pass only what's in its own scope, so an exchange's models reach its mover by being passed twice, from `sim-nam` to the exchange and from the exchange to the mover, and no component looks up the tree for a name.
@@ -1260,7 +1260,7 @@ A parameter's `type` can say what a key can't. MODFLOW 6 applies list-based SPC 
 
 Two things aren't parameters. The parent is already in scope, as `self` is, so `utl-obs` declares none. And what no binding says (case 8) can't be passed, so it's a rule.
 
-In relational terms, an argument is a foreign key on the binding row, and the parameter is that column carried onto the child's row:
+In relational terms, an argument is a foreign key in the binding's record, and the parameter is that column carried onto the child's row:
 
 | DFN | SQL |
 |---|---|
@@ -1273,7 +1273,7 @@ A validator checks that:
 
 - each parameter's `type` admits some component;
 - each argument is a parameter of every component its `file` can bind;
-- each argument names exactly one of a binding row column, with an `fk`, and a parent's parameter, and can name something of the parameter's type;
+- each argument names exactly one of a sibling, with an `fk`, and a parent's parameter, and can name something of the parameter's type;
 - each `fk`, cellid `model` and `when` naming a parameter names one the component declares, and a cellid's is of a model.
 
 So an exchange's cellid always resolves, and so does a mover's model name.

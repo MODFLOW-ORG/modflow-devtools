@@ -1846,7 +1846,7 @@ _PARAMS: dict[str, dict[str, v2.Param]] = {
 }
 
 # The arguments each binding passes (see `v2.File.args`), as (block, file
-# field, args): a column of the binding row, or the parent's own parameter,
+# field, args): a sibling of the file field with an fk, or the parent's own parameter,
 # passed on.
 _PASS_MODELS = {"model1": "model1", "model2": "model2"}
 _ARGS: dict[str, list[tuple[str, str, dict[str, str]]]] = {
@@ -1926,7 +1926,7 @@ def _ssm_pname_keyed(blocks: dict[str, v2.Block], block_name: str) -> bool:
 def _fix_spc_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     SPC's `bndno` names a bound of the flow package its SSM `fileinput` row
-    (its binding row) names, its `target` parameter (see `_PARAMS`), so
+    names, its `target` parameter (see `_PARAMS`), so
     `fk = {key = "bound", param = "target"}`, keeping its `pk` (one row per
     bound per period). MF6 reads `bndno` against SPC's own `maxbound` and
     requires that to be at least the flow package's bound count
