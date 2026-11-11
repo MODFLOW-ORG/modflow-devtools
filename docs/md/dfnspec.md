@@ -533,7 +533,7 @@ A cellid is only valid as a column in a list item, where each row names its cell
 
 ###### `model`
 
-`string | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model, or the name of one of the component's [parameters](#parameters) whose type is a model, for that model's grid. A parameter left unset where the file is bound means the component's own model too, so a component read in either context (e.g. `gwf-gnc`, under an exchange or a model) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must name one, since an exchange has no grid of its own, and a list item naming a model on one cellid column must name one on every cellid column. For example, in an exchange `cellidm1` is `"model1"` and `cellidm2` is `"model2"`, set from `EXGMNAMEA` and `EXGMNAMEB`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"model1"` and `cellidm` is `"model2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
+`string | null (default: null)`. Which model's grid the cellid refers to: `null` for the grid of the component's own model, or the name of one of the component's [parameters](#parameters) whose type is a model, for that model's grid. A parameter that's unset where the file is bound is null, so it means the component's own model too, so a component read in either context (e.g. `gwf-gnc`, under an exchange or a model) gives the value unconditionally. A cellid in an exchange ([`subtype`](#subtype) `"exchange"`) must name one, since an exchange has no grid of its own, and a list item naming a model on one cellid column must name one on every cellid column. For example, in an exchange `cellidm1` is `"model1"` and `cellidm2` is `"model2"`, set from `EXGMNAMEA` and `EXGMNAMEB`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"model1"` and `cellidm` is `"model2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
 
 **Note:** The values are strings, not integers, as `true == 1` in many languages (e.g. Python). A reader rejects an integer or boolean `model`.
 
@@ -1058,7 +1058,11 @@ args = { target = "pname" }
 - `type` is what the parameter names, a selector as in [`parent`](#parent).
 - `rule` is optional, and means what it means on an `fk`: a named subset of the target (see [Rules](#rules)).
 
-An argument names something in the binder's scope: a column of the binding row, following its `fk` to an instance, or one of the binder's own parameters. It must name exactly one, so nothing is searched. A binder that passes no argument leaves the parameter unset: a mover under a model gets no models, which means that model.
+An argument names something in the binder's scope: a column of the binding row, following its `fk` to an instance, or one of the binder's own parameters. It must name exactly one, so nothing is searched.
+
+Following an argument's `fk` applies all of it, [rule](#rules) included, and the parameter's own `rule` applies after that. SSM's `pname` has `rule = "flow_model"`, so the `target` it passes is a package of the paired flow model; `utl-spc`'s `rule = "no_advanced_transport"` then narrows it to one with no advanced transport package.
+
+A binder that passes no argument leaves the parameter unset, which is null, as for a field. Nothing fills it in from elsewhere. What null means is said by whatever names the parameter (below): a `when` naming it is off, and a cellid whose `model` names it is in the component's own model. So a mover under a model has no `MODELNAMES` or model names, and a GNC under a model reads all its cellids in that model.
 
 The binder itself isn't a parameter. A file's owner is already known: it's what cross-component `fk`s resolve against (see [Primary and foreign keys](#primary-and-foreign-keys)), as a method's `self` is. So `utl-obs`, whose target is whatever binds it, declares none.
 
