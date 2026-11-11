@@ -24,7 +24,7 @@ from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 FORMATS = ["yaml", "toml", "json"]
 MF6_OWNER = "MODFLOW-ORG"
 MF6_REPO = "modflow6"
-MF6_REF = "6.8.2"
+MF6_REF = "65278c938a0c6e742b52fa7398b35a9aea6c0752"
 
 
 def _load(path: Path, fmt: str) -> dict:
@@ -699,6 +699,30 @@ def test_migrate_obs_id_boundname_arm_has_no_when(dfn_dir):
     component = _migrate_dev3(dfn_dir, "utl-obs")
     item = component.blocks["continuous"].fields["continuous"].item
     assert item.fields["id"].arms["boundname"].when is None
+
+
+@pytest.mark.parametrize(
+    "name,record",
+    [
+        ("chf-oc", "qoutflowprintrecord"),
+        ("gwe-oc", "temperatureprintrecord"),
+        ("gwf-oc", "headprintrecord"),
+        ("gwt-ist", "cimprintrecord"),
+        ("gwt-oc", "concentrationprintrecord"),
+        ("olf-oc", "qoutflowprintrecord"),
+    ],
+)
+def test_migrate_format_record_optional(dfn_dir, name, record):
+    # MF6 uses a format only with COLUMNS, WIDTH and DIGITS, and has a default
+    # edit descriptor.
+    options = _migrate_dev3(dfn_dir, name).blocks["options"]
+    fields = options.fields[record].fields["formatrecord"].fields
+    assert {n: f.optional for n, f in fields.items()} == {
+        "columns": False,
+        "width": False,
+        "digits": False,
+        "format": True,
+    }
 
 
 def test_migrate_option_columns_fails_when_stale(dfn_dir, monkeypatch):

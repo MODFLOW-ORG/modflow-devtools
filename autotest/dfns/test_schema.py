@@ -716,11 +716,7 @@ def test_obs_filerecord_stays_a_record(dev3_spec):
 def test_render_respects_tagged_scalars_in_record(dev3_spec):
     """Tagged Integer/String subfields of a Record must keep their keyword on render()."""
     render = dev3_spec.components["gwf-oc"].blocks["options"].render()
-    # columns/width/digits are optional per v1's bare `optional` attribute on each
-    # (see try_parse_bool's empty-string handling), so they render bracketed.
-    assert (
-        "HEAD PRINT_FORMAT [COLUMNS <columns>] [WIDTH <width>] [DIGITS <digits>] <format>" in render
-    )
+    assert "HEAD PRINT_FORMAT COLUMNS <columns> WIDTH <width> DIGITS <digits> [<format>]" in render
 
 
 def test_render_respects_untagged_arrays_in_record(dev3_spec):

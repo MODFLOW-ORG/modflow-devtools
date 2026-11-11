@@ -107,21 +107,19 @@ blocks:
                 type: integer
                 longname: number of columns
                 description: number of columns for writing data.
-                optional: true
               width:
                 type: integer
                 longname: width for each number
                 description: width for writing each number.
-                optional: true
               digits:
                 type: integer
                 longname: number of digits
                 description: number of digits to use for writing a number.
-                optional: true
               format:
                 type: string
                 longname: write format
                 description: write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.
+                optional: true
                 tagged: false
       sorbate_filerecord:
         type: record
