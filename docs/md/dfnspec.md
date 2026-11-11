@@ -898,8 +898,9 @@ A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model nam
 - A **binding** is a field in a component's input that names a subcomponent's input file: a `file` field with a [`component`](#component), which says what the subcomponent is. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
 - The subcomponent's **parent** is the component whose input holds the binding. Bindings build the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
 - A binding is one field of a record, and its **siblings** are the record's other fields: on the `GWF6 model.nam gwf_1` line, `GWF6` and `gwf_1`. Siblings may be keys, references or plain data, and may say something about the child, such as its name.
-- A **reference** is a value that names something introduced elsewhere in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
-- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
+- A **reference** is a value that names something introduced elsewhere in the simulation, and resolves by looking it up in the tree: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
+- A component's **parameters** declare what its references need from the component that binds it, and **arguments** are what the parent passes to them, at the binding. See [Parameters](#parameters).
+- A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, `sim-tdis`, and the component's [parameters](#parameters), which its binding passes it. `sim-tdis` is a child of the simulation, not an ancestor, but there's only one, so every component can see it: its `nper` is a [dimension](#dimension-scope) of every component. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
 
 A binding and a reference are different things. A binding introduces what it names: the subcomponent is in the simulation because its parent binds it. A reference names something that exists without it, and resolves by looking it up in the tree, once bindings have built it. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
 
@@ -1061,7 +1062,7 @@ An `fk` names an existing row: a file in which one names no row is invalid. An i
 
 An `fk` is a hierarchical path of the form `"[component.]block.field"`, naming the `pk` field it references. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. On a `string` field, the path may instead name a string array (e.g. `"options.auxiliary"`), whose entries then act as the key set: the array is in effect a one-column list whose entries are its keys. A dynamic keyword (see [`dynamic`](#dynamic)) needs this form when its keywords are a string array's entries.
 
-A cross-component `fk` resolves in the file's [scope](#terms): against a singleton component (e.g. `sim-nam`), or an ancestor of the instance the file is input for (e.g. a reference from a model's package to that model's name file).
+A cross-component `fk` resolves in the file's [scope](#terms): against an ancestor of the instance the file is input for (e.g. `sim-nam`, or a model's name file for a reference from one of its packages), or through a [parameter](#parameters).
 
 #### Scoped keys
 
@@ -1215,7 +1216,7 @@ The names are fixed by the schema, so a misspelled rule is an error. A new rule 
 
 ### Parameters
 
-A component's **parameters** are what its references need from its binding: cases 4 to 7 under [What a binding carries](#what-a-binding-carries). Binding works like a function call:
+A component's **parameters** declare what its references need from the component that binds it: cases 4 to 7 under [What a binding carries](#what-a-binding-carries). Binding works like a function call:
 
 | Binding | Function call |
 |---|---|
