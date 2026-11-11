@@ -895,13 +895,13 @@ A MODFLOW 6 simulation is a tree of input files. `mfsim.nam` names the model nam
 
 #### Terms
 
-- A **binding** is a `file` field with a [`component`](#component), and each value of it: a file named as the input of an instance of the component. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
-- The bound instance's **parent** is the instance whose file holds the binding. Bindings make the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
+- A **binding** is a field in a component's input that names a subcomponent's input file: a `file` field with a [`component`](#component), which says what the subcomponent is. `GWF6 model.nam gwf_1` in `mfsim.nam` binds `model.nam` as a `gwf-nam`.
+- The subcomponent's **parent** is the component whose input holds the binding. Bindings build the simulation's tree, and the [`parent`](#parent) attribute says which component types may be the parent of which.
 - A binding is one field of a record, and its **siblings** are the record's other fields: on the `GWF6 model.nam gwf_1` line, `GWF6` and `gwf_1`. Siblings may be keys, references or plain data, and may say something about the child, such as its name.
-- A **reference** is a value that names something else in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
+- A **reference** is a value that names something introduced elsewhere in the simulation: a row (an [`fk`](#primary-and-foreign-keys)), a key in a [key set](#key-sets), a grid cell (a [cellid](#cellid)) or a time series.
 - A reference resolves in its component's **scope**: what it can see by name. That's the component itself, its ancestors, the simulation's singletons (`sim-nam`, `sim-tdis`), and the component's [parameters](#parameters), which its binding passes it. The spec's other uses of scope are the same idea. A [dimension's scope](#dimension-scope) says which components' scopes include it, and a [scoped key](#scoped-keys) names the scope its key is unique in, or resolves in.
 
-A binding and a reference are different things. A binding names a file, and so builds the tree: the file becomes a child of the file the binding is in. A reference names something in the tree, and is resolved once the tree is built. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
+A binding and a reference are different things. A binding introduces what it names: the subcomponent is in the simulation because its parent binds it. A reference names something that exists without it, and resolves by looking it up in the tree, once bindings have built it. One row can hold both. `sim-nam`'s `exchanges` row binds the exchange file with `exgfile`, and refers to the exchange's two models with `exgmnamea` and `exgmnameb`, which are `fk`s to `sim-nam`'s `models`.
 
 So a component's file says what it says, and the binding's siblings may say more about it. The question in each case is whether the file's references need any of that.
 
