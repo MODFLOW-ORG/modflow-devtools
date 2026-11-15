@@ -1,28 +1,44 @@
 name: Set up a MODFLOW program build
 description: >
-  Set up the compiler and pixi, and on macOS, Xcode and static linking of the
-  gcc runtime. Building and testing is left to the caller.
+  Set up the compiler and pixi, and set LDFLAGS so the compiler runtime
+  libraries are linked statically. gfortran comes from the repo's pixi
+  environment (conda-forge), so pixi.toml must depend on gfortran; Intel
+  compilers come from fortran-lang/setup-fortran. Building and testing is
+  left to the caller.
 inputs:
   path:
     description: Directory of the program repo checkout, holding pixi.toml
     default: .
   compiler:
-    description: Compiler for fortran-lang/setup-fortran (gcc, intel, intel-classic), or none
+    description: gcc (gfortran from the pixi environment), intel or intel-classic
     default: gcc
   compiler-version:
-    description: Compiler version
-    default: "13"
+    description: Intel compiler version; ignored for gcc, whose version pixi.toml pins
+    default: "2025.0"
   xcode-version:
     description: Xcode version to select on macOS, if any
     default: ""
   pixi-version:
     description: pixi version
     default: v0.82.1
+  pixi-environment:
+    description: pixi environment to install, which must provide gfortran for gcc builds
+    default: default
 runs:
   using: composite
   steps:
+    - name: Check compiler
+      shell: bash
+      env:
+        COMPILER: ${{ inputs.compiler }}
+      run: |
+        case "$COMPILER" in
+          gcc|intel|intel-classic) ;;
+          *) echo "::error::Unsupported compiler '$COMPILER', expected gcc, intel or intel-classic."; exit 1 ;;
+        esac
+
     - name: Setup ${{ inputs.compiler }} ${{ inputs.compiler-version }}
-      if: inputs.compiler != 'none'
+      if: inputs.compiler != 'gcc'
       uses: fortran-lang/setup-fortran@v1
       with:
         compiler: ${{ inputs.compiler }}
@@ -39,6 +55,7 @@ runs:
       with:
         pixi-version: ${{ inputs.pixi-version }}
         manifest-path: ${{ inputs.path }}/pixi.toml
+        environments: ${{ inputs.pixi-environment }}
 
     - name: Set Xcode version (macOS)
       if: runner.os == 'macOS' && inputs.xcode-version != ''
@@ -46,31 +63,41 @@ runs:
       with:
         xcode-version: ${{ inputs.xcode-version }}
 
-    - name: Show toolchain (macOS)
-      if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        xcode-select -p
-        xcrun --show-sdk-version
-        ld -v 2>&1 | head -2
-        if command -v gfortran >/dev/null; then gfortran --version | head -1; fi
-
-    # hide the gcc runtime dylibs so the linker uses the static libraries
-    - name: Hide gcc dylibs (macOS gcc)
-      if: runner.os == 'macOS' && inputs.compiler == 'gcc'
+    # Windows Intel builds link the runtime statically through meson's
+    # b_vscrt option, which LDFLAGS can't set; see the release actions docs
+    - name: Link the compiler runtime statically
       shell: bash
       env:
-        GCC_VERSION: ${{ inputs.compiler-version }}
+        COMPILER: ${{ inputs.compiler }}
       run: |
-        libpath="$(brew --prefix)/opt/gcc@$GCC_VERSION/lib/gcc/$GCC_VERSION"
-        for lib in libgcc_s.1.1 libgfortran.5 libquadmath.0 libstdc++.6; do
-          if [[ -f "$libpath/$lib.dylib" ]]; then
-            mv "$libpath/$lib.dylib" "$libpath/$lib.dylib.bak"
-          fi
-        done
+        case "$COMPILER-$RUNNER_OS" in
+          gcc-Windows) flags="-static" ;;
+          gcc-*) flags="-static-libgfortran -static-libgcc -static-libquadmath" ;;
+          intel*-Linux) flags="-static-intel" ;;
+          *) flags="" ;;
+        esac
+        if [[ -n "$flags" ]]; then
+          echo "LDFLAGS=${LDFLAGS:+$LDFLAGS }$flags" >> "$GITHUB_ENV"
+        fi
+        echo "LDFLAGS: ${LDFLAGS:+$LDFLAGS }$flags"
 
-    # classic linker, static libgcc
-    - name: Set LDFLAGS (macOS gcc)
-      if: runner.os == 'macOS' && inputs.compiler == 'gcc'
+    - name: Show toolchain
       shell: bash
-      run: echo "LDFLAGS=$LDFLAGS -Wl,-ld_classic -static-libgcc" >> "$GITHUB_ENV"
+      working-directory: ${{ inputs.path }}
+      env:
+        COMPILER: ${{ inputs.compiler }}
+        PIXI_ENV: ${{ inputs.pixi-environment }}
+      run: |
+        if [[ "$COMPILER" == "gcc" ]]; then
+          if ! pixi run -e "$PIXI_ENV" gfortran --version | head -1; then
+            echo "::error::No gfortran in pixi environment $PIXI_ENV, add it to pixi.toml."
+            exit 1
+          fi
+        else
+          "$FC" --version 2>&1 | head -1 || true
+        fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          xcode-select -p
+          xcrun --show-sdk-version
+          ld -v 2>&1 | head -2
+        fi

@@ -67,3 +67,6 @@ jobs:
           version: ${{ needs.start.outputs.version }}
           name: mfusg
           long-name: MODFLOW-USG
+          # other files to attach, relative to the checkout
+          # extra-assets: |
+          #   doc/*.pdf

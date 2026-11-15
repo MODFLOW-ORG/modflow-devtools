@@ -1,7 +1,8 @@
 name: Program version
 description: >
-  Get, check or set a program's version with modflow_devtools/release/version.py: meson.build
-  (or the version.txt it reads), pixi.toml, and any files in release.toml.
+  Get, check or set a program's version with modflow_devtools/release/version.py:
+  meson.build's project() (or the version.txt it reads), pixi.toml, and any
+  files in release.toml.
 inputs:
   path:
     description: Directory of the program repo checkout
@@ -40,19 +41,19 @@ runs:
       shell: bash
       working-directory: ${{ inputs.path }}
       env:
-        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/version.py
         PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
         SET: ${{ inputs.set }}
         NEXT: ${{ inputs.next }}
       run: |
         if [[ -n "$SET" ]]; then
-          "$PYTHON" "$SCRIPT" --set "$SET"
+          "$PYTHON" -P -m modflow_devtools.release.version --set "$SET"
         fi
-        version=$("$PYTHON" "$SCRIPT" --get)
+        version=$("$PYTHON" -P -m modflow_devtools.release.version --get)
         echo "version=$version" >> "$GITHUB_OUTPUT"
-        if "$PYTHON" "$SCRIPT" --is-release; then release=true; else release=false; fi
+        if "$PYTHON" -P -m modflow_devtools.release.version --is-release; then release=true; else release=false; fi
         echo "release=$release" >> "$GITHUB_OUTPUT"
         if [[ "$NEXT" == "true" ]]; then
-          echo "next=$("$PYTHON" "$SCRIPT" --next)" >> "$GITHUB_OUTPUT"
+          echo "next=$("$PYTHON" -P -m modflow_devtools.release.version --next)" >> "$GITHUB_OUTPUT"
         fi
         echo "version $version, release $release"

@@ -3,9 +3,11 @@ description: >
   Last step of a release workflow, after the release-start action and the
   build. For stage `prepare`, open the release pull request into the main
   branch. For stage `publish`, download the dist-* artifacts uploaded by the
-  package action, check them, publish the GitHub release, and open a pull
-  request setting the next development version on the development branch.
-  Expects a checkout of the commit being released.
+  package action, check them, publish the GitHub release with them and any
+  extra assets, and open a pull request setting the next development version
+  on the development branch. Steps already done by an earlier run are
+  skipped, so a failed run can be rerun. Expects a checkout of the commit
+  being released. See modflow_devtools/release/workflow.py.
 inputs:
   path:
     description: Directory of the program repo checkout
@@ -34,38 +36,19 @@ inputs:
   platforms:
     description: Space-separated OS tags that must each have an archive
     default: linux macarm win64
+  extra-assets:
+    description: >
+      Newline-separated globs, relative to the checkout, of other files to
+      attach to the release, e.g. documentation. Each must match a file.
+      Files built in other jobs can be downloaded into the checkout first.
+    default: ""
   github-token:
     description: Token for creating the release and pull requests
     default: ${{ github.token }}
 runs:
   using: composite
   steps:
-    - name: Check stage
-      shell: bash
-      env:
-        STAGE: ${{ inputs.stage }}
-      run: |
-        if [[ "$STAGE" != "prepare" && "$STAGE" != "publish" ]]; then
-          echo "::error::Unexpected stage '$STAGE', expected prepare or publish."
-          exit 1
-        fi
-
-    - name: Open release pull request
-      if: inputs.stage == 'prepare'
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        BRANCH: ${{ inputs.ref }}
-        VERSION: ${{ inputs.version }}
-        MAIN_BRANCH: ${{ inputs.main-branch }}
-        DEVELOP_BRANCH: ${{ inputs.develop-branch || inputs.main-branch }}
-      run: |
-        body="Review the $VERSION section of CHANGELOG.md, it becomes the release notes. Merging this publishes release v$VERSION and opens a pull request setting the next development version on $DEVELOP_BRANCH."
-        gh pr create -R "$GITHUB_REPOSITORY" -B "$MAIN_BRANCH" -H "$BRANCH" \
-          --title "chore(release): $VERSION" --body "$body"
-
     - name: Setup Python
-      if: inputs.stage == 'publish'
       id: python
       uses: actions/setup-python@v5
       with:
@@ -80,80 +63,32 @@ runs:
         merge-multiple: true
         path: ${{ runner.temp }}/dist
 
-    - name: Check archives
-      if: inputs.stage == 'publish'
-      shell: bash
-      env:
-        DIST: ${{ runner.temp }}/dist
-        NAME: ${{ inputs.name }}
-        PLATFORMS: ${{ inputs.platforms }}
-      run: |
-        ls -l "$DIST"
-        status=0
-        for ostag in $PLATFORMS; do
-          if [[ ! -f "$DIST/$ostag.zip" ]]; then
-            echo "::error::Missing $ostag.zip."
-            status=1
-          fi
-        done
-        for file in "$DIST"/*; do
-          base=$(basename "$file")
-          case "$base" in
-            linux.zip|mac.zip|macarm.zip|win64.zip|"${NAME}_source.zip") ;;
-            *) echo "::error::Unexpected file $base."; status=1 ;;
-          esac
-        done
-        exit $status
-
-    - name: Publish release
-      if: inputs.stage == 'publish'
+    - name: Finish release
       shell: bash
       working-directory: ${{ inputs.path }}
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/changelog.py
         PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
         DIST: ${{ runner.temp }}/dist
-        NOTES: ${{ runner.temp }}/notes.md
-        VERSION: ${{ inputs.version }}
+        STAGE: ${{ inputs.stage }}
         REF: ${{ inputs.ref }}
+        VERSION: ${{ inputs.version }}
         NAME: ${{ inputs.name }}
         LONG_NAME: ${{ inputs.long-name }}
-      run: |
-        {
-          echo "$LONG_NAME version $VERSION"
-          echo
-          "$PYTHON" "$SCRIPT" notes --version "$VERSION"
-        } > "$NOTES"
-        cat "$NOTES"
-        gh release create "v$VERSION" "$DIST"/* -R "$GITHUB_REPOSITORY" \
-          --target "$REF" --title "$NAME $VERSION" --notes-file "$NOTES" --latest
-
-    # in the dual-branch model this also merges the release back into the
-    # development branch, so it must be merged with a merge commit
-    - name: Open next version pull request
-      if: inputs.stage == 'publish'
-      shell: bash
-      working-directory: ${{ inputs.path }}
-      env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        SCRIPT: ${{ github.action_path }}/../../modflow_devtools/release/version.py
-        PYTHON: ${{ steps.python.outputs.python-path }}
-        VERSION: ${{ inputs.version }}
         MAIN_BRANCH: ${{ inputs.main-branch }}
-        DEVELOP_BRANCH: ${{ inputs.develop-branch || inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch }}
+        PLATFORMS: ${{ inputs.platforms }}
+        EXTRA_ASSETS: ${{ inputs.extra-assets }}
       run: |
-        next=$("$PYTHON" "$SCRIPT" --next)
-        branch="release/v$next"
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git switch -c "$branch"
-        "$PYTHON" "$SCRIPT" --set "$next"
-        git commit -am "chore(release): set version to $next"
-        git push origin "$branch"
-        body="Set the version on $DEVELOP_BRANCH to $next after the $VERSION release."
-        if [[ "$DEVELOP_BRANCH" != "$MAIN_BRANCH" ]]; then
-          body="$body This also merges $MAIN_BRANCH into $DEVELOP_BRANCH. Merge it with a merge commit, not a squash, so the v$VERSION tag is reachable from $DEVELOP_BRANCH."
-        fi
-        gh pr create -R "$GITHUB_REPOSITORY" -B "$DEVELOP_BRANCH" -H "$branch" \
-          --title "chore(release): set version to $next" --body "$body"
+        read -ra platforms <<< "$PLATFORMS"
+        extra=()
+        while IFS= read -r line; do
+          if [[ -n "${line//[[:space:]]/}" ]]; then extra+=("$line"); fi
+        done <<< "$EXTRA_ASSETS"
+        "$PYTHON" -P -m modflow_devtools.release.workflow \
+          --repository "$GITHUB_REPOSITORY" \
+          --main-branch "$MAIN_BRANCH" --develop-branch "$DEVELOP_BRANCH" \
+          finish --stage "$STAGE" --ref "$REF" --version "$VERSION" \
+          --name "$NAME" --long-name "$LONG_NAME" --dist "$DIST" \
+          --platforms "${platforms[@]}" --extra-assets "${extra[@]}"

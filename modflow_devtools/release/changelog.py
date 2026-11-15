@@ -1,10 +1,14 @@
 """
 Update CHANGELOG.md for a release, or print a release's notes from it.
 
-``update`` runs git-cliff with the repo's cliff.toml, or with the shared
-template (cliff.toml beside this script) filled in with the
-repository and the program's long name. ``notes`` prints the section of
+``update`` runs git-cliff with the shared template (cliff.toml beside this
+module), filled in with the repository and the program's long name. Every
+program uses the same template, so CHANGELOG.md looks the same everywhere and
+``notes`` can find each version's section. ``notes`` prints the section of
 CHANGELOG.md for one version, which becomes the GitHub release notes.
+
+git-cliff runs at a pinned version with ``pipx run`` or ``uvx``, whichever is
+available, so nothing needs installing beforehand.
 """
 
 import argparse
@@ -15,40 +19,36 @@ import sys
 import tempfile
 from pathlib import Path
 
+GIT_CLIFF_VERSION = "2.14.2"
 TEMPLATE = Path(__file__).resolve().parent / "cliff.toml"
 HEADING = re.compile(r"^## Version (\S+)")
 
 
-def config(root, repository, long_name):
-    own = root / "cliff.toml"
-    if own.is_file():
-        return own
-    text = TEMPLATE.read_text()
-    text = text.replace("__REPOSITORY__", repository).replace("__NAME__", long_name)
-    tmp = Path(tempfile.mkdtemp()) / "cliff.toml"
-    tmp.write_text(text)
-    return tmp
+def git_cliff():
+    """The command that runs the pinned git-cliff."""
+    if pipx := shutil.which("pipx"):
+        return [pipx, "run", "--spec", f"git-cliff=={GIT_CLIFF_VERSION}", "git-cliff"]
+    if uvx := shutil.which("uvx"):
+        return [uvx, f"git-cliff@{GIT_CLIFF_VERSION}"]
+    sys.exit("running git-cliff needs pipx or uvx")
 
 
 def update(root, version, repository, long_name):
-    cliff = shutil.which("git-cliff")
-    if cliff is None:
-        sys.exit("git-cliff is not installed")
     changelog = root / "CHANGELOG.md"
-    cmd = [
-        cliff,
-        "--config",
-        str(config(root, repository, long_name)),
-        "--unreleased",
-        "--tag",
-        f"v{version}",
-    ]
-    # --prepend keeps the existing file's header and earlier sections
-    cmd += ["--prepend", str(changelog)] if changelog.is_file() else ["-o", str(changelog)]
-    subprocess.run(cmd, cwd=root, check=True)
+    text = TEMPLATE.read_text()
+    text = text.replace("__REPOSITORY__", repository).replace("__NAME__", long_name)
+    with tempfile.TemporaryDirectory() as tmp:
+        config = Path(tmp) / "cliff.toml"
+        config.write_text(text)
+        cmd = [*git_cliff(), "--config", str(config), "--unreleased", "--tag", f"v{version}"]
+        # --prepend keeps the existing file's header and earlier sections
+        cmd += ["--prepend", str(changelog)] if changelog.is_file() else ["-o", str(changelog)]
+        subprocess.run(cmd, cwd=root, check=True)
 
 
-def notes(root, version):
+def notes(root, version, long_name=None):
+    """The section of CHANGELOG.md for the version, titled with the long
+    name if given."""
     changelog = root / "CHANGELOG.md"
     if not changelog.is_file():
         sys.exit("no CHANGELOG.md")
@@ -64,7 +64,8 @@ def notes(root, version):
             lines.append(line)
     if not found:
         sys.exit(f"no section for version {version} in CHANGELOG.md")
-    return "\n".join(lines).strip() + "\n"
+    body = "\n".join(lines).strip() + "\n"
+    return f"{long_name} version {version}\n\n{body}" if long_name else body
 
 
 def main(argv=None):
@@ -77,12 +78,13 @@ def main(argv=None):
     up.add_argument("--long-name", required=True)
     no = sub.add_parser("notes", help="print one version's section")
     no.add_argument("--version", required=True)
+    no.add_argument("--long-name", help="title the notes '<long name> version <version>'")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     if args.command == "update":
         update(root, args.version, args.repository, args.long_name)
     else:
-        sys.stdout.write(notes(root, args.version))
+        sys.stdout.write(notes(root, args.version, args.long_name))
     return 0
 
 

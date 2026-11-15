@@ -1,6 +1,6 @@
 ! Print the kind of a default real and, given an expected kind as the first
 ! argument, fail when they differ. The version line is updated by
-! scripts/version.py through release.toml.
+! modflow_devtools/release/version.py through release.toml.
 program hello
   implicit none
   character(len=*), parameter :: VERSION = '0.1.0.dev0 01/01/2026'

@@ -5,6 +5,7 @@ platforms = ["win-64", "linux-64", "osx-arm64"]
 version = "0.1.0.dev0"
 
 [dependencies]
+gfortran = "15.*"
 meson = ">=1.7.0"
 ninja = "*"
 

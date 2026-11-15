@@ -2,7 +2,8 @@
 # .github/workflows/build.yml and adapt it. It runs on pushes, pull requests
 # and a schedule, and is also called by the release workflow, which sets
 # `ref` and `release`. Release builds must upload one archive per platform
-# with the package action (`upload: true`).
+# with the package action (`upload: true`). gfortran comes from the pixi
+# environment, so pixi.toml must depend on it, e.g. gfortran = "15.*".
 name: build
 on:
   push:
@@ -37,11 +38,11 @@ jobs:
         include:
           # release builds, one per platform
           - {os: ubuntu-22.04, compiler: intel, version: "2025.0", release: true}
-          - {os: macos-15, compiler: gcc, version: "13", xcode-version: "16.4", release: true}
+          - {os: macos-15, compiler: gcc, xcode-version: "16.4", release: true}
           - {os: windows-2022, compiler: intel, version: "2025.0", release: true}
           # extra coverage
-          - {os: ubuntu-22.04, compiler: gcc, version: "13"}
-          - {os: windows-2022, compiler: gcc, version: "13"}
+          - {os: ubuntu-22.04, compiler: gcc}
+          - {os: windows-2022, compiler: gcc}
     defaults:
       run:
         shell: bash
@@ -73,12 +74,12 @@ jobs:
       - name: Check linkage
         uses: MODFLOW-ORG/modflow-devtools/actions/check-linkage@1.10.0
 
+      # package every build to catch problems early, upload release builds
       - name: Package
-        if: inputs.release && matrix.release
         uses: MODFLOW-ORG/modflow-devtools/actions/package@1.10.0
         with:
           name: mfusg
-          upload: true
+          upload: ${{ inputs.release && matrix.release }}
 
       - name: Upload build logs
         if: failure()

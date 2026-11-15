@@ -1,7 +1,8 @@
-# Shared git-cliff template for CHANGELOG.md and the release notes. Used when
-# a program repo has no cliff.toml of its own; changelog.py fills in
-# __REPOSITORY__ (owner/repo) and __NAME__ (the program's long name). Only
-# features, fixes, and performance changes are listed.
+# git-cliff template for CHANGELOG.md and the release notes, shared by every
+# program repo. changelog.py fills in __REPOSITORY__ (owner/repo) and __NAME__
+# (the program's long name), and its notes command expects the
+# "## Version X.Y.Z" headings below. Only features, fixes, and performance
+# changes are listed.
 
 [changelog]
 header = """
