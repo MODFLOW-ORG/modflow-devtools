@@ -190,6 +190,7 @@ def test_update(repo):
     changelog.update(repo, "0.3.0", "MODFLOW-ORG/hello", "Hello")
     text = (repo / "CHANGELOG.md").read_text()
     assert text.count("# Changelog") == 1
+    assert b"\r\n" not in (repo / "CHANGELOG.md").read_bytes()
     assert text.index("## Version 0.3.0") < text.index("## Version 0.2.0")
     assert "Faster" in changelog.notes(repo, "0.3.0")
 

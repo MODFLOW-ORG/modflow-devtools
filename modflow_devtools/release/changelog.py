@@ -22,6 +22,7 @@ from pathlib import Path
 GIT_CLIFF_VERSION = "2.14.2"
 TEMPLATE = Path(__file__).resolve().parent / "cliff.toml"
 HEADING = re.compile(r"^## Version (\S+)")
+SECTION = re.compile(r"^## Version ", re.M)
 
 
 def git_cliff():
@@ -34,6 +35,10 @@ def git_cliff():
 
 
 def update(root, version, repository, long_name):
+    """Add the release's section to CHANGELOG.md, above the earlier ones,
+    creating the file with the template's header if needed. The file is
+    assembled here rather than with git-cliff's --prepend, which repeats the
+    header on Windows, and always written with LF line endings."""
     changelog = root / "CHANGELOG.md"
     text = TEMPLATE.read_text()
     text = text.replace("__REPOSITORY__", repository).replace("__NAME__", long_name)
@@ -41,9 +46,18 @@ def update(root, version, repository, long_name):
         config = Path(tmp) / "cliff.toml"
         config.write_text(text)
         cmd = [*git_cliff(), "--config", str(config), "--unreleased", "--tag", f"v{version}"]
-        # --prepend keeps the existing file's header and earlier sections
-        cmd += ["--prepend", str(changelog)] if changelog.is_file() else ["-o", str(changelog)]
-        subprocess.run(cmd, cwd=root, check=True)
+        if changelog.is_file():
+            cmd += ["--strip", "header"]
+        # text mode turns any CRLF into LF
+        out = subprocess.run(cmd, cwd=root, check=True, stdout=subprocess.PIPE, text=True).stdout
+    if changelog.is_file():
+        old = changelog.read_text()
+        match = SECTION.search(old)
+        head, rest = (old[: match.start()], old[match.start() :]) if match else (old, "")
+        parts = [head.rstrip("\n"), out.strip("\n"), rest.strip("\n")]
+        out = "\n\n".join(p for p in parts if p)
+    with changelog.open("w", newline="\n") as f:
+        f.write(out.strip("\n") + "\n")
 
 
 def notes(root, version, long_name=None):
