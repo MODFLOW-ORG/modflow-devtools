@@ -163,7 +163,7 @@ Copy [`docs/examples/release.yml`](https://github.com/MODFLOW-ORG/modflow-devtoo
 - `long-name`: program long name, used in the release notes (required)
 - `main-branch`, `develop-branch`: as for `release-start`
 - `platforms`: OS tags that must each have an archive (default `linux macarm win64`)
-- `extra-assets`: newline-separated globs, relative to the checkout, of other files to attach to the release, e.g. `doc/*.pdf`. Each must match a file. To attach files built in another job, download them into the checkout in a step before `release-finish`.
+- `extra-assets`: newline-separated globs of other files to attach to the release, e.g. `doc/*.pdf`, matched relative to the checkout and to the downloaded `dist-*` artifacts. Each must match a file. To attach a file built in another job, e.g. a PDF of the release notes, upload it as an artifact named `dist-<something>` and list it here.
 
 ### Branching models
 
@@ -172,13 +172,14 @@ Two branching models are supported:
 - **single**: development and releases both happen on `main`. Release branches are created from and merged back into `main`. This is the default.
 - **dual**: development happens on `develop`, as in MODFLOW 6. Release branches are created from `develop` and merged into `main`, where the release is tagged. `main` is then merged back into `develop`. Set `develop-branch: develop` on both release actions to use this model.
 
-In the dual model, the pull request that sets the next development version also merges `main` back into `develop`. It must be merged with a merge commit, not squashed, so the release tag is reachable from `develop`. Otherwise the next release's notes will repeat this release's changes.
+In the dual model, the pull request that sets the next development version also merges `main` back into `develop`. It must be merged with a merge commit, not squashed, so the release tag is reachable from `develop`. Otherwise the next release's notes would repeat this release's changes, so `release-start` refuses to start a release from `develop` until the last release tag is reachable from it.
 
 ### Making a release
 
 To make a release:
 
 1. Run the release workflow from the development branch (*Actions* -> *release* -> *Run workflow*) with the version to release, e.g. `1.5.2`. The workflow
+   - checks that `1.5.2` is newer than the last release tag
    - creates branch `release/v1.5.2`, or builds it as is if it exists
    - sets the version
    - updates `CHANGELOG.md`

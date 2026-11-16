@@ -37,6 +37,7 @@ BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
 ARCHIVES = {"linux.zip", "macarm.zip", "win64.zip"}
 VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+TAG = re.compile(r"^refs/tags/(v?(\d+)\.(\d+)\.(\d+))$")
 
 
 def run(cmd, cwd, check=True):
@@ -93,6 +94,43 @@ def remote_branch(root, branch):
         ).returncode
         == 0
     )
+
+
+def latest_tag(root):
+    """The origin's highest release tag (vX.Y.Z, or X.Y.Z from before the
+    convention) and its version as a tuple, or None if there are none."""
+    out = git(root, "ls-remote", "--tags", "origin").stdout
+    tags = [m for ref in out.split()[1::2] if (m := TAG.match(ref))]
+    if not tags:
+        return None
+    m = max(tags, key=lambda m: tuple(map(int, m.groups()[1:])))
+    return m.group(1), tuple(map(int, m.groups()[1:]))
+
+
+def fetch_history(root):
+    """Fetch the full history and tags, which git-cliff and the checks on the
+    last release need."""
+    shallow = git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == "true"
+    git(root, "fetch", "--quiet", *(["--unshallow"] if shallow else []), "--tags", "origin")
+
+
+def check_latest(root, v, develop, main):
+    """Fail if the version isn't newer than the last release, or, in the
+    dual-branch model, if the last release isn't merged into the development
+    branch."""
+    latest = latest_tag(root)
+    if latest is None:
+        return
+    tag, last = latest
+    if tuple(map(int, v.split("."))) <= last:
+        sys.exit(f"version {v} is not newer than the last release, {tag}")
+    if develop != main:
+        fetch_history(root)
+        if git(root, "merge-base", "--is-ancestor", tag, "HEAD", check=False).returncode:
+            sys.exit(
+                f"{tag} is not reachable from {develop}, so the changelog would repeat it. "
+                f"Merge {main} into {develop} with a merge commit (not a squash) first."
+            )
 
 
 def commit(root, message, paths):
@@ -165,6 +203,7 @@ def start(root, event, ref_name, sha, v, long_name, repository, main, develop=""
             sys.exit(f"version '{v}' is not X.Y.Z")
         if tagged(root, v):
             sys.exit(f"tag v{v} already exists")
+        check_latest(root, v, develop, main)
         branch = release_branch(v)
         if remote_branch(root, branch):
             notice(f"{branch} exists, building it as is. Delete it to start over.")
@@ -182,9 +221,7 @@ def start(root, event, ref_name, sha, v, long_name, repository, main, develop=""
 
 
 def prepare(root, v, branch, repository, long_name):
-    # git-cliff needs the history and tags since the last release
-    shallow = git(root, "rev-parse", "--is-shallow-repository").stdout.strip() == "true"
-    git(root, "fetch", "--quiet", *(["--unshallow"] if shallow else []), "--tags", "origin")
+    fetch_history(root)
     git(root, "switch", "-c", branch)
     version.set_version(root, v)
     changelog.update(root, v, repository, long_name)
@@ -206,34 +243,40 @@ def finish_prepare(root, repository, ref, v, main, develop=""):
     open_pr(root, repository, main, ref, f"chore(release): {v}", body)
 
 
-def expand(root, patterns):
-    """Files matching each glob, relative to root. Each must match."""
+def expand(dirs, patterns):
+    """Files matching each glob, relative to any of the directories. Each
+    must match."""
     files = []
     for pattern in (p.strip() for p in patterns):
         if not pattern:
             continue
-        matches = sorted(p for p in root.glob(pattern) if p.is_file())
+        matches = sorted(p for d in dirs if d.is_dir() for p in d.glob(pattern) if p.is_file())
         if not matches:
             sys.exit(f"extra asset pattern '{pattern}' matches no files")
-        files += matches
+        files += [p for p in matches if p not in files]
     return files
 
 
 def assets(root, dist, name, platforms, extra=()):
     """The release's files: the archives in dist, each platform's present and
-    nothing unexpected, then the extra assets."""
+    nothing unexpected, then the extra assets, which are matched in the repo
+    and in dist (for files built in other jobs and uploaded as dist-*
+    artifacts)."""
+    dist = Path(dist)
     allowed = ARCHIVES | {f"{name}_source.zip"}
-    found = sorted(p for p in Path(dist).iterdir() if p.is_file()) if Path(dist).is_dir() else []
+    extras = expand([root, dist], extra)
+    found = sorted(p for p in dist.iterdir() if p.is_file()) if dist.is_dir() else []
+    archives = [p for p in found if p not in extras]
     ok = True
     for p in platforms:
-        if not (Path(dist) / f"{p}.zip").is_file():
+        if not (dist / f"{p}.zip").is_file():
             error(f"missing {p}.zip")
             ok = False
-    for path in found:
+    for path in archives:
         if path.name not in allowed:
             error(f"unexpected file {path.name}")
             ok = False
-    files = found + expand(root, extra)
+    files = archives + extras
     names = [f.name for f in files]
     for n in sorted({n for n in names if names.count(n) > 1}):
         error(f"more than one asset named {n}")
@@ -372,7 +415,9 @@ def main(argv=None):
     f.add_argument("--long-name", required=True)
     f.add_argument("--dist", type=Path, required=True, help="directory holding the archives")
     f.add_argument("--platforms", nargs="+", default=["linux", "macarm", "win64"])
-    f.add_argument("--extra-assets", nargs="*", default=[], help="globs relative to the repo root")
+    f.add_argument(
+        "--extra-assets", nargs="*", default=[], help="globs relative to the repo root or dist"
+    )
     args = parser.parse_args(argv)
     root = args.root.resolve()
     if args.command == "start":

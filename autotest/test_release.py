@@ -709,3 +709,48 @@ def test_linkage_tool_failure(tmp_path, monkeypatch):
 
     monkeypatch.setattr(linkage, "tool", fail)
     assert not linkage.check(tmp_path, "linux")
+
+
+# release order checks
+
+
+def push_tag(repo, tag, ref="HEAD"):
+    git(repo, "tag", tag, ref)
+    git(repo, "push", "-q", "origin", tag)
+
+
+@pytest.mark.parametrize("tag", ["v0.2.0", "0.2.0", "v0.1.0-rc"], ids=["v", "unprefixed", "other"])
+def test_start_rejects_older_version(origin, gh, tag):
+    push_tag(origin, tag)
+    if tag == "v0.1.0-rc":
+        assert start(origin, v="0.1.0")["stage"] == "prepare"
+    else:
+        with pytest.raises(SystemExit, match="not newer than the last release"):
+            start(origin, v="0.1.0")
+
+
+def test_start_dual(origin, gh):
+    git(origin, "switch", "-q", "-c", "develop")
+    git(origin, "push", "-q", "origin", "develop")
+    out = start(origin, ref_name="develop", develop="develop")
+    assert out["stage"] == "prepare"
+
+
+def test_start_dual_rejects_unmerged_release(origin, gh):
+    """A squash-merged post-release pull request leaves the tag off develop."""
+    git(origin, "switch", "-q", "-c", "develop")
+    git(origin, "push", "-q", "origin", "develop")
+    git(origin, "switch", "-q", "-c", "side", "main")
+    git(origin, "commit", "-q", "--allow-empty", "-m", "chore(release): 0.0.2")
+    push_tag(origin, "v0.0.2")
+    git(origin, "switch", "-q", "develop")
+    with pytest.raises(SystemExit, match="not reachable from develop"):
+        start(origin, ref_name="develop", develop="develop")
+
+
+def test_extra_assets_from_dist(repo, tmp_path):
+    d = dist(tmp_path, *ARCHIVES, "notes.pdf")
+    files = workflow.assets(repo, d, "hello", PLATFORMS, ["*.pdf"])
+    assert sorted(f.name for f in files) == sorted([*ARCHIVES, "notes.pdf"])
+    with pytest.raises(SystemExit):
+        workflow.assets(repo, d, "hello", PLATFORMS)

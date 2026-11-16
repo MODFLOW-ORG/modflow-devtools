@@ -38,9 +38,10 @@ inputs:
     default: linux macarm win64
   extra-assets:
     description: >
-      Newline-separated globs, relative to the checkout, of other files to
-      attach to the release, e.g. documentation. Each must match a file.
-      Files built in other jobs can be downloaded into the checkout first.
+      Newline-separated globs of other files to attach to the release, e.g.
+      documentation, matched relative to the checkout and to the downloaded
+      dist-* artifacts, so files built in other jobs can be uploaded as
+      dist-* artifacts. Each must match a file.
     default: ""
   github-token:
     description: Token for creating the release and pull requests
