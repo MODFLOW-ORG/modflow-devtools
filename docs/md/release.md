@@ -42,7 +42,7 @@ A program repository must satisfy the following to use the actions.
 
 ### Build system
 
-The program should build with [Meson](https://mesonbuild.com/) and [pixi](https://pixi.sh/). Programs in Fortran, C, or C++ are supported. `pixi.toml` must be at the repository root, and `pixi.lock` should be committed.
+The program should build with [Meson](https://mesonbuild.com/) and [pixi](https://pixi.sh/). The actions are written for Fortran programs. A program with C or C++ sources can add the compilers to `pixi.toml`, but `setup` only arranges static linking of the Fortran and C runtimes; a C++ program must link libstdc++ statically itself (`-static-libstdc++`), or `check-linkage` fails. `pixi.toml` must be at the repository root, and `pixi.lock` should be committed.
 
 How the program is built and tested is up to the repository's build workflow. The examples assume pixi tasks like
 
@@ -232,7 +232,6 @@ Intel macOS (`mac`) is not supported.
 - `actions/release-start`: prepare the release branch, or check whether `main` needs releasing
 - `actions/release-finish`: open the release pull request, or publish the release with any extra assets and open the next version pull request
 - `actions/version`: get or set the version, or get the next development version
-- `actions/changelog`: update `CHANGELOG.md` with git-cliff, or get a version's release notes
 
 See each `action.yml` for inputs and outputs.
 

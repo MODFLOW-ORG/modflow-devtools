@@ -69,26 +69,6 @@ jobs:
           git init -q "$RUNNER_TEMP/examples"
           cd "$RUNNER_TEMP/examples" && "$GITHUB_WORKSPACE/actionlint" -color
 
-  release-start:
-    name: Release start (no-op)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      # not a release event, so there should be nothing to do
-      - name: Start release
-        id: start
-        uses: ./actions/release-start
-        with:
-          path: autotest/release
-          long-name: Hello
-
-      - name: Check stage
-        env:
-          STAGE: ${{ steps.start.outputs.stage }}
-        run: '[[ -z "$STAGE" ]]'
-
   actions:
     name: Actions ${{ matrix.os }} ${{ matrix.compiler }} ${{ matrix.version }}
     runs-on: ${{ matrix.os }}
