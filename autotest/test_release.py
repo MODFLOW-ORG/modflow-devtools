@@ -283,7 +283,7 @@ elif args[:2] == ["release", "view"]:
 elif args[:2] == ["release", "delete"]:
     del state["releases"][args[2]]
 elif args[:2] == ["release", "create"]:
-    files = [os.path.basename(a) for a in args[3 : args.index("-R")]]
+    files = [os.path.basename(a) for a in args[3 : args.index("--target")]]
     with open(opt("--notes-file")) as f:
         notes = f.read()
     state["releases"][args[2]] = {
@@ -756,3 +756,17 @@ def test_extra_assets_from_dist(repo, tmp_path):
     assert sorted(f.name for f in files) == sorted([*ARCHIVES, "notes.pdf"])
     with pytest.raises(SystemExit):
         workflow.assets(repo, d, "hello", PLATFORMS)
+
+
+# the actions run the modules with only the standard library
+
+
+@pytest.mark.parametrize("module", ["changelog", "linkage", "package", "version", "workflow"])
+def test_standard_library_only(module):
+    """-S skips site-packages, so a third-party import anywhere on the way
+    (including modflow_devtools/__init__.py) fails."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("PYTHON")}
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1])
+    cmd = [sys.executable, "-S", "-P", "-m", f"modflow_devtools.release.{module}", "--help"]
+    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

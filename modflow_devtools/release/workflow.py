@@ -21,6 +21,10 @@ actions.
 
 Each step checks whether it has already been done, so a failed run can be
 rerun.
+
+Pull requests and releases go through the ``GitHub`` class, using the gh
+CLI. Everything else uses git, so another forge needs only another class
+with the same methods.
 """
 
 import argparse
@@ -32,6 +36,7 @@ import tempfile
 from pathlib import Path
 
 from modflow_devtools.release import changelog, version
+from modflow_devtools.release.ci import error, notice
 
 BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
@@ -50,18 +55,6 @@ def run(cmd, cwd, check=True):
 
 def git(root, *args, check=True):
     return run(["git", *args], root, check)
-
-
-def gh(root, *args, check=True):
-    return run(["gh", *args], root, check)
-
-
-def error(message):
-    print(f"::error::{message}")
-
-
-def notice(message):
-    print(f"::notice::{message}")
 
 
 def release_branch(v):
@@ -148,47 +141,57 @@ def commit(root, message, paths):
     )
 
 
-def pr_states(root, repository, head):
-    """States (OPEN, MERGED, CLOSED) of the pull requests from a branch."""
-    out = gh(
-        root,
-        "pr",
-        "list",
-        "-R",
-        repository,
-        "--head",
-        head,
-        "--state",
-        "all",
-        "--json",
-        "state",
-        "--jq",
-        ".[].state",
-    )
-    return out.stdout.split()
+class GitHub:
+    """Pull requests and releases on GitHub, with the gh CLI."""
+
+    def __init__(self, root, repository):
+        self.root = root
+        self.repository = repository
+
+    def gh(self, *args, check=True):
+        return run(["gh", *args, "-R", self.repository], self.root, check)
+
+    def pr_states(self, head):
+        """States (OPEN, MERGED, CLOSED) of the pull requests from a branch."""
+        out = self.gh(
+            "pr", "list", "--head", head, "--state", "all", "--json", "state", "--jq", ".[].state"
+        )
+        return out.stdout.split()
+
+    def create_pr(self, base, head, title, body):
+        self.gh("pr", "create", "-B", base, "-H", head, "--title", title, "--body", body)
+
+    def release_state(self, tag):
+        """None if there is no release for the tag, else 'draft' or 'published'."""
+        result = self.gh(
+            "release", "view", tag, "--json", "isDraft", "--jq", ".isDraft", check=False
+        )
+        if result.returncode != 0:
+            if "not found" in result.stderr.lower():
+                return None
+            sys.exit(f"gh release view failed:\n{result.stderr.strip()}")
+        return "draft" if json.loads(result.stdout) else "published"
+
+    def delete_release(self, tag):
+        self.gh("release", "delete", tag, "--yes")
+
+    def create_release(self, tag, files, target, title, notes):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "notes.md"
+            path.write_text(notes)
+            self.gh(
+                "release", "create", tag, *map(str, files), "--target", target,
+                "--title", title, "--notes-file", str(path),
+            )  # fmt: skip
 
 
-def open_pr(root, repository, base, head, title, body):
+def open_pr(forge, base, head, title, body):
     """Open a pull request, unless one from the branch is open or merged."""
-    states = pr_states(root, repository, head)
+    states = forge.pr_states(head)
     if "OPEN" in states or "MERGED" in states:
         print(f"pull request from {head} already {'open' if 'OPEN' in states else 'merged'}")
         return False
-    gh(
-        root,
-        "pr",
-        "create",
-        "-R",
-        repository,
-        "-B",
-        base,
-        "-H",
-        head,
-        "--title",
-        title,
-        "--body",
-        body,
-    )
+    forge.create_pr(base, head, title, body)
     return True
 
 
@@ -240,7 +243,7 @@ def finish_prepare(root, repository, ref, v, main, develop=""):
         f"Merging this publishes release v{v} and opens a pull request setting "
         f"the next development version on {develop}."
     )
-    open_pr(root, repository, main, ref, f"chore(release): {v}", body)
+    open_pr(GitHub(root, repository), main, ref, f"chore(release): {v}", body)
 
 
 def expand(dirs, patterns):
@@ -286,59 +289,21 @@ def assets(root, dist, name, platforms, extra=()):
     return files
 
 
-def release_state(root, repository, tag):
-    """None if there is no release for the tag, else 'draft' or 'published'."""
-    result = gh(
-        root,
-        "release",
-        "view",
-        tag,
-        "-R",
-        repository,
-        "--json",
-        "isDraft",
-        "--jq",
-        ".isDraft",
-        check=False,
-    )
-    if result.returncode != 0:
-        if "not found" in result.stderr.lower():
-            return None
-        sys.exit(f"gh release view failed:\n{result.stderr.strip()}")
-    return "draft" if json.loads(result.stdout) else "published"
-
-
 def publish(root, repository, ref, v, name, long_name, dist, platforms, extra=()):
     files = assets(root, dist, name, platforms, extra)
     notes = changelog.notes(root, v, long_name)
     print(notes)
     tag = f"v{v}"
-    state = release_state(root, repository, tag)
+    forge = GitHub(root, repository)
+    state = forge.release_state(tag)
     if state == "published":
         print(f"release {tag} already published")
         return False
     if state == "draft":
         # gh leaves a draft when an asset upload fails
         print(f"deleting draft release {tag} from an earlier run")
-        gh(root, "release", "delete", tag, "-R", repository, "--yes")
-    with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "notes.md"
-        path.write_text(notes)
-        gh(
-            root,
-            "release",
-            "create",
-            tag,
-            *map(str, files),
-            "-R",
-            repository,
-            "--target",
-            ref,
-            "--title",
-            f"{name} {v}",
-            "--notes-file",
-            str(path),
-        )
+        forge.delete_release(tag)
+    forge.create_release(tag, files, ref, f"{name} {v}", notes)
     return True
 
 
@@ -348,7 +313,8 @@ def post_release(root, repository, v, main, develop=""):
     branch into the development branch."""
     develop = develop or main
     branch = post_release_branch(v)
-    states = pr_states(root, repository, branch)
+    forge = GitHub(root, repository)
+    states = forge.pr_states(branch)
     if "OPEN" in states or "MERGED" in states:
         print(f"pull request from {branch} already {'open' if 'OPEN' in states else 'merged'}")
         return False
@@ -366,7 +332,7 @@ def post_release(root, repository, v, main, develop=""):
             f" This also merges {main} into {develop}. Merge it with a merge commit, "
             f"not a squash, so the v{v} tag is reachable from {develop}."
         )
-    open_pr(root, repository, develop, branch, f"chore(release): set version to {nxt}", body)
+    open_pr(forge, develop, branch, f"chore(release): set version to {nxt}", body)
     return True
 
 
