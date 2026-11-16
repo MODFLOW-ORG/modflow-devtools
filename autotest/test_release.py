@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.release import changelog, package, version, workflow
+from modflow_devtools.release import changelog, linkage, package, version, workflow
 
 FIXTURE = Path(__file__).resolve().parent / "release"
 IGNORE = shutil.ignore_patterns("builddir*", "bin", ".pixi")
@@ -544,3 +544,168 @@ def test_cli_outputs(origin, gh, tmp_path):
     args += ["--ref-name", "main", "--sha", sha, "--long-name", "Hello", "--output", str(output)]
     assert workflow.main(args) == 0
     assert output.read_text() == "stage=\nref=\nversion=0.1.0.dev0\n"
+
+
+# linkage, on sample tool output
+
+OBJDUMP_ELF = """
+hello:     file format elf64-x86-64
+
+Dynamic Section:
+  NEEDED               libm.so.6
+  NEEDED               libc.so.6
+  NEEDED               {extra}
+  INIT                 0x0000000000001000
+
+Version References:
+  required from libc.so.6:
+    0x09691a75 0x00 03 GLIBC_2.2.5
+    0x069691b4 0x00 02 GLIBC_{glibc}
+"""
+
+
+@pytest.mark.parametrize(
+    "extra,glibc,problems",
+    [
+        ("libgcc_s.so.1", "2.34", []),
+        ("libgfortran.so.5", "2.34", ["links libgfortran.so.5"]),
+        ("libstdc++.so.6", "2.34", ["links libstdc++.so.6"]),
+        ("libifcore.so.5", "2.17", ["links libifcore.so.5"]),
+        ("libgcc_s.so.1", "2.35", ["needs glibc 2.35, newer than 2.34"]),
+    ],
+)
+def test_linkage_linux(extra, glibc, problems):
+    assert linkage.check_linux(OBJDUMP_ELF.format(extra=extra, glibc=glibc)) == problems
+
+
+def test_linkage_linux_static():
+    assert linkage.check_linux("hello:     file format elf64-x86-64\n") == []
+
+
+def test_linkage_linux_dynamic_without_libraries():
+    assert linkage.check_linux("Dynamic Section:\n  INIT 0x1000\n") != []
+
+
+OTOOL_L = """\
+bin/hello:
+\t@rpath/libgfortran.5.dylib (compatibility version 6.0.0, current version 6.0.0)
+\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)
+"""
+
+OTOOL_l = """\
+Load command 11
+      cmd LC_BUILD_VERSION
+  cmdsize 32
+ platform 1
+    minos {minos}
+      sdk 15.5
+"""
+
+
+def test_linkage_macos_parse():
+    assert linkage.parse_otool_L(OTOOL_L) == [
+        "@rpath/libgfortran.5.dylib",
+        "/usr/lib/libSystem.B.dylib",
+    ]
+    assert linkage.parse_otool_L(OTOOL_L, dylib=True) == ["/usr/lib/libSystem.B.dylib"]
+    assert linkage.parse_otool_l(OTOOL_l.format(minos="14.0")) == (14, 0)
+    old = "      cmd LC_VERSION_MIN_MACOSX\n  cmdsize 16\n  version 10.13\n"
+    assert linkage.parse_otool_l(old) == (10, 13)
+    assert linkage.parse_otool_l("") is None
+
+
+SYSTEM = "/usr/lib/libSystem.B.dylib"
+
+
+@pytest.mark.parametrize(
+    "libs,archs,minos,problems",
+    [
+        ([SYSTEM, "/usr/lib/libc++.1.dylib"], ["arm64"], (14, 0), 0),
+        ([SYSTEM, "/System/Library/Frameworks/Foo.framework/Foo"], ["arm64"], (11, 0), 0),
+        ([SYSTEM, "@rpath/libgfortran.5.dylib"], ["arm64"], (14, 0), 1),
+        ([SYSTEM, "/opt/homebrew/lib/libquadmath.0.dylib"], ["arm64"], (14, 0), 1),
+        ([SYSTEM], ["x86_64"], (14, 0), 1),
+        ([SYSTEM], ["arm64"], (26, 0), 1),
+        ([SYSTEM], ["arm64"], None, 1),
+        ([], ["arm64"], (14, 0), 1),
+    ],
+    ids=["ok", "framework", "rpath", "homebrew", "intel", "too-new", "no-minos", "no-libs"],
+)  # fmt: skip
+def test_linkage_macos(libs, archs, minos, problems):
+    assert len(linkage.check_macos(libs, archs, minos)) == problems
+
+
+OBJDUMP_PE = """
+The Import Tables (interpreted .idata section contents)
+ vma:            Hint/Ord Member-Name Bound-To
+\tDLL Name: KERNEL32.dll
+\tDLL Name: api-ms-win-crt-runtime-l1-1-0.dll
+\tDLL Name: {extra}
+"""
+
+DUMPBIN = """\
+Dump of file hello.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    libifcoremd.dll
+
+  Summary
+
+        1000 .data
+"""
+
+
+@pytest.mark.parametrize(
+    "extra,problems",
+    [
+        ("msvcrt.dll", []),
+        ("ucrtbase.dll", []),
+        ("libgfortran-5.dll", ["links libgfortran-5.dll"]),
+        ("libwinpthread-1.dll", ["links libwinpthread-1.dll"]),
+        ("VCRUNTIME140.dll", ["links VCRUNTIME140.dll"]),
+        ("libmmd.dll", ["links libmmd.dll"]),
+    ],
+)
+def test_linkage_windows(extra, problems):
+    dlls = linkage.parse_objdump_pe(OBJDUMP_PE.format(extra=extra))
+    assert len(dlls) == 3
+    assert linkage.check_windows(dlls) == problems
+
+
+def test_linkage_windows_dumpbin():
+    dlls = linkage.parse_dumpbin(DUMPBIN)
+    assert dlls == ["KERNEL32.dll", "libifcoremd.dll"]
+    assert linkage.check_windows(dlls) == ["links libifcoremd.dll"]
+    assert linkage.check_windows([]) != []
+
+
+def test_linkage_finds_binaries(tmp_path):
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "hello").write_bytes(b"\x7fELF\x02\x01")
+    (tmp_path / "sub" / "libhello.so").write_bytes(b"\x7fELF\x02\x01")
+    (tmp_path / "hello.exe").write_bytes(b"MZ\x90\x00")
+    (tmp_path / "run.sh").write_text("#!/bin/sh\n")
+    names = lambda os_: [p.name for p in linkage.binaries(tmp_path, os_)]  # noqa: E731
+    assert names("linux") == ["hello", "libhello.so"]
+    assert names("windows") == ["hello.exe"]
+    assert names("macos") == []
+
+
+def test_linkage_nothing_to_check(tmp_path, capsys):
+    (tmp_path / "readme.txt").write_text("not a binary")
+    assert not linkage.check(tmp_path)
+    assert "no " in capsys.readouterr().err
+
+
+def test_linkage_tool_failure(tmp_path, monkeypatch):
+    (tmp_path / "hello").write_bytes(b"\x7fELF\x02\x01")
+
+    def fail(cmd):
+        raise RuntimeError("objdump failed")
+
+    monkeypatch.setattr(linkage, "tool", fail)
+    assert not linkage.check(tmp_path, "linux")

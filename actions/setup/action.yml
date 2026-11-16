@@ -1,7 +1,8 @@
 name: Set up a MODFLOW program build
 description: >
-  Set up the compiler and pixi, and set LDFLAGS so the compiler runtime
-  libraries are linked statically. gfortran comes from the repo's pixi
+  Set up the compiler and pixi, set LDFLAGS so the compiler runtime
+  libraries are linked statically, and on macOS set MACOSX_DEPLOYMENT_TARGET
+  to 14.0, the oldest macOS the binaries support. gfortran comes from the repo's pixi
   environment (conda-forge), so pixi.toml must depend on gfortran; Intel
   compilers come from fortran-lang/setup-fortran. Building and testing is
   left to the caller.
@@ -10,7 +11,7 @@ inputs:
     description: Directory of the program repo checkout, holding pixi.toml
     default: .
   compiler:
-    description: gcc (gfortran from the pixi environment), intel or intel-classic
+    description: gcc (gfortran from the pixi environment) or intel
     default: gcc
   compiler-version:
     description: Intel compiler version; ignored for gcc, whose version pixi.toml pins
@@ -33,8 +34,8 @@ runs:
         COMPILER: ${{ inputs.compiler }}
       run: |
         case "$COMPILER" in
-          gcc|intel|intel-classic) ;;
-          *) echo "::error::Unsupported compiler '$COMPILER', expected gcc, intel or intel-classic."; exit 1 ;;
+          gcc|intel) ;;
+          *) echo "::error::Unsupported compiler '$COMPILER', expected gcc or intel."; exit 1 ;;
         esac
 
     - name: Setup ${{ inputs.compiler }} ${{ inputs.compiler-version }}
@@ -73,13 +74,19 @@ runs:
         case "$COMPILER-$RUNNER_OS" in
           gcc-Windows) flags="-static" ;;
           gcc-*) flags="-static-libgfortran -static-libgcc -static-libquadmath" ;;
-          intel*-Linux) flags="-static-intel" ;;
+          intel-Linux) flags="-static-intel" ;;
           *) flags="" ;;
         esac
         if [[ -n "$flags" ]]; then
           echo "LDFLAGS=${LDFLAGS:+$LDFLAGS }$flags" >> "$GITHUB_ENV"
         fi
         echo "LDFLAGS: ${LDFLAGS:+$LDFLAGS }$flags"
+
+    # must match MACOS_MIN in modflow_devtools/release/linkage.py
+    - name: Set the minimum macOS version
+      if: runner.os == 'macOS'
+      shell: bash
+      run: echo "MACOSX_DEPLOYMENT_TARGET=14.0" >> "$GITHUB_ENV"
 
     - name: Show toolchain
       shell: bash

@@ -72,7 +72,12 @@ Executables must link the compiler runtime libraries statically, so users don't 
 default_options: ['b_vscrt=static_from_buildtype', 'buildtype=release'],
 ```
 
-Don't set `link_language: 'fortran'` on executables. With Intel, it makes Meson append `-lifcore -limf` after `-static-intel`, so the executables link the Intel runtime dynamically. The `check-linkage` action catches this, and any other dynamically linked compiler runtime.
+Don't set `link_language` on executables. With Intel, `'fortran'` makes Meson append `-lifcore -limf` after `-static-intel`, so the executables link the Intel runtime dynamically, and `'cpp'` likewise appends `-lstdc++`. The `check-linkage` action catches this, and any other library the operating system doesn't provide.
+
+Binaries must also run on older systems than the build machines:
+
+- **Linux**: glibc 2.34 (RHEL 9) or older. Binaries built with gfortran from conda-forge link against an old glibc, whatever the build machine has. Intel builds link against the build machine's glibc, so build them on the oldest available runner (`ubuntu-22.04`).
+- **macOS**: macOS 14.0 or newer, on Apple silicon. The `setup` action sets `MACOSX_DEPLOYMENT_TARGET=14.0`; without it, binaries require the build machine's macOS version.
 
 ### Version
 
@@ -211,7 +216,8 @@ Program releases share a common layout, so the [executables](https://github.com/
 - executables at the archive root, no enclosing directory, double precision executables included if any
 - optionally, `<name>_source.zip`
 - optionally, extra assets like documentation, named differently from the archives
-- no dynamic linking to compiler runtime libraries on any platform: Intel's, GNU's (gfortran, quadmath, OpenMP, and except on Linux, where they're system libraries, the gcc and C++ runtimes), or the Microsoft Visual C++ runtime
+- executables and shared libraries linking only libraries the operating system provides, so no compiler runtime libraries (Intel's, GNU's, the C++ runtime, or the Microsoft Visual C++ runtime): on Linux, libc, libm, libdl, libpthread, librt, the dynamic loader and libgcc_s; on macOS, libraries under `/usr/lib` and `/System/Library`; on Windows, core system DLLs (`kernel32`, `ntdll`, the Universal CRT, etc.)
+- on Linux, glibc 2.34 or older; on macOS, arm64 binaries supporting macOS 14.0 and later
 
 The `package` action produces this layout the same way on every platform, `check-linkage` enforces the static linking, and `release-finish` refuses to publish missing or unexpected archives.
 
@@ -219,8 +225,8 @@ Intel macOS (`mac`) is not supported.
 
 ## Actions
 
-- `actions/setup`: set up the compiler (Intel with setup-fortran, gfortran from pixi), pixi, optionally Xcode, and static runtime linking
-- `actions/check-linkage`: list each executable's shared library dependencies and fail on compiler runtime libraries on every platform, and on macOS, check for arm64
+- `actions/setup`: set up the compiler (Intel with setup-fortran, gfortran from pixi), pixi, optionally Xcode, static runtime linking, and on macOS the minimum macOS version
+- `actions/check-linkage`: list the shared library dependencies of each binary in a directory and fail on any library the operating system doesn't provide, on a too new glibc (Linux), or on a missing arm64 build or too new minimum macOS version (macOS)
 - `actions/package`: zip `bin/` as `<ostag>.zip`, and on Linux the source as `<name>_source.zip`, optionally uploading them as artifact `dist-<ostag>`
 - `actions/release-start`: prepare the release branch, or check whether `main` needs releasing
 - `actions/release-finish`: open the release pull request, or publish the release with any extra assets and open the next version pull request

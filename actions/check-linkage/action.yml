@@ -1,58 +1,29 @@
 name: Check linkage
 description: >
-  List the shared libraries each executable and shared library in a
-  directory links, and fail if any links a compiler runtime library that
-  users might not have: the Intel, GNU (gfortran, quadmath, OpenMP, and on
-  macOS and Windows the gcc and C++ runtimes), or Microsoft Visual C++
-  runtime. Linux's libgcc_s and libstdc++ are system libraries, so they're
-  allowed there. On macOS, also require arm64.
+  Check that every executable and shared library in a directory links only
+  libraries the operating system provides, so compiler runtimes must be
+  linked statically. On Linux, also require glibc 2.34 (RHEL 9) or older; on
+  macOS, require arm64 and a minimum macOS of 14.0. Fails if no binaries are
+  found or a file can't be inspected. See
+  modflow_devtools/release/linkage.py.
 inputs:
   path:
-    description: Directory holding the executables
+    description: Directory holding the executables, searched recursively
     default: bin
 runs:
   using: composite
   steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        update-environment: false
+
     - name: Check linkage
       shell: bash
-      working-directory: ${{ inputs.path }}
-      run: |
-        intel='libifcore|libifport|libimf|libsvml|libintlc|libirng|libiomp5|libmmd|svml_disp'
-        gnu='libgfortran|libquadmath|libgomp'
-        status=0
-        check() {
-          local exe="$1" deps="$2" forbidden="$3"
-          echo "::group::$exe"; echo "$deps"; echo "::endgroup::"
-          if bad=$(grep -iE "$forbidden" <<< "$deps"); then
-            echo "::error::$exe dynamically links a compiler runtime library: $(tr '\n' ' ' <<< "$bad")"
-            status=1
-          fi
-        }
-        case "$RUNNER_OS" in
-          Linux)
-            for exe in $(find . -maxdepth 1 -type f \( -perm -u+x -o -name '*.so*' \) | sort); do
-              check "$exe" "$(ldd "$exe" 2>&1 || true)" "$intel|$gnu"
-            done
-            ;;
-          macOS)
-            for exe in $(find . -maxdepth 1 -type f \( -perm -u+x -o -name '*.dylib' \) | sort); do
-              check "$exe" "$(otool -L "$exe")" "$intel|$gnu|libgcc_s|/libstdc\+\+"
-              if ! lipo -archs "$exe" | grep -qw arm64; then
-                echo "::error::$exe is not built for arm64"
-                status=1
-              fi
-            done
-            ;;
-          Windows)
-            if ! command -v objdump >/dev/null; then
-              echo "::error::objdump not found, can't check linkage"
-              exit 1
-            fi
-            shopt -s nullglob
-            for exe in *.exe *.dll; do
-              check "$exe" "$(objdump -p "$exe" | grep -i 'DLL Name' || true)" \
-                "$intel|$gnu|libgcc_s|libstdc\+\+|libwinpthread|vcruntime|msvcp"
-            done
-            ;;
-        esac
-        exit $status
+      env:
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
+        BINDIR: ${{ inputs.path }}
+      run: '"$PYTHON" -P -m modflow_devtools.release.linkage "$BINDIR"'
