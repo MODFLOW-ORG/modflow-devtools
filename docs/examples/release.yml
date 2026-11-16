@@ -1,7 +1,9 @@
 # Example release workflow for a program repo, e.g. mfusg. Copy it to
 # .github/workflows/release.yml and set the program name and long name, and
 # develop-branch in both actions if development happens on a separate branch.
-# It calls the repo's own build workflow (docs/examples/build.yml).
+# It calls the repo's own build workflow (docs/examples/build.yml). With a
+# GitHub App token (recommended, see "Repository settings" in the docs), pass
+# it as `token` to both checkouts and as `github-token` to release-finish.
 name: release
 on:
   workflow_dispatch:

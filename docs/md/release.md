@@ -93,7 +93,7 @@ project(
 
 or read from a file with `version: files('version.txt')`.
 
-Release versions are `major.minor.patch`. Between releases, the repository holds the next minor version with a `.devN` suffix, where `N` is the last release's patch number as in MODFLOW 6, e.g. `1.6.0.dev0` after `1.5.0` and `1.6.0.dev2` after `1.5.2`. Programs with `major.minor` versions should switch to `major.minor.0` at their next release.
+Release versions are `major.minor.patch`, with plain integers, so zero padding is dropped: the development version after `1.0.03` is `1.1.0.dev3`. Between releases, the repository holds the next minor version with a `.devN` suffix, where `N` is the last release's patch number as in MODFLOW 6, e.g. `1.6.0.dev0` after `1.5.0` and `1.6.0.dev2` after `1.5.2`. Programs with `major.minor` versions should switch to `major.minor.0` at their next release.
 
 Only `project()`'s `version` keyword counts, so e.g. a `dependency()`'s `version` doesn't. If `pixi.toml` has a `version`, it is kept in sync with `meson.build`. Other files containing the version, e.g. a version string in the source code, can be listed in `release.toml` at the repository root:
 
@@ -124,7 +124,12 @@ Every program uses the [shared git-cliff template](https://github.com/MODFLOW-OR
 
 ### Repository settings
 
-The release actions create pull requests with the workflow token. This must be enabled under *Settings* -> *Actions* -> *General* -> *Allow GitHub Actions to create and approve pull requests*.
+The release actions push branches and create pull requests and releases with the token passed as `github-token` to `release-finish` (and to `actions/checkout`, for the pushes). By default this is the workflow token, which has two drawbacks:
+
+- pull requests it creates don't trigger other workflows, so required checks never run on the release pull requests
+- creating pull requests with it must be enabled under *Settings* -> *Actions* -> *General* -> *Allow GitHub Actions to create and approve pull requests*
+
+A [GitHub App](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow) installation token avoids both, and is recommended for the organization. Create the token with [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token) in the `start` and `finish` jobs, and pass it to `actions/checkout` and `release-finish`. The app needs read and write access to contents and pull requests.
 
 Program repositories should also enable [dependabot](https://docs.github.com/en/code-security/dependabot) for GitHub Actions, since their workflows pin action versions.
 
@@ -195,7 +200,7 @@ To make a release:
 
 On any other push to `main`, `release-start` finds nothing to do and the other jobs are skipped.
 
-**Note:** pull requests created with the workflow token don't trigger other workflows, so the build workflow doesn't run on them. The release workflow already built and tested the release branch in step 1. To run the build workflow anyway, close and reopen the pull request.
+**Note:** pull requests created with the workflow token don't trigger other workflows, so the build workflow doesn't run on them. The release workflow already built and tested the release branch in step 1. To run the build workflow anyway, close and reopen the pull request, or use an app token (see [Repository settings](#repository-settings)).
 
 ### Rerunning a release
 
