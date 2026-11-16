@@ -19,7 +19,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
     {% for commit in commits %}
-        * {% if commit.scope %}{{ commit.scope }}: {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/__REPOSITORY__/commit/{{ commit.id }}))\
+        * {% if commit.scope %}{{ commit.scope }}: {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}{% if commit.message is not containing("/pull/") %} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/__REPOSITORY__/commit/{{ commit.id }})){% endif %}\
     {% endfor %}
 {% endfor %}\n
 """
@@ -29,6 +29,11 @@ trim = true
 conventional_commits = true
 filter_unconventional = true
 split_commits = false
+# link pull request numbers, e.g. from squash merges; commits without one
+# link the commit instead
+commit_preprocessors = [
+    { pattern = '\(#([0-9]+)\)', replace = "([#${1}](https://github.com/__REPOSITORY__/pull/${1}))" },
+]
 commit_parsers = [
     { message = "^[a-zA-Z]+\\(ci\\)", skip = true },
     { message = "^[fF]eat", group = "<!-- 0 -->Features" },
@@ -38,5 +43,6 @@ commit_parsers = [
 ]
 protect_breaking_commits = false
 filter_commits = false
-tag_pattern = "v[0-9]+\\.[0-9]+\\.[0-9]+"
+# older releases of some programs are tagged without the v
+tag_pattern = "^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
 sort_commits = "oldest"

@@ -169,8 +169,9 @@ def test_update(repo):
     git(repo, "init", "-q", "-b", "main")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "feat: first")
-    git(repo, "tag", "v0.1.0")
+    git(repo, "tag", "0.1.0")  # an old tag without the v
     git(repo, "commit", "-q", "--allow-empty", "-m", "fix(io): read the thing")
+    git(repo, "commit", "-q", "--allow-empty", "-m", "feat: squashed (#12)")
     git(repo, "commit", "-q", "--allow-empty", "-m", "ci: skipped")
     git(repo, "commit", "-q", "--allow-empty", "-m", "fix(ci): also skipped")
     changelog.update(repo, "0.2.0", "MODFLOW-ORG/hello", "Hello")
@@ -179,8 +180,9 @@ def test_update(repo):
     assert "## Version 0.2.0" in text
     assert "io: Read the thing" in text
     assert "https://github.com/MODFLOW-ORG/hello/commit/" in text
+    assert "Squashed ([#12](https://github.com/MODFLOW-ORG/hello/pull/12))\n" in text
     assert "first" not in text and "skipped" not in text
-    assert changelog.notes(repo, "0.2.0").startswith("### Fixes")
+    assert changelog.notes(repo, "0.2.0").startswith("### Features")
 
     # a second release prepends, keeping the first
     git(repo, "add", "-A")
