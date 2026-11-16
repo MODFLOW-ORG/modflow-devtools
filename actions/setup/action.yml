@@ -74,7 +74,7 @@ runs:
         case "$COMPILER-$RUNNER_OS" in
           gcc-Windows) flags="-static" ;;
           gcc-*) flags="-static-libgfortran -static-libgcc -static-libquadmath" ;;
-          intel-Linux) flags="-static-intel" ;;
+          intel-Linux) flags="-static-intel -static-libgcc" ;;
           *) flags="" ;;
         esac
         if [[ -n "$flags" ]]; then

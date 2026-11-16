@@ -31,7 +31,7 @@ MACOS_ARCH = "arm64"
 
 # libraries every system has; anything else must be linked statically
 LINUX_LIBS = re.compile(
-    r"^(linux-vdso|linux-gate|ld-linux[\w.-]*|libc|libm|libdl|libpthread|librt|libgcc_s)\.so",
+    r"^(linux-vdso|linux-gate|ld-linux[\w.-]*|libc|libm|libdl|libpthread|librt)\.so",
 )
 MACOS_LIBS = re.compile(r"^(/usr/lib/|/System/Library/)")
 WINDOWS_LIBS = re.compile(

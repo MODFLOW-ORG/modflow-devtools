@@ -569,11 +569,12 @@ Version References:
 @pytest.mark.parametrize(
     "extra,glibc,problems",
     [
-        ("libgcc_s.so.1", "2.34", []),
+        ("libm.so.6", "2.34", []),
+        ("libgcc_s.so.1", "2.34", ["links libgcc_s.so.1"]),
         ("libgfortran.so.5", "2.34", ["links libgfortran.so.5"]),
         ("libstdc++.so.6", "2.34", ["links libstdc++.so.6"]),
         ("libifcore.so.5", "2.17", ["links libifcore.so.5"]),
-        ("libgcc_s.so.1", "2.35", ["needs glibc 2.35, newer than 2.34"]),
+        ("libm.so.6", "2.35", ["needs glibc 2.35, newer than 2.34"]),
     ],
 )
 def test_linkage_linux(extra, glibc, problems):

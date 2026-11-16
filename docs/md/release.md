@@ -66,7 +66,7 @@ If gfortran is in another pixi environment, pass it to the `setup` action as `pi
 
 Intel compilers are installed with [setup-fortran](https://github.com/fortran-lang/setup-fortran), which also sets `FC`, `CC` and `CXX`. Releases should be built with Intel `ifx` on Linux and Windows, and with gfortran on macOS.
 
-Executables must link the compiler runtime libraries statically, so users don't need the compiler installed. The `setup` action sets `LDFLAGS` for this: `-static-libgfortran -static-libgcc -static-libquadmath` for gfortran (`-static` on Windows), and `-static-intel` for Intel on Linux. On Windows, Intel builds need Meson's `b_vscrt` option, which `LDFLAGS` can't set, so `meson.build` must have
+Executables must link the compiler runtime libraries statically, so users don't need the compiler installed. The `setup` action sets `LDFLAGS` for this: `-static-libgfortran -static-libgcc -static-libquadmath` for gfortran (`-static` on Windows), and `-static-intel -static-libgcc` for Intel on Linux. On Windows, Intel builds need Meson's `b_vscrt` option, which `LDFLAGS` can't set, so `meson.build` must have
 
 ```meson
 default_options: ['b_vscrt=static_from_buildtype', 'buildtype=release'],
@@ -222,7 +222,7 @@ Program releases share a common layout, so the [executables](https://github.com/
 - executables at the archive root, no enclosing directory, double precision executables included if any
 - optionally, `<name>_source.zip`
 - optionally, extra assets like documentation, named differently from the archives
-- executables and shared libraries linking only libraries the operating system provides, so no compiler runtime libraries (Intel's, GNU's, the C++ runtime, or the Microsoft Visual C++ runtime): on Linux, libc, libm, libdl, libpthread, librt, the dynamic loader and libgcc_s; on macOS, libraries under `/usr/lib` and `/System/Library`; on Windows, core system DLLs (`kernel32`, `ntdll`, the Universal CRT, etc.)
+- executables and shared libraries linking only libraries the operating system provides, so no compiler runtime libraries (Intel's, GNU's, the C++ runtime, or the Microsoft Visual C++ runtime): on Linux, libc, libm, libdl, libpthread, librt and the dynamic loader; on macOS, libraries under `/usr/lib` and `/System/Library`; on Windows, core system DLLs (`kernel32`, `ntdll`, the Universal CRT, etc.)
 - on Linux, glibc 2.34 or older; on macOS, arm64 binaries supporting macOS 14.0 and later
 
 The `package` action produces this layout the same way on every platform, `check-linkage` enforces the static linking, and `release-finish` refuses to publish missing or unexpected archives.
