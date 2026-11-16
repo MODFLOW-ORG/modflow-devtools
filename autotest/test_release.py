@@ -667,6 +667,7 @@ File Type: EXECUTABLE IMAGE
     [
         ("msvcrt.dll", []),
         ("ucrtbase.dll", []),
+        ("imagehlp.dll", []),
         ("libgfortran-5.dll", ["links libgfortran-5.dll"]),
         ("libwinpthread-1.dll", ["links libwinpthread-1.dll"]),
         ("VCRUNTIME140.dll", ["links VCRUNTIME140.dll"]),
@@ -698,7 +699,8 @@ def test_linkage_finds_binaries(tmp_path):
     assert names("macos") == []
 
 
-def test_linkage_nothing_to_check(tmp_path, capsys):
+def test_linkage_nothing_to_check(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     (tmp_path / "readme.txt").write_text("not a binary")
     assert not linkage.check(tmp_path)
     assert "no " in capsys.readouterr().err

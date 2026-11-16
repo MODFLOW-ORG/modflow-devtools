@@ -35,7 +35,7 @@ LINUX_LIBS = re.compile(
 )
 MACOS_LIBS = re.compile(r"^(/usr/lib/|/System/Library/)")
 WINDOWS_LIBS = re.compile(
-    r"^(kernel32|user32|gdi32|advapi32|shell32|ole32|oleaut32|ws2_32|bcrypt|ntdll"
+    r"^(kernel32|user32|gdi32|advapi32|shell32|ole32|oleaut32|ws2_32|bcrypt|ntdll|imagehlp"
     r"|msvcrt|ucrtbase|api-ms-win-[\w.-]+)\.dll$",
     re.I,
 )
