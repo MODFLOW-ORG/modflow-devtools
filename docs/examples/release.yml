@@ -1,6 +1,7 @@
 # Example release workflow for a program repo, e.g. mfusg. Copy it to
-# .github/workflows/release.yml and set the program name and long name, and
-# develop-branch in both actions if development happens on a separate branch.
+# .github/workflows/release.yml, and set develop-branch in both actions if
+# development happens on a separate branch. The program's name and long name
+# come from release.toml.
 # It calls the repo's own build workflow (docs/examples/build.yml). With a
 # GitHub App token (recommended, see "Repository settings" in the docs), pass
 # it as `token` to both checkouts and as `github-token` to release-finish.
@@ -37,7 +38,6 @@ jobs:
         uses: MODFLOW-ORG/modflow-devtools/actions/release-start@1.10.0
         with:
           version: ${{ inputs.version }}
-          long-name: MODFLOW-USG
 
   build:
     name: Build
@@ -67,8 +67,6 @@ jobs:
           stage: ${{ needs.start.outputs.stage }}
           ref: ${{ needs.start.outputs.ref }}
           version: ${{ needs.start.outputs.version }}
-          name: mfusg
-          long-name: MODFLOW-USG
           # other files to attach, relative to the checkout or dist-* artifacts
           # extra-assets: |
           #   doc/*.pdf

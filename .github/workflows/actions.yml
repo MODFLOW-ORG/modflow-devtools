@@ -85,21 +85,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set version
-        id: version
-        uses: ./actions/version
+      - name: Setup Python
+        uses: actions/setup-python@v7
         with:
-          path: autotest/release
-          set: 1.2.3
+          python-version: "3.12"
 
-      - name: Check version
+      - name: Set version
         shell: bash
+        working-directory: autotest/release
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          RELEASE: ${{ steps.version.outputs.release }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          [[ "$VERSION" == "1.2.3" && "$RELEASE" == "true" ]]
-          grep -q "VERSION = '1.2.3 " autotest/release/src/hello.f90
+          python -P -m modflow_devtools.release.version --set 1.2.3
+          [[ "$(python -P -m modflow_devtools.release.version --get)" == "1.2.3" ]]
+          grep -q "VERSION = '1.2.3 " src/hello.f90
 
       - name: Setup
         uses: ./actions/setup
@@ -130,7 +129,6 @@ jobs:
         uses: ./actions/package
         with:
           path: autotest/release
-          name: hello
 
       - name: Check archives
         shell: bash
@@ -139,7 +137,7 @@ jobs:
           OSTAG: ${{ steps.package.outputs.ostag }}
         run: |
           ls -l "$DIST"
-          python3 - "$DIST/$OSTAG.zip" <<'EOF'
+          python - "$DIST/$OSTAG.zip" <<'EOF'
           import sys, zipfile
           names = sorted(zipfile.ZipFile(sys.argv[1]).namelist())
           print(names)

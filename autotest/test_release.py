@@ -61,10 +61,15 @@ def test_set_keeps_line_endings(repo):
     assert b"\n" not in path.read_bytes().replace(b"\r\n", b"")
 
 
-@pytest.mark.parametrize("value", ["1.2", "v1.2.3", "1.2.3rc1", "1.2.3.dev"])
+@pytest.mark.parametrize("value", ["1.2", "v1.2.3", "1.2.3rc1", "1.2.3.dev", "1.12.02"])
 def test_set_rejects_bad_versions(repo, value):
     with pytest.raises(SystemExit):
         version.set_version(repo, value)
+
+
+def test_normalize():
+    assert version.normalize("1.12.02") == "1.12.2"
+    assert version.normalize("7.2.002") == "7.2.2"
 
 
 def test_next():
@@ -160,7 +165,8 @@ def test_notes(tmp_path):
 
 def test_notes_title(tmp_path):
     (tmp_path / "CHANGELOG.md").write_text(CHANGELOG)
-    notes = changelog.notes(tmp_path, "1.2.0", "Hello")
+    (tmp_path / "release.toml").write_text('name = "hello"\nlong-name = "Hello"\n')
+    notes = changelog.notes(tmp_path, "1.2.0", title=True)
     assert notes == "Hello version 1.2.0\n\n### Features\n\n* Something new\n"
 
 
@@ -174,7 +180,7 @@ def test_update(repo):
     git(repo, "commit", "-q", "--allow-empty", "-m", "feat: squashed (#12)")
     git(repo, "commit", "-q", "--allow-empty", "-m", "ci: skipped")
     git(repo, "commit", "-q", "--allow-empty", "-m", "fix(ci): also skipped")
-    changelog.update(repo, "0.2.0", "MODFLOW-ORG/hello", "Hello")
+    changelog.update(repo, "0.2.0", "MODFLOW-ORG/hello")
     text = (repo / "CHANGELOG.md").read_text()
     assert "Features, fixes, and performance changes in each Hello release." in text
     assert "## Version 0.2.0" in text
@@ -189,7 +195,7 @@ def test_update(repo):
     git(repo, "commit", "-q", "-m", "chore(release): 0.2.0")
     git(repo, "tag", "v0.2.0")
     git(repo, "commit", "-q", "--allow-empty", "-m", "perf: faster")
-    changelog.update(repo, "0.3.0", "MODFLOW-ORG/hello", "Hello")
+    changelog.update(repo, "0.3.0", "MODFLOW-ORG/hello")
     text = (repo / "CHANGELOG.md").read_text()
     assert text.count("# Changelog") == 1
     assert b"\r\n" not in (repo / "CHANGELOG.md").read_bytes()
@@ -211,7 +217,7 @@ def built(repo, *names):
 def test_package(repo, tmp_path):
     built(repo, "hello", "hellodbl")
     dist = tmp_path / "dist"
-    assert package.package(repo, "hello", dist, tag="linux") == "linux"
+    assert package.package(repo, dist, tag="linux") == "linux"
     with zipfile.ZipFile(dist / "linux.zip") as z:
         assert sorted(z.namelist()) == ["hello", "hellodbl"]
         if sys.platform != "win32":
@@ -223,22 +229,22 @@ def test_package(repo, tmp_path):
 
 def test_package_no_source(repo, tmp_path):
     built(repo, "hello")
-    package.package(repo, "hello", tmp_path / "dist", source_paths=[], tag="linux")
+    package.package(repo, tmp_path / "dist", source_paths=[], tag="linux")
     assert [p.name for p in (tmp_path / "dist").iterdir()] == ["linux.zip"]
 
 
 def test_package_source_only_on_linux(repo, tmp_path):
     built(repo, "hello.exe")
-    package.package(repo, "hello", tmp_path / "dist", tag="win64")
+    package.package(repo, tmp_path / "dist", tag="win64")
     assert [p.name for p in (tmp_path / "dist").iterdir()] == ["win64.zip"]
 
 
 def test_package_optional_meson_options(repo, tmp_path):
     built(repo, "hello")
     (repo / "meson.options").unlink()
-    package.package(repo, "hello", tmp_path / "dist", tag="linux")
+    package.package(repo, tmp_path / "dist", tag="linux")
     with pytest.raises(SystemExit):
-        package.package(repo, "hello", tmp_path / "dist", ["meson.options"], tag="linux")
+        package.package(repo, tmp_path / "dist", ["meson.options"], tag="linux")
 
 
 def test_package_tracked_source(repo, tmp_path):
@@ -247,14 +253,21 @@ def test_package_tracked_source(repo, tmp_path):
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "first")
     (repo / "src" / "scratch.o").write_text("untracked")
-    package.package(repo, "hello", tmp_path / "dist", tag="linux")
+    package.package(repo, tmp_path / "dist", tag="linux")
     with zipfile.ZipFile(tmp_path / "dist" / "hello_source.zip") as z:
         assert "src/scratch.o" not in z.namelist()
 
 
+def test_names(repo):
+    built(repo, "hello")
+    (repo / "release.toml").write_text('name = "hello"\n')
+    with pytest.raises(SystemExit, match="long-name"):
+        package.package(repo, repo / "dist", tag="linux")
+
+
 def test_package_empty_bin(repo, tmp_path):
     with pytest.raises(SystemExit):
-        package.package(repo, "hello", tmp_path / "dist", tag="linux")
+        package.package(repo, tmp_path / "dist", tag="linux")
 
 
 # workflow, against a local origin and a fake gh
@@ -346,7 +359,7 @@ def origin(repo, tmp_path, monkeypatch):
     git(repo, "commit", "-q", "--allow-empty", "-m", "fix: second")
     git(repo, "push", "-q", "origin", "main", "--tags")
 
-    def update(root, v, repository, long_name):
+    def update(root, v, repository):
         path = root / "CHANGELOG.md"
         old = path.read_text() if path.is_file() else "# Changelog\n"
         path.write_text(old + f"\n## Version {v} (2026-11-15)\n\n### Fixes\n\n* Second\n")
@@ -365,7 +378,7 @@ def remote_file(repo, ref, path):
 
 def start(repo, event="workflow_dispatch", ref_name="main", v="0.1.0", develop=""):
     sha = git(repo, "rev-parse", "HEAD")
-    return workflow.start(repo, event, ref_name, sha, v, "Hello", "o/hello", "main", develop)
+    return workflow.start(repo, event, ref_name, sha, v, "o/hello", "main", develop)
 
 
 def test_start_nothing_to_do(origin, gh):
@@ -376,8 +389,15 @@ def test_start_nothing_to_do(origin, gh):
 
 @pytest.mark.parametrize(
     "kwargs",
-    [{"ref_name": "feature"}, {"v": "0.1"}, {"v": ""}, {"v": "0.0.1"}, {"develop": "develop"}],
-    ids=["wrong-branch", "bad-version", "no-version", "tagged", "not-develop"],
+    [
+        {"ref_name": "feature"},
+        {"v": "0.1"},
+        {"v": "0.01.0"},
+        {"v": ""},
+        {"v": "0.0.1"},
+        {"develop": "develop"},
+    ],
+    ids=["wrong-branch", "bad-version", "padded", "no-version", "tagged", "not-develop"],
 )
 def test_start_rejects(origin, gh, kwargs):
     with pytest.raises(SystemExit):
@@ -426,13 +446,30 @@ def dist(tmp_path, *names):
 
 
 ARCHIVES = ("linux.zip", "macarm.zip", "win64.zip", "hello_source.zip")
-PLATFORMS = ["linux", "macarm", "win64"]
 
 
 def test_start_publish(origin, gh):
     merged_release(origin)
     out = start(origin, "push")
     assert out == {"stage": "publish", "ref": git(origin, "rev-parse", "HEAD"), "version": "0.1.0"}
+
+
+def test_start_padded_hint(origin, gh):
+    with pytest.raises(SystemExit, match=r"e\.g\. 0\.1\.2"):
+        start(origin, v="0.01.02")
+
+
+def test_start_empty_notes_warns(origin, gh, capsys, monkeypatch):
+    def update(root, v, repository):
+        (root / "CHANGELOG.md").write_text(f"# Changelog\n\n## Version {v} (2026-11-15)\n")
+
+    monkeypatch.setattr(changelog, "update", update)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    start(origin)
+    assert "section of CHANGELOG.md is empty" in capsys.readouterr().err
+    merged_release(origin)
+    assert start(origin, "push")["stage"] == "publish"
+    assert "release notes are too" in capsys.readouterr().err
 
 
 def test_start_publish_needs_notes(origin, gh):
@@ -450,10 +487,7 @@ def test_publish(origin, gh, tmp_path):
     sha = git(origin, "rev-parse", "HEAD")
     d = dist(tmp_path, *ARCHIVES)
     for _ in range(2):
-        workflow.finish(
-            origin, "publish", "o/hello", sha, "0.1.0", "hello", "Hello", "main", "",
-            d, PLATFORMS, ["doc/*.pdf"],
-        )  # fmt: skip
+        workflow.finish(origin, "publish", "o/hello", sha, "0.1.0", "main", "", d, ["doc/*.pdf"])
     state = gh.load()
     assert len(gh.calls("release", "create")) == 1
     release = state["releases"]["v0.1.0"]
@@ -477,10 +511,7 @@ def test_publish_dual(origin, gh, tmp_path):
     merged_release(origin)
     sha = git(origin, "rev-parse", "HEAD")
     d = dist(tmp_path, *ARCHIVES)
-    workflow.finish(
-        origin, "publish", "o/hello", sha, "0.1.0", "hello", "Hello", "main", "develop",
-        d, PLATFORMS,
-    )  # fmt: skip
+    workflow.finish(origin, "publish", "o/hello", sha, "0.1.0", "main", "develop", d)
     create = gh.calls("pr", "create")[0]
     assert create[create.index("-B") + 1] == "develop"
     assert "merge commit" in create[create.index("--body") + 1]
@@ -492,9 +523,7 @@ def test_publish_replaces_draft(origin, gh, tmp_path):
     state["releases"]["v0.1.0"] = {"isDraft": True}
     gh.save(state)
     sha = git(origin, "rev-parse", "HEAD")
-    workflow.publish(
-        origin, "o/hello", sha, "0.1.0", "hello", "Hello", dist(tmp_path, *ARCHIVES), PLATFORMS
-    )
+    workflow.publish(origin, "o/hello", sha, "0.1.0", dist(tmp_path, *ARCHIVES))
     assert len(gh.calls("release", "delete")) == 1
     assert not gh.load()["releases"]["v0.1.0"]["isDraft"]
 
@@ -529,21 +558,19 @@ def test_post_release_after_merge(origin, gh):
 def test_bad_assets(repo, tmp_path, names, extra):
     (repo / "hello_source.zip").write_text("zip")
     with pytest.raises(SystemExit):
-        workflow.assets(repo, dist(tmp_path, *names), "hello", PLATFORMS, extra)
+        workflow.assets(repo, dist(tmp_path, *names), extra)
 
 
 def test_finish_bad_stage(origin, gh, tmp_path):
     with pytest.raises(SystemExit):
-        workflow.finish(
-            origin, "", "o/hello", "x", "0.1.0", "hello", "Hello", "main", "", tmp_path, PLATFORMS
-        )
+        workflow.finish(origin, "", "o/hello", "x", "0.1.0", "main", "", tmp_path)
 
 
 def test_cli_outputs(origin, gh, tmp_path):
     output = tmp_path / "github_output"
     sha = git(origin, "rev-parse", "HEAD")
     args = ["--root", str(origin), "--repository", "o/hello", "start", "--event", "push"]
-    args += ["--ref-name", "main", "--sha", sha, "--long-name", "Hello", "--output", str(output)]
+    args += ["--ref-name", "main", "--sha", sha, "--output", str(output)]
     assert workflow.main(args) == 0
     assert output.read_text() == "stage=\nref=\nversion=0.1.0.dev0\n"
 
@@ -755,10 +782,10 @@ def test_start_dual_rejects_unmerged_release(origin, gh):
 
 def test_extra_assets_from_dist(repo, tmp_path):
     d = dist(tmp_path, *ARCHIVES, "notes.pdf")
-    files = workflow.assets(repo, d, "hello", PLATFORMS, ["*.pdf"])
+    files = workflow.assets(repo, d, ["*.pdf"])
     assert sorted(f.name for f in files) == sorted([*ARCHIVES, "notes.pdf"])
     with pytest.raises(SystemExit):
-        workflow.assets(repo, d, "hello", PLATFORMS)
+        workflow.assets(repo, d)
 
 
 # the actions run the modules with only the standard library
@@ -773,3 +800,9 @@ def test_standard_library_only(module):
     cmd = [sys.executable, "-S", "-P", "-m", f"modflow_devtools.release.{module}", "--help"]
     result = subprocess.run(cmd, env=env, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+def test_macos_min_matches_setup():
+    setup = (Path(__file__).resolve().parents[1] / "actions" / "setup" / "action.yml").read_text()
+    target = linkage.version_str(linkage.MACOS_MIN)
+    assert f"MACOSX_DEPLOYMENT_TARGET={target}" in setup

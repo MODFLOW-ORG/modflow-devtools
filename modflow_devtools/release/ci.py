@@ -20,6 +20,13 @@ def error(message):
         print(f"error: {message}", file=sys.stderr, flush=True)
 
 
+def warning(message):
+    if github():
+        print(f"::warning::{message}", flush=True)
+    else:
+        print(f"warning: {message}", file=sys.stderr, flush=True)
+
+
 def notice(message):
     print(f"::notice::{message}" if github() else message, flush=True)
 

@@ -2,16 +2,16 @@ name: Set up a MODFLOW program build
 description: >
   Set up the compiler and pixi, set LDFLAGS so the compiler runtime
   libraries are linked statically, and on macOS set MACOSX_DEPLOYMENT_TARGET
-  to 14.0, the oldest macOS the binaries support. gfortran comes from the repo's pixi
-  environment (conda-forge), so pixi.toml must depend on gfortran; Intel
-  compilers come from fortran-lang/setup-fortran. Building and testing is
-  left to the caller.
+  to 14.0, the oldest macOS the binaries support. gfortran comes from the
+  repo's pixi environment (conda-forge), so a Fortran program's pixi.toml
+  must depend on gfortran; Intel compilers come from
+  fortran-lang/setup-fortran. Building and testing is left to the caller.
 inputs:
   path:
-    description: Directory of the program repo checkout, holding pixi.toml
+    description: Directory holding the program and its pixi.toml, if not the repo root
     default: .
   compiler:
-    description: gcc (gfortran from the pixi environment) or intel
+    description: gcc (gfortran from the pixi environment, if any) or intel
     default: gcc
   compiler-version:
     description: Intel compiler version; ignored for gcc, whose version pixi.toml pins
@@ -65,7 +65,8 @@ runs:
         xcode-version: ${{ inputs.xcode-version }}
 
     # Windows Intel builds link the runtime statically through meson's
-    # b_vscrt option, which LDFLAGS can't set; see the release actions docs
+    # b_vscrt option, which LDFLAGS can't set; see the release actions docs.
+    # On macOS, libc++ is a system library.
     - name: Link the compiler runtime statically
       shell: bash
       env:
@@ -73,8 +74,9 @@ runs:
       run: |
         case "$COMPILER-$RUNNER_OS" in
           gcc-Windows) flags="-static" ;;
+          gcc-Linux) flags="-static-libgfortran -static-libgcc -static-libquadmath -static-libstdc++" ;;
           gcc-*) flags="-static-libgfortran -static-libgcc -static-libquadmath" ;;
-          intel-Linux) flags="-static-intel -static-libgcc" ;;
+          intel-Linux) flags="-static-intel -static-libgcc -static-libstdc++" ;;
           *) flags="" ;;
         esac
         if [[ -n "$flags" ]]; then
@@ -82,7 +84,7 @@ runs:
         fi
         echo "LDFLAGS: ${LDFLAGS:+$LDFLAGS }$flags"
 
-    # must match MACOS_MIN in modflow_devtools/release/linkage.py
+    # must match MACOS_MIN in modflow_devtools/release/linkage.py; a test checks
     - name: Set the minimum macOS version
       if: runner.os == 'macOS'
       shell: bash
@@ -95,11 +97,14 @@ runs:
         COMPILER: ${{ inputs.compiler }}
         PIXI_ENV: ${{ inputs.pixi-environment }}
       run: |
-        if [[ "$COMPILER" == "gcc" ]]; then
+        # a Fortran program mustn't fall back to the runner's gfortran
+        if [[ "$COMPILER" == "gcc" ]] && grep -q "'fortran'" meson.build; then
           if ! pixi run -e "$PIXI_ENV" gfortran --version | head -1; then
             echo "::error::No gfortran in pixi environment $PIXI_ENV, add it to pixi.toml."
             exit 1
           fi
+        elif [[ "$COMPILER" == "gcc" ]]; then
+          "${CC:-cc}" --version 2>&1 | head -1 || true
         else
           "$FC" --version 2>&1 | head -1 || true
         fi

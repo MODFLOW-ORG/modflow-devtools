@@ -78,7 +78,6 @@ jobs:
       - name: Package
         uses: MODFLOW-ORG/modflow-devtools/actions/package@1.10.0
         with:
-          name: mfusg
           upload: ${{ inputs.release && matrix.release }}
 
       - name: Upload build logs

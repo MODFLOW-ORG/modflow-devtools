@@ -9,14 +9,11 @@ description: >
   is set, then run release-finish. See modflow_devtools/release/workflow.py.
 inputs:
   path:
-    description: Directory of the program repo checkout
+    description: Directory holding the program, if not the repo root
     default: .
   version:
     description: Version to release, X.Y.Z (workflow_dispatch only)
     default: ""
-  long-name:
-    description: Program long name, e.g. MODFLOW-USG; used in the changelog header
-    required: true
   main-branch:
     description: Branch releases are merged into and tagged on
     default: main
@@ -51,7 +48,6 @@ runs:
         PYTHON: ${{ steps.python.outputs.python-path }}
         PYTHONPATH: ${{ github.action_path }}/../..
         VERSION: ${{ inputs.version }}
-        LONG_NAME: ${{ inputs.long-name }}
         MAIN_BRANCH: ${{ inputs.main-branch }}
         DEVELOP_BRANCH: ${{ inputs.develop-branch }}
       run: |
@@ -59,5 +55,5 @@ runs:
           --repository "$GITHUB_REPOSITORY" \
           --main-branch "$MAIN_BRANCH" --develop-branch "$DEVELOP_BRANCH" \
           start --event "$GITHUB_EVENT_NAME" --ref-name "$GITHUB_REF_NAME" \
-          --sha "$GITHUB_SHA" --version "$VERSION" --long-name "$LONG_NAME" \
+          --sha "$GITHUB_SHA" --version "$VERSION" \
           --output "$GITHUB_OUTPUT"

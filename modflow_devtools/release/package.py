@@ -3,9 +3,9 @@ Zip a program's release archives, the same way on every platform.
 
 Everything under bin/ goes in <ostag>.zip, at the archive root (bin/mfusg
 becomes mfusg). On Linux, the source also goes in <name>_source.zip, with
-paths relative to the repo root. When the repo is a git checkout, only
-tracked files go in the source archive. Prints the OS tag; the archive
-contents go to stderr.
+paths relative to the repo root and the name from release.toml. When the
+repo is a git checkout, only tracked files go in the source archive. Prints
+the OS tag; the archive contents go to stderr.
 """
 
 import argparse
@@ -14,6 +14,8 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+from modflow_devtools.release import config
 
 # (sys.platform, machine) -> OS tag; Intel macOS (mac) isn't supported
 OSTAGS = {
@@ -74,7 +76,7 @@ def source_files(root, paths):
     return [f for f in files if f.is_file()]
 
 
-def package(root, name, dist, source_paths=None, tag=None):
+def package(root, dist, source_paths=None, tag=None):
     tag = tag or ostag()
     bindir = root / "bin"
     exes = [f for f in bindir.rglob("*") if f.is_file()] if bindir.is_dir() else []
@@ -82,6 +84,7 @@ def package(root, name, dist, source_paths=None, tag=None):
         sys.exit(f"nothing in {bindir}")
     zip_files(dist / f"{tag}.zip", exes, bindir)
     if tag == "linux" and source_paths != []:
+        name, _ = config.names(root)
         zip_files(dist / f"{name}_source.zip", source_files(root, source_paths), root)
     return tag
 
@@ -89,7 +92,6 @@ def package(root, name, dist, source_paths=None, tag=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd(), help="repo root")
-    parser.add_argument("--name", required=True, help="program name, for the source archive")
     parser.add_argument("--dist", type=Path, required=True, help="directory to write archives to")
     parser.add_argument(
         "--source-paths",
@@ -98,7 +100,7 @@ def main(argv=None):
         "(if present) and src; none to skip it",
     )
     args = parser.parse_args(argv)
-    print(package(args.root.resolve(), args.name, args.dist.resolve(), args.source_paths))
+    print(package(args.root.resolve(), args.dist.resolve(), args.source_paths))
     return 0
 
 

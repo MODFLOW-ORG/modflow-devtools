@@ -15,19 +15,23 @@ release.toml:
     format = "{version} {date:%m/%d/%Y}"
 
 Every file is checked before any is written, so a failed update changes
-nothing. Release versions are X.Y.Z, development versions X.Y.Z.devN.
+nothing. Release versions are X.Y.Z, development versions X.Y.Z.devN, with
+plain integers (no leading zeros).
 """
 
 import argparse
 import re
 import sys
-import tomllib
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-RELEASE = re.compile(r"^\d+\.\d+\.\d+$")
-DEVELOP = re.compile(r"^\d+\.\d+\.\d+\.dev\d+$")
+from modflow_devtools.release import config
+
+# plain integers, without leading zeros
+N = r"(?:0|[1-9]\d*)"
+RELEASE = re.compile(rf"^{N}\.{N}\.{N}$")
+DEVELOP = re.compile(rf"^{N}\.{N}\.{N}\.dev{N}$")
 
 PROJECT = re.compile(r"^\s*project\s*\(", re.M)
 # \b keeps meson_version from matching
@@ -109,21 +113,13 @@ def source(root):
     sys.exit("no version in meson.build's project()")
 
 
-def load_config(root):
-    path = root / "release.toml"
-    if not path.is_file():
-        return {}
-    with path.open("rb") as f:
-        return tomllib.load(f)
-
-
 def targets(root):
     """Every file the version is written to, the source first."""
     found = [source(root)]
     pixi = root / "pixi.toml"
     if pixi.is_file() and PIXI.search(read(pixi)):
         found.append(Target(pixi, PIXI))
-    for entry in load_config(root).get("version-files", []):
+    for entry in config.load(root).get("version-files", []):
         pattern = re.compile(entry["pattern"], re.M)
         if pattern.groups != 1:
             sys.exit(f"pattern for {entry['path']} needs exactly one group")
@@ -152,9 +148,14 @@ def next_version(version):
     return f"{major}.{int(minor) + 1}.0.dev{int(micro)}"
 
 
+def normalize(version):
+    """The version with zero padding dropped, e.g. 1.12.2 for 1.12.02."""
+    return re.sub(r"\d+", lambda m: str(int(m.group())), version)
+
+
 def set_version(root, version, date=None):
     if not (RELEASE.match(version) or DEVELOP.match(version)):
-        sys.exit(f"{version} is not X.Y.Z or X.Y.Z.devN")
+        sys.exit(f"{version} is not X.Y.Z or X.Y.Z.devN without leading zeros")
     date = date or datetime.now(UTC)
     # check every target before writing any
     updates = []

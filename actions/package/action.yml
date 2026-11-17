@@ -2,17 +2,14 @@ name: Package a MODFLOW program
 description: >
   Zip everything in bin/ as <ostag>.zip (linux, macarm or win64), with the
   files at the archive root, and on Linux also zip the source as
-  <name>_source.zip. The archives are made the same way on every platform,
-  with modflow_devtools/release/package.py. Outputs the directory holding
-  the archives, and optionally uploads them as artifact dist-<ostag> for the
-  release-finish action.
+  <name>_source.zip, with the name from release.toml. The archives are made
+  the same way on every platform, with modflow_devtools/release/package.py.
+  Outputs the directory holding the archives, and optionally uploads them as
+  artifact dist-<ostag> for the release-finish action.
 inputs:
   path:
-    description: Directory of the program repo checkout
+    description: Directory holding the program, if not the repo root
     default: .
-  name:
-    description: Program name, used for the source archive
-    required: true
   source-paths:
     description: >
       Space-separated paths to put in the source archive, or `none` to skip
@@ -47,11 +44,10 @@ runs:
       env:
         PYTHON: ${{ steps.python.outputs.python-path }}
         PYTHONPATH: ${{ github.action_path }}/../..
-        NAME: ${{ inputs.name }}
         SOURCE_PATHS: ${{ inputs.source-paths }}
       run: |
         dist="$RUNNER_TEMP/dist"
-        args=(--name "$NAME" --dist "$dist")
+        args=(--dist "$dist")
         if [[ "$SOURCE_PATHS" == "none" ]]; then
           args+=(--source-paths)
         elif [[ -n "$SOURCE_PATHS" ]]; then

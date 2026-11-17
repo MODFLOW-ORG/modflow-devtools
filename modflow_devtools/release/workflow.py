@@ -35,13 +35,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-from modflow_devtools.release import changelog, version
-from modflow_devtools.release.ci import error, notice
+from modflow_devtools.release import changelog, config, package, version
+from modflow_devtools.release.ci import error, notice, warning
 
 BOT_NAME = "github-actions[bot]"
 BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
-ARCHIVES = {"linux.zip", "macarm.zip", "win64.zip"}
-VERSION = re.compile(r"^\d+\.\d+\.\d+$")
+PLATFORMS = sorted(package.OSTAGS.values())
 TAG = re.compile(r"^refs/tags/(v?(\d+)\.(\d+)\.(\d+))$")
 
 
@@ -195,15 +194,16 @@ def open_pr(forge, base, head, title, body):
     return True
 
 
-def start(root, event, ref_name, sha, v, long_name, repository, main, develop=""):
+def start(root, event, ref_name, sha, v, repository, main, develop=""):
     """Select the stage, preparing the release branch for ``prepare``.
     Returns the outputs: stage, ref and version."""
     develop = develop or main
     if event == "workflow_dispatch":
         if ref_name != develop:
             sys.exit(f"start a release from {develop}, not {ref_name}")
-        if not VERSION.match(v or ""):
-            sys.exit(f"version '{v}' is not X.Y.Z")
+        if not version.RELEASE.match(v or ""):
+            hint = f", e.g. {version.normalize(v)}" if re.match(r"^\d+\.\d+\.\d+$", v) else ""
+            sys.exit(f"version '{v}' is not X.Y.Z without leading zeros{hint}")
         if tagged(root, v):
             sys.exit(f"tag v{v} already exists")
         check_latest(root, v, develop, main)
@@ -211,23 +211,29 @@ def start(root, event, ref_name, sha, v, long_name, repository, main, develop=""
         if remote_branch(root, branch):
             notice(f"{branch} exists, building it as is. Delete it to start over.")
         else:
-            prepare(root, v, branch, repository, long_name)
+            prepare(root, v, branch, repository)
         return {"stage": "prepare", "ref": branch, "version": v}
     if event == "push" and ref_name == main:
         v = version.get_version(root)
-        if VERSION.match(v) and not tagged(root, v):
+        if version.RELEASE.match(v) and not tagged(root, v):
             # fail before the build if there are no release notes
-            changelog.notes(root, v)
+            if not changelog.notes(root, v):
+                warning(f"the {v} section of CHANGELOG.md is empty, so the release notes are too")
             return {"stage": "publish", "ref": sha, "version": v}
         print(f"version {v} on {main} is not an untagged release version, nothing to do")
     return {"stage": "", "ref": "", "version": v or ""}
 
 
-def prepare(root, v, branch, repository, long_name):
+def prepare(root, v, branch, repository):
     fetch_history(root)
     git(root, "switch", "-c", branch)
     version.set_version(root, v)
-    changelog.update(root, v, repository, long_name)
+    changelog.update(root, v, repository)
+    if not changelog.notes(root, v):
+        warning(
+            f"the {v} section of CHANGELOG.md is empty, since there are no feat, fix or "
+            f"perf commits since the last release. Add release notes to it on {branch}."
+        )
     commit(
         root,
         f"chore(release): set version to {v} and update changelog",
@@ -260,18 +266,19 @@ def expand(dirs, patterns):
     return files
 
 
-def assets(root, dist, name, platforms, extra=()):
+def assets(root, dist, extra=()):
     """The release's files: the archives in dist, each platform's present and
     nothing unexpected, then the extra assets, which are matched in the repo
     and in dist (for files built in other jobs and uploaded as dist-*
     artifacts)."""
     dist = Path(dist)
-    allowed = ARCHIVES | {f"{name}_source.zip"}
+    name, _ = config.names(root)
+    allowed = {f"{p}.zip" for p in PLATFORMS} | {f"{name}_source.zip"}
     extras = expand([root, dist], extra)
     found = sorted(p for p in dist.iterdir() if p.is_file()) if dist.is_dir() else []
     archives = [p for p in found if p not in extras]
     ok = True
-    for p in platforms:
+    for p in PLATFORMS:
         if not (dist / f"{p}.zip").is_file():
             error(f"missing {p}.zip")
             ok = False
@@ -289,9 +296,9 @@ def assets(root, dist, name, platforms, extra=()):
     return files
 
 
-def publish(root, repository, ref, v, name, long_name, dist, platforms, extra=()):
-    files = assets(root, dist, name, platforms, extra)
-    notes = changelog.notes(root, v, long_name)
+def publish(root, repository, ref, v, dist, extra=()):
+    files = assets(root, dist, extra)
+    notes = changelog.notes(root, v, title=True)
     print(notes)
     tag = f"v{v}"
     forge = GitHub(root, repository)
@@ -303,6 +310,7 @@ def publish(root, repository, ref, v, name, long_name, dist, platforms, extra=()
         # gh leaves a draft when an asset upload fails
         print(f"deleting draft release {tag} from an earlier run")
         forge.delete_release(tag)
+    name, _ = config.names(root)
     forge.create_release(tag, files, ref, f"{name} {v}", notes)
     return True
 
@@ -336,13 +344,11 @@ def post_release(root, repository, v, main, develop=""):
     return True
 
 
-def finish(
-    root, stage, repository, ref, v, name, long_name, main, develop, dist, platforms, extra=()
-):
+def finish(root, stage, repository, ref, v, main, develop, dist, extra=()):
     if stage == "prepare":
         finish_prepare(root, repository, ref, v, main, develop)
     elif stage == "publish":
-        publish(root, repository, ref, v, name, long_name, dist, platforms, extra)
+        publish(root, repository, ref, v, dist, extra)
         post_release(root, repository, v, main, develop)
     else:
         sys.exit(f"unexpected stage '{stage}', expected prepare or publish")
@@ -371,16 +377,12 @@ def main(argv=None):
     s.add_argument("--ref-name", required=True)
     s.add_argument("--sha", required=True)
     s.add_argument("--version", default="")
-    s.add_argument("--long-name", required=True)
     s.add_argument("--output", help="file to append outputs to, e.g. $GITHUB_OUTPUT")
     f = sub.add_parser("finish", help="open the release pull request, or publish")
     f.add_argument("--stage", required=True)
     f.add_argument("--ref", required=True)
     f.add_argument("--version", required=True)
-    f.add_argument("--name", required=True)
-    f.add_argument("--long-name", required=True)
     f.add_argument("--dist", type=Path, required=True, help="directory holding the archives")
-    f.add_argument("--platforms", nargs="+", default=["linux", "macarm", "win64"])
     f.add_argument(
         "--extra-assets", nargs="*", default=[], help="globs relative to the repo root or dist"
     )
@@ -393,7 +395,6 @@ def main(argv=None):
             args.ref_name,
             args.sha,
             args.version,
-            args.long_name,
             args.repository,
             args.main_branch,
             args.develop_branch,
@@ -406,12 +407,9 @@ def main(argv=None):
             args.repository,
             args.ref,
             args.version,
-            args.name,
-            args.long_name,
             args.main_branch,
             args.develop_branch,
             args.dist,
-            args.platforms,
             args.extra_assets,
         )
     return 0

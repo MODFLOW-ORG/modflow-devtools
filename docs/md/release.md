@@ -9,6 +9,7 @@ Shared CI and release tooling for MODFLOW program repositories.
 - [Requirements](#requirements)
   - [Build system](#build-system)
   - [Version](#version)
+  - [release.toml](#releasetoml)
   - [Commits](#commits)
   - [Repository settings](#repository-settings)
 - [Build workflow](#build-workflow)
@@ -42,7 +43,9 @@ A program repository must satisfy the following to use the actions.
 
 ### Build system
 
-The program should build with [Meson](https://mesonbuild.com/) and [pixi](https://pixi.sh/). The actions are written for Fortran programs. A program with C or C++ sources can add the compilers to `pixi.toml`, but `setup` only arranges static linking of the Fortran and C runtimes; a C++ program must link libstdc++ statically itself (`-static-libstdc++`), or `check-linkage` fails. `pixi.toml` must be at the repository root, and `pixi.lock` should be committed.
+The program should build with [Meson](https://mesonbuild.com/) and [pixi](https://pixi.sh/), and may be written in Fortran, C or C++. `pixi.lock` should be committed.
+
+The program's files (`meson.build`, `pixi.toml`, `release.toml`, `CHANGELOG.md` and `bin/`) are expected at the repository root. If they're in a subdirectory, pass it to every action as `path` (to `check-linkage`, the `bin/` directory). The changelog still covers the whole repository's history.
 
 How the program is built and tested is up to the repository's build workflow. The examples assume pixi tasks like
 
@@ -55,7 +58,7 @@ test = "meson test --verbose --no-rebuild -C builddir"
 
 Executables must install to `bin/` at the repository root. Everything in `bin/` goes in the release archives, so nothing else should be installed there. If the program has a double precision build, its executables must have different names than the single precision ones (e.g. `mfusg` and `mfusgdbl`).
 
-gfortran comes from the pixi environment, i.e. from conda-forge, so `pixi.toml` must depend on it:
+For a Fortran program, gfortran comes from the pixi environment, i.e. from conda-forge, so `pixi.toml` must depend on it:
 
 ```toml
 [dependencies]
@@ -66,7 +69,7 @@ If gfortran is in another pixi environment, pass it to the `setup` action as `pi
 
 Intel compilers are installed with [setup-fortran](https://github.com/fortran-lang/setup-fortran), which also sets `FC`, `CC` and `CXX`. Releases should be built with Intel `ifx` on Linux and Windows, and with gfortran on macOS.
 
-Executables must link the compiler runtime libraries statically, so users don't need the compiler installed. The `setup` action sets `LDFLAGS` for this: `-static-libgfortran -static-libgcc -static-libquadmath` for gfortran (`-static` on Windows), and `-static-intel -static-libgcc` for Intel on Linux. On Windows, Intel builds need Meson's `b_vscrt` option, which `LDFLAGS` can't set, so `meson.build` must have
+Executables must link the compiler runtime libraries statically, so users don't need the compiler installed. The `setup` action sets `LDFLAGS` for this: `-static-libgfortran -static-libgcc -static-libquadmath` for gfortran (`-static` on Windows), and `-static-intel -static-libgcc` for Intel on Linux, plus `-static-libstdc++` for either on Linux. On macOS, the C++ runtime (libc++) is a system library. On Windows, Intel builds need Meson's `b_vscrt` option, which `LDFLAGS` can't set, so `meson.build` must have
 
 ```meson
 default_options: ['b_vscrt=static_from_buildtype', 'buildtype=release'],
@@ -76,7 +79,7 @@ Don't set `link_language` on executables. With Intel, `'fortran'` makes Meson ap
 
 Binaries must also run on older systems than the build machines:
 
-- **Linux**: glibc 2.34 (RHEL 9) or older. Binaries built with gfortran from conda-forge link against an old glibc, whatever the build machine has. Intel builds link against the build machine's glibc, so build them on the oldest available runner (`ubuntu-22.04`).
+- **Linux**: glibc 2.34 (RHEL 9) or older. Binaries built with gfortran from conda-forge link against an old glibc, whatever the build machine has. Intel builds link against the build machine's glibc, so build them on the oldest available runner. `ubuntu-22.04` has glibc 2.35, so its binaries pass only if they don't use a function added in 2.35, which `check-linkage` checks.
 - **macOS**: macOS 14.0 or newer, on Apple silicon. The `setup` action sets `MACOSX_DEPLOYMENT_TARGET=14.0`; without it, binaries require the build machine's macOS version.
 
 ### Version
@@ -93,18 +96,9 @@ project(
 
 or read from a file with `version: files('version.txt')`.
 
-Release versions are `major.minor.patch`, with plain integers, so zero padding is dropped: the development version after `1.0.03` is `1.1.0.dev3`. Between releases, the repository holds the next minor version with a `.devN` suffix, where `N` is the last release's patch number as in MODFLOW 6, e.g. `1.6.0.dev0` after `1.5.0` and `1.6.0.dev2` after `1.5.2`. Programs with `major.minor` versions should switch to `major.minor.0` at their next release.
+Release versions are `major.minor.patch`, with plain integers: `release-start` rejects zero padding like `1.12.02` (release it as `1.12.2`), and the development version after `1.0.03` is `1.1.0.dev3`. Between releases, the repository holds the next minor version with a `.devN` suffix, where `N` is the last release's patch number as in MODFLOW 6, e.g. `1.6.0.dev0` after `1.5.0` and `1.6.0.dev2` after `1.5.2`. Programs with `major.minor` versions should switch to `major.minor.0` at their next release.
 
-Only `project()`'s `version` keyword counts, so e.g. a `dependency()`'s `version` doesn't. If `pixi.toml` has a `version`, it is kept in sync with `meson.build`. Other files containing the version, e.g. a version string in the source code, can be listed in `release.toml` at the repository root:
-
-```toml
-[[version-files]]
-path = "src/mfusg.f"
-# exactly one capture group, matching the text to replace
-pattern = "PARAMETER \\(VERSION='([^']*)'\\)"
-# optional, {version} and {date} (UTC) are available
-format = "{version} {date:%m/%d/%Y}"
-```
+Only `project()`'s `version` keyword counts, so e.g. a `dependency()`'s `version` doesn't. If `pixi.toml` has a `version`, it is kept in sync with `meson.build`, as are any files listed in [`release.toml`](#releasetoml).
 
 To get or set the version locally:
 
@@ -115,6 +109,22 @@ python -m modflow_devtools.release.version --root ../mfusg --files
 ```
 
 Setting the version checks every file before writing any, so if one file has no version, or more than one, nothing changes.
+
+### release.toml
+
+`release.toml` at the repository root names the program, for the source archive, the release title, the changelog header and the release notes. Other files containing the version, e.g. a version string in the source code, can be listed there too:
+
+```toml
+name = "mfusg"
+long-name = "MODFLOW-USG"
+
+[[version-files]]
+path = "src/mfusg.f"
+# exactly one capture group, matching the text to replace
+pattern = "PARAMETER \\(VERSION='([^']*)'\\)"
+# optional, {version} and {date} (UTC) are available
+format = "{version} {date:%m/%d/%Y}"
+```
 
 ### Commits
 
@@ -148,7 +158,7 @@ The build workflow must also accept `workflow_call` with inputs `ref` (what to c
 
 ## Release workflow
 
-Copy [`docs/examples/release.yml`](https://github.com/MODFLOW-ORG/modflow-devtools/blob/develop/docs/examples/release.yml) to `.github/workflows/release.yml` and set the program's name and long name. It has three jobs:
+Copy [`docs/examples/release.yml`](https://github.com/MODFLOW-ORG/modflow-devtools/blob/develop/docs/examples/release.yml) to `.github/workflows/release.yml`. It has three jobs:
 
 - `start`: the `release-start` action decides what to do, see [Making a release](#making-a-release)
 - `build`: calls the repository's build workflow on the release branch or commit
@@ -157,17 +167,13 @@ Copy [`docs/examples/release.yml`](https://github.com/MODFLOW-ORG/modflow-devtoo
 `release-start` inputs:
 
 - `version`: pass `${{ inputs.version }}`
-- `long-name`: program long name, used in the shared changelog header (required)
 - `main-branch`: branch releases are merged into and tagged on (default `main`)
 - `develop-branch`: development branch, if not the main branch, see [Branching models](#branching-models)
 
 `release-finish` inputs:
 
 - `stage`, `ref`, `version`: pass `release-start`'s outputs
-- `name`: program name, used for the source archive and release title (required)
-- `long-name`: program long name, used in the release notes (required)
 - `main-branch`, `develop-branch`: as for `release-start`
-- `platforms`: OS tags that must each have an archive (default `linux macarm win64`)
 - `extra-assets`: newline-separated globs of other files to attach to the release, e.g. `doc/*.pdf`, matched relative to the checkout and to the downloaded `dist-*` artifacts. Each must match a file. To attach a file built in another job, e.g. a PDF of the release notes, upload it as an artifact named `dist-<something>` and list it here.
 
 ### Branching models
@@ -190,7 +196,7 @@ To make a release:
    - updates `CHANGELOG.md`
    - builds and tests on each platform
    - opens a pull request into `main`
-2. Review the pull request. The version's section in `CHANGELOG.md` becomes the release notes, so edit it on the release branch if needed.
+2. Review the pull request. The version's section in `CHANGELOG.md` becomes the release notes, so edit it on the release branch if needed. If there were no `feat`, `fix` or `perf` commits since the last release, the section is empty and the workflow warns.
 3. Merge the pull request. If the version on `main` is a release version without a tag, the workflow
    - checks that `CHANGELOG.md` has a section for the version, failing before the build if not
    - builds and tests on each platform again
@@ -211,7 +217,7 @@ Each step checks whether it's already done, so a failed release can be rerun:
 
 ### Adopting the release workflow
 
-`release-start` publishes any untagged release version it finds on the main branch, so before adding the release workflow, make sure the version there is either tagged `vX.Y.Z` or a development version. Otherwise the first push to the main branch tries to release it, and fails if `CHANGELOG.md` has no section for it. Tag the last release on the commit it was made from, if it isn't already, so the first changelog only covers changes since then.
+`release-start` publishes any untagged release version it finds on the main branch, so before adding the release workflow, make sure the version there is either tagged `vX.Y.Z` or a development version. Otherwise the first push to the main branch tries to release it, and fails if `CHANGELOG.md` has no section for it. Tag the last release `vX.Y.Z` on the commit it was made from, if it isn't already, so the first changelog only covers changes since then. Two-part tags like `v3.01` aren't recognized, so tag such a release `v3.1.0` too.
 
 ## Release assets
 
@@ -236,7 +242,6 @@ Intel macOS (`mac`) is not supported.
 - `actions/package`: zip `bin/` as `<ostag>.zip`, and on Linux the source as `<name>_source.zip`, optionally uploading them as artifact `dist-<ostag>`
 - `actions/release-start`: prepare the release branch, or check whether `main` needs releasing
 - `actions/release-finish`: open the release pull request, or publish the release with any extra assets and open the next version pull request
-- `actions/version`: get or set the version, or get the next development version
 
 See each `action.yml` for inputs and outputs.
 

@@ -10,7 +10,7 @@ description: >
   being released. See modflow_devtools/release/workflow.py.
 inputs:
   path:
-    description: Directory of the program repo checkout
+    description: Directory holding the program, if not the repo root
     default: .
   stage:
     description: The release-start action's stage output
@@ -21,21 +21,12 @@ inputs:
   version:
     description: The release-start action's version output
     required: true
-  name:
-    description: Program name, e.g. mfusg; used for the source archive and release title
-    required: true
-  long-name:
-    description: Program long name, e.g. MODFLOW-USG; used in the release notes
-    required: true
   main-branch:
     description: Branch releases are merged into and tagged on
     default: main
   develop-branch:
     description: Branch development happens on, if not the main branch
     default: ""
-  platforms:
-    description: Space-separated OS tags that must each have an archive
-    default: linux macarm win64
   extra-assets:
     description: >
       Newline-separated globs of other files to attach to the release, e.g.
@@ -75,14 +66,10 @@ runs:
         STAGE: ${{ inputs.stage }}
         REF: ${{ inputs.ref }}
         VERSION: ${{ inputs.version }}
-        NAME: ${{ inputs.name }}
-        LONG_NAME: ${{ inputs.long-name }}
         MAIN_BRANCH: ${{ inputs.main-branch }}
         DEVELOP_BRANCH: ${{ inputs.develop-branch }}
-        PLATFORMS: ${{ inputs.platforms }}
         EXTRA_ASSETS: ${{ inputs.extra-assets }}
       run: |
-        read -ra platforms <<< "$PLATFORMS"
         extra=()
         while IFS= read -r line; do
           if [[ -n "${line//[[:space:]]/}" ]]; then extra+=("$line"); fi
@@ -91,5 +78,4 @@ runs:
           --repository "$GITHUB_REPOSITORY" \
           --main-branch "$MAIN_BRANCH" --develop-branch "$DEVELOP_BRANCH" \
           finish --stage "$STAGE" --ref "$REF" --version "$VERSION" \
-          --name "$NAME" --long-name "$LONG_NAME" --dist "$DIST" \
-          --platforms "${platforms[@]}" --extra-assets "${extra[@]}"
+          --dist "$DIST" --extra-assets "${extra[@]}"

@@ -2,7 +2,7 @@
 Update CHANGELOG.md for a release, or print a release's notes from it.
 
 ``update`` runs git-cliff with the shared template (cliff.toml beside this
-module), filled in with the repository and the program's long name. Every
+module), filled in with the repository and the long name from release.toml. Every
 program uses the same template, so CHANGELOG.md looks the same everywhere and
 ``notes`` can find each version's section. ``notes`` prints the section of
 CHANGELOG.md for one version, which becomes the GitHub release notes.
@@ -19,6 +19,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from modflow_devtools.release import config
+
 GIT_CLIFF_VERSION = "2.14.2"
 TEMPLATE = Path(__file__).resolve().parent / "cliff.toml"
 HEADING = re.compile(r"^## Version (\S+)")
@@ -34,18 +36,19 @@ def git_cliff():
     sys.exit("running git-cliff needs pipx or uvx")
 
 
-def update(root, version, repository, long_name):
+def update(root, version, repository):
     """Add the release's section to CHANGELOG.md, above the earlier ones,
     creating the file with the template's header if needed. The file is
     assembled here rather than with git-cliff's --prepend, which repeats the
     header on Windows, and always written with LF line endings."""
+    _, long_name = config.names(root)
     changelog = root / "CHANGELOG.md"
     text = TEMPLATE.read_text()
     text = text.replace("__REPOSITORY__", repository).replace("__NAME__", long_name)
     with tempfile.TemporaryDirectory() as tmp:
-        config = Path(tmp) / "cliff.toml"
-        config.write_text(text)
-        cmd = [*git_cliff(), "--config", str(config), "--unreleased", "--tag", f"v{version}"]
+        cliff = Path(tmp) / "cliff.toml"
+        cliff.write_text(text)
+        cmd = [*git_cliff(), "--config", str(cliff), "--unreleased", "--tag", f"v{version}"]
         if changelog.is_file():
             cmd += ["--strip", "header"]
         # text mode turns any CRLF into LF
@@ -60,9 +63,9 @@ def update(root, version, repository, long_name):
         f.write(out.strip("\n") + "\n")
 
 
-def notes(root, version, long_name=None):
+def notes(root, version, title=False):
     """The section of CHANGELOG.md for the version, titled with the long
-    name if given."""
+    name if ``title``."""
     changelog = root / "CHANGELOG.md"
     if not changelog.is_file():
         sys.exit("no CHANGELOG.md")
@@ -78,8 +81,12 @@ def notes(root, version, long_name=None):
             lines.append(line)
     if not found:
         sys.exit(f"no section for version {version} in CHANGELOG.md")
-    body = "\n".join(lines).strip() + "\n"
-    return f"{long_name} version {version}\n\n{body}" if long_name else body
+    body = "\n".join(lines).strip()
+    body = body + "\n" if body else ""
+    if not title:
+        return body
+    _, long_name = config.names(root)
+    return f"{long_name} version {version}\n\n{body}"
 
 
 def main(argv=None):
@@ -89,16 +96,17 @@ def main(argv=None):
     up = sub.add_parser("update", help="prepend this release to CHANGELOG.md")
     up.add_argument("--version", required=True)
     up.add_argument("--repository", required=True, help="owner/repo")
-    up.add_argument("--long-name", required=True)
     no = sub.add_parser("notes", help="print one version's section")
     no.add_argument("--version", required=True)
-    no.add_argument("--long-name", help="title the notes '<long name> version <version>'")
+    no.add_argument(
+        "--title", action="store_true", help="title the notes '<long name> version <version>'"
+    )
     args = parser.parse_args(argv)
     root = args.root.resolve()
     if args.command == "update":
-        update(root, args.version, args.repository, args.long_name)
+        update(root, args.version, args.repository)
     else:
-        sys.stdout.write(notes(root, args.version, args.long_name))
+        sys.stdout.write(notes(root, args.version, args.title))
     return 0
 
 
