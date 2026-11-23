@@ -38,6 +38,7 @@ Python development tools for MODFLOW 6 and related projects.
   - [`MODFLOW-ORG/modflow6-examples`](https://github.com/MODFLOW-ORG/modflow6-examples)
   - [`MODFLOW-ORG/modflow6-testmodels`](https://github.com/MODFLOW-ORG/modflow6-testmodels)
   - [`MODFLOW-ORG/modflow6-largetestmodels`](https://github.com/MODFLOW-ORG/modflow6-largetestmodels)
+* GitHub Actions for building, packaging and releasing MODFLOW programs, see [release actions](docs/md/release.md)
 
 ## Requirements
 

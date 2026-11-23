@@ -1,0 +1,60 @@
+name: Start a release
+description: >
+  First step of a release workflow. On workflow_dispatch from the development
+  branch, create release/vX.Y.Z, set the version, update CHANGELOG.md
+  (unless the release notes are curated), and push the branch, or reuse the
+  branch if it exists (stage `prepare`). On push to the main branch, if the
+  version there is X.Y.Z, untagged, and has a section in the release notes,
+  select the commit for release (stage `publish`).
+  Otherwise do nothing (empty stage). Build the `ref` output when the stage
+  is set, then run release-finish. See modflow_devtools/release/workflow.py.
+inputs:
+  path:
+    description: Directory holding the program, if not the repo root
+    default: .
+  version:
+    description: Version to release, X.Y.Z (workflow_dispatch only)
+    default: ""
+  main-branch:
+    description: Branch releases are merged into and tagged on
+    default: main
+  develop-branch:
+    description: Branch development happens on, if not the main branch
+    default: ""
+outputs:
+  stage:
+    description: prepare, publish, or empty if there is nothing to do
+    value: ${{ steps.start.outputs.stage }}
+  ref:
+    description: Branch or commit to build and release
+    value: ${{ steps.start.outputs.ref }}
+  version:
+    description: Version being released
+    value: ${{ steps.start.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Start release
+      id: start
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
+        VERSION: ${{ inputs.version }}
+        MAIN_BRANCH: ${{ inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch }}
+      run: |
+        "$PYTHON" -P -m modflow_devtools.release.workflow \
+          --repository "$GITHUB_REPOSITORY" \
+          --main-branch "$MAIN_BRANCH" --develop-branch "$DEVELOP_BRANCH" \
+          start --event "$GITHUB_EVENT_NAME" --ref-name "$GITHUB_REF_NAME" \
+          --sha "$GITHUB_SHA" --version "$VERSION" \
+          --output "$GITHUB_OUTPUT"

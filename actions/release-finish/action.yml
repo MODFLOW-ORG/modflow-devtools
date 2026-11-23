@@ -1,0 +1,82 @@
+name: Finish a release
+description: >
+  Last step of a release workflow, after the release-start action and the
+  build. For stage `prepare`, open the release pull request into the main
+  branch. For stage `publish`, download the dist-* artifacts uploaded by the
+  package action, check them, publish the GitHub release with them and any
+  extra assets, and open a pull request setting the next development version
+  on the development branch. Steps already done by an earlier run are
+  skipped, so a failed run can be rerun. Expects a checkout of the commit
+  being released. See modflow_devtools/release/workflow.py.
+inputs:
+  path:
+    description: Directory holding the program, if not the repo root
+    default: .
+  stage:
+    description: The release-start action's stage output
+    required: true
+  ref:
+    description: The release-start action's ref output
+    required: true
+  version:
+    description: The release-start action's version output
+    required: true
+  main-branch:
+    description: Branch releases are merged into and tagged on
+    default: main
+  develop-branch:
+    description: Branch development happens on, if not the main branch
+    default: ""
+  extra-assets:
+    description: >
+      Newline-separated globs of other files to attach to the release, e.g.
+      documentation, matched relative to the checkout and to the downloaded
+      dist-* artifacts, so files built in other jobs can be uploaded as
+      dist-* artifacts. Each must match a file. These must include the
+      release notes asset, if release.toml names one.
+    default: ""
+  github-token:
+    description: Token for creating the release and pull requests
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Download archives
+      if: inputs.stage == 'publish'
+      uses: actions/download-artifact@v8
+      with:
+        pattern: dist-*
+        merge-multiple: true
+        path: ${{ runner.temp }}/dist
+
+    - name: Finish release
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
+        DIST: ${{ runner.temp }}/dist
+        STAGE: ${{ inputs.stage }}
+        REF: ${{ inputs.ref }}
+        VERSION: ${{ inputs.version }}
+        MAIN_BRANCH: ${{ inputs.main-branch }}
+        DEVELOP_BRANCH: ${{ inputs.develop-branch }}
+        EXTRA_ASSETS: ${{ inputs.extra-assets }}
+      run: |
+        extra=()
+        while IFS= read -r line; do
+          if [[ -n "${line//[[:space:]]/}" ]]; then extra+=("$line"); fi
+        done <<< "$EXTRA_ASSETS"
+        "$PYTHON" -P -m modflow_devtools.release.workflow \
+          --repository "$GITHUB_REPOSITORY" \
+          --main-branch "$MAIN_BRANCH" --develop-branch "$DEVELOP_BRANCH" \
+          finish --stage "$STAGE" --ref "$REF" --version "$VERSION" \
+          --dist "$DIST" --extra-assets "${extra[@]}"

@@ -1,0 +1,115 @@
+name: Set up a MODFLOW program build
+description: >
+  Set up the compiler and pixi, set LDFLAGS so the compiler runtime
+  libraries are linked statically, and on macOS set MACOSX_DEPLOYMENT_TARGET
+  to 14.0, the oldest macOS the binaries support. gfortran comes from the
+  repo's pixi environment (conda-forge), so a Fortran program's pixi.toml
+  must depend on gfortran; Intel compilers come from
+  fortran-lang/setup-fortran. Building and testing is left to the caller.
+inputs:
+  path:
+    description: Directory holding the program and its pixi.toml, if not the repo root
+    default: .
+  compiler:
+    description: gcc (gfortran from the pixi environment, if any) or intel
+    default: gcc
+  compiler-version:
+    description: Intel compiler version; ignored for gcc, whose version pixi.toml pins
+    default: "2025.0"
+  xcode-version:
+    description: Xcode version to select on macOS, if any
+    default: ""
+  pixi-version:
+    description: pixi version
+    default: v0.82.1
+  pixi-environment:
+    description: pixi environment to install, which must provide gfortran for gcc builds
+    default: default
+runs:
+  using: composite
+  steps:
+    - name: Check compiler
+      shell: bash
+      env:
+        COMPILER: ${{ inputs.compiler }}
+      run: |
+        case "$COMPILER" in
+          gcc|intel) ;;
+          *) echo "::error::Unsupported compiler '$COMPILER', expected gcc or intel."; exit 1 ;;
+        esac
+
+    - name: Setup ${{ inputs.compiler }} ${{ inputs.compiler-version }}
+      if: inputs.compiler != 'gcc'
+      uses: fortran-lang/setup-fortran@v1
+      with:
+        compiler: ${{ inputs.compiler }}
+        version: ${{ inputs.compiler-version }}
+
+    # setup-fortran leaves CXX unset for intel on Windows
+    - name: Set CXX (Windows intel)
+      if: runner.os == 'Windows' && inputs.compiler == 'intel'
+      shell: pwsh
+      run: echo "CXX=icx" >> $env:GITHUB_ENV
+
+    - name: Setup pixi
+      uses: prefix-dev/setup-pixi@v0.11.3
+      with:
+        pixi-version: ${{ inputs.pixi-version }}
+        manifest-path: ${{ inputs.path }}/pixi.toml
+        environments: ${{ inputs.pixi-environment }}
+
+    - name: Set Xcode version (macOS)
+      if: runner.os == 'macOS' && inputs.xcode-version != ''
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    # Windows Intel builds link the runtime statically through meson's
+    # b_vscrt option, which LDFLAGS can't set; see the release actions docs.
+    # On macOS, libc++ is a system library.
+    - name: Link the compiler runtime statically
+      shell: bash
+      env:
+        COMPILER: ${{ inputs.compiler }}
+      run: |
+        case "$COMPILER-$RUNNER_OS" in
+          gcc-Windows) flags="-static" ;;
+          gcc-Linux) flags="-static-libgfortran -static-libgcc -static-libquadmath -static-libstdc++" ;;
+          gcc-*) flags="-static-libgfortran -static-libgcc -static-libquadmath" ;;
+          intel-Linux) flags="-static-intel -static-libgcc -static-libstdc++" ;;
+          *) flags="" ;;
+        esac
+        if [[ -n "$flags" ]]; then
+          echo "LDFLAGS=${LDFLAGS:+$LDFLAGS }$flags" >> "$GITHUB_ENV"
+        fi
+        echo "LDFLAGS: ${LDFLAGS:+$LDFLAGS }$flags"
+
+    # must match MACOS_MIN in modflow_devtools/release/linkage.py; a test checks
+    - name: Set the minimum macOS version
+      if: runner.os == 'macOS'
+      shell: bash
+      run: echo "MACOSX_DEPLOYMENT_TARGET=14.0" >> "$GITHUB_ENV"
+
+    - name: Show toolchain
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      env:
+        COMPILER: ${{ inputs.compiler }}
+        PIXI_ENV: ${{ inputs.pixi-environment }}
+      run: |
+        # a Fortran program mustn't fall back to the runner's gfortran
+        if [[ "$COMPILER" == "gcc" ]] && grep -q "'fortran'" meson.build; then
+          if ! pixi run -e "$PIXI_ENV" gfortran --version | head -1; then
+            echo "::error::No gfortran in pixi environment $PIXI_ENV, add it to pixi.toml."
+            exit 1
+          fi
+        elif [[ "$COMPILER" == "gcc" ]]; then
+          "${CC:-cc}" --version 2>&1 | head -1 || true
+        else
+          "$FC" --version 2>&1 | head -1 || true
+        fi
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          xcode-select -p
+          xcrun --show-sdk-version
+          ld -v 2>&1 | head -2
+        fi

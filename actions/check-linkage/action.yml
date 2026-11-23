@@ -1,0 +1,29 @@
+name: Check linkage
+description: >
+  Check that every executable and shared library in a directory links only
+  libraries the operating system provides, so compiler runtimes must be
+  linked statically. On Linux, also require glibc 2.34 (RHEL 9) or older; on
+  macOS, require arm64 and a minimum macOS of 14.0. Fails if no binaries are
+  found or a file can't be inspected. See
+  modflow_devtools/release/linkage.py.
+inputs:
+  path:
+    description: Directory holding the executables, searched recursively
+    default: bin
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      id: python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        update-environment: false
+
+    - name: Check linkage
+      shell: bash
+      env:
+        PYTHON: ${{ steps.python.outputs.python-path }}
+        PYTHONPATH: ${{ github.action_path }}/../..
+        BINDIR: ${{ inputs.path }}
+      run: '"$PYTHON" -P -m modflow_devtools.release.linkage "$BINDIR"'

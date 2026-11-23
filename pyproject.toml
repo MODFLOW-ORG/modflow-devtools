@@ -119,6 +119,7 @@ core-metadata-version = "2.4"
 [tool.hatch.build]
 include = [
     "modflow_devtools/dfn/*.toml",
+    "modflow_devtools/release/cliff.toml",
     "modflow_devtools/registry/*"
 ]
 
