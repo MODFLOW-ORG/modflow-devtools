@@ -32,7 +32,8 @@ inputs:
       Newline-separated globs of other files to attach to the release, e.g.
       documentation, matched relative to the checkout and to the downloaded
       dist-* artifacts, so files built in other jobs can be uploaded as
-      dist-* artifacts. Each must match a file.
+      dist-* artifacts. Each must match a file. These must include the
+      release notes asset, if release.toml names one.
     default: ""
   github-token:
     description: Token for creating the release and pull requests

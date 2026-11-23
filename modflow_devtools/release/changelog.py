@@ -5,7 +5,9 @@ Update CHANGELOG.md for a release, or print a release's notes from it.
 module), filled in with the repository and the long name from release.toml. Every
 program uses the same template, so CHANGELOG.md looks the same everywhere and
 ``notes`` can find each version's section. ``notes`` prints the section of
-CHANGELOG.md for one version, which becomes the GitHub release notes.
+CHANGELOG.md for one version, which becomes the GitHub release notes. It
+also reads curated release notes, written by hand in the same format (see
+config.py).
 
 git-cliff runs at a pinned version with ``pipx run`` or ``uvx``, whichever is
 available, so nothing needs installing beforehand.
@@ -63,14 +65,14 @@ def update(root, version, repository):
         f.write(out.strip("\n") + "\n")
 
 
-def notes(root, version, title=False):
-    """The section of CHANGELOG.md for the version, titled with the long
-    name if ``title``."""
-    changelog = root / "CHANGELOG.md"
-    if not changelog.is_file():
-        sys.exit("no CHANGELOG.md")
+def section(root, version, path=config.CHANGELOG):
+    """The section of the notes file for the version, or None if the file or
+    the section is missing."""
+    file = root / path
+    if not file.is_file():
+        return None
     lines, found = [], False
-    for line in changelog.read_text().splitlines():
+    for line in file.read_text().splitlines():
         match = HEADING.match(line)
         if match:
             if found:
@@ -79,9 +81,18 @@ def notes(root, version, title=False):
             continue
         if found:
             lines.append(line)
-    if not found:
-        sys.exit(f"no section for version {version} in CHANGELOG.md")
-    body = "\n".join(lines).strip()
+    return "\n".join(lines) if found else None
+
+
+def notes(root, version, title=False, path=config.CHANGELOG):
+    """The section of the notes file (CHANGELOG.md by default) for the
+    version, titled with the long name if ``title``."""
+    if not (root / path).is_file():
+        sys.exit(f"no {path}")
+    body = section(root, version, path)
+    if body is None:
+        sys.exit(f"no section for version {version} in {path}")
+    body = body.strip()
     body = body + "\n" if body else ""
     if not title:
         return body
@@ -98,6 +109,7 @@ def main(argv=None):
     up.add_argument("--repository", required=True, help="owner/repo")
     no = sub.add_parser("notes", help="print one version's section")
     no.add_argument("--version", required=True)
+    no.add_argument("--path", default=config.CHANGELOG, help="notes file")
     no.add_argument(
         "--title", action="store_true", help="title the notes '<long name> version <version>'"
     )
@@ -106,7 +118,7 @@ def main(argv=None):
     if args.command == "update":
         update(root, args.version, args.repository)
     else:
-        sys.stdout.write(notes(root, args.version, args.title))
+        sys.stdout.write(notes(root, args.version, args.title, args.path))
     return 0
 
 

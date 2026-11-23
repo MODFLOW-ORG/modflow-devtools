@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.release import changelog, linkage, package, version, workflow
+from modflow_devtools.release import changelog, config, linkage, package, version, workflow
 
 FIXTURE = Path(__file__).resolve().parent / "release"
 IGNORE = shutil.ignore_patterns("builddir*", "bin", ".pixi")
@@ -505,6 +505,120 @@ def test_publish(origin, gh, tmp_path):
     git(origin, "fetch", "-q", "origin")
     meson = remote_file(origin, "post-release/v0.1.0", "meson.build")
     assert "version: '0.2.0.dev0'" in meson
+
+
+CURATED = """# Release notes
+
+## Version 0.1.0
+
+### New features
+
+* Says hello in more languages
+"""
+
+
+def curate(origin, asset=None, notes=CURATED):
+    """Switch the fixture to curated release notes in doc/release-notes.md."""
+    toml = origin / "release.toml"
+    table = '[release-notes]\npath = "doc/release-notes.md"\n'
+    if asset:
+        table += f'asset = "{asset}"\n'
+    toml.write_text(toml.read_text() + "\n" + table)
+    (origin / "doc").mkdir(exist_ok=True)
+    (origin / "doc" / "release-notes.md").write_text(notes)
+    git(origin, "add", "-A")
+    git(origin, "commit", "-q", "-m", "docs: curate release notes")
+    git(origin, "push", "-q", "origin", "main")
+
+
+def test_release_notes_default(repo):
+    assert config.release_notes(repo) == (False, "CHANGELOG.md", None)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        'release-notes = "ReleaseNotes.pdf"',
+        '[release-notes]\npath = ""',
+        '[release-notes]\nasset = "doc/ReleaseNotes.pdf"',
+        '[release-notes]\nfile = "notes.md"',
+    ],
+    ids=["not-table", "empty-path", "asset-path", "unknown-key"],
+)
+def test_release_notes_rejects(repo, value):
+    toml = repo / "release.toml"
+    # a top-level key must come before the tables
+    old = toml.read_text()
+    toml.write_text(f"{old}\n{value}\n" if value.startswith("[") else f"{value}\n{old}")
+    with pytest.raises(SystemExit, match="release-notes"):
+        config.release_notes(repo)
+
+
+def test_prepare_curated(origin, gh, monkeypatch, capsys):
+    curate(origin)
+
+    def update(root, v, repository):
+        raise AssertionError("curated notes need no changelog")
+
+    monkeypatch.setattr(changelog, "update", update)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    assert start(origin)["stage"] == "prepare"
+    assert "has no notes" not in capsys.readouterr().err
+    git(origin, "fetch", "-q", "origin")
+    changed = git(origin, "show", "--name-only", "--format=", "origin/release/v0.1.0")
+    assert sorted(changed.split()) == ["meson.build", "pixi.toml", "src/hello.f90"]
+    workflow.finish_prepare(origin, "o/hello", "release/v0.1.0", "0.1.0", "main")
+    create = gh.calls("pr", "create")[0]
+    assert "doc/release-notes.md" in create[create.index("--body") + 1]
+
+    git(origin, "switch", "-q", "main")
+    git(origin, "merge", "-q", "--ff-only", "release/v0.1.0")
+    assert start(origin, "push")["stage"] == "publish"
+
+
+def test_prepare_curated_missing_warns(origin, gh, capsys, monkeypatch):
+    curate(origin, notes="# Release notes\n")
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    start(origin)
+    assert "doc/release-notes.md has no notes for 0.1.0" in capsys.readouterr().err
+
+    # and the release can't be published without them
+    git(origin, "switch", "-q", "main")
+    git(origin, "merge", "-q", "--ff-only", "release/v0.1.0")
+    with pytest.raises(SystemExit, match=r"no section for version 0\.1\.0 in doc"):
+        start(origin, "push")
+
+
+def test_publish_curated(origin, gh, tmp_path):
+    curate(origin)
+    merged_release(origin)
+    sha = git(origin, "rev-parse", "HEAD")
+    workflow.publish(origin, "o/hello", sha, "0.1.0", dist(tmp_path, *ARCHIVES))
+    release = gh.load()["releases"]["v0.1.0"]
+    assert release["notes"] == (
+        "Hello version 0.1.0\n\n### New features\n\n* Says hello in more languages\n"
+    )
+
+
+def test_publish_notes_asset(origin, gh, tmp_path):
+    curate(origin, asset="ReleaseNotes.pdf")
+    merged_release(origin)
+    sha = git(origin, "rev-parse", "HEAD")
+    d = dist(tmp_path, *ARCHIVES)
+    with pytest.raises(SystemExit, match="Attach it"):
+        workflow.publish(origin, "o/hello", sha, "0.1.0", d)
+    assert not gh.calls("release", "create")
+
+    # e.g. built from the notes in another job and uploaded as a dist-* artifact
+    (d / "ReleaseNotes.pdf").write_text("pdf")
+    workflow.publish(origin, "o/hello", sha, "0.1.0", d, ["ReleaseNotes.pdf"])
+    release = gh.load()["releases"]["v0.1.0"]
+    assert "ReleaseNotes.pdf" in release["files"]
+    assert release["notes"].startswith("Hello version 0.1.0\n\n### New features\n\n* Says")
+    assert release["notes"].endswith(
+        "The release notes are also attached as [ReleaseNotes.pdf]"
+        "(https://github.com/o/hello/releases/download/v0.1.0/ReleaseNotes.pdf).\n"
+    )
 
 
 def test_publish_dual(origin, gh, tmp_path):

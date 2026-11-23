@@ -67,6 +67,7 @@ jobs:
           stage: ${{ needs.start.outputs.stage }}
           ref: ${{ needs.start.outputs.ref }}
           version: ${{ needs.start.outputs.version }}
-          # other files to attach, relative to the checkout or dist-* artifacts
+          # other files to attach, relative to the checkout or dist-* artifacts,
+          # including release-notes.asset from release.toml, if set
           # extra-assets: |
-          #   doc/*.pdf
+          #   ReleaseNotes.pdf

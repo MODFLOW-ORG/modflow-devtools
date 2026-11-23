@@ -87,3 +87,27 @@ jobs:
           name: meson-logs-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.version }}
           path: builddir*/meson-logs/
           if-no-files-found: ignore
+
+  # With curated release notes published as a document (release-notes.asset
+  # in release.toml), build it from the notes on every build so reviewers can
+  # check it, and upload it for the release. List it in release-finish's
+  # extra-assets.
+  # notes:
+  #   name: Release notes
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v7
+  #       with:
+  #         ref: ${{ inputs.ref }}
+  #
+  #     - name: Build release notes
+  #       uses: docker://pandoc/latex:3.7
+  #       with:
+  #         args: doc/release-notes.md -o ReleaseNotes.pdf
+  #
+  #     - name: Upload release notes
+  #       uses: actions/upload-artifact@v7
+  #       with:
+  #         name: ${{ inputs.release && 'dist-notes' || 'release-notes' }}
+  #         path: ReleaseNotes.pdf

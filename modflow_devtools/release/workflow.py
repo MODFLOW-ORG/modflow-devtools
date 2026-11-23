@@ -5,17 +5,18 @@ actions.
 ``start`` selects the stage from the triggering event:
 
 - ``prepare``, on workflow_dispatch from the development branch: create
-  release/vX.Y.Z, set the version, update CHANGELOG.md, and push the branch.
-  If the branch already exists (e.g. a rerun after a failed build), it is
-  reused as is.
+  release/vX.Y.Z, set the version, update CHANGELOG.md (unless the release
+  notes are curated, see config.py), and push the branch. If the branch
+  already exists (e.g. a rerun after a failed build), it is reused as is.
 - ``publish``, on push to the main branch, if the version there is X.Y.Z,
-  untagged, and has a CHANGELOG.md section.
+  untagged, and has a section in the release notes.
 - nothing (empty stage) otherwise.
 
 ``finish`` completes the stage after the build:
 
 - ``prepare``: open the release pull request into the main branch.
-- ``publish``: check the archives, publish the GitHub release, and open a
+- ``publish``: check the archives (and that any release notes asset is
+  attached), publish the GitHub release, and open a
   pull request on post-release/vX.Y.Z setting the next development version on
   the development branch.
 
@@ -217,8 +218,9 @@ def start(root, event, ref_name, sha, v, repository, main, develop=""):
         v = version.get_version(root)
         if version.RELEASE.match(v) and not tagged(root, v):
             # fail before the build if there are no release notes
-            if not changelog.notes(root, v):
-                warning(f"the {v} section of CHANGELOG.md is empty, so the release notes are too")
+            path = config.release_notes(root).path
+            if not changelog.notes(root, v, path=path):
+                warning(f"the {v} section of {path} is empty, so the release notes are too")
             return {"stage": "publish", "ref": sha, "version": v}
         print(f"version {v} on {main} is not an untagged release version, nothing to do")
     return {"stage": "", "ref": "", "version": v or ""}
@@ -228,6 +230,13 @@ def prepare(root, v, branch, repository):
     fetch_history(root)
     git(root, "switch", "-c", branch)
     version.set_version(root, v)
+    notes = config.release_notes(root)
+    if notes.curated:
+        if not (changelog.section(root, v, notes.path) or "").strip():
+            warning(f"{notes.path} has no notes for {v}. Add them on {branch}.")
+        commit(root, f"chore(release): set version to {v}", version.files(root))
+        git(root, "push", "origin", branch)
+        return
     changelog.update(root, v, repository)
     if not changelog.notes(root, v):
         warning(
@@ -244,9 +253,11 @@ def prepare(root, v, branch, repository):
 
 def finish_prepare(root, repository, ref, v, main, develop=""):
     develop = develop or main
+    notes = config.release_notes(root)
+    verb = "Write or review" if notes.curated else "Review"
+    notes = f"{verb} the {v} section of {notes.path}, it becomes the release notes."
     body = (
-        f"Review the {v} section of CHANGELOG.md, it becomes the release notes. "
-        f"Merging this publishes release v{v} and opens a pull request setting "
+        f"{notes} Merging this publishes release v{v} and opens a pull request setting "
         f"the next development version on {develop}."
     )
     open_pr(GitHub(root, repository), main, ref, f"chore(release): {v}", body)
@@ -296,9 +307,22 @@ def assets(root, dist, extra=()):
     return files
 
 
+def release_notes(root, repository, v, files):
+    """The release's description: the version's section of the release
+    notes, linking the release notes asset, which must be attached, if any."""
+    notes = config.release_notes(root)
+    body = changelog.notes(root, v, title=True, path=notes.path)
+    if notes.asset is None:
+        return body
+    if notes.asset not in [f.name for f in files]:
+        sys.exit(f"{notes.asset} is not among the release assets. Attach it with extra-assets.")
+    url = f"https://github.com/{repository}/releases/download/v{v}/{notes.asset}"
+    return f"{body.rstrip()}\n\nThe release notes are also attached as [{notes.asset}]({url}).\n"
+
+
 def publish(root, repository, ref, v, dist, extra=()):
     files = assets(root, dist, extra)
-    notes = changelog.notes(root, v, title=True)
+    notes = release_notes(root, repository, v, files)
     print(notes)
     tag = f"v{v}"
     forge = GitHub(root, repository)

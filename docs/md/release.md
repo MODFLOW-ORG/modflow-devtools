@@ -10,7 +10,7 @@ Shared CI and release tooling for MODFLOW program repositories.
   - [Build system](#build-system)
   - [Version](#version)
   - [release.toml](#releasetoml)
-  - [Commits](#commits)
+  - [Release notes](#release-notes)
   - [Repository settings](#repository-settings)
 - [Build workflow](#build-workflow)
 - [Release workflow](#release-workflow)
@@ -45,7 +45,7 @@ A program repository must satisfy the following to use the actions.
 
 The program should build with [Meson](https://mesonbuild.com/) and [pixi](https://pixi.sh/), and may be written in Fortran, C or C++. `pixi.lock` should be committed.
 
-The program's files (`meson.build`, `pixi.toml`, `release.toml`, `CHANGELOG.md` and `bin/`) are expected at the repository root. If they're in a subdirectory, pass it to every action as `path` (to `check-linkage`, the `bin/` directory). The changelog still covers the whole repository's history.
+The program's files (`meson.build`, `pixi.toml`, `release.toml`, `CHANGELOG.md` if generated and `bin/`) are expected at the repository root. If they're in a subdirectory, pass it to every action as `path` (to `check-linkage`, the `bin/` directory). The changelog still covers the whole repository's history.
 
 How the program is built and tested is up to the repository's build workflow. The examples assume pixi tasks like
 
@@ -112,7 +112,7 @@ Setting the version checks every file before writing any, so if one file has no 
 
 ### release.toml
 
-`release.toml` at the repository root names the program, for the source archive, the release title, the changelog header and the release notes. Other files containing the version, e.g. a version string in the source code, can be listed there too:
+`release.toml` at the repository root names the program, for the source archive, the release title, the changelog header and the release notes. It also says where [curated release notes](#release-notes) are, if any. Other files containing the version, e.g. a version string in the source code, can be listed there too:
 
 ```toml
 name = "mfusg"
@@ -126,11 +126,26 @@ pattern = "PARAMETER \\(VERSION='([^']*)'\\)"
 format = "{version} {date:%m/%d/%Y}"
 ```
 
-### Commits
+### Release notes
 
-Release notes are generated with [git-cliff](https://git-cliff.org/) from [conventional commits](https://www.conventionalcommits.org/) since the last release. Only `feat`, `fix` and `perf` commits are included, and commits scoped `ci` (e.g. `fix(ci)`) are skipped.
+Release notes can be generated or curated.
+
+**Generated** (the default): release notes are generated with [git-cliff](https://git-cliff.org/) from [conventional commits](https://www.conventionalcommits.org/) since the last release into `CHANGELOG.md`, and the version's section becomes the GitHub release's description. Only `feat`, `fix` and `perf` commits are included, and commits scoped `ci` (e.g. `fix(ci)`) are skipped.
 
 Every program uses the [shared git-cliff template](https://github.com/MODFLOW-ORG/modflow-devtools/blob/develop/modflow_devtools/release/cliff.toml), so changelogs look the same everywhere and the release notes can be found by their `## Version X.Y.Z` headings. Repositories can't supply their own. git-cliff runs at a version pinned in `modflow_devtools/release/changelog.py`, with `pipx run` or `uvx`, so nothing needs installing. If there is no `CHANGELOG.md`, one is created at the first release, from the commits since the last release tag, or the whole history if there is none. Release tags are `vX.Y.Z`, but older `X.Y.Z` tags are recognized too. Entries link the pull request if the commit message ends with its number, e.g. `fix: read the thing (#12)` from a squash merge, and otherwise link the commit.
+
+**Curated**: release notes are written by hand in a Markdown file in the repository, with a `## Version X.Y.Z` section per release, newest first, in the same format as `CHANGELOG.md`. Name the file in `release.toml`:
+
+```toml
+[release-notes]
+path = "doc/release-notes.md"
+# optional, a document built from the notes and attached to the release
+asset = "ReleaseNotes.pdf"
+```
+
+Then git-cliff doesn't run, and the version's section of the file becomes the GitHub release's description. Write it on the development branch before starting the release, or on the release branch. Commit messages needn't follow a convention, though conventional commits are still recommended.
+
+If the release notes are also published as a document, e.g. a PDF, set `asset` to its file name. Build it from the notes in CI rather than committing it, so it can't go stale: the example [build workflow](#build-workflow) has a job that builds a PDF with pandoc on every build, so reviewers can check it, and uploads it as a `dist-notes` artifact on release builds. List it in `release-finish`'s `extra-assets`. `release-finish` refuses to publish if the asset isn't attached, and the release's description links to it.
 
 ### Repository settings
 
@@ -153,6 +168,8 @@ Copy [`docs/examples/build.yml`](https://github.com/MODFLOW-ORG/modflow-devtools
 - runs the tests
 - checks the executables' linkage with the `check-linkage` action
 - packages the executables with the `package` action
+
+With curated release notes published as a document, uncomment the example's `notes` job and adapt it to build the document.
 
 The build workflow must also accept `workflow_call` with inputs `ref` (what to check out) and `release` (whether to upload archives), since the release workflow calls it. In a release build, one job per platform must run the `package` action with `upload: true`. The example marks those matrix entries `release: true`, and packages every build so packaging problems show up before a release.
 
@@ -193,13 +210,14 @@ To make a release:
    - checks that `1.5.2` is newer than the last release tag
    - creates branch `release/v1.5.2`, or builds it as is if it exists
    - sets the version
-   - updates `CHANGELOG.md`
+   - updates `CHANGELOG.md`, if the release notes are generated
    - builds and tests on each platform
    - opens a pull request into `main`
-2. Review the pull request. The version's section in `CHANGELOG.md` becomes the release notes, so edit it on the release branch if needed. If there were no `feat`, `fix` or `perf` commits since the last release, the section is empty and the workflow warns.
+2. Review the pull request. The version's section of the release notes (`CHANGELOG.md`, or the curated file) becomes the release's description, so edit it on the release branch if needed. With generated release notes, if there were no `feat`, `fix` or `perf` commits since the last release, the section is empty and the workflow warns. With curated release notes, the workflow warns if the section is missing or empty.
 3. Merge the pull request. If the version on `main` is a release version without a tag, the workflow
-   - checks that `CHANGELOG.md` has a section for the version, failing before the build if not
+   - checks that the release notes have a section for the version, failing before the build if not
    - builds and tests on each platform again
+   - checks that the release notes asset, if any, is among the extra assets
    - publishes release `v1.5.2` with the archives and any extra assets, targeting the merge commit
    - opens a pull request from branch `post-release/v1.5.2` setting the next development version (e.g. `1.6.0.dev2`) on the development branch
 4. Merge that pull request.
@@ -217,7 +235,7 @@ Each step checks whether it's already done, so a failed release can be rerun:
 
 ### Adopting the release workflow
 
-`release-start` publishes any untagged release version it finds on the main branch, so before adding the release workflow, make sure the version there is either tagged `vX.Y.Z` or a development version. Otherwise the first push to the main branch tries to release it, and fails if `CHANGELOG.md` has no section for it. Tag the last release `vX.Y.Z` on the commit it was made from, if it isn't already, so the first changelog only covers changes since then. Two-part tags like `v3.01` aren't recognized, so tag such a release `v3.1.0` too.
+`release-start` publishes any untagged release version it finds on the main branch, so before adding the release workflow, make sure the version there is either tagged `vX.Y.Z` or a development version. Otherwise the first push to the main branch tries to release it, and fails if the release notes have no section for it. Tag the last release `vX.Y.Z` on the commit it was made from, if it isn't already, so the first changelog only covers changes since then. Two-part tags like `v3.01` aren't recognized, so tag such a release `v3.1.0` too.
 
 ## Release assets
 

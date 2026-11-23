@@ -1,10 +1,11 @@
 name: Start a release
 description: >
   First step of a release workflow. On workflow_dispatch from the development
-  branch, create release/vX.Y.Z, set the version, update CHANGELOG.md, and
-  push the branch, or reuse the branch if it exists (stage `prepare`). On
-  push to the main branch, if the version there is X.Y.Z, untagged, and has a
-  CHANGELOG.md section, select the commit for release (stage `publish`).
+  branch, create release/vX.Y.Z, set the version, update CHANGELOG.md
+  (unless the release notes are curated), and push the branch, or reuse the
+  branch if it exists (stage `prepare`). On push to the main branch, if the
+  version there is X.Y.Z, untagged, and has a section in the release notes,
+  select the commit for release (stage `publish`).
   Otherwise do nothing (empty stage). Build the `ref` output when the stage
   is set, then run release-finish. See modflow_devtools/release/workflow.py.
 inputs:
