@@ -333,6 +333,7 @@ def extract_release_archive(
     release_tag: str,
     ostag: str,
     subset: set[str] | None = None,
+    libdir: Path | None = None,
     verbose: bool = False,
 ) -> list["_ExtractedProgram"]:
     """
@@ -357,8 +358,12 @@ def extract_release_archive(
 
     `subset` items may be program names or file names. Raises
     `ProgramInstallationError` if any is not in the archive.
+
+    Shared libraries go in `libdir` if given, otherwise in `dest_dir`.
     """
     dest_dir.mkdir(parents=True, exist_ok=True)
+    if libdir is not None:
+        libdir.mkdir(parents=True, exist_ok=True)
     exe_suffix, lib_suffix = get_binary_suffixes(ostag)
     tag_version = _normalize_version(release_tag)
 
@@ -412,7 +417,7 @@ def extract_release_archive(
         extracted: list[_ExtractedProgram] = []
         for name in sorted(selected):
             info, version, is_so = available[name]
-            target = dest_dir / Path(info.filename).name
+            target = (libdir if is_so and libdir else dest_dir) / Path(info.filename).name
             # write beside the target and swap it in, so an existing (possibly
             # running, or code-signed and cached by the OS) binary is replaced
             # rather than modified in place
@@ -644,6 +649,8 @@ class ProgramInstallation:
     """Free-form provenance, e.g. {'repo': 'MODFLOW-ORG/modflow6', 'tag': '6.8.0'}
     or {'origin': 'conda-forge'} - not a registry reference."""
     executables: list[str]
+    """File names in `bindir`, or absolute paths for files elsewhere (e.g. a
+    shared library installed in a separate libdir)."""
 
 
 class InstallationMetadata:
@@ -733,6 +740,7 @@ def install_program(
     owner: str = DEFAULT_OWNER,
     version: str = "latest",
     bindir: str | Path | None = None,
+    libdir: str | Path | bool | None = None,
     platform: str | None = None,
     subset: str | list[str] | set[str] | None = None,
     force: bool = False,
@@ -764,6 +772,10 @@ def install_program(
     bindir : str | Path, optional
         Installation directory. Auto-selected (see `get_bindir_options`) if
         omitted.
+    libdir : str | Path | bool, optional
+        Directory to install shared libraries on Linux and macOS, created if
+        needed. True selects `lib` beside `bindir`. Default is `bindir`. On
+        Windows, shared libraries are always installed in `bindir`.
     platform : str, optional
         Ostag override; auto-detected if omitted.
     subset : str | list[str] | set[str], optional
@@ -795,6 +807,13 @@ def install_program(
         bindir = Path(bindir)
         bindir.mkdir(parents=True, exist_ok=True)
 
+    if not libdir or ostag.startswith("win"):
+        libdir = None
+    elif libdir is True:
+        libdir = bindir.parent / "lib"
+    else:
+        libdir = Path(libdir)
+
     archive_path = _DEFAULT_CACHE.get_archive_dir(repo, tag, ostag) / asset["name"]
     download_archive(
         url=asset["browser_download_url"],
@@ -811,6 +830,7 @@ def install_program(
         release_tag=tag,
         ostag=ostag,
         subset=subset,
+        libdir=libdir,
         verbose=verbose,
     )
 
@@ -824,7 +844,7 @@ def install_program(
             bindir=bindir,
             installed_at=installed_at,
             source=dict(source),
-            executables=[prog.path.name],
+            executables=[str(prog.path) if prog.path.parent != bindir else prog.path.name],
         )
         InstallationMetadata(prog.name).add_installation(installation)
         installations.append(installation)

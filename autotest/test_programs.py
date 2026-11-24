@@ -9,12 +9,14 @@ local per-program ledger tracks what's installed where.
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 import warnings
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from flaky import flaky
@@ -734,6 +736,7 @@ class TestCLI:
             owner="MODFLOW-ORG",
             version=None,
             bindir=str(bindir),
+            libdir=None,
             platform=None,
             subset=None,
             force=False,
@@ -924,3 +927,72 @@ class TestGetReleaseErrorWrapping:
         assert get_releases(repo="x") == ["2.0rc1"]
         with pytest.raises(ProgramInstallationError, match=r"'latest' not found.*: 2\.0rc1$"):
             get_release(repo="x")
+
+
+class TestLibdir:
+    @staticmethod
+    def _offline_release(monkeypatch, tmp_path, ostag="linux"):
+        suffix = ".dll" if ostag == "win64" else ".so"
+        exe = "mf6.exe" if ostag == "win64" else "mf6"
+        archive = _make_zip(
+            tmp_path / f"{ostag}.zip",
+            {f"mf6/bin/{exe}": b"fake-mf6", f"mf6/bin/libmf6{suffix}": b"fake-lib"},
+        )
+        release = {
+            "tag_name": "6.8.0",
+            "assets": [{"name": f"{ostag}.zip", "browser_download_url": "https://example/x"}],
+        }
+        monkeypatch.setattr("modflow_devtools.programs.get_release", lambda *a, **k: release)
+
+        def _download(url, dest, **kwargs):
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(archive, dest)
+
+        monkeypatch.setattr("modflow_devtools.programs.download_archive", _download)
+
+    def test_extract_puts_shared_libraries_in_libdir(self, tmp_path):
+        archive = _make_zip(
+            tmp_path / "linux.zip",
+            {"bin/mf6": b"fake-mf6", "bin/libmf6.so": b"fake-lib"},
+        )
+        bindir, libdir = tmp_path / "bin", tmp_path / "lib"
+        extracted = extract_release_archive(
+            archive, bindir, release_tag="6.8.0", ostag="linux", libdir=libdir
+        )
+        paths = {p.name: p.path for p in extracted}
+        assert paths["mf6"] == bindir / "mf6"
+        assert paths["libmf6"] == libdir / "libmf6.so"
+        assert not (bindir / "libmf6.so").exists()
+
+    def test_install_libdir_true_is_lib_beside_bindir(self, isolated_cache, tmp_path, monkeypatch):
+        self._offline_release(monkeypatch, tmp_path)
+        bindir = tmp_path / "env" / "bin"
+        install_program(repo="modflow6", bindir=bindir, platform="linux", libdir=True)
+        assert (bindir / "mf6").exists()
+        assert (tmp_path / "env" / "lib" / "libmf6.so").exists()
+        assert not (bindir / "libmf6.so").exists()
+
+    def test_uninstall_removes_library_from_libdir(self, isolated_cache, tmp_path, monkeypatch):
+        self._offline_release(monkeypatch, tmp_path)
+        bindir, libdir = tmp_path / "bin", tmp_path / "lib"
+        install_program(repo="modflow6", bindir=bindir, platform="linux", libdir=libdir)
+        assert get_executable("libmf6") == libdir / "libmf6.so"
+        uninstall_program("libmf6", version="6.8.0", bindir=bindir)
+        assert not (libdir / "libmf6.so").exists()
+        assert list_installed("libmf6") == {}
+
+    def test_libdir_ignored_on_windows(self, isolated_cache, tmp_path, monkeypatch):
+        self._offline_release(monkeypatch, tmp_path, ostag="win64")
+        bindir = tmp_path / "bin"
+        install_program(repo="modflow6", bindir=bindir, platform="win64", libdir=True)
+        assert (bindir / "libmf6.dll").exists()
+        assert not (tmp_path / "lib").exists()
+
+    def test_cli_libdir_flag(self):
+        with mock.patch("modflow_devtools.programs.__main__.cmd_install") as cmd:
+            with mock.patch.object(sys, "argv", ["mf", "install", "mf6", "--libdir"]):
+                main()
+            assert cmd.call_args.args[0].libdir is True
+            with mock.patch.object(sys, "argv", ["mf", "install", "mf6", "--libdir", "/x/lib"]):
+                main()
+            assert cmd.call_args.args[0].libdir == "/x/lib"

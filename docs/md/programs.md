@@ -54,6 +54,12 @@ mf programs install mf6 --repo modflow6 --version 6.8.0 --bindir /usr/local/bin
 mf programs install --repo executables --subset mfnwt,mf2005 --bindir /usr/local/bin
 ```
 
+Shared libraries (e.g. `libmf6`) are installed beside the executables by default. On Linux and macOS, `libdir` (`--libdir`) installs them in a given directory instead, or with no value, in `lib` beside the bindir. On Windows they always go in the bindir.
+
+```bash
+mf programs install mf6 --repo modflow6 --bindir /usr/local/bin --libdir
+```
+
 ## Program sources
 
 `repo` is **not** restricted to a fixed list - any repo under `owner` (default `MODFLOW-ORG`) with a GitHub release and a platform-matching asset works, including installing a single program directly from its own repo:
@@ -165,7 +171,7 @@ Platform is auto-detected as a MODFLOW ostag - `linux`, `mac`, `macarm`, or `win
 └── metadata/{program}.json                          # per-program installation ledger
 ```
 
-The ledger is a flat list of installations per program name - version, platform, bindir, install time, source, and the executable filename(s) - independent of how the archive was cached or discovered.
+The ledger is a flat list of installations per program name - version, platform, bindir, install time, source, and the executable filename(s), or absolute paths for files outside the bindir - independent of how the archive was cached or discovered.
 
 ## Relationship to get-modflow and conda-forge
 
