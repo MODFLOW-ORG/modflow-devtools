@@ -9,6 +9,7 @@ Commands:
 
 import argparse
 import sys
+from pathlib import Path
 
 from . import (
     DEFAULT_OWNER,
@@ -43,6 +44,7 @@ def cmd_install(args):
             owner=args.owner,
             version=version or "latest",
             bindir=bindir,
+            libdir=args.libdir,
             platform=args.platform,
             subset=args.subset,
             force=args.force,
@@ -51,7 +53,7 @@ def cmd_install(args):
         print("\nInstalled:")
         for inst in installations:
             for exe in inst.executables:
-                print(f"  {exe} {inst.version} -> {inst.bindir / exe}")
+                print(f"  {Path(exe).name} {inst.version} -> {inst.bindir / exe}")
     except Exception as e:
         print(f"Installation failed: {e}", file=sys.stderr)
         sys.exit(1)
@@ -141,6 +143,13 @@ def main():
             ":prev, :mf, :python, :home (Unix) or :windowsapps (Windows), :system (Unix). "
             "Default: auto-select."
         ),
+    )
+    install_parser.add_argument(
+        "--libdir",
+        nargs="?",
+        const=True,
+        help="Directory to install shared libraries on Linux and macOS; "
+        "default is the bindir. Without a value, 'lib' beside the bindir.",
     )
     install_parser.add_argument("--platform", help="Ostag override; default is to auto-detect.")
     install_parser.add_argument(
